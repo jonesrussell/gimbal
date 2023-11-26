@@ -25,11 +25,15 @@ const (
 type GimlarGame struct {
 	p           *Player
 	inputSystem input.System
-	speed       float64 // Add a speed variable to the gimlarGame struct
+	speed       float64
 }
 
 func NewGimlarGame(speed float64) *GimlarGame { // Take speed as an argument
-	g := &GimlarGame{speed: speed} // Initialize the speed variable
+	g := &GimlarGame{
+		p:           &Player{},
+		inputSystem: input.System{},
+		speed:       speed,
+	} // Initialize the speed variable
 	g.inputSystem.Init(input.SystemConfig{
 		DevicesEnabled: input.AnyDevice,
 	})
