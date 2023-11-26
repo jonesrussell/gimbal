@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 	"log"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -15,8 +16,14 @@ const (
 	ActionMoveRight
 )
 
+var (
+	width, height = 640, 480
+	radius        = 200.0
+	center        = image.Point{X: width / 2, Y: height / 2}
+)
+
 func main() {
-	ebiten.SetWindowSize(640, 480)
+	ebiten.SetWindowSize(width, height)
 	if err := ebiten.RunGame(newExampleGame()); err != nil {
 		log.Fatal(err)
 	}
@@ -38,13 +45,13 @@ func newExampleGame() *exampleGame {
 	}
 	g.p = &player{
 		input: g.inputSystem.NewHandler(0, keymap),
-		pos:   image.Point{X: 640 / 2, Y: 400},
+		angle: math.Pi / 2,
 	}
 	return g
 }
 
 func (g *exampleGame) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return 640, 480
+	return width, height
 }
 
 func (g *exampleGame) Draw(screen *ebiten.Image) {
@@ -59,18 +66,23 @@ func (g *exampleGame) Update() error {
 
 type player struct {
 	input *input.Handler
-	pos   image.Point
+	angle float64
+	speed float64
 }
 
 func (p *player) Update() {
 	if p.input.ActionIsPressed(ActionMoveLeft) {
-		p.pos.X -= 4
+		p.speed = -0.01
+	} else if p.input.ActionIsPressed(ActionMoveRight) {
+		p.speed = 0.01
+	} else {
+		p.speed = 0
 	}
-	if p.input.ActionIsPressed(ActionMoveRight) {
-		p.pos.X += 4
-	}
+	p.angle += p.speed
 }
 
 func (p *player) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrintAt(screen, "PlayeR", p.pos.X, p.pos.Y)
+	x := center.X + int(radius*math.Cos(p.angle))
+	y := center.Y - int(radius*math.Sin(p.angle))
+	ebitenutil.DebugPrintAt(screen, "PlayeR", x, y)
 }
