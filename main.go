@@ -18,13 +18,13 @@ const (
 
 var (
 	width, height = 640, 480
-	radius        = 200.0
+	radius        = 200.0 // Change radius to float64
 	center        = image.Point{X: width / 2, Y: height / 2}
 )
 
 func main() {
 	ebiten.SetWindowSize(width, height)
-	if err := ebiten.RunGame(newExampleGame()); err != nil {
+	if err := ebiten.RunGame(newExampleGame(0.02)); err != nil { // Pass the speed as an argument
 		log.Fatal(err)
 	}
 }
@@ -32,10 +32,11 @@ func main() {
 type exampleGame struct {
 	p           *player
 	inputSystem input.System
+	speed       float64 // Add a speed variable to the exampleGame struct
 }
 
-func newExampleGame() *exampleGame {
-	g := &exampleGame{}
+func newExampleGame(speed float64) *exampleGame { // Take speed as an argument
+	g := &exampleGame{speed: speed} // Initialize the speed variable
 	g.inputSystem.Init(input.SystemConfig{
 		DevicesEnabled: input.AnyDevice,
 	})
@@ -46,6 +47,7 @@ func newExampleGame() *exampleGame {
 	g.p = &player{
 		input: g.inputSystem.NewHandler(0, keymap),
 		angle: math.Pi / 2,
+		speed: g.speed, // Pass the speed to the player
 	}
 	return g
 }
@@ -65,20 +67,21 @@ func (g *exampleGame) Update() error {
 }
 
 type player struct {
-	input *input.Handler
-	angle float64
-	speed float64
+	input     *input.Handler
+	angle     float64
+	speed     float64 // Add a speed variable to the player struct
+	direction float64 // Add a direction variable to the player struct
 }
 
 func (p *player) Update() {
 	if p.input.ActionIsPressed(ActionMoveLeft) {
-		p.speed = -0.01
+		p.direction = -1
 	} else if p.input.ActionIsPressed(ActionMoveRight) {
-		p.speed = 0.01
+		p.direction = 1
 	} else {
-		p.speed = 0
+		p.direction = 0
 	}
-	p.angle += p.speed
+	p.angle += p.direction * p.speed
 }
 
 func (p *player) Draw(screen *ebiten.Image) {
