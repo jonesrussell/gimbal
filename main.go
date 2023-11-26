@@ -2,8 +2,11 @@ package main
 
 import (
 	"image"
+	"image/color"
 	"log"
 	"math"
+	"os"
+	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -20,9 +23,15 @@ var (
 	width, height = 640, 480
 	radius        = 200.0 // Change radius to float64
 	center        = image.Point{X: width / 2, Y: height / 2}
+	debug         = false
 )
 
 func main() {
+	// Check if DEBUG environment variable is set to true
+	if value, exists := os.LookupEnv("DEBUG"); exists {
+		debug, _ = strconv.ParseBool(value)
+	}
+
 	ebiten.SetWindowSize(width, height)
 	if err := ebiten.RunGame(newExampleGame(0.02)); err != nil { // Pass the speed as an argument
 		log.Fatal(err)
@@ -58,6 +67,18 @@ func (g *exampleGame) Layout(outsideWidth, outsideHeight int) (int, int) {
 
 func (g *exampleGame) Draw(screen *ebiten.Image) {
 	g.p.Draw(screen)
+
+	// Draw debug info if debug is true
+	if debug {
+		ebitenutil.DebugPrint(screen, "Debugging Info")
+		// Draw grid overlay
+		for i := 0; i < width; i += 40 {
+			ebitenutil.DrawLine(screen, float64(i), 0, float64(i), float64(height), color.White)
+		}
+		for i := 0; i < height; i += 40 {
+			ebitenutil.DrawLine(screen, 0, float64(i), float64(width), float64(i), color.White)
+		}
+	}
 }
 
 func (g *exampleGame) Update() error {
