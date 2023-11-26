@@ -13,8 +13,6 @@ import (
 const (
 	ActionMoveLeft input.Action = iota
 	ActionMoveRight
-	ActionMoveUp
-	ActionMoveDown
 )
 
 func main() {
@@ -37,12 +35,10 @@ func newExampleGame() *exampleGame {
 	keymap := input.Keymap{
 		ActionMoveLeft:  {input.KeyGamepadLeft, input.KeyLeft, input.KeyA},
 		ActionMoveRight: {input.KeyGamepadRight, input.KeyRight, input.KeyD},
-		ActionMoveUp:    {input.KeyGamepadUp, input.KeyUp, input.KeyW},
-		ActionMoveDown:  {input.KeyGamepadDown, input.KeyDown, input.KeyS},
 	}
 	g.p = &player{
 		input: g.inputSystem.NewHandler(0, keymap),
-		pos:   image.Point{X: 96, Y: 96},
+		pos:   image.Point{X: 640 / 2, Y: 400},
 	}
 	return g
 }
@@ -72,12 +68,6 @@ func (p *player) Update() {
 	}
 	if p.input.ActionIsPressed(ActionMoveRight) {
 		p.pos.X += 4
-	}
-	if p.input.ActionIsPressed(ActionMoveUp) {
-		p.pos.Y -= 4
-	}
-	if p.input.ActionIsPressed(ActionMoveDown) {
-		p.pos.Y += 4
 	}
 }
 
