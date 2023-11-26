@@ -1,12 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"log"
 	"math"
-	"os"
-	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -23,29 +22,24 @@ var (
 	width, height = 640, 480
 	radius        = 200.0 // Change radius to float64
 	center        = image.Point{X: width / 2, Y: height / 2}
-	debug         = false
+	debug         = true
 )
 
 func main() {
-	// Check if DEBUG environment variable is set to true
-	if value, exists := os.LookupEnv("DEBUG"); exists {
-		debug, _ = strconv.ParseBool(value)
-	}
-
 	ebiten.SetWindowSize(width, height)
-	if err := ebiten.RunGame(newExampleGame(0.02)); err != nil { // Pass the speed as an argument
+	if err := ebiten.RunGame(newGimlarGame(0.02)); err != nil { // Pass the speed as an argument
 		log.Fatal(err)
 	}
 }
 
-type exampleGame struct {
+type gimlarGame struct {
 	p           *player
 	inputSystem input.System
-	speed       float64 // Add a speed variable to the exampleGame struct
+	speed       float64 // Add a speed variable to the gimlarGame struct
 }
 
-func newExampleGame(speed float64) *exampleGame { // Take speed as an argument
-	g := &exampleGame{speed: speed} // Initialize the speed variable
+func newGimlarGame(speed float64) *gimlarGame { // Take speed as an argument
+	g := &gimlarGame{speed: speed} // Initialize the speed variable
 	g.inputSystem.Init(input.SystemConfig{
 		DevicesEnabled: input.AnyDevice,
 	})
@@ -61,16 +55,16 @@ func newExampleGame(speed float64) *exampleGame { // Take speed as an argument
 	return g
 }
 
-func (g *exampleGame) Layout(outsideWidth, outsideHeight int) (int, int) {
+func (g *gimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return width, height
 }
 
-func (g *exampleGame) Draw(screen *ebiten.Image) {
+func (g *gimlarGame) Draw(screen *ebiten.Image) {
 	g.p.Draw(screen)
 
 	// Draw debug info if debug is true
 	if debug {
-		ebitenutil.DebugPrint(screen, "Debugging Info")
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.CurrentFPS())) // Print the current FPS
 		// Draw grid overlay
 		for i := 0; i < width; i += 40 {
 			ebitenutil.DrawLine(screen, float64(i), 0, float64(i), float64(height), color.White)
@@ -81,7 +75,7 @@ func (g *exampleGame) Draw(screen *ebiten.Image) {
 	}
 }
 
-func (g *exampleGame) Update() error {
+func (g *gimlarGame) Update() error {
 	g.inputSystem.Update()
 	g.p.Update()
 	return nil
