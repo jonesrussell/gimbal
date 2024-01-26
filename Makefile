@@ -18,7 +18,7 @@ help:
 .PHONY: serve
 serve:
 	@echo "Hosting game on http://localhost:4242"
-	wasmserve -http=":4242" -allow-origin='*' -tags cmd/gimbal/main.go
+	 (cd cmd/gimbal/; wasmserve -http=":4242" -allow-origin='*' -tags .)
 
 ## build/linux: build build Linux version
 .PHONY: build/linux
