@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	input "github.com/quasilyte/ebitengine-input"
 )
 
@@ -59,13 +60,13 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 
 	// Draw debug info if debug is true
 	if debug {
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.CurrentFPS())) // Print the current FPS
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS())) // Print the current FPS
 		// Draw grid overlay
 		for i := 0; i < width; i += 40 {
-			ebitenutil.DrawLine(screen, float64(i), 0, float64(i), float64(height), color.White)
+			vector.StrokeLine(screen, float32(i), 0, float32(i), float32(height), 1, color.White, false)
 		}
 		for i := 0; i < height; i += 40 {
-			ebitenutil.DrawLine(screen, 0, float64(i), float64(width), float64(i), color.White)
+			vector.StrokeLine(screen, 0, float32(i), float32(width), float32(i), 1, color.White, false)
 		}
 	}
 }
