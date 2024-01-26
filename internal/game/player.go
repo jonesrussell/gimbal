@@ -1,6 +1,7 @@
 package game
 
 import (
+	"errors"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -9,17 +10,35 @@ import (
 	"github.com/solarlune/resolv"
 )
 
+// Player represents a player in the game.
 type Player struct {
-	input     *input.Handler
-	angle     float64
-	speed     float64 // Add a speed variable to the player struct
-	direction float64 // Add a direction variable to the player struct
-	Object    *resolv.Object
+	// Input is the input handler for the player.
+	input *input.Handler
+	// Angle is the current angle of the player.
+	angle float64
+	// Speed is the speed of the player.
+	speed float64
+	// Direction is the current direction of the player.
+	direction float64
+	// Object is the game object representing the player.
+	Object *resolv.Object
 }
 
-func NewPlayer(input *input.Handler, speed float64) *Player {
-	x := center.X + int(radius*math.Cos(-math.Pi/2))
-	y := center.Y - int(radius*math.Sin(-math.Pi/2))
+const (
+	initialAngle = -math.Pi / 2
+	playerLabel  = "PlayeR"
+)
+
+func NewPlayer(input *input.Handler, speed float64) (*Player, error) {
+	if input == nil {
+		return nil, errors.New("input handler cannot be nil")
+	}
+	if radius <= 0 {
+		return nil, errors.New("radius must be greater than zero")
+	}
+
+	x := center.X + int(radius*math.Cos(initialAngle))
+	y := center.Y - int(radius*math.Sin(initialAngle))
 	width := 20  // replace with your player's width
 	height := 20 // replace with your player's height
 
@@ -28,7 +47,7 @@ func NewPlayer(input *input.Handler, speed float64) *Player {
 		speed:  speed,
 		angle:  -math.Pi / 2, // Initialize the angle to -math.Pi / 2 to start at the bottom
 		Object: resolv.NewObject(float64(x), float64(y), float64(width), float64(height)),
-	}
+	}, nil
 }
 
 func (p *Player) Update() {
@@ -50,5 +69,5 @@ func (p *Player) Update() {
 func (p *Player) Draw(screen *ebiten.Image) {
 	x := center.X + int(radius*math.Cos(p.angle))
 	y := center.Y - int(radius*math.Sin(p.angle))
-	ebitenutil.DebugPrintAt(screen, "PlayeR", x, y)
+	ebitenutil.DebugPrintAt(screen, playerLabel, x, y)
 }

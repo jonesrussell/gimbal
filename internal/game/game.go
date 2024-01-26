@@ -29,7 +29,7 @@ type GimlarGame struct {
 	speed       float64
 }
 
-func NewGimlarGame(speed float64) *GimlarGame { // Take speed as an argument
+func NewGimlarGame(speed float64) (*GimlarGame, error) { // Take speed as an argument
 	g := &GimlarGame{
 		p:           &Player{},
 		inputSystem: input.System{},
@@ -42,8 +42,12 @@ func NewGimlarGame(speed float64) *GimlarGame { // Take speed as an argument
 		ActionMoveLeft:  {input.KeyGamepadLeft, input.KeyLeft, input.KeyA},
 		ActionMoveRight: {input.KeyGamepadRight, input.KeyRight, input.KeyD},
 	}
-	g.p = NewPlayer(g.inputSystem.NewHandler(0, keymap), g.speed) // Pass the speed to the player
-	return g
+	var err error
+	g.p, err = NewPlayer(g.inputSystem.NewHandler(0, keymap), g.speed) // Pass the speed to the player
+	if err != nil {
+		return nil, err
+	}
+	return g, nil
 }
 
 func (g *GimlarGame) Run() error {

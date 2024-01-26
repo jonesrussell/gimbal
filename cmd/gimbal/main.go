@@ -7,7 +7,11 @@ import (
 )
 
 func main() {
-	g := game.NewGimlarGame(0.04) // Pass the speed as an argument
+	g, err := game.NewGimlarGame(0.04) // Pass the speed as an argument
+	if err != nil {
+		log.Fatal((err))
+	}
+
 	if err := g.Run(); err != nil {
 		log.Fatal(err)
 	}
