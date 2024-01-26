@@ -17,9 +17,14 @@ help:
 ## serve: serve WebAssembly version locally
 .PHONY: serve
 serve:
+	@if ! command -v wasmserve >/dev/null 2>&1; then \
+		echo "wasmserve could not be found"; \
+		echo "You can install it with: go install github.com/hajimehoshi/wasmserve@latest"; \
+		exit 1; \
+	fi
 	@echo "Hosting game on http://localhost:4242"
-	 (cd cmd/gimbal/; wasmserve -http=":4242" -allow-origin='*' -tags .)
-
+	(cd cmd/gimbal/; wasmserve -http=":4242" -allow-origin='*' -tags .)
+	
 ## build/linux: build build Linux version
 .PHONY: build/linux
 build/linux:
