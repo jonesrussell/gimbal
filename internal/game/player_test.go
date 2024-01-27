@@ -81,7 +81,7 @@ func TestPlayer_Update(t *testing.T) {
 				direction: 0.0,
 				Object:    resolv.NewObject(0, 0, 20, 20),
 			},
-			want: 1.0,
+			want: 1.0, // Change this to 1.0
 		},
 	}
 	for _, tt := range tests {

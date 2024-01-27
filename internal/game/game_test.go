@@ -69,8 +69,13 @@ func TestGimlarGame_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockHandler := &MockHandler{}
+			player, err := NewPlayer(mockHandler, tt.fields.speed)
+			if err != nil {
+				t.Fatalf("Failed to create new player: %v", err)
+			}
 			g := &GimlarGame{
-				p:           tt.fields.p,
+				p:           player,
 				inputSystem: tt.fields.inputSystem,
 				speed:       tt.fields.speed,
 			}

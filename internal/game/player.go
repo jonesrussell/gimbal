@@ -2,7 +2,6 @@ package game
 
 import (
 	"errors"
-	"fmt"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -74,7 +73,6 @@ func (p *Player) Update() {
 	} else {
 		p.direction = 0
 	}
-	fmt.Println("Direction after Update: ", p.direction) // Debugging print statement
 
 	p.angle += p.direction * p.speed
 
