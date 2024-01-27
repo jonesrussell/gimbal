@@ -1,3 +1,11 @@
+USERNAME := jonesrussell
+PROJECTNAME := gimbal
+VERSION := v1.0.0
+GO = go
+GO_LDFLAGS = -ldflags "-s -w"
+BINARY_DIR = bin
+BINARY_NAME = game
+
 ifndef WASM_EXEC_PATH
 WASM_EXEC_PATH="$(shell go env GOROOT)/misc/wasm/wasm_exec.js"
 endif
@@ -6,7 +14,6 @@ ifndef ITCH_USERNAME
 ITCH_USERNAME=jonesrussell
 endif
 
-PROJ_NAME=gimbal
 ITCH_PATH=gimbal
 
 ## help: print this help message
@@ -30,16 +37,16 @@ serve:
 build/linux:
 	@echo "Making build Linux build..."
 	rm -rf build/linux
-	mkdir -p build/linux/$(PROJ_NAME)
-	go build -tags build -o build/linux/$(PROJ_NAME)/$(PROJ_NAME) ./cmd/gimbal
+	mkdir -p build/linux/$(PROJECTNAME)
+	go build -tags build -o build/linux/$(PROJECTNAME)/$(PROJECTNAME) ./cmd/gimbal
 
 ## build/win32: build build Win32 version
 .PHONY: build/win32
 build/win32:
 	@echo "Making build Win32 build..."
 	rm -rf build/win32
-	mkdir -p build/win32/$(PROJ_NAME)
-	GOOS=windows go build -tags build -o build/win32/$(PROJ_NAME)/$(PROJ_NAME).exe ./cmd/gimbal
+	mkdir -p build/win32/$(PROJECTNAME)
+	GOOS=windows go build -tags build -o build/win32/$(PROJECTNAME)/$(PROJECTNAME).exe ./cmd/gimbal
 
 ## build/web: build build WebAssembly version
 .PHONY: build/web
@@ -47,7 +54,7 @@ build/web:
 	@echo "Making build wasm build..."
 	rm -rf build/web
 	mkdir -p build/web
-	GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm ./cmd/gimbal
+	GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/${PROJECTNAME}.wasm ./cmd/gimbal
 	cp -r html/* build/web
 	cp $(WASM_EXEC_PATH) build/web
 
@@ -77,3 +84,19 @@ clean/build:
 .PHONY: clean
 clean: clean_build
 	rm -rf game.wasm site.zip
+
+## test: run tests
+.PHONY: test
+test:
+	go test -v ./...
+
+all: fmt lint test build
+
+fmt:
+	$(GO) fmt ./...
+
+lint:
+	golangci-lint run
+
+vet:
+	$(GO) vet ./...

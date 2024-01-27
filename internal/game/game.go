@@ -43,7 +43,10 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) { // Take speed as an arg
 		ActionMoveRight: {input.KeyGamepadRight, input.KeyRight, input.KeyD},
 	}
 	var err error
-	g.p, err = NewPlayer(g.inputSystem.NewHandler(0, keymap), g.speed) // Pass the speed to the player
+	g.p, err = NewPlayer(
+		g.inputSystem.NewHandler(0, keymap),
+		g.speed,
+	) // Pass the speed to the player
 	if err != nil {
 		return nil, err
 	}
