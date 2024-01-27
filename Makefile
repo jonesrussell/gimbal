@@ -1,3 +1,4 @@
+# Variables
 USERNAME := jonesrussell
 PROJECTNAME := gimbal
 VERSION := v1.0.0
@@ -6,22 +7,25 @@ GO_LDFLAGS = -ldflags "-s -w"
 BINARY_DIR = bin
 BINARY_NAME = game
 
+# Check if WASM_EXEC_PATH is set, if not, set it
 ifndef WASM_EXEC_PATH
 WASM_EXEC_PATH="$(shell go env GOROOT)/misc/wasm/wasm_exec.js"
 endif
 
+# Check if ITCH_USERNAME is set, if not, set it
 ifndef ITCH_USERNAME
 ITCH_USERNAME=jonesrussell
 endif
 
 ITCH_PATH=gimbal
 
-## help: print this help message
+# Help target
+.PHONY: help
 help:
 	@echo 'Usage:'
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed -e 's/^/ /'
 
-## serve: serve WebAssembly version locally
+# Serve target
 .PHONY: serve
 serve:
 	@if ! command -v wasmserve >/dev/null 2>&1; then \
@@ -31,8 +35,8 @@ serve:
 	fi
 	@echo "Hosting game on http://localhost:4242"
 	(cd cmd/gimbal/; wasmserve -http=":4242" -allow-origin='*' -tags .)
-	
-## build/linux: build build Linux version
+
+# Build Linux target
 .PHONY: build/linux
 build/linux:
 	@echo "Making build Linux build..."
@@ -40,7 +44,7 @@ build/linux:
 	mkdir -p build/linux/$(PROJECTNAME)
 	go build -tags build -o build/linux/$(PROJECTNAME)/$(PROJECTNAME) ./cmd/gimbal
 
-## build/win32: build build Win32 version
+# Build Win32 target
 .PHONY: build/win32
 build/win32:
 	@echo "Making build Win32 build..."
@@ -48,21 +52,21 @@ build/win32:
 	mkdir -p build/win32/$(PROJECTNAME)
 	GOOS=windows go build -tags build -o build/win32/$(PROJECTNAME)/$(PROJECTNAME).exe ./cmd/gimbal
 
-## build/web: build build WebAssembly version
+# Build WebAssembly target
 .PHONY: build/web
 build/web:
 	@echo "Making build wasm build..."
 	rm -rf build/web
 	mkdir -p build/web
-	GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/${PROJECTNAME}.wasm ./cmd/gimbal
+	GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm ./cmd/gimbal
 	cp -r html/* build/web
 	cp $(WASM_EXEC_PATH) build/web
 
-## build: build all build versions
+# Build all target
 .PHONY: build
 build: build/linux build/win32 build/web
 
-## itch: upload all build versions on itch.io
+# Upload to itch.io target
 .PHONY: itch
 itch: clean/build build
 	butler push --if-changed build/win32 $(ITCH_USERNAME)/$(ITCH_PATH):windows
@@ -70,33 +74,41 @@ itch: clean/build build
 	butler push build/web $(ITCH_USERNAME)/$(ITCH_PATH):web
 	@echo "Project is live on http://$(ITCH_USERNAME).itch.io/$(ITCH_PATH)"
 
-## run: run game (dev)
+# Run target
 .PHONY: run
 run:
 	go run ./cmd/gimbal
 
-## clean/build: remove all previosly built build versions
+# Clean build target
 .PHONY: clean/build
 clean/build:
 	rm -rf build
 
-## clean: clean all build artifacts
+# Clean all target
 .PHONY: clean
 clean: clean_build
 	rm -rf game.wasm site.zip
 
-## test: run tests
+# Test target
 .PHONY: test
 test:
 	go test -v ./...
 
+# All target
+.PHONY: all
 all: fmt lint test build
 
+# Format target
+.PHONY: fmt
 fmt:
 	$(GO) fmt ./...
 
+# Lint target
+.PHONY: lint
 lint:
 	golangci-lint run
 
+# Vet target
+.PHONY: vet
 vet:
 	$(GO) vet ./...

@@ -86,13 +86,13 @@ func TestPlayer_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &Player{
-				input:     tt.fields.input,
-				speed:     tt.fields.speed,
-				angle:     tt.fields.angle,
-				direction: tt.fields.direction,
-				Object:    tt.fields.Object,
+			p, err := NewPlayer(tt.fields.input, tt.fields.speed)
+			if err != nil {
+				t.Fatalf("Failed to create new player: %v", err)
 			}
+			p.angle = tt.fields.angle
+			p.direction = tt.fields.direction
+			p.Object = tt.fields.Object
 			switch tt.name {
 			case "Test with MoveLeft action":
 				p.input.ActionIsPressed(ActionMoveLeft)
