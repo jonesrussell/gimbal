@@ -11,10 +11,12 @@ import (
 )
 
 var (
-	width, height = 640, 480
-	radius        = 200.0
-	center        = image.Point{X: width / 2, Y: height / 2}
-	debug         = true
+	width, height             = 640, 480
+	radius                    = float64(height / 2)
+	center                    = image.Point{X: width / 2, Y: height / 2}
+	debug                     = true
+	gridSpacing               = 40
+	playerWidth, playerHeight = 25, 25
 )
 
 type GimlarGame struct {
@@ -61,10 +63,10 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	if debug {
 		ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS())) // Print the current FPS
 		// Draw grid overlay
-		for i := 0; i < width; i += 40 {
+		for i := 0; i < width; i += gridSpacing {
 			vector.StrokeLine(screen, float32(i), 0, float32(i), float32(height), 1, color.White, false)
 		}
-		for i := 0; i < height; i += 40 {
+		for i := 0; i < height; i += gridSpacing {
 			vector.StrokeLine(screen, 0, float32(i), float32(width), float32(i), 1, color.White, false)
 		}
 	}

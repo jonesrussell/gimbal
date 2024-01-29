@@ -2,8 +2,10 @@ package game
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"math"
+
+	_ "image/png"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -22,6 +24,8 @@ type Player struct {
 	direction float64
 	// Object is the game object representing the player.
 	Object *resolv.Object
+	// Sprite is the player's sprite.
+	Sprite *ebiten.Image
 }
 
 const (
@@ -39,37 +43,47 @@ func NewPlayer(input InputHandlerInterface, speed float64) (*Player, error) {
 
 	x := center.X + int(radius*math.Cos(initialAngle))
 	y := center.Y - int(radius*math.Sin(initialAngle))
-	width := 20  // replace with your player's width
-	height := 20 // replace with your player's height
+	width := playerWidth // replace with your player's width
+	height := playerHeight
+
+	// Load the sprite.
+	spriteImage, _, err := ebitenutil.NewImageFromFile("assets/player.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return &Player{
 		input:  input,
 		speed:  speed,
-		angle:  initialAngle, // Initialize the angle to -math.Pi / 2 to start at the bottom
+		angle:  initialAngle,
 		Object: resolv.NewObject(float64(x), float64(y), float64(width), float64(height)),
+		Sprite: spriteImage,
 	}, nil
 }
 
-func (p *Player) Update() {
-	fmt.Println(p.direction)
-	if p.input.IsKeyPressed(ebiten.KeyLeft) {
-		p.direction = -1
-	} else if p.input.IsKeyPressed(ebiten.KeyRight) {
-		p.direction = 1
+func (player *Player) Update() {
+	if player.input.IsKeyPressed(ebiten.KeyLeft) {
+		player.direction = -1
+	} else if player.input.IsKeyPressed(ebiten.KeyRight) {
+		player.direction = 1
 	} else {
-		p.direction = 0
+		player.direction = 0
 	}
 
-	p.angle += p.direction * p.speed
+	player.angle += player.direction * player.speed
 
-	x := center.X + int(radius*math.Cos(p.angle))
-	y := center.Y - int(radius*math.Sin(p.angle))
-	p.Object.X = float64(x)
-	p.Object.Y = float64(y)
+	x := center.X + int(radius*math.Cos(player.angle))
+	y := center.Y - int(radius*math.Sin(player.angle))
+	player.Object.Position.X = float64(x)
+	player.Object.Position.Y = float64(y)
+	player.Object.Update()
 }
 
 func (p *Player) Draw(screen *ebiten.Image) {
-	x := center.X + int(radius*math.Cos(p.angle))
-	y := center.Y - int(radius*math.Sin(p.angle))
-	ebitenutil.DebugPrintAt(screen, playerLabel, x, y)
+	op := &ebiten.DrawImageOptions{}
+	// Scale the sprite to half its original size.
+	op.GeoM.Scale(0.1, 0.1)
+	op.GeoM.Translate(p.Object.Position.X, p.Object.Position.Y)
+	p.Object.Update()
+	screen.DrawImage(p.Sprite, op)
 }
