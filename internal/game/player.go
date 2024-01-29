@@ -2,31 +2,18 @@ package game
 
 import (
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	input "github.com/quasilyte/ebitengine-input"
 	"github.com/solarlune/resolv"
 )
-
-// Define the interface
-type HandlerInterface interface {
-	ActionIsPressed(action input.Action) bool
-}
-
-type HandlerWrapper struct {
-	HandlerInterface
-}
-
-func (hw *HandlerWrapper) ActionIsPressed(action input.Action) bool {
-	return hw.HandlerInterface.ActionIsPressed(action)
-}
 
 // Player represents a player in the game.
 type Player struct {
 	// Input is the input handler for the player.
-	input HandlerInterface
+	input InputHandlerInterface
 	// Angle is the current angle of the player.
 	angle float64
 	// Speed is the speed of the player.
@@ -42,7 +29,7 @@ const (
 	playerLabel  = "PlayeR"
 )
 
-func NewPlayer(input HandlerInterface, speed float64) (*Player, error) {
+func NewPlayer(input InputHandlerInterface, speed float64) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
 	}
@@ -55,20 +42,19 @@ func NewPlayer(input HandlerInterface, speed float64) (*Player, error) {
 	width := 20  // replace with your player's width
 	height := 20 // replace with your player's height
 
-	handlerWrapper := &HandlerWrapper{HandlerInterface: input}
-
 	return &Player{
-		input:  handlerWrapper,
+		input:  input,
 		speed:  speed,
-		angle:  -math.Pi / 2, // Initialize the angle to -math.Pi / 2 to start at the bottom
+		angle:  initialAngle, // Initialize the angle to -math.Pi / 2 to start at the bottom
 		Object: resolv.NewObject(float64(x), float64(y), float64(width), float64(height)),
 	}, nil
 }
 
 func (p *Player) Update() {
-	if p.input.ActionIsPressed(ActionMoveLeft) {
+	fmt.Println(p.direction)
+	if p.input.IsKeyPressed(ebiten.KeyLeft) {
 		p.direction = -1
-	} else if p.input.ActionIsPressed(ActionMoveRight) {
+	} else if p.input.IsKeyPressed(ebiten.KeyRight) {
 		p.direction = 1
 	} else {
 		p.direction = 0

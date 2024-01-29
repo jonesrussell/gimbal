@@ -8,7 +8,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-	input "github.com/quasilyte/ebitengine-input"
 )
 
 var (
@@ -18,35 +17,19 @@ var (
 	debug         = true
 )
 
-const (
-	ActionMoveLeft input.Action = iota
-	ActionMoveRight
-)
-
 type GimlarGame struct {
-	p           *Player
-	inputSystem input.System
-	speed       float64
+	player *Player
+	speed  float64
 }
 
-func NewGimlarGame(speed float64) (*GimlarGame, error) { // Take speed as an argument
+func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	g := &GimlarGame{
-		p:           &Player{},
-		inputSystem: input.System{},
-		speed:       speed,
-	} // Initialize the speed variable
-	g.inputSystem.Init(input.SystemConfig{
-		DevicesEnabled: input.AnyDevice,
-	})
-	keymap := input.Keymap{
-		ActionMoveLeft:  {input.KeyGamepadLeft, input.KeyLeft, input.KeyA},
-		ActionMoveRight: {input.KeyGamepadRight, input.KeyRight, input.KeyD},
+		speed: speed,
 	}
+
+	handler := &InputHandler{}
 	var err error
-	g.p, err = NewPlayer(
-		g.inputSystem.NewHandler(0, keymap),
-		g.speed,
-	) // Pass the speed to the player
+	g.player, err = NewPlayer(handler, g.speed)
 	if err != nil {
 		return nil, err
 	}
@@ -54,16 +37,25 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) { // Take speed as an arg
 }
 
 func (g *GimlarGame) Run() error {
-	ebiten.SetWindowSize(width, height)
-	return ebiten.RunGame(g)
+	ebiten.SetWindowSize(width, height) // Sets the window size to the width and height defined in your game.
+	return ebiten.RunGame(g)            // Runs your game. The game's logic is executed in the Update method of your GimlarGame struct.
 }
 
 func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return width, height
 }
 
+func (g *GimlarGame) Update() error {
+	// Update the player's state
+	g.player.Update()
+
+	// Add any other game state updates here
+
+	return nil
+}
+
 func (g *GimlarGame) Draw(screen *ebiten.Image) {
-	g.p.Draw(screen)
+	g.player.Draw(screen)
 
 	// Draw debug info if debug is true
 	if debug {
@@ -76,10 +68,4 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 			vector.StrokeLine(screen, 0, float32(i), float32(width), float32(i), 1, color.White, false)
 		}
 	}
-}
-
-func (g *GimlarGame) Update() error {
-	g.inputSystem.Update()
-	g.p.Update()
-	return nil
 }
