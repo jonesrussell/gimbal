@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/solarlune/resolv"
 )
 
 var (
@@ -15,9 +16,14 @@ var (
 	radius                    = float64(height / 2)
 	center                    = image.Point{X: width / 2, Y: height / 2}
 	debug                     = true
-	gridSpacing               = 40
-	playerWidth, playerHeight = 25, 25
+	gridSpacing               = 32
+	playerWidth, playerHeight = 16, 16
+	space                     *resolv.Space
 )
+
+func init() {
+	space = resolv.NewSpace(width, height, playerWidth, playerHeight)
+}
 
 type GimlarGame struct {
 	player *Player
@@ -35,6 +41,9 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	space.Add(g.player.Object)
+
 	return g, nil
 }
 
