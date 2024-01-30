@@ -49,19 +49,34 @@ func NewPlayer(
 		return nil, errors.New("sprite image cannot be nil")
 	}
 
-	x := center.X + int(radius*math.Cos(math.Pi/2))
-	y := center.Y - int(radius*math.Sin(math.Pi/2))
+	x := center.X + int(radius*math.Cos(0))
+	y := center.Y - int(radius*math.Sin(0))
 
 	return &Player{
 		input:     input,
-		angle:     math.Pi / 2,
+		angle:     0,
 		speed:     speed,
 		direction: 0,
 		Object:    resolv.NewObject(float64(x), float64(y), float64(playerWidth), float64(playerHeight)),
 		Sprite:    spriteImage,
-		viewAngle: 0.0,
+		viewAngle: 3 * math.Pi / 2,
 		debug:     debugger,
 	}, nil
+}
+
+func (player *Player) calculatePosition() resolv.Vector {
+	// Calculate the x and y positions based on the current angle
+	x := center.X + int(radius*math.Cos(player.viewAngle))
+	y := center.Y - int(radius*math.Sin(player.viewAngle))
+
+	return resolv.Vector{X: float64(x), Y: float64(y)}
+}
+
+func (player *Player) calculateAngle() float64 {
+	// Calculate the angle between the sprite and the center of the screen
+	dx := float64(center.X) - player.Object.Position.X
+	dy := float64(center.Y) - player.Object.Position.Y
+	return math.Atan2(dy, dx) + math.Pi/2 // Add Pi/2 to rotate the sprite by 90 degrees
 }
 
 func (player *Player) Update() {
@@ -86,16 +101,9 @@ func (player *Player) Update() {
 		player.direction = 0
 	}
 
-	// Calculate the x and y positions based on the current angle
-	x := center.X + int(radius*math.Cos(player.viewAngle))
-	y := center.Y - int(radius*math.Sin(player.viewAngle))
-	player.Object.Position.X = float64(x)
-	player.Object.Position.Y = float64(y)
+	player.Object.Position = player.calculatePosition()
 
-	// Calculate the angle between the sprite and the center of the screen
-	dx := float64(center.X) - player.Object.Position.X
-	dy := float64(center.Y) - player.Object.Position.Y
-	player.angle = math.Atan2(dy, dx) + math.Pi/2 // Add Pi/2 to rotate the sprite by 90 degrees
+	player.angle = player.calculateAngle()
 
 	if player.viewAngle != oldOrientation {
 		player.debug.DebugPrintOrientation(player.viewAngle)
