@@ -1,11 +1,11 @@
 # Variables
 USERNAME := jonesrussell
 PROJECTNAME := gimbal
-VERSION := v1.0.0
+VERSION := v0.1.0
 GO = go
 GO_LDFLAGS = -ldflags "-s -w"
 BINARY_DIR = bin
-BINARY_NAME = game
+BINARY_NAME = gimbal
 
 # Check if WASM_EXEC_PATH is set, if not, set it
 ifndef WASM_EXEC_PATH
