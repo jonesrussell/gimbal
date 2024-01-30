@@ -5,7 +5,6 @@ import (
 	"image"
 
 	"image/color"
-	_ "image/png"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
