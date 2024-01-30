@@ -18,6 +18,7 @@ var (
 	center                    = image.Point{X: screenWidth / 2, Y: screenHeight / 2}
 	debugGridSpacing          = 32
 	playerWidth, playerHeight = 16, 16
+	gameStarted               bool // Debugging check if game started
 )
 
 type GimlarGame struct {

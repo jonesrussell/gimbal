@@ -25,8 +25,6 @@ type Player struct {
 	Object *resolv.Object
 	// Sprite is the player's sprite.
 	Sprite *ebiten.Image
-	// Debugging check if game started
-	gameStarted bool
 	// Orientation of player's viewable sprite
 	viewAngle float64
 	// Debugger
@@ -55,22 +53,21 @@ func NewPlayer(
 	y := center.Y - int(radius*math.Sin(math.Pi/2))
 
 	return &Player{
-		input:       input,
-		angle:       math.Pi / 2,
-		speed:       speed,
-		direction:   0,
-		Object:      resolv.NewObject(float64(x), float64(y), float64(playerWidth), float64(playerHeight)),
-		Sprite:      spriteImage,
-		gameStarted: false,
-		viewAngle:   0.0,
-		debug:       debugger,
+		input:     input,
+		angle:     math.Pi / 2,
+		speed:     speed,
+		direction: 0,
+		Object:    resolv.NewObject(float64(x), float64(y), float64(playerWidth), float64(playerHeight)),
+		Sprite:    spriteImage,
+		viewAngle: 0.0,
+		debug:     debugger,
 	}, nil
 }
 
 func (player *Player) Update() {
-	if !player.gameStarted {
+	if !gameStarted {
 		player.debug.DebugPlayer(player)
-		player.gameStarted = true
+		gameStarted = true
 	}
 
 	oldOrientation := player.viewAngle
@@ -128,7 +125,7 @@ func (player *Player) Draw(screen *ebiten.Image) {
 	if player.Sprite != nil {
 		// Create a separate DrawImageOptions for the sprite rotation
 		spriteOp := &ebiten.DrawImageOptions{}
-		// Scale the sprite to half its original size.
+		// Scale the sprite to 1/10th size.
 		spriteOp.GeoM.Scale(0.1, 0.1)
 		spriteOp.GeoM.Rotate(player.angle)
 		// Translate the rotated sprite to the player's position
