@@ -1,18 +1,19 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/jonesrussell/gimbal/internal/game"
 )
 
 func main() {
-	g, err := game.NewGimlarGame(0.04) // Pass the speed as an argument
+	speed := 0.04
+	g, err := game.NewGimlarGame(speed)
 	if err != nil {
-		log.Fatal((err))
+		slog.Error("Failed to initialize game", "error", err)
 	}
 
 	if err := g.Run(); err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to run game", "error", err)
 	}
 }

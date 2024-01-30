@@ -2,7 +2,7 @@ package game
 
 import (
 	"image"
-	"log"
+	"log/slog"
 )
 
 type Debugger struct {
@@ -25,28 +25,28 @@ func (d *Debugger) DebugMode(debug bool) {
 
 func (d *Debugger) logIfDebugEnabled(format string, v ...interface{}) {
 	if d.debug {
-		log.Printf(format, v...)
+		slog.Info(format, v...)
 	}
 }
 
 func (d *Debugger) DebugPrint() {
-	d.logIfDebugEnabled("Debug mode is enabled.")
+	d.logIfDebugEnabled("message", "Debug mode is enabled.")
 }
 
 func (d *Debugger) DebugPrintOrientation(viewAngle float64) {
-	d.logIfDebugEnabled("Player viewAngle: %f", viewAngle)
+	d.logIfDebugEnabled("Player", "viewAngle", viewAngle)
 }
 
 func (d *Debugger) DebugPrintDirection(direction float64) {
-	d.logIfDebugEnabled("Player direction: %f", direction)
+	d.logIfDebugEnabled("Player", "direction", direction)
 }
 
 func (d *Debugger) DebugPrintAngle(angle float64) {
-	d.logIfDebugEnabled("Player angle: %f", angle)
+	d.logIfDebugEnabled("Player", "angle", angle)
 }
 
 func (d *Debugger) DebugPrintPosition(position image.Point) {
-	d.logIfDebugEnabled("Player position: (%.2f, %.2f)", float64(position.X), float64(position.Y))
+	d.logIfDebugEnabled("Player", "X", float64(position.X), "Y", float64(position.Y))
 }
 
 func (d *Debugger) DebugPlayer(player *Player) {

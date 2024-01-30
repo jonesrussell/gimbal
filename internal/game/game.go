@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"log"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -41,13 +41,15 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	// Load the player sprite.
 	spriteImage, _, loadErr := ebitenutil.NewImageFromFile("assets/player.png")
 	if loadErr != nil {
-		log.Fatal(loadErr)
+		g.debug.logIfDebugEnabled("message", "Failed to load player sprite", "loadErr", loadErr)
+		os.Exit(1)
 	}
 
 	var err error
 	g.player, err = NewPlayer(handler, g.speed, g.debug, spriteImage)
 	if err != nil {
-		return nil, err
+		g.debug.logIfDebugEnabled("message", "Failed to create player", "err", err)
+		os.Exit(1)
 	}
 
 	g.space = resolv.NewSpace(screenWidth, screenHeight, playerWidth, playerHeight)
