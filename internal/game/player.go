@@ -27,12 +27,8 @@ type Player struct {
 	// Sprite is the player's sprite.
 	Sprite      *ebiten.Image
 	gameStarted bool
+	orientation float64
 }
-
-const (
-	initialAngle = 0
-	playerLabel  = "PlayeR"
-)
 
 func NewPlayer(input InputHandlerInterface, speed float64) (*Player, error) {
 	if input == nil {
@@ -42,8 +38,8 @@ func NewPlayer(input InputHandlerInterface, speed float64) (*Player, error) {
 		return nil, errors.New("radius must be greater than zero")
 	}
 
-	x := center.X + int(radius*math.Cos(initialAngle))
-	y := center.Y - int(radius*math.Sin(initialAngle))
+	x := center.X + int(radius*math.Cos(math.Pi/2))
+	y := center.Y - int(radius*math.Sin(math.Pi/2))
 	width := playerWidth // replace with your player's width
 	height := playerHeight
 
@@ -56,7 +52,7 @@ func NewPlayer(input InputHandlerInterface, speed float64) (*Player, error) {
 	return &Player{
 		input:       input,
 		speed:       speed,
-		angle:       initialAngle,
+		angle:       math.Pi / 2,
 		Object:      resolv.NewObject(float64(x), float64(y), float64(width), float64(height)),
 		Sprite:      spriteImage,
 		gameStarted: false,
@@ -65,32 +61,37 @@ func NewPlayer(input InputHandlerInterface, speed float64) (*Player, error) {
 
 func (player *Player) Update() {
 	if !player.gameStarted {
+		log.Printf("Game started. Player orientation: %f", player.orientation)
 		log.Printf("Game started. Player direction: %f", player.direction)
 		log.Printf("Game started. Player angle: %f", player.angle)
 		log.Printf("Game started. Player position: (%f, %f)", player.Object.Position.X, player.Object.Position.Y)
 		player.gameStarted = true
 	}
 
+	oldOrientation := player.orientation
 	oldDirection := player.direction
 	oldAngle := player.angle
 	oldX := player.Object.Position.X
 
 	if player.input.IsKeyPressed(ebiten.KeyLeft) {
 		player.direction = -1
+		player.orientation -= 0.05
 	} else if player.input.IsKeyPressed(ebiten.KeyRight) {
 		player.direction = 1
+		player.orientation += 0.05
 	} else {
 		player.direction = 0
 	}
 
-	dx := center.X - player.Object.Position.X
-	dy := center.Y - player.Object.Position.Y
-	player.angle = math.Atan2(dy, dx)
-
-	x := center.X + int(radius*math.Cos(player.angle))
-	y := center.Y - int(radius*math.Sin(player.angle))
+	// Calculate the x and y positions based on the current angle
+	x := center.X + int(radius*math.Cos(player.orientation))
+	y := center.Y - int(radius*math.Sin(player.orientation))
 	player.Object.Position.X = float64(x)
 	player.Object.Position.Y = float64(y)
+
+	if player.orientation != oldOrientation {
+		log.Printf("Player direction: %f", player.orientation)
+	}
 
 	if player.direction != oldDirection {
 		log.Printf("Player direction: %f", player.direction)
@@ -107,12 +108,12 @@ func (player *Player) Update() {
 	player.Object.Update()
 }
 
-func (p *Player) Draw(screen *ebiten.Image) {
+func (player *Player) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	// Scale the sprite to half its original size.
 	op.GeoM.Scale(0.1, 0.1)
-	op.GeoM.Rotate(p.angle)
-	op.GeoM.Translate(p.Object.Position.X, p.Object.Position.Y)
-	p.Object.Update()
-	screen.DrawImage(p.Sprite, op)
+	op.GeoM.Rotate(player.angle)
+	op.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
+	player.Object.Update()
+	screen.DrawImage(player.Sprite, op)
 }
