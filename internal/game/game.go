@@ -101,7 +101,3 @@ func (g *GimlarGame) DrawGridOverlay(screen *ebiten.Image) {
 		vector.StrokeLine(screen, 0, float32(i), float32(screenWidth), float32(i), 1, color.White, false)
 	}
 }
-
-func Center() image.Point {
-	return center
-}

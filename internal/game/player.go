@@ -33,7 +33,12 @@ type Player struct {
 	debug *Debugger
 }
 
-func NewPlayer(input InputHandlerInterface, speed float64, debugger *Debugger, spriteImage *ebiten.Image) (*Player, error) {
+func NewPlayer(
+	input InputHandlerInterface,
+	speed float64,
+	debugger *Debugger,
+	spriteImage *ebiten.Image,
+) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
 	}
@@ -46,7 +51,6 @@ func NewPlayer(input InputHandlerInterface, speed float64, debugger *Debugger, s
 		return nil, errors.New("sprite image cannot be nil")
 	}
 
-	center := Center()
 	x := center.X + int(radius*math.Cos(math.Pi/2))
 	y := center.Y - int(radius*math.Sin(math.Pi/2))
 
