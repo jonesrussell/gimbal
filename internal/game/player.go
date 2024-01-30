@@ -45,10 +45,9 @@ func NewPlayer(input InputHandlerInterface, speed float64, radius float64) (*Pla
 		return nil, errors.New("radius must be greater than zero")
 	}
 
+	center := GetCenter()
 	x := center.X + int(radius*math.Cos(math.Pi/2))
 	y := center.Y - int(radius*math.Sin(math.Pi/2))
-	width := playerWidth // replace with your player's width
-	height := playerHeight
 
 	// Load the sprite.
 	spriteImage, _, err := ebitenutil.NewImageFromFile("assets/player.png")
@@ -60,7 +59,8 @@ func NewPlayer(input InputHandlerInterface, speed float64, radius float64) (*Pla
 		input:       input,
 		speed:       speed,
 		angle:       math.Pi / 2,
-		Object:      resolv.NewObject(float64(x), float64(y), float64(width), float64(height)),
+		orientation: 0.0,
+		Object:      resolv.NewObject(float64(x), float64(y), float64(playerWidth), float64(playerHeight)),
 		Sprite:      spriteImage,
 		gameStarted: false,
 	}, nil

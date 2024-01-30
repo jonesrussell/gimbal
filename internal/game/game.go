@@ -15,7 +15,7 @@ var (
 	width, height             = 640, 480
 	radius                    = float64(height / 2)
 	center                    = image.Point{X: width / 2, Y: height / 2}
-	gridSpacing               = 32
+	debugGridSpacing          = 32
 	playerWidth, playerHeight = 16, 16
 )
 
@@ -70,10 +70,6 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	}
 }
 
-func (g *GimlarGame) GetCenter() image.Point {
-	return center
-}
-
 func (g *GimlarGame) GetRadius() float64 {
 	return radius
 }
@@ -88,10 +84,10 @@ func (g *GimlarGame) DrawDebugInfo(screen *ebiten.Image) {
 
 func (g *GimlarGame) DrawGridOverlay(screen *ebiten.Image) {
 	// Draw grid overlay
-	for i := 0; i < width; i += gridSpacing {
+	for i := 0; i < width; i += debugGridSpacing {
 		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(height), 1, color.White, false)
 	}
-	for i := 0; i < height; i += gridSpacing {
+	for i := 0; i < height; i += debugGridSpacing {
 		vector.StrokeLine(screen, 0, float32(i), float32(width), float32(i), 1, color.White, false)
 	}
 }
@@ -102,4 +98,16 @@ func (g *GimlarGame) SetDebugMode(debug bool) {
 
 func (g *GimlarGame) IsDebugMode() bool {
 	return g.debug
+}
+
+func GetWidth() int {
+	return width
+}
+
+func GetHeight() int {
+	return height
+}
+
+func GetCenter() image.Point {
+	return center
 }
