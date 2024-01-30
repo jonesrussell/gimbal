@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"log/slog"
 	"os"
+	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/solarlune/resolv"
 )
 
@@ -19,36 +22,37 @@ var (
 	debugGridSpacing          = 32
 	playerWidth, playerHeight = 16, 16
 	gameStarted               bool // Debugging check if game started
+	Debug                     bool
 )
 
 type GimlarGame struct {
 	player *Player
 	speed  float64
-	debug  *Debugger
 	space  *resolv.Space
+	logger slog.Logger
 }
 
 func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	g := &GimlarGame{
-		speed: speed,
-		debug: NewDebugger(),
+		speed:  speed,
+		logger: logger.NewSlogHandler(),
 	}
 
-	g.debug.DebugMode(true)
+	Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 
 	handler := &InputHandler{}
 
 	// Load the player sprite.
 	spriteImage, _, loadErr := ebitenutil.NewImageFromFile("assets/player.png")
 	if loadErr != nil {
-		g.debug.logIfDebugEnabled("message", "Failed to load player sprite", "loadErr", loadErr)
+		g.logger.Error("Failed to load player sprite", "loadErr", loadErr)
 		os.Exit(1)
 	}
 
 	var err error
-	g.player, err = NewPlayer(handler, g.speed, g.debug, spriteImage)
+	g.player, err = NewPlayer(handler, g.speed, spriteImage, g.logger)
 	if err != nil {
-		g.debug.logIfDebugEnabled("message", "Failed to create player", "err", err)
+		g.logger.Error("Failed to create player", "err", err)
 		os.Exit(1)
 	}
 
@@ -78,7 +82,7 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	g.player.Draw(screen)
 
 	// Draw debug info if debug is true
-	if g.debug.IsDebugMode() {
+	if Debug {
 		g.DrawDebugInfo(screen)
 	}
 }

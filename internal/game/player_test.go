@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/solarlune/resolv"
 )
 
@@ -40,7 +41,7 @@ func TestNewPlayer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			image := ebiten.NewImage(600, 480)
-			_, err := NewPlayer(tt.args.input, tt.args.speed, &Debugger{}, image)
+			_, err := NewPlayer(tt.args.input, tt.args.speed, image, logger.NewSlogHandler())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPlayer() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -88,7 +89,7 @@ func TestPlayer_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			image := ebiten.NewImage(600, 480)
-			p, err := NewPlayer(tt.fields.input, tt.fields.speed, &Debugger{}, image)
+			p, err := NewPlayer(tt.fields.input, tt.fields.speed, image, logger.NewSlogHandler())
 			if err != nil {
 				t.Fatalf("Failed to create new player: %v", err)
 			}

@@ -3,6 +3,7 @@ package game
 import (
 	"errors"
 	"image"
+	"log/slog"
 
 	"image/color"
 
@@ -27,9 +28,8 @@ type Player struct {
 	Sprite *ebiten.Image
 	// Orientation of player's viewable sprite
 	viewAngle float64
-	// Debugger
-	debug *Debugger
-	path  []resolv.Vector
+	path      []resolv.Vector
+	logger    slog.Logger
 }
 
 // Draw the players path
@@ -51,8 +51,8 @@ func (player *Player) drawPath(screen *ebiten.Image) {
 func NewPlayer(
 	input InputHandlerInterface,
 	speed float64,
-	debugger *Debugger,
 	spriteImage *ebiten.Image,
+	logger slog.Logger,
 ) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
@@ -73,7 +73,7 @@ func NewPlayer(
 		direction: 0,
 		Sprite:    spriteImage,
 		viewAngle: MaxAngle,
-		debug:     debugger,
+		logger:    logger,
 	}
 
 	// Calculate the initial position
@@ -93,7 +93,7 @@ func NewPlayer(
 
 func (player *Player) Update() {
 	if !gameStarted {
-		player.debug.DebugPlayer(player)
+		player.logger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
 		gameStarted = true
 	}
 
@@ -118,11 +118,7 @@ func (player *Player) Update() {
 	player.angle = player.calculateAngle()
 
 	if player.viewAngle != oldOrientation || player.direction != oldDirection || player.angle != oldAngle || player.Object.Position.X != oldX || player.Object.Position.Y != oldY {
-		player.debug.DebugPrintOrientation(player.viewAngle)
-		player.debug.DebugPrintDirection(player.direction)
-		player.debug.DebugPrintAngle(player.angle)
-		pos := image.Point{X: int(player.Object.Position.X), Y: int(player.Object.Position.Y)}
-		player.debug.DebugPrintPosition(pos)
+		player.logger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
 	}
 
 	// Add the current position to the path

@@ -11,72 +11,6 @@ This project uses the following technologies:
 - **Makefile**: Used for building and running the game.
 - **HTML**: Contains the index.html file for the game for WASM.
 
-## Development Roadmap
-
-### Research and Planning
-- [ ] Play the original Gyruss game to understand its mechanics, controls, and aesthetics
-- [ ] Document the features and behaviors you observe for future reference
-
-### Design
-- [ ] Sketch out the game's levels, enemies, power-ups, and other elements
-- [ ] Plan the user interface, including menus, score displays, and control schemes
-
-### Development Environment Setup
-- [ ] Choose a game engine or programming language that suits your needs and skills
-- [ ] Set up your development environment, including any necessary software and tools
-
-### Gameplay Mechanics
-- [ ] Implement player movement
-- [ ] Implement shooting mechanics
-- [ ] Implement enemy behavior
-- [ ] Implement level progression
-
-### Collision Detection
-- [ ] Implement collision detection between the player's ship and enemy ships
-- [ ] Implement collision detection between the player's shots and enemy ships
-
-### Scoring
-- [ ] Develop a scoring system
-- [ ] Define the points for shooting down enemy ships
-- [ ] Implement bonus points for meeting certain conditions
-
-### Player Lives
-- [ ] Implement a system to track the player's lives
-- [ ] Define the conditions for losing a life
-- [ ] Implement game over condition when player has no more lives
-
-### User Interface (UI)
-- [ ] Design the UI layout
-- [ ] Implement the player's score display
-- [ ] Implement the display for the number of lives remaining
-
-### Sound Effects and Music
-- [ ] Choose or create sound effects for shooting, explosions, and other game events
-- [ ] Choose or create background music
-
-### Intro Screen
-- [ ] Design the intro screen layout
-- [ ] Implement options to start the game, view high scores, and exit the game
-
-### High Score Screen
-- [ ] Design the high score screen layout
-- [ ] Implement a system to track and display the highest scores
-
-### End Game
-- [ ] Define what happens when the game ends
-- [ ] Implement a game over screen
-- [ ] Implement a system to return to the intro screen after the game ends
-
-### Testing
-- [ ] Playtest the game regularly, both yourself and with others
-- [ ] Use feedback to refine and improve the game
-- [ ] Test the game on different platforms and systems to ensure compatibility
-
-### Release
-- [ ] Prepare the game for release
-- [ ] Create promotional materials, set up a website, and submit the game to different platforms
-- [ ] Release the game and monitor for feedback
-
 ## Running the Game
 
 To run the game, navigate to the directory where this repository is cloned and run the following command:
@@ -132,6 +66,73 @@ The game can be built for Linux, Windows (Win32), and WebAssembly. To build the 
   ```bash
   make build/web
   ```
+
+## Development Roadmap
+
+### Research and Planning
+- [ ] Play the original Gyruss game to understand its mechanics, controls, and aesthetics
+- [ ] Document the features and behaviors you observe for future reference
+
+### Design
+- [ ] Sketch out the game's levels, enemies, power-ups, and other elements
+- [ ] Plan the user interface, including menus, score displays, and control schemes
+
+### Development Environment Setup
+- [x] Choose a game engine or programming language that suits your needs and skills
+- [x] Set up your development environment, including any necessary software and tools
+
+### Gameplay Mechanics
+- [x] Implement player movement
+- [ ] Implement shooting mechanics
+- [ ] Implement enemy behavior
+- [ ] Implement level progression
+- [ ] Implement Entity Component System
+
+### Collision Detection
+- [ ] Implement collision detection between the player's ship and enemy ships
+- [ ] Implement collision detection between the player's shots and enemy ships
+
+### Scoring
+- [ ] Develop a scoring system
+- [ ] Define the points for shooting down enemy ships
+- [ ] Implement bonus points for meeting certain conditions
+
+### Player Lives
+- [ ] Implement a system to track the player's lives
+- [ ] Define the conditions for losing a life
+- [ ] Implement game over condition when player has no more lives
+
+### User Interface (UI)
+- [ ] Design the UI layout
+- [ ] Implement the player's score display
+- [ ] Implement the display for the number of lives remaining
+
+### Sound Effects and Music
+- [ ] Choose or create sound effects for shooting, explosions, and other game events
+- [ ] Choose or create background music
+
+### Intro Screen
+- [ ] Design the intro screen layout
+- [ ] Implement options to start the game, view high scores, and exit the game
+
+### High Score Screen
+- [ ] Design the high score screen layout
+- [ ] Implement a system to track and display the highest scores
+
+### End Game
+- [ ] Define what happens when the game ends
+- [ ] Implement a game over screen
+- [ ] Implement a system to return to the intro screen after the game ends
+
+### Testing
+- [ ] Playtest the game regularly, both yourself and with others
+- [ ] Use feedback to refine and improve the game
+- [ ] Test the game on different platforms and systems to ensure compatibility
+
+### Release
+- [ ] Prepare the game for release
+- [ ] Create promotional materials, set up a website, and submit the game to different platforms
+- [ ] Release the game and monitor for feedback
 
 ## License
 
