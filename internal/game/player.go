@@ -30,10 +30,15 @@ type Player struct {
 	orientation float64
 }
 
-func NewPlayer(input InputHandlerInterface, speed float64) (*Player, error) {
+func NewPlayer(input InputHandlerInterface, speed float64, radius float64) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
 	}
+
+	if speed <= 0 {
+		return nil, errors.New("speed must be greater than zero")
+	}
+
 	if radius <= 0 {
 		return nil, errors.New("radius must be greater than zero")
 	}

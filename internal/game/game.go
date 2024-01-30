@@ -15,34 +15,32 @@ var (
 	width, height             = 640, 480
 	radius                    = float64(height / 2)
 	center                    = image.Point{X: width / 2, Y: height / 2}
-	debug                     = true
 	gridSpacing               = 32
 	playerWidth, playerHeight = 16, 16
-	space                     *resolv.Space
 )
-
-func init() {
-	space = resolv.NewSpace(width, height, playerWidth, playerHeight)
-}
 
 type GimlarGame struct {
 	player *Player
 	speed  float64
+	debug  bool
+	space  *resolv.Space
 }
 
 func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	g := &GimlarGame{
 		speed: speed,
+		debug: true,
 	}
 
 	handler := &InputHandler{}
 	var err error
-	g.player, err = NewPlayer(handler, g.speed)
+	g.player, err = NewPlayer(handler, g.speed, radius)
 	if err != nil {
 		return nil, err
 	}
 
-	space.Add(g.player.Object)
+	g.space = resolv.NewSpace(width, height, playerWidth, playerHeight)
+	g.space.Add(g.player.Object)
 
 	return g, nil
 }
@@ -69,7 +67,7 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	g.player.Draw(screen)
 
 	// Draw debug info if debug is true
-	if debug {
+	if g.debug {
 		ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS())) // Print the current FPS
 		// Draw grid overlay
 		for i := 0; i < width; i += gridSpacing {
