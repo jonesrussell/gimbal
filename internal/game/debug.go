@@ -33,8 +33,8 @@ func (d *Debugger) DebugPrint() {
 	d.logIfDebugEnabled("Debug mode is enabled.")
 }
 
-func (d *Debugger) DebugPrintOrientation(orientation float64) {
-	d.logIfDebugEnabled("Player orientation: %f", orientation)
+func (d *Debugger) DebugPrintOrientation(viewAngle float64) {
+	d.logIfDebugEnabled("Player viewAngle: %f", viewAngle)
 }
 
 func (d *Debugger) DebugPrintDirection(direction float64) {
@@ -50,7 +50,7 @@ func (d *Debugger) DebugPrintPosition(position image.Point) {
 }
 
 func (d *Debugger) DebugPlayer(player *Player) {
-	d.DebugPrintOrientation(player.orientation)
+	d.DebugPrintOrientation(player.viewAngle)
 	d.DebugPrintDirection(player.direction)
 	d.DebugPrintAngle(player.angle)
 	pos := image.Point{X: int(player.Object.Position.X), Y: int(player.Object.Position.Y)}

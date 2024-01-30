@@ -28,7 +28,7 @@ type Player struct {
 	// Debugging check if game started
 	gameStarted bool
 	// Orientation of player's viewable sprite
-	orientation float64
+	viewAngle float64
 	// Debugger
 	debug *Debugger
 }
@@ -52,12 +52,13 @@ func NewPlayer(input InputHandlerInterface, speed float64, debugger *Debugger, s
 
 	return &Player{
 		input:       input,
-		speed:       speed,
 		angle:       math.Pi / 2,
-		orientation: 0.0,
+		speed:       speed,
+		direction:   0,
 		Object:      resolv.NewObject(float64(x), float64(y), float64(playerWidth), float64(playerHeight)),
 		Sprite:      spriteImage,
 		gameStarted: false,
+		viewAngle:   0.0,
 		debug:       debugger,
 	}, nil
 }
@@ -68,7 +69,7 @@ func (player *Player) Update() {
 		player.gameStarted = true
 	}
 
-	oldOrientation := player.orientation
+	oldOrientation := player.viewAngle
 	oldDirection := player.direction
 	oldAngle := player.angle
 	oldX := player.Object.Position.X
@@ -76,22 +77,27 @@ func (player *Player) Update() {
 
 	if player.input.IsKeyPressed(ebiten.KeyLeft) {
 		player.direction = -1
-		player.orientation -= 0.05
+		player.viewAngle -= 0.05
 	} else if player.input.IsKeyPressed(ebiten.KeyRight) {
 		player.direction = 1
-		player.orientation += 0.05
+		player.viewAngle += 0.05
 	} else {
 		player.direction = 0
 	}
 
 	// Calculate the x and y positions based on the current angle
-	x := center.X + int(radius*math.Cos(player.orientation))
-	y := center.Y - int(radius*math.Sin(player.orientation))
+	x := center.X + int(radius*math.Cos(player.viewAngle))
+	y := center.Y - int(radius*math.Sin(player.viewAngle))
 	player.Object.Position.X = float64(x)
 	player.Object.Position.Y = float64(y)
 
-	if player.orientation != oldOrientation {
-		player.debug.DebugPrintOrientation(player.orientation)
+	// Calculate the angle between the sprite and the center of the screen
+	dx := float64(center.X) - player.Object.Position.X
+	dy := float64(center.Y) - player.Object.Position.Y
+	player.angle = math.Atan2(dy, dx) + math.Pi/2 // Add Pi/2 to rotate the sprite by 90 degrees
+
+	if player.viewAngle != oldOrientation {
+		player.debug.DebugPrintOrientation(player.viewAngle)
 	}
 
 	if player.direction != oldDirection {
@@ -123,7 +129,9 @@ func (player *Player) Draw(screen *ebiten.Image) {
 		spriteOp.GeoM.Rotate(player.angle)
 		// Translate the rotated sprite to the player's position
 		spriteOp.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
-		rotatedSprite := player.Sprite.SubImage(image.Rect(0, 0, player.Sprite.Bounds().Dx(), player.Sprite.Bounds().Dy())).(*ebiten.Image)
+		rotatedSprite := player.Sprite.SubImage(
+			image.Rect(0, 0, player.Sprite.Bounds().Dx(), player.Sprite.Bounds().Dy()),
+		).(*ebiten.Image)
 		screen.DrawImage(rotatedSprite, spriteOp)
 	}
 }
