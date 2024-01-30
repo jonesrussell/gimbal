@@ -2,13 +2,12 @@ package game
 
 import (
 	"errors"
-	"log"
+	"image"
 	"math"
 
 	_ "image/png"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/solarlune/resolv"
 )
 
@@ -30,9 +29,11 @@ type Player struct {
 	gameStarted bool
 	// Orientation of player's viewable sprite
 	orientation float64
+	// Debugger
+	debug *Debugger
 }
 
-func NewPlayer(input InputHandlerInterface, speed float64, radius float64) (*Player, error) {
+func NewPlayer(input InputHandlerInterface, speed float64, debugger *Debugger, spriteImage *ebiten.Image) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
 	}
@@ -41,19 +42,13 @@ func NewPlayer(input InputHandlerInterface, speed float64, radius float64) (*Pla
 		return nil, errors.New("speed must be greater than zero")
 	}
 
-	if radius <= 0 {
-		return nil, errors.New("radius must be greater than zero")
+	if spriteImage == nil {
+		return nil, errors.New("sprite image cannot be nil")
 	}
 
-	center := GetCenter()
+	center := Center()
 	x := center.X + int(radius*math.Cos(math.Pi/2))
 	y := center.Y - int(radius*math.Sin(math.Pi/2))
-
-	// Load the sprite.
-	spriteImage, _, err := ebitenutil.NewImageFromFile("assets/player.png")
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	return &Player{
 		input:       input,
@@ -63,12 +58,13 @@ func NewPlayer(input InputHandlerInterface, speed float64, radius float64) (*Pla
 		Object:      resolv.NewObject(float64(x), float64(y), float64(playerWidth), float64(playerHeight)),
 		Sprite:      spriteImage,
 		gameStarted: false,
+		debug:       debugger,
 	}, nil
 }
 
 func (player *Player) Update() {
 	if !player.gameStarted {
-		player.DebugPrint()
+		player.debug.DebugPlayer(player)
 		player.gameStarted = true
 	}
 
@@ -95,19 +91,20 @@ func (player *Player) Update() {
 	player.Object.Position.Y = float64(y)
 
 	if player.orientation != oldOrientation {
-		player.DebugPrintOrientation()
+		player.debug.DebugPrintOrientation(player.orientation)
 	}
 
 	if player.direction != oldDirection {
-		player.DebugPrintDirection()
+		player.debug.DebugPrintDirection(player.direction)
 	}
 
 	if player.angle != oldAngle {
-		player.DebugPrintAngle()
+		player.debug.DebugPrintAngle(player.angle)
 	}
 
 	if player.Object.Position.X != oldX || player.Object.Position.Y != oldY {
-		player.DebugPrintPosition()
+		pos := image.Point{X: int(player.Object.Position.X), Y: int(player.Object.Position.Y)}
+		player.debug.DebugPrintPosition(pos)
 	}
 
 	player.Object.Update()
@@ -115,32 +112,18 @@ func (player *Player) Update() {
 
 func (player *Player) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	// Scale the sprite to half its original size.
-	op.GeoM.Scale(0.1, 0.1)
-	op.GeoM.Rotate(player.angle)
 	op.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
 	player.Object.Update()
-	screen.DrawImage(player.Sprite, op)
-}
 
-func (player *Player) DebugPrint() {
-	player.DebugPrintOrientation()
-	player.DebugPrintDirection()
-	player.DebugPrintAngle()
-	player.DebugPrintPosition()
-}
-
-func (player *Player) DebugPrintOrientation() {
-	log.Printf("Player orientation: %f", player.orientation)
-}
-
-func (player *Player) DebugPrintDirection() {
-	log.Printf("Player direction: %f", player.direction)
-}
-
-func (player *Player) DebugPrintAngle() {
-	log.Printf("Player angle: %f", player.angle)
-}
-func (player *Player) DebugPrintPosition() {
-	log.Printf("Player position: (%f, %f)", player.Object.Position.X, player.Object.Position.Y)
+	if player.Sprite != nil {
+		// Create a separate DrawImageOptions for the sprite rotation
+		spriteOp := &ebiten.DrawImageOptions{}
+		// Scale the sprite to half its original size.
+		spriteOp.GeoM.Scale(0.1, 0.1)
+		spriteOp.GeoM.Rotate(player.angle)
+		// Translate the rotated sprite to the player's position
+		spriteOp.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
+		rotatedSprite := player.Sprite.SubImage(image.Rect(0, 0, player.Sprite.Bounds().Dx(), player.Sprite.Bounds().Dy())).(*ebiten.Image)
+		screen.DrawImage(rotatedSprite, spriteOp)
+	}
 }

@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	_ "image/png"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -10,9 +11,8 @@ import (
 
 func TestNewPlayer(t *testing.T) {
 	type args struct {
-		input  InputHandlerInterface
-		speed  float64
-		radius float64
+		input InputHandlerInterface
+		speed float64
 	}
 	tests := []struct {
 		name    string
@@ -22,18 +22,16 @@ func TestNewPlayer(t *testing.T) {
 		{
 			name: "Test with valid input and speed",
 			args: args{
-				input:  &MockHandler{}, // Use MockHandler
-				speed:  1.0,
-				radius: 0,
+				input: &MockHandler{}, // Use MockHandler
+				speed: 1.0,
 			},
 			wantErr: false,
 		},
 		{
 			name: "Test with nil input",
 			args: args{
-				input:  nil,
-				speed:  1.0,
-				radius: 0,
+				input: nil,
+				speed: 1.0,
 			},
 			wantErr: true,
 		},
@@ -41,7 +39,8 @@ func TestNewPlayer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewPlayer(tt.args.input, tt.args.speed, tt.args.radius)
+			image := ebiten.NewImage(600, 480)
+			_, err := NewPlayer(tt.args.input, tt.args.speed, &Debugger{}, image)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPlayer() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -53,7 +52,6 @@ func TestPlayer_Update(t *testing.T) {
 	type fields struct {
 		input     InputHandlerInterface
 		speed     float64
-		radius    float64
 		angle     float64
 		direction float64
 		Object    *resolv.Object
@@ -69,7 +67,6 @@ func TestPlayer_Update(t *testing.T) {
 			fields: fields{
 				input:     NewMockHandler(), // Use MockHandler
 				speed:     1.0,
-				radius:    0,
 				angle:     0.0,
 				direction: 0.0,
 				Object:    resolv.NewObject(0, 0, 20, 20),
@@ -81,7 +78,6 @@ func TestPlayer_Update(t *testing.T) {
 			fields: fields{
 				input:     NewMockHandler(), // Use MockHandler
 				speed:     1.0,
-				radius:    0,
 				angle:     0.0,
 				direction: 0.0,
 				Object:    resolv.NewObject(0, 0, 20, 20),
@@ -91,7 +87,8 @@ func TestPlayer_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := NewPlayer(tt.fields.input, tt.fields.speed, tt.fields.radius)
+			image := ebiten.NewImage(600, 480)
+			p, err := NewPlayer(tt.fields.input, tt.fields.speed, &Debugger{}, image)
 			if err != nil {
 				t.Fatalf("Failed to create new player: %v", err)
 			}
