@@ -25,12 +25,11 @@ help:
 	@echo 'Usage:'
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed -e 's/^/ /'
 
-# Serve target
+## Serve target: Starts a local server for development
 .PHONY: serve
 serve:
 	@if ! command -v wasmserve >/dev/null 2>&1; then \
-		echo "wasmserve could not be found"; \
-		echo "You can install it with: go install github.com/hajimehoshi/wasmserve@latest"; \
+		echo "wasmserve could not be found. You can install it with: go install github.com/hajimehoshi/wasmserve@latest" >&2; \
 		exit 1; \
 	fi
 	@echo "Hosting game on http://localhost:4242"
@@ -112,3 +111,10 @@ lint:
 .PHONY: vet
 vet:
 	$(GO) vet ./...
+
+## Mod target: Tidies and downloads Go modules
+.PHONY: mod
+mod:
+	go mod tidy
+	go clean -modcache
+	go mod download

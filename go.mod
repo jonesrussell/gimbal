@@ -1,9 +1,9 @@
 module github.com/jonesrussell/gimbal
 
-go 1.18
+go 1.21
 
 require (
-	github.com/hajimehoshi/ebiten/v2 v2.6.4
+	github.com/hajimehoshi/ebiten/v2 v2.6.5
 	github.com/solarlune/resolv v0.7.0
 )
 
