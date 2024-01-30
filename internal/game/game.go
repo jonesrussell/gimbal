@@ -46,8 +46,8 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 }
 
 func (g *GimlarGame) Run() error {
-	ebiten.SetWindowSize(width, height) // Sets the window size to the width and height defined in your game.
-	return ebiten.RunGame(g)            // Runs your game. The game's logic is executed in the Update method of your GimlarGame struct.
+	ebiten.SetWindowSize(width, height)
+	return ebiten.RunGame(g)
 }
 
 func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -58,8 +58,6 @@ func (g *GimlarGame) Update() error {
 	// Update the player's state
 	g.player.Update()
 
-	// Add any other game state updates here
-
 	return nil
 }
 
@@ -67,14 +65,41 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	g.player.Draw(screen)
 
 	// Draw debug info if debug is true
-	if g.debug {
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS())) // Print the current FPS
-		// Draw grid overlay
-		for i := 0; i < width; i += gridSpacing {
-			vector.StrokeLine(screen, float32(i), 0, float32(i), float32(height), 1, color.White, false)
-		}
-		for i := 0; i < height; i += gridSpacing {
-			vector.StrokeLine(screen, 0, float32(i), float32(width), float32(i), 1, color.White, false)
-		}
+	if g.IsDebugMode() {
+		g.DrawDebugInfo(screen)
 	}
+}
+
+func (g *GimlarGame) GetCenter() image.Point {
+	return center
+}
+
+func (g *GimlarGame) GetRadius() float64 {
+	return radius
+}
+
+func (g *GimlarGame) DrawDebugInfo(screen *ebiten.Image) {
+	// Print the current FPS
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS()))
+
+	// Draw grid overlay
+	g.DrawGridOverlay(screen)
+}
+
+func (g *GimlarGame) DrawGridOverlay(screen *ebiten.Image) {
+	// Draw grid overlay
+	for i := 0; i < width; i += gridSpacing {
+		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(height), 1, color.White, false)
+	}
+	for i := 0; i < height; i += gridSpacing {
+		vector.StrokeLine(screen, 0, float32(i), float32(width), float32(i), 1, color.White, false)
+	}
+}
+
+func (g *GimlarGame) SetDebugMode(debug bool) {
+	g.debug = debug
+}
+
+func (g *GimlarGame) IsDebugMode() bool {
+	return g.debug
 }
