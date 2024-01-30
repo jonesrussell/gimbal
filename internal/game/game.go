@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -12,9 +13,9 @@ import (
 )
 
 var (
-	width, height             = 640, 480
-	radius                    = float64(height / 2)
-	center                    = image.Point{X: width / 2, Y: height / 2}
+	screenWidth, screenHeight = 640, 480
+	radius                    = float64(screenHeight / 2)
+	center                    = image.Point{X: screenWidth / 2, Y: screenHeight / 2}
 	debugGridSpacing          = 32
 	playerWidth, playerHeight = 16, 16
 )
@@ -22,36 +23,45 @@ var (
 type GimlarGame struct {
 	player *Player
 	speed  float64
-	debug  bool
+	debug  *Debugger
 	space  *resolv.Space
 }
 
 func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	g := &GimlarGame{
 		speed: speed,
-		debug: true,
+		debug: NewDebugger(),
 	}
 
+	g.debug.DebugMode(true)
+
 	handler := &InputHandler{}
+
+	// Load the player sprite.
+	spriteImage, _, loadErr := ebitenutil.NewImageFromFile("assets/player.png")
+	if loadErr != nil {
+		log.Fatal(loadErr)
+	}
+
 	var err error
-	g.player, err = NewPlayer(handler, g.speed, radius)
+	g.player, err = NewPlayer(handler, g.speed, g.debug, spriteImage)
 	if err != nil {
 		return nil, err
 	}
 
-	g.space = resolv.NewSpace(width, height, playerWidth, playerHeight)
+	g.space = resolv.NewSpace(screenWidth, screenHeight, playerWidth, playerHeight)
 	g.space.Add(g.player.Object)
 
 	return g, nil
 }
 
 func (g *GimlarGame) Run() error {
-	ebiten.SetWindowSize(width, height)
+	ebiten.SetWindowSize(screenWidth, screenHeight)
 	return ebiten.RunGame(g)
 }
 
 func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return width, height
+	return screenWidth, screenHeight
 }
 
 func (g *GimlarGame) Update() error {
@@ -65,7 +75,7 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	g.player.Draw(screen)
 
 	// Draw debug info if debug is true
-	if g.IsDebugMode() {
+	if g.debug.IsDebugMode() {
 		g.DrawDebugInfo(screen)
 	}
 }
@@ -84,30 +94,14 @@ func (g *GimlarGame) DrawDebugInfo(screen *ebiten.Image) {
 
 func (g *GimlarGame) DrawGridOverlay(screen *ebiten.Image) {
 	// Draw grid overlay
-	for i := 0; i < width; i += debugGridSpacing {
-		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(height), 1, color.White, false)
+	for i := 0; i < screenWidth; i += debugGridSpacing {
+		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(screenHeight), 1, color.White, false)
 	}
-	for i := 0; i < height; i += debugGridSpacing {
-		vector.StrokeLine(screen, 0, float32(i), float32(width), float32(i), 1, color.White, false)
+	for i := 0; i < screenHeight; i += debugGridSpacing {
+		vector.StrokeLine(screen, 0, float32(i), float32(screenWidth), float32(i), 1, color.White, false)
 	}
 }
 
-func (g *GimlarGame) SetDebugMode(debug bool) {
-	g.debug = debug
-}
-
-func (g *GimlarGame) IsDebugMode() bool {
-	return g.debug
-}
-
-func GetWidth() int {
-	return width
-}
-
-func GetHeight() int {
-	return height
-}
-
-func GetCenter() image.Point {
+func Center() image.Point {
 	return center
 }
