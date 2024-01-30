@@ -25,8 +25,10 @@ type Player struct {
 	// Object is the game object representing the player.
 	Object *resolv.Object
 	// Sprite is the player's sprite.
-	Sprite      *ebiten.Image
+	Sprite *ebiten.Image
+	// Debugging check if game started
 	gameStarted bool
+	// Orientation of player's viewable sprite
 	orientation float64
 }
 
@@ -66,10 +68,7 @@ func NewPlayer(input InputHandlerInterface, speed float64, radius float64) (*Pla
 
 func (player *Player) Update() {
 	if !player.gameStarted {
-		log.Printf("Game started. Player orientation: %f", player.orientation)
-		log.Printf("Game started. Player direction: %f", player.direction)
-		log.Printf("Game started. Player angle: %f", player.angle)
-		log.Printf("Game started. Player position: (%f, %f)", player.Object.Position.X, player.Object.Position.Y)
+		player.DebugPrint()
 		player.gameStarted = true
 	}
 
@@ -77,6 +76,7 @@ func (player *Player) Update() {
 	oldDirection := player.direction
 	oldAngle := player.angle
 	oldX := player.Object.Position.X
+	oldY := player.Object.Position.Y
 
 	if player.input.IsKeyPressed(ebiten.KeyLeft) {
 		player.direction = -1
@@ -95,19 +95,19 @@ func (player *Player) Update() {
 	player.Object.Position.Y = float64(y)
 
 	if player.orientation != oldOrientation {
-		log.Printf("Player direction: %f", player.orientation)
+		player.DebugPrintOrientation()
 	}
 
 	if player.direction != oldDirection {
-		log.Printf("Player direction: %f", player.direction)
+		player.DebugPrintDirection()
 	}
 
 	if player.angle != oldAngle {
-		log.Printf("Player angle: %f", player.angle)
+		player.DebugPrintAngle()
 	}
 
-	if player.Object.Position.X != oldX {
-		log.Printf("Player position: (%f, %f)", player.Object.Position.X, player.Object.Position.Y)
+	if player.Object.Position.X != oldX || player.Object.Position.Y != oldY {
+		player.DebugPrintPosition()
 	}
 
 	player.Object.Update()
@@ -121,4 +121,26 @@ func (player *Player) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
 	player.Object.Update()
 	screen.DrawImage(player.Sprite, op)
+}
+
+func (player *Player) DebugPrint() {
+	player.DebugPrintOrientation()
+	player.DebugPrintDirection()
+	player.DebugPrintAngle()
+	player.DebugPrintPosition()
+}
+
+func (player *Player) DebugPrintOrientation() {
+	log.Printf("Player orientation: %f", player.orientation)
+}
+
+func (player *Player) DebugPrintDirection() {
+	log.Printf("Player direction: %f", player.direction)
+}
+
+func (player *Player) DebugPrintAngle() {
+	log.Printf("Player angle: %f", player.angle)
+}
+func (player *Player) DebugPrintPosition() {
+	log.Printf("Player position: (%f, %f)", player.Object.Position.X, player.Object.Position.Y)
 }
