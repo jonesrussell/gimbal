@@ -118,19 +118,10 @@ func (player *Player) Update() {
 
 	player.angle = player.calculateAngle()
 
-	if player.viewAngle != oldOrientation {
+	if player.viewAngle != oldOrientation || player.direction != oldDirection || player.angle != oldAngle || player.Object.Position.X != oldX || player.Object.Position.Y != oldY {
 		player.debug.DebugPrintOrientation(player.viewAngle)
-	}
-
-	if player.direction != oldDirection {
 		player.debug.DebugPrintDirection(player.direction)
-	}
-
-	if player.angle != oldAngle {
 		player.debug.DebugPrintAngle(player.angle)
-	}
-
-	if player.Object.Position.X != oldX || player.Object.Position.Y != oldY {
 		pos := image.Point{X: int(player.Object.Position.X), Y: int(player.Object.Position.Y)}
 		player.debug.DebugPrintPosition(pos)
 	}
