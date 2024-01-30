@@ -3,11 +3,12 @@ package game
 import (
 	"errors"
 	"image"
-	"math"
 
+	"image/color"
 	_ "image/png"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/solarlune/resolv"
 )
 
@@ -29,6 +30,23 @@ type Player struct {
 	viewAngle float64
 	// Debugger
 	debug *Debugger
+	path  []resolv.Vector
+}
+
+// Draw the players path
+func (player *Player) drawPath(screen *ebiten.Image) {
+	for i := 0; i < len(player.path)-1; i++ {
+		vector.StrokeLine(
+			screen,
+			float32(player.path[i].X),
+			float32(player.path[i].Y),
+			float32(player.path[i+1].X),
+			float32(player.path[i+1].Y),
+			1.0,
+			color.RGBA{255, 0, 0, 255},
+			false,
+		)
+	}
 }
 
 func NewPlayer(
@@ -55,7 +73,7 @@ func NewPlayer(
 		speed:     speed,
 		direction: 0,
 		Sprite:    spriteImage,
-		viewAngle: 3 * math.Pi / 2,
+		viewAngle: MaxAngle,
 		debug:     debugger,
 	}
 
@@ -68,22 +86,10 @@ func NewPlayer(
 		float64(playerHeight),
 	)
 
+	// Calculate the entire path
+	player.path = player.calculatePath()
+
 	return player, nil
-}
-
-func (player *Player) calculatePosition() resolv.Vector {
-	// Calculate the x and y positions based on the current angle
-	x := center.X + int(radius*math.Cos(player.viewAngle))
-	y := center.Y - int(radius*math.Sin(player.viewAngle))
-
-	return resolv.Vector{X: float64(x), Y: float64(y)}
-}
-
-func (player *Player) calculateAngle() float64 {
-	// Calculate the angle between the sprite and the center of the screen
-	dx := float64(center.X) - player.Object.Position.X
-	dy := float64(center.Y) - player.Object.Position.Y
-	return math.Atan2(dy, dx) + math.Pi/2 // Add Pi/2 to rotate the sprite by 90 degrees
 }
 
 func (player *Player) Update() {
@@ -100,10 +106,10 @@ func (player *Player) Update() {
 
 	if player.input.IsKeyPressed(ebiten.KeyLeft) {
 		player.direction = -1
-		player.viewAngle -= 0.05
+		player.viewAngle -= AngleStep
 	} else if player.input.IsKeyPressed(ebiten.KeyRight) {
 		player.direction = 1
-		player.viewAngle += 0.05
+		player.viewAngle += AngleStep
 	} else {
 		player.direction = 0
 	}
@@ -129,10 +135,14 @@ func (player *Player) Update() {
 		player.debug.DebugPrintPosition(pos)
 	}
 
+	// Add the current position to the path
+	player.path = append(player.path, player.Object.Position)
+
 	player.Object.Update()
 }
 
 func (player *Player) Draw(screen *ebiten.Image) {
+	player.drawPath(screen)
 	player.updatePosition()
 	player.drawSprite(screen)
 }

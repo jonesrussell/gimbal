@@ -14,7 +14,7 @@ import (
 
 var (
 	screenWidth, screenHeight = 640, 480
-	radius                    = float64(screenHeight / 2)
+	radius                    = float64(screenHeight/2) * 0.75
 	center                    = image.Point{X: screenWidth / 2, Y: screenHeight / 2}
 	debugGridSpacing          = 32
 	playerWidth, playerHeight = 16, 16
