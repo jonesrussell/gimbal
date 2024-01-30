@@ -49,19 +49,26 @@ func NewPlayer(
 		return nil, errors.New("sprite image cannot be nil")
 	}
 
-	x := center.X + int(radius*math.Cos(0))
-	y := center.Y - int(radius*math.Sin(0))
-
-	return &Player{
+	player := &Player{
 		input:     input,
 		angle:     0,
 		speed:     speed,
 		direction: 0,
-		Object:    resolv.NewObject(float64(x), float64(y), float64(playerWidth), float64(playerHeight)),
 		Sprite:    spriteImage,
 		viewAngle: 3 * math.Pi / 2,
 		debug:     debugger,
-	}, nil
+	}
+
+	// Calculate the initial position
+	position := player.calculatePosition()
+	player.Object = resolv.NewObject(
+		position.X,
+		position.Y,
+		float64(playerWidth),
+		float64(playerHeight),
+	)
+
+	return player, nil
 }
 
 func (player *Player) calculatePosition() resolv.Vector {
@@ -126,21 +133,36 @@ func (player *Player) Update() {
 }
 
 func (player *Player) Draw(screen *ebiten.Image) {
+	player.updatePosition()
+	player.drawSprite(screen)
+}
+
+func (player *Player) updatePosition() {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
 	player.Object.Update()
+}
 
+func (player *Player) drawSprite(screen *ebiten.Image) {
 	if player.Sprite != nil {
-		// Create a separate DrawImageOptions for the sprite rotation
-		spriteOp := &ebiten.DrawImageOptions{}
-		// Scale the sprite to 1/10th size.
-		spriteOp.GeoM.Scale(0.1, 0.1)
-		spriteOp.GeoM.Rotate(player.angle)
-		// Translate the rotated sprite to the player's position
-		spriteOp.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
-		rotatedSprite := player.Sprite.SubImage(
-			image.Rect(0, 0, player.Sprite.Bounds().Dx(), player.Sprite.Bounds().Dy()),
-		).(*ebiten.Image)
+		spriteOp := player.createSpriteOptions()
+		rotatedSprite := player.getRotatedSprite()
 		screen.DrawImage(rotatedSprite, spriteOp)
 	}
+}
+
+func (player *Player) createSpriteOptions() *ebiten.DrawImageOptions {
+	spriteOp := &ebiten.DrawImageOptions{}
+	// Scale the sprite to 1/10th size.
+	spriteOp.GeoM.Scale(0.1, 0.1)
+	spriteOp.GeoM.Rotate(player.angle)
+	// Translate the rotated sprite to the player's position
+	spriteOp.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
+	return spriteOp
+}
+
+func (player *Player) getRotatedSprite() *ebiten.Image {
+	return player.Sprite.SubImage(
+		image.Rect(0, 0, player.Sprite.Bounds().Dx(), player.Sprite.Bounds().Dy()),
+	).(*ebiten.Image)
 }
