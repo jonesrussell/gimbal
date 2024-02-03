@@ -1,16 +1,25 @@
 <!DOCTYPE html>
-<script src="wasm_exec.js"></script>
-<script>
-// Polyfill
-if (!WebAssembly.instantiateStreaming) {
-    WebAssembly.instantiateStreaming = async (resp, importObject) => {
-        const source = await (await resp).arrayBuffer();
-        return await WebAssembly.instantiate(source, importObject);
-    };
-}
+<html lang="en">
 
-const go = new Go();
-WebAssembly.instantiateStreaming(fetch("gimbal.wasm"), go.importObject).then(result => {
-    go.run(result.instance);
-});
-</script>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Gimbal</title>
+    <script src="wasm_exec.js"></script>
+    <script>
+        // Polyfill
+        if (!WebAssembly.instantiateStreaming) {
+            WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                const source = await (await resp).arrayBuffer();
+                return await WebAssembly.instantiate(source, importObject);
+            };
+        }
+
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("gimbal.wasm"), go.importObject).then(result => {
+            go.run(result.instance);
+        });
+    </script>
+</head>
+
+</html>
