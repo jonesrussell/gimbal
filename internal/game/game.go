@@ -34,12 +34,20 @@ type GimlarGame struct {
 }
 
 func NewGimlarGame(speed float64) (*GimlarGame, error) {
+	Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
+
+	var level slog.Level
+	if Debug {
+		level = slog.LevelDebug
+	} else {
+		level = slog.LevelInfo // Or whatever non-debug level you prefer
+	}
+	glogger := logger.NewSlogHandler(level)
+
 	g := &GimlarGame{
 		speed:  speed,
-		logger: logger.NewSlogHandler(),
+		logger: glogger,
 	}
-
-	Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 
 	handler := &InputHandler{}
 

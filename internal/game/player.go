@@ -80,7 +80,6 @@ func NewPlayer(
 
 	// Calculate the initial position
 	position := player.calculatePosition()
-	fmt.Printf("position: %f\n", position)
 	player.Object = resolv.NewObject(
 		position.X,
 		position.Y,

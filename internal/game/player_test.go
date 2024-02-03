@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	_ "image/png"
+	"log/slog"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -41,7 +42,7 @@ func TestNewPlayer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			image := ebiten.NewImage(600, 480)
-			_, err := NewPlayer(tt.args.input, tt.args.speed, image, logger.NewSlogHandler())
+			_, err := NewPlayer(tt.args.input, tt.args.speed, image, logger.NewSlogHandler(slog.LevelInfo))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPlayer() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -89,7 +90,7 @@ func TestPlayer_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			image := ebiten.NewImage(600, 480)
-			p, err := NewPlayer(tt.fields.input, tt.fields.speed, image, logger.NewSlogHandler())
+			p, err := NewPlayer(tt.fields.input, tt.fields.speed, image, logger.NewSlogHandler(slog.LevelInfo))
 			if err != nil {
 				t.Fatalf("Failed to create new player: %v", err)
 			}

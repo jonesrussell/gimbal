@@ -7,15 +7,9 @@ import (
 	"time"
 )
 
-func NewSlogHandler() slog.Logger {
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = ""
-		slog.Error("could not get hostname")
-	}
-
+func NewSlogHandler(level slog.Level) slog.Logger {
 	logHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level:     slog.LevelDebug,
+		Level:     level, // Use the provided logging level
 		AddSource: true,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
@@ -27,7 +21,6 @@ func NewSlogHandler() slog.Logger {
 	}).WithAttrs([]slog.Attr{
 		slog.Group("app_details",
 			slog.Int("pid", os.Getpid()),
-			slog.String("hostname", hostname),
 			slog.String("go_version", runtime.Version()),
 		),
 	})
