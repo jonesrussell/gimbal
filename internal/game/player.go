@@ -132,12 +132,15 @@ func (player *Player) Update() {
 var prevRectX, prevRectY float64
 
 func (player *Player) Draw(screen *ebiten.Image) {
-	// Draw the player's path
-	player.drawPath(screen)
-	// Draw the rectangle image onto the screen
-	player.drawRectangle(screen)
 	// Draw the player's sprite
 	player.drawSprite(screen)
+
+	if Debug {
+		// Draw the player's path
+		player.drawPath(screen)
+		// Draw the rectangle image onto the screen
+		player.drawRectangle(screen)
+	}
 }
 
 func (player *Player) drawRectangle(screen *ebiten.Image) {
