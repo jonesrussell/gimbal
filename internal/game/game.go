@@ -27,6 +27,11 @@ var (
 	Debug                     bool
 )
 
+type Star struct {
+	X, Y, Size, Angle, Speed float64
+	Image                    *ebiten.Image
+}
+
 type GimlarGame struct {
 	player       *Player
 	stars        []Star
@@ -34,6 +39,14 @@ type GimlarGame struct {
 	space        *resolv.Space
 	logger       slog.Logger
 	prevX, prevY float64
+}
+
+var starImage *ebiten.Image
+
+func init() {
+	// Create a single star image that will be used for all stars
+	starImage = ebiten.NewImage(1, 1)
+	starImage.Fill(color.White)
 }
 
 func NewGimlarGame(speed float64) (*GimlarGame, error) {
@@ -53,15 +66,7 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	}
 
 	// Initialize stars
-	for i := 0; i < 100; i++ {
-		g.stars = append(g.stars, Star{
-			X:     float64(screenWidth) / 2,
-			Y:     float64(screenHeight) / 2,
-			Size:  rand.Float64()*5 + 1, // Add 1 to ensure the size is always greater than 0
-			Angle: rand.Float64() * 2 * math.Pi,
-			Speed: rand.Float64() * 2,
-		})
-	}
+	g.stars = initializeStars(100, starImage)
 
 	handler := &InputHandler{}
 
@@ -171,27 +176,39 @@ func (g *GimlarGame) updateStars() {
 }
 
 func (g *GimlarGame) drawStars(screen *ebiten.Image) {
-	for i, star := range g.stars {
+	for _, star := range g.stars {
 		// Calculate the size of the star image
 		size := int(star.Size * 2)
 		if size < 1 {
 			size = 1
 		}
 
-		// Print debugging information
-		fmt.Printf("Size=%.2f\n", float64(size))
-		// Create a new image for the star
-		starImage := ebiten.NewImage(size, size)
-		starImage.Fill(color.White)
-
 		// Create an option to position the star
 		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(float64(size), float64(size))
 		op.GeoM.Translate(star.X-float64(size)/2, star.Y-float64(size)/2)
 
-		// Print debugging information
-		fmt.Printf("Star %d: X=%.2f, Y=%.2f, Size=%.2f\n", i, star.X, star.Y, star.Size)
+		// Draw the star using the Image field of the Star struct
+		screen.DrawImage(star.Image, op)
 
-		// Draw the star
-		screen.DrawImage(starImage, op)
+		// Debugging output
+		if Debug {
+			fmt.Printf("Star: X=%.2f, Y=%.2f, Size=%.2f\n", star.X, star.Y, star.Size)
+		}
 	}
+}
+
+func initializeStars(numStars int, starImage *ebiten.Image) []Star {
+	stars := make([]Star, numStars)
+	for i := range stars {
+		stars[i] = Star{
+			X:     float64(screenWidth) / 2,
+			Y:     float64(screenHeight) / 2,
+			Size:  rand.Float64()*5 + 1, // Add 1 to ensure the size is always greater than 0
+			Angle: rand.Float64() * 2 * math.Pi,
+			Speed: rand.Float64() * 2,
+			Image: starImage, // Assign the global starImage to each Star
+		}
+	}
+	return stars
 }
