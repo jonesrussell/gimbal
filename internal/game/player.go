@@ -2,6 +2,7 @@ package game
 
 import (
 	"errors"
+	"fmt"
 	"image"
 	"log/slog"
 
@@ -74,10 +75,12 @@ func NewPlayer(
 		Sprite:    spriteImage,
 		viewAngle: MaxAngle,
 		logger:    logger,
+		Object:    &resolv.Object{},
 	}
 
 	// Calculate the initial position
 	position := player.calculatePosition()
+	fmt.Printf("position: %f\n", position)
 	player.Object = resolv.NewObject(
 		position.X,
 		position.Y,
@@ -127,10 +130,37 @@ func (player *Player) Update() {
 	player.Object.Update()
 }
 
+var prevRectX, prevRectY float64
+
 func (player *Player) Draw(screen *ebiten.Image) {
+	// Draw the player's path
 	player.drawPath(screen)
-	player.updatePosition()
+	// Draw the rectangle image onto the screen
+	player.drawRectangle(screen)
+	// Draw the player's sprite
 	player.drawSprite(screen)
+}
+
+func (player *Player) drawRectangle(screen *ebiten.Image) {
+	// Create a new image for the rectangle
+	rectColor := color.RGBA{255, 0, 0, 255}
+	img := ebiten.NewImage(int(player.Object.Size.X), int(player.Object.Size.Y))
+	img.Fill(rectColor)
+
+	// Calculate the rectangle's top-left corner position
+	rectX := player.Object.Position.X - player.Object.Size.X/2
+	rectY := player.Object.Position.Y - player.Object.Size.Y/2
+
+	// Check if rectX or rectY has changed since the last call
+	if rectX != prevRectX || rectY != prevRectY {
+		fmt.Printf("rectX: %f, rectY: %f\n", rectX, rectY)
+		prevRectX, prevRectY = rectX, rectY // Update the stored values
+	}
+
+	// Draw the rectangle image onto the screen
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(rectX, rectY)
+	screen.DrawImage(img, op)
 }
 
 func (player *Player) updatePosition() {
@@ -148,12 +178,25 @@ func (player *Player) drawSprite(screen *ebiten.Image) {
 }
 
 func (player *Player) createSpriteOptions() *ebiten.DrawImageOptions {
+	// Calculate the sprite's top-left corner position
+	width := player.Sprite.Bounds().Dx()
+	someValue := float64(width) / 2 // Convert to float64 and divide by 2
+	height := float64(player.Sprite.Bounds().Dy())
+
 	spriteOp := &ebiten.DrawImageOptions{}
-	// Scale the sprite to 1/10th size.
+
+	// Translate the sprite so that its center is at the origin
+	spriteOp.GeoM.Translate(-someValue, -height/2)
+
+	// Scale the sprite to 1/10th size and rotate
 	spriteOp.GeoM.Scale(0.1, 0.1)
 	spriteOp.GeoM.Rotate(player.angle)
-	// Translate the rotated sprite to the player's position
-	spriteOp.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
+
+	// Translate the rotated and scaled sprite to the player's position
+	spriteX := player.Object.Position.X
+	spriteY := player.Object.Position.Y
+	spriteOp.GeoM.Translate(spriteX, spriteY)
+
 	return spriteOp
 }
 

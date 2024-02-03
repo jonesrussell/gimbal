@@ -26,10 +26,11 @@ var (
 )
 
 type GimlarGame struct {
-	player *Player
-	speed  float64
-	space  *resolv.Space
-	logger slog.Logger
+	player       *Player
+	speed        float64
+	space        *resolv.Space
+	logger       slog.Logger
+	prevX, prevY float64
 }
 
 func NewGimlarGame(speed float64) (*GimlarGame, error) {
@@ -74,12 +75,27 @@ func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (g *GimlarGame) Update() error {
 	// Update the player's state
 	g.player.Update()
+	g.player.updatePosition()
+
+	// Log the player's position after updating if it has changed
+	if g.player.Object.Position.X != g.prevX || g.player.Object.Position.Y != g.prevY {
+		g.logger.Debug("Player position after update", "X", g.player.Object.Position.X, "Y", g.player.Object.Position.Y)
+		g.prevX = g.player.Object.Position.X
+		g.prevY = g.player.Object.Position.Y
+	}
 
 	return nil
 }
 
 func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	g.player.Draw(screen)
+
+	// Log the player's position before draw if it has changed
+	if g.player.Object.Position.X != g.prevX || g.player.Object.Position.Y != g.prevY {
+		g.logger.Debug("Player position before draw", "X", g.player.Object.Position.X, "Y", g.player.Object.Position.Y)
+		g.prevX = g.player.Object.Position.X
+		g.prevY = g.player.Object.Position.Y
+	}
 
 	// Draw debug info if debug is true
 	if Debug {
