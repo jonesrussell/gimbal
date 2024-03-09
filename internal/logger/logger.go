@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+var GlobalLogger slog.Logger
+
+func init() {
+	// Initialize the global logger with default settings
+	GlobalLogger = NewSlogHandler(slog.LevelInfo)
+}
+
 func NewSlogHandler(level slog.Level) slog.Logger {
 	logHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level:     level, // Use the provided logging level

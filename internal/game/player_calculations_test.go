@@ -74,15 +74,21 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			player := &Player{
-				input:     tt.fields.input,
-				angle:     tt.fields.angle,
-				speed:     tt.fields.speed,
-				direction: tt.fields.direction,
-				Object:    tt.fields.Object,
-				Sprite:    tt.fields.Sprite,
+				PlayerInput: PlayerInput{
+					input: tt.fields.input,
+				},
+				PlayerPosition: PlayerPosition{
+					Object: tt.fields.Object,
+				},
+				PlayerSprite: PlayerSprite{
+					Sprite: tt.fields.Sprite,
+				},
+				PlayerPath: PlayerPath{
+					path: tt.fields.path,
+				},
 				viewAngle: tt.fields.viewAngle,
-				path:      tt.fields.path,
-				logger:    tt.fields.logger,
+				direction: tt.fields.direction,
+				angle:     tt.fields.angle,
 			}
 			got, got1 := player.calculateCoordinates(tt.args.angle)
 			if got != tt.want {
@@ -105,7 +111,6 @@ func TestPlayer_calculatePosition(t *testing.T) {
 		Sprite    *ebiten.Image
 		viewAngle float64
 		path      []resolv.Vector
-		logger    slog.Logger
 	}
 	tests := []struct {
 		name   string
@@ -123,7 +128,6 @@ func TestPlayer_calculatePosition(t *testing.T) {
 				Sprite:    nil,
 				viewAngle: 0,
 				path:      nil,
-				logger:    logger.NewSlogHandler(slog.LevelInfo),
 			},
 			want: resolv.Vector{X: 500.00, Y: 232.00},
 		},
@@ -138,7 +142,6 @@ func TestPlayer_calculatePosition(t *testing.T) {
 				Sprite:    nil,
 				viewAngle: 0,
 				path:      nil,
-				logger:    logger.NewSlogHandler(slog.LevelInfo),
 			},
 			want: resolv.Vector{X: 500.00, Y: 232.00},
 		},
@@ -153,7 +156,6 @@ func TestPlayer_calculatePosition(t *testing.T) {
 				Sprite:    nil,
 				viewAngle: 0,
 				path:      nil,
-				logger:    logger.NewSlogHandler(slog.LevelInfo),
 			},
 			want: resolv.Vector{X: 500.00, Y: 232.00}, // Considering simple trigonometric calculations without actual game physics
 		},
@@ -161,17 +163,24 @@ func TestPlayer_calculatePosition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			player := &Player{
-				input:     tt.fields.input,
-				angle:     tt.fields.angle,
-				speed:     tt.fields.speed,
-				direction: tt.fields.direction,
-				Object:    tt.fields.Object,
-				Sprite:    tt.fields.Sprite,
+				PlayerInput: PlayerInput{
+					input: tt.fields.input,
+				},
+				PlayerPosition: PlayerPosition{
+					Object: tt.fields.Object,
+				},
+				PlayerSprite: PlayerSprite{
+					Sprite: tt.fields.Sprite,
+				},
+				PlayerPath: PlayerPath{
+					path: tt.fields.path,
+				},
 				viewAngle: tt.fields.viewAngle,
-				path:      tt.fields.path,
-				logger:    tt.fields.logger,
+				direction: tt.fields.direction,
+				angle:     tt.fields.angle,
 			}
-			if got := player.calculatePosition(); !reflect.DeepEqual(got, tt.want) {
+			got := player.calculatePosition()
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Player.calculatePosition() = %v, want %v", got, tt.want)
 			}
 		})

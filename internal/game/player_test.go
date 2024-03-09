@@ -1,13 +1,10 @@
 package game
 
 import (
-	"fmt"
 	_ "image/png"
-	"log/slog"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/solarlune/resolv"
 )
 
@@ -42,7 +39,7 @@ func TestNewPlayer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			image := ebiten.NewImage(600, 480)
-			_, err := NewPlayer(tt.args.input, tt.args.speed, image, logger.NewSlogHandler(slog.LevelInfo))
+			_, err := NewPlayer(tt.args.input, tt.args.speed, image)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPlayer() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -90,7 +87,7 @@ func TestPlayer_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			image := ebiten.NewImage(600, 480)
-			p, err := NewPlayer(tt.fields.input, tt.fields.speed, image, logger.NewSlogHandler(slog.LevelInfo))
+			p, err := NewPlayer(tt.fields.input, tt.fields.speed, image)
 			if err != nil {
 				t.Fatalf("Failed to create new player: %v", err)
 			}
@@ -105,7 +102,6 @@ func TestPlayer_Update(t *testing.T) {
 			}
 			p.Update()
 			if p.direction != tt.want {
-				fmt.Println(tt.name)
 				t.Errorf("Player.Update() direction = %v, want %v", p.direction, tt.want)
 			}
 		})
