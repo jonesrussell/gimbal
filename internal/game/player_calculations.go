@@ -29,12 +29,3 @@ func (player *Player) calculateAngle() float64 {
 	dy := float64(center.Y) - player.Object.Position.Y
 	return math.Atan2(dy, dx) + RotationOffset
 }
-
-func (player *Player) calculatePath() []resolv.Vector {
-	var path []resolv.Vector
-	for angle := MinAngle; angle < MaxAngle; angle += AngleStep {
-		x, y := player.calculateCoordinates(angle)
-		path = append(path, resolv.Vector{X: float64(x), Y: float64(y)})
-	}
-	return path
-}

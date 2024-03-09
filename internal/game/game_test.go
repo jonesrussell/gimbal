@@ -23,7 +23,6 @@ func TestNewGimlarGame(t *testing.T) {
 	assert.NotNil(t, game.player)      // Ensure the player is initialized
 	assert.NotNil(t, game.stars)       // Ensure the stars are initialized
 	assert.NotNil(t, game.space)       // Ensure the space is initialized
-	assert.NotNil(t, game.logger)      // Ensure the logger is initialized
 }
 
 func TestUpdate(t *testing.T) {
@@ -80,7 +79,7 @@ func TestPlayerMovement(t *testing.T) {
 
 	// Execute
 	// Simulate player movement by updating the player's Object position directly
-	game.player.Object.Position.X += game.player.speed // Adjust the X position based on the player's speed
+	game.player.Object.Position.X += game.speed // Adjust the X position based on the player's speed
 
 	// Assert
 	// Check that the player's position has changed after the movement

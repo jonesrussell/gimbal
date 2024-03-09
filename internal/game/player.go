@@ -4,57 +4,42 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"log/slog"
 
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/solarlune/resolv"
 )
 
-// Player represents a player in the game.
-type Player struct {
-	// Input is the input handler for the player.
+type PlayerInput struct {
 	input InputHandlerInterface
-	// Angle is the current angle of the player.
-	angle float64
-	// Speed is the speed of the player.
-	speed float64
-	// Direction is the current direction of the player.
-	direction float64
-	// Object is the game object representing the player.
+}
+
+type PlayerPosition struct {
 	Object *resolv.Object
-	// Sprite is the player's sprite.
+}
+
+type PlayerSprite struct {
 	Sprite *ebiten.Image
-	// Orientation of player's viewable sprite
+}
+
+type PlayerPath struct {
+	path []resolv.Vector
+}
+
+type Player struct {
+	PlayerInput
+	PlayerPosition
+	PlayerSprite
+	PlayerPath
 	viewAngle float64
-	path      []resolv.Vector
-	logger    slog.Logger
+	direction float64
+	angle     float64
 }
 
-// Draw the players path
-func (player *Player) drawPath(screen *ebiten.Image) {
-	for i := 0; i < len(player.path)-1; i++ {
-		vector.StrokeLine(
-			screen,
-			float32(player.path[i].X),
-			float32(player.path[i].Y),
-			float32(player.path[i+1].X),
-			float32(player.path[i+1].Y),
-			1.0,
-			color.RGBA{255, 0, 0, 255},
-			false,
-		)
-	}
-}
-
-func NewPlayer(
-	input InputHandlerInterface,
-	speed float64,
-	spriteImage *ebiten.Image,
-	logger slog.Logger,
-) (*Player, error) {
+func NewPlayer(input InputHandlerInterface, speed float64, spriteImage *ebiten.Image) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
 	}
@@ -68,34 +53,24 @@ func NewPlayer(
 	}
 
 	player := &Player{
-		input:     input,
-		angle:     0,
-		speed:     speed,
-		direction: 0,
-		Sprite:    spriteImage,
-		viewAngle: MaxAngle,
-		logger:    logger,
-		Object:    &resolv.Object{},
+		PlayerInput: PlayerInput{
+			input: input,
+		},
+		PlayerPosition: PlayerPosition{
+			Object: resolv.NewObject(0, 0, 100, 100),
+		},
+		PlayerSprite: PlayerSprite{
+			Sprite: spriteImage,
+		},
+		PlayerPath: PlayerPath{},
 	}
-
-	// Calculate the initial position
-	position := player.calculatePosition()
-	player.Object = resolv.NewObject(
-		position.X,
-		position.Y,
-		float64(playerWidth),
-		float64(playerHeight),
-	)
-
-	// Calculate the entire path
-	player.path = player.calculatePath()
 
 	return player, nil
 }
 
 func (player *Player) Update() {
 	if !gameStarted {
-		player.logger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
+		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
 		gameStarted = true
 	}
 
@@ -120,7 +95,7 @@ func (player *Player) Update() {
 	player.angle = player.calculateAngle()
 
 	if player.viewAngle != oldOrientation || player.direction != oldDirection || player.angle != oldAngle || player.Object.Position.X != oldX || player.Object.Position.Y != oldY {
-		player.logger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
+		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
 	}
 
 	// Add the current position to the path
@@ -140,6 +115,22 @@ func (player *Player) Draw(screen *ebiten.Image) {
 		player.drawPath(screen)
 		// Draw the rectangle image onto the screen
 		player.drawRectangle(screen)
+	}
+}
+
+// Draw the players path
+func (player *Player) drawPath(screen *ebiten.Image) {
+	for i := 0; i < len(player.path)-1; i++ {
+		vector.StrokeLine(
+			screen,
+			float32(player.path[i].X),
+			float32(player.path[i].Y),
+			float32(player.path[i+1].X),
+			float32(player.path[i+1].Y),
+			1.0,
+			color.RGBA{255, 0, 0, 255},
+			false,
+		)
 	}
 }
 
