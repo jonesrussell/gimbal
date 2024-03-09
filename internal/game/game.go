@@ -17,14 +17,24 @@ import (
 	"github.com/solarlune/resolv"
 )
 
+const (
+	screenWidth      = 640
+	screenHeight     = 480
+	playerWidth      = 16
+	playerHeight     = 16
+	debugGridSpacing = 32
+)
+
 var (
-	screenWidth, screenHeight = 640, 480
-	radius                    = float64(screenHeight/2) * 0.75
-	center                    = image.Point{X: screenWidth / 2, Y: screenHeight / 2}
-	playerWidth, playerHeight = 16, 16
-	debugGridSpacing          = 32
-	gameStarted               bool // Debugging check if game started
-	Debug                     bool
+	assetsBasePath = "/home/russell/Development/gimbal/assets/"
+	// assetsBasePath            = "assets/"
+	radius = float64(screenHeight/2) * 0.75
+	center = image.Point{X: screenWidth / 2, Y: screenHeight / 2}
+
+	starImage *ebiten.Image
+
+	gameStarted bool
+	Debug       bool
 )
 
 type Star struct {
@@ -41,8 +51,6 @@ type GimlarGame struct {
 	prevX, prevY float64
 }
 
-var starImage *ebiten.Image
-
 func init() {
 	// Create a single star image that will be used for all stars
 	starImage = ebiten.NewImage(1, 1)
@@ -58,30 +66,37 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	} else {
 		level = slog.LevelInfo // Or whatever non-debug level you prefer
 	}
-	glogger := logger.NewSlogHandler(level)
 
 	g := &GimlarGame{
+		player: &Player{},
+		stars:  []Star{},
 		speed:  speed,
-		logger: glogger,
+		space:  &resolv.Space{},
+		logger: logger.NewSlogHandler(level),
+		prevX:  0,
+		prevY:  0,
 	}
 
 	// Initialize stars
+	if starImage == nil {
+		return nil, fmt.Errorf("starImage is not loaded")
+	}
 	g.stars = initializeStars(100, starImage)
 
 	handler := &InputHandler{}
 
 	// Load the player sprite.
-	spriteImage, _, loadErr := ebitenutil.NewImageFromFile("assets/player.png")
+	spriteImage, _, loadErr := ebitenutil.NewImageFromFile(assetsBasePath + "player.png")
 	if loadErr != nil {
-		g.logger.Error("Failed to load player sprite", "loadErr", loadErr)
-		os.Exit(1)
+		g.logger.Error("Failed to load player sprite", "error", loadErr)
+		return nil, loadErr // Return the error instead of exiting
 	}
 
 	var err error
 	g.player, err = NewPlayer(handler, g.speed, spriteImage, g.logger)
 	if err != nil {
-		g.logger.Error("Failed to create player", "err", err)
-		os.Exit(1)
+		g.logger.Error("Failed to create player: %v", err)
+		return nil, err // Return the error instead of exiting
 	}
 
 	g.space = resolv.NewSpace(screenWidth, screenHeight, playerWidth, playerHeight)
@@ -122,13 +137,6 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	g.drawStars(screen)
 
 	g.player.Draw(screen)
-
-	// Log the player's position before draw if it has changed
-	if g.player.Object.Position.X != g.prevX || g.player.Object.Position.Y != g.prevY {
-		g.logger.Debug("Player position before draw", "X", g.player.Object.Position.X, "Y", g.player.Object.Position.Y)
-		g.prevX = g.player.Object.Position.X
-		g.prevY = g.player.Object.Position.Y
-	}
 
 	// Draw debug info if debug is true
 	if Debug {
