@@ -142,10 +142,10 @@ func (g *GimlarGame) DrawDebugInfo(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS()))
 
 	// Draw grid overlay
-	g.DrawGridOverlay(screen)
+	g.DrawDebugGrid(screen)
 }
 
-func (g *GimlarGame) DrawGridOverlay(screen *ebiten.Image) {
+func (g *GimlarGame) DrawDebugGrid(screen *ebiten.Image) {
 	// Draw grid overlay
 	for i := 0; i < screenWidth; i += debugGridSpacing {
 		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(screenHeight), 1, color.White, false)
