@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"math"
 
 	"image/color"
 
@@ -52,17 +53,22 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage *ebiten.I
 		return nil, errors.New("sprite image cannot be nil")
 	}
 
+	initialAngle := math.Pi * 1.5 // 270 degrees or bottom of the screen
+	initialX := center.X + int(radius*math.Cos(initialAngle))
+	initialY := center.Y - int(radius*math.Sin(initialAngle)) - playerHeight/2
+
 	player := &Player{
 		PlayerInput: PlayerInput{
 			input: input,
 		},
 		PlayerPosition: PlayerPosition{
-			Object: resolv.NewObject(0, 0, 100, 100),
+			Object: resolv.NewObject(float64(initialX), float64(initialY), float64(playerWidth), float64(playerHeight)),
 		},
 		PlayerSprite: PlayerSprite{
 			Sprite: spriteImage,
 		},
 		PlayerPath: PlayerPath{},
+		viewAngle:  initialAngle,
 	}
 
 	return player, nil
