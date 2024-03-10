@@ -90,7 +90,15 @@ func (player *Player) Update() {
 		player.direction = 0
 	}
 
-	player.Object.Position = player.calculatePosition()
+	position := player.calculatePosition()
+	logger.GlobalLogger.Info("position", "full", position)
+
+	player.Object = resolv.NewObject(
+		position.X,
+		position.Y,
+		float64(playerWidth),
+		float64(playerHeight),
+	)
 
 	player.angle = player.calculateAngle()
 
