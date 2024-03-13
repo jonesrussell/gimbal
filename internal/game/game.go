@@ -1,6 +1,8 @@
 package game
 
 import (
+	"bytes"
+	"embed"
 	"fmt"
 	"image"
 	"image/color"
@@ -14,6 +16,9 @@ import (
 	"github.com/solarlune/resolv"
 )
 
+//go:embed assets/*
+var assets embed.FS
+
 const (
 	screenWidth      = 640
 	screenHeight     = 480
@@ -23,8 +28,6 @@ const (
 )
 
 var (
-	assetsBasePath = "/home/russell/Development/gimbal/assets/"
-	// assetsBasePath            = "assets/"
 	radius = float64(screenHeight/2) * 0.75
 	center = image.Point{X: screenWidth / 2, Y: screenHeight / 2}
 
@@ -69,17 +72,21 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	handler := &InputHandler{}
 
 	// Load the player sprite.
-	spriteImage, _, loadErr := ebitenutil.NewImageFromFile(assetsBasePath + "player.png")
-	if loadErr != nil {
-		logger.GlobalLogger.Error("Failed to load player sprite", "error", loadErr)
-		return nil, loadErr // Return the error instead of exiting
+	imageData, rfErr := assets.ReadFile("assets/player.png")
+	if rfErr != nil {
+		logger.GlobalLogger.Error("Failed to load player image: %v", rfErr)
 	}
 
-	var err error
-	g.player, err = NewPlayer(handler, g.speed, spriteImage)
+	image, _, err := image.Decode(bytes.NewReader(imageData))
 	if err != nil {
-		logger.GlobalLogger.Error("Failed to create player: %v", err)
-		return nil, err // Return the error instead of exiting
+		logger.GlobalLogger.Error("Failed to decode player image: %v", err)
+	}
+
+	var npErr error
+	g.player, npErr = NewPlayer(handler, g.speed, image)
+	if npErr != nil {
+		logger.GlobalLogger.Error("Failed to create player: %v", npErr)
+		return nil, npErr // Return the error instead of exiting
 	}
 
 	g.space = resolv.NewSpace(screenWidth, screenHeight, playerWidth, playerHeight)
