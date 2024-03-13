@@ -40,7 +40,9 @@ type Player struct {
 	angle     float64
 }
 
-func NewPlayer(input InputHandlerInterface, speed float64, spriteImage *ebiten.Image) (*Player, error) {
+// NewPlayer creates a new instance of a player with the given input handler, speed, and sprite image.
+// If any of the arguments are nil, an error is returned.
+func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Image) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
 	}
@@ -53,10 +55,14 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage *ebiten.I
 		return nil, errors.New("sprite image cannot be nil")
 	}
 
+	// calculate the initial angle of the player (270 degrees)
 	initialAngle := math.Pi * 1.5 // 270 degrees or bottom of the screen
+
+	// calculate the initial X and Y positions of the player based on the center point and the initial angle
 	initialX := center.X + int(radius*math.Cos(initialAngle))
 	initialY := center.Y - int(radius*math.Sin(initialAngle)) - playerHeight/2
 
+	// create a new instance of a player with the given input handler, initial position, and sprite image
 	player := &Player{
 		PlayerInput: PlayerInput{
 			input: input,
@@ -65,7 +71,7 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage *ebiten.I
 			Object: resolv.NewObject(float64(initialX), float64(initialY), float64(playerWidth), float64(playerHeight)),
 		},
 		PlayerSprite: PlayerSprite{
-			Sprite: spriteImage,
+			Sprite: ebiten.NewImageFromImage(spriteImage),
 		},
 		PlayerPath: PlayerPath{},
 		viewAngle:  initialAngle,
