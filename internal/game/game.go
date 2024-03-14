@@ -10,8 +10,6 @@ import (
 	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/solarlune/resolv"
 )
@@ -20,11 +18,10 @@ import (
 var assets embed.FS
 
 const (
-	screenWidth      = 640
-	screenHeight     = 480
-	playerWidth      = 16
-	playerHeight     = 16
-	debugGridSpacing = 32
+	screenWidth  = 640
+	screenHeight = 480
+	playerWidth  = 16
+	playerHeight = 16
 )
 
 var (
@@ -38,11 +35,12 @@ var (
 )
 
 type GimlarGame struct {
-	player       *Player
-	stars        []Star
-	speed        float64
-	space        *resolv.Space
-	prevX, prevY float64
+	player *Player
+	stars  []Star
+	speed  float64
+	space  *resolv.Space
+	prevX  float64
+	prevY  float64
 }
 
 func init() {
@@ -142,22 +140,4 @@ func (g *GimlarGame) drawPlayer(screen *ebiten.Image) {
 
 func (g *GimlarGame) GetRadius() float64 {
 	return radius
-}
-
-func (g *GimlarGame) DrawDebugInfo(screen *ebiten.Image) {
-	// Print the current FPS
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS()))
-
-	// Draw grid overlay
-	g.DrawDebugGrid(screen)
-}
-
-func (g *GimlarGame) DrawDebugGrid(screen *ebiten.Image) {
-	// Draw grid overlay
-	for i := 0; i < screenWidth; i += debugGridSpacing {
-		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(screenHeight), 1, color.White, false)
-	}
-	for i := 0; i < screenHeight; i += debugGridSpacing {
-		vector.StrokeLine(screen, 0, float32(i), float32(screenWidth), float32(i), 1, color.White, false)
-	}
 }
