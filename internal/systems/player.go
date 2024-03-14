@@ -65,19 +65,40 @@ func UpdatePlayer(ecs *ecs.ECS) {
 	//player.Path = append(player.Path, player.Object.Position)
 }
 
+// internal/systems/player.go
 func DrawPlayer(ecs *ecs.ECS, screen *ebiten.Image) {
 	tags.Player.Each(ecs.World, func(e *donburi.Entry) {
 		o := dresolv.GetObject(e)
 		player := components.Player.Get(e) // get the PlayerData
 
 		if player.Sprite != nil {
+			rotatedSprite := getRotatedSprite(player.Sprite, player.Angle)
 			op := &ebiten.DrawImageOptions{}
-			// Scale the sprite down to 10% of its original size
 			op.GeoM.Scale(0.1, 0.1)
 			op.GeoM.Translate(float64(o.Position.X), float64(o.Position.Y))
-			screen.DrawImage(player.Sprite, op)
+			screen.DrawImage(rotatedSprite, op)
 		}
 	})
+}
+
+func getRotatedSprite(sprite *ebiten.Image, angle float64) *ebiten.Image {
+	// Create a sub-image
+	subImage := sprite.SubImage(sprite.Bounds()).(*ebiten.Image)
+	// Create an empty image of the same size as the sub-image
+	rotatedSprite := ebiten.NewImage(subImage.Bounds().Dx(), subImage.Bounds().Dy())
+	// Create draw options
+	op := &ebiten.DrawImageOptions{}
+	// Adjust the origin to the center of the sub-image
+	w, h := subImage.Bounds().Dx(), subImage.Bounds().Dy()
+	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	// Rotate the sub-image
+	op.GeoM.Rotate(angle)
+	// Adjust the origin back
+	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	// Draw the sub-image onto the empty image with the rotation applied
+	rotatedSprite.DrawImage(subImage, op)
+	// Return the rotated sprite
+	return rotatedSprite
 }
 
 func calculateCoordinates(angle float64) (int, int) {
