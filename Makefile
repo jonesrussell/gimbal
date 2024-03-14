@@ -33,7 +33,7 @@ serve:
 		exit 1; \
 	fi
 	@echo "Hosting game on http://localhost:4242"
-	(cd cmd/gimbal/; wasmserve -http=":4242" -allow-origin='*' -tags .)
+	(wasmserve -http=":4242" -allow-origin='*' -tags .)
 
 # Build Linux target
 .PHONY: build/linux
@@ -41,7 +41,7 @@ build/linux:
 	@echo "Making build Linux build..."
 	rm -rf build/linux
 	mkdir -p build/linux/$(PROJECTNAME)
-	go build -tags build -o build/linux/$(PROJECTNAME)/$(PROJECTNAME) ./cmd/gimbal
+	go build -tags build -o build/linux/$(PROJECTNAME)/$(PROJECTNAME) ./main.go
 
 # Build Win32 target
 .PHONY: build/win32
@@ -49,7 +49,7 @@ build/win32:
 	@echo "Making build Win32 build..."
 	rm -rf build/win32
 	mkdir -p build/win32/$(PROJECTNAME)
-	GOOS=windows go build -tags build -o build/win32/$(PROJECTNAME)/$(PROJECTNAME).exe ./cmd/gimbal
+	GOOS=windows go build -tags build -o build/win32/$(PROJECTNAME)/$(PROJECTNAME).exe ./main.go
 
 # Build WebAssembly target
 .PHONY: build/web
@@ -57,7 +57,7 @@ build/web:
 	@echo "Making build wasm build..."
 	rm -rf build/web
 	mkdir -p build/web
-	GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm ./cmd/gimbal
+	GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm ./main.go
 	cp -r html/* build/web
 	cp $(WASM_EXEC_PATH) build/web
 
@@ -76,7 +76,7 @@ itch: clean/build build
 # Run target
 .PHONY: run
 run:
-	go run ./cmd/gimbal
+	go run ./main.go
 
 # Clean build target
 .PHONY: clean/build

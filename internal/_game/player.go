@@ -12,37 +12,31 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/solarlune/resolv"
+	"github.com/yohamta/donburi"
 )
 
-type PlayerInput struct {
-	input InputHandlerInterface
-}
-
-type PlayerPosition struct {
-	Object *resolv.Object
-}
-
-type PlayerSprite struct {
-	Sprite *ebiten.Image
-}
-
-type PlayerPath struct {
-	path []resolv.Vector
-}
-
 type Player struct {
-	PlayerInput
-	PlayerPosition
-	PlayerSprite
-	PlayerPath
-	viewAngle float64
-	direction float64
-	angle     float64
+	Input     InputHandlerInterface
+	Position  PositionData
+	Velocity  VelocityData
+	Sprite    *ebiten.Image
+	Path      []resolv.Vector
+	ViewAngle float64
+	Direction float64
+	Angle     float64
+}
+
+type PositionData struct {
+	X, Y float64
+}
+
+type VelocityData struct {
+	X, Y float64
 }
 
 // NewPlayer creates a new instance of a player with the given input handler, speed, and sprite image.
 // If any of the arguments are nil, an error is returned.
-func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Image) (*Player, error) {
+func NewPlayer(world donburi.World, input InputHandlerInterface, speed float64, spriteImage image.Image) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
 	}
@@ -62,19 +56,41 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 	initialX := center.X + int(radius*math.Cos(initialAngle))
 	initialY := center.Y - int(radius*math.Sin(initialAngle)) - playerHeight/2
 
+	playerData := Player{
+		Input: input,
+		Position: PositionData{
+			X: float64(initialX),
+			Y: float64(initialY),
+		},
+		Velocity: VelocityData{
+			X: 0, // Initial velocity
+			Y: 0, // Initial velocity
+		},
+		Sprite:    ebiten.NewImageFromImage(spriteImage),
+		Path:      []resolv.Vector{},
+		ViewAngle: initialAngle,
+	}
+
+	// ComponentType represents kind of component which is used to create or query entities.
+	var Position = donburi.NewComponentType[PositionData]()
+	var Velocity = donburi.NewComponentType[VelocityData]()
+
+	// Create an entity by specifying components that the entity will have.
+	// Component data will be initialized by default value of the struct.
+	entity := world.Create(Position, Velocity)
+
+	// We can use entity (it's a wrapper of int64) to get an Entry object from World
+	// which allows you to access the components that belong to the entity.
+	entry := world.Entry(entity)
+
 	// create a new instance of a player with the given input handler, initial position, and sprite image
 	player := &Player{
-		PlayerInput: PlayerInput{
-			input: input,
-		},
-		PlayerPosition: PlayerPosition{
-			Object: resolv.NewObject(float64(initialX), float64(initialY), float64(playerWidth), float64(playerHeight)),
-		},
-		PlayerSprite: PlayerSprite{
-			Sprite: ebiten.NewImageFromImage(spriteImage),
-		},
-		PlayerPath: PlayerPath{},
-		viewAngle:  initialAngle,
+		Input:     input,
+		Position:  playerData.Position,
+		Velocity:  playerData.Velocity,
+		Sprite:    ebiten.NewImageFromImage(spriteImage),
+		Path:      []resolv.Vector{},
+		ViewAngle: initialAngle,
 	}
 
 	return player, nil
