@@ -68,6 +68,8 @@ func DrawPlayer(ecs *ecs.ECS, screen *ebiten.Image) {
 
 		if player.Sprite != nil {
 			op := &ebiten.DrawImageOptions{}
+			// Scale the sprite down to 10% of its original size
+			op.GeoM.Scale(0.1, 0.1)
 			op.GeoM.Translate(float64(o.Position.X), float64(o.Position.Y))
 			screen.DrawImage(player.Sprite, op)
 		}
