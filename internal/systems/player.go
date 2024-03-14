@@ -51,6 +51,10 @@ func UpdatePlayer(ecs *ecs.ECS) {
 	position := calculatePosition(player)
 	logger.GlobalLogger.Info("position", "full", position)
 
+	// Update the player's position
+	playerObject.Position.X = float64(position.X)
+	playerObject.Position.Y = float64(position.Y)
+
 	player.Angle = calculateAngle(playerObject)
 
 	if player.ViewAngle != oldOrientation || player.Direction != oldDirection || player.Angle != oldAngle || playerObject.Position.X != oldX || playerObject.Position.Y != oldY {
