@@ -44,8 +44,6 @@ func (ps *GalaxyScene) configure() {
 	space := factory.CreateSpace(ps.ecs)
 
 	dresolv.Add(space,
-		// Create the Player. NewPlayer adds it to the world's Space.
 		factory.CreatePlayer(ps.ecs),
 	)
-
 }

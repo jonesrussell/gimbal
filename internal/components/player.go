@@ -8,6 +8,7 @@ import (
 
 type PlayerData struct {
 	Sprite    *ebiten.Image
+	SubSprite *ebiten.Image
 	Path      []resolv.Vector
 	ViewAngle float64
 	Direction float64

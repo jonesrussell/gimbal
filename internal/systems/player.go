@@ -49,9 +49,9 @@ func UpdatePlayer(ecs *ecs.ECS) {
 	}
 
 	position := calculatePosition(player)
-	logger.GlobalLogger.Info("position", "full", position)
+	//logger.GlobalLogger.Info("position", "full", position)
 
-	// Update the player's position
+	// Update the player's position immediately
 	playerObject.Position.X = float64(position.X)
 	playerObject.Position.Y = float64(position.Y)
 
@@ -60,19 +60,15 @@ func UpdatePlayer(ecs *ecs.ECS) {
 	if player.ViewAngle != oldOrientation || player.Direction != oldDirection || player.Angle != oldAngle || playerObject.Position.X != oldX || playerObject.Position.Y != oldY {
 		logger.GlobalLogger.Debug("Player", "viewAngle", player.ViewAngle, "direction", player.Direction, "angle", player.Angle, "X", float64(playerObject.Position.X), "Y", float64(playerObject.Position.Y))
 	}
-
-	// Add the current position to the path
-	//player.Path = append(player.Path, player.Object.Position)
 }
 
-// internal/systems/player.go
 func DrawPlayer(ecs *ecs.ECS, screen *ebiten.Image) {
 	tags.Player.Each(ecs.World, func(e *donburi.Entry) {
 		o := dresolv.GetObject(e)
 		player := components.Player.Get(e) // get the PlayerData
 
-		if player.Sprite != nil {
-			rotatedSprite := getRotatedSprite(player.Sprite, player.Angle)
+		if player.SubSprite != nil { // Use the stored sub-image
+			rotatedSprite := getRotatedSprite(player.SubSprite, player.Angle)
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(0.1, 0.1)
 			op.GeoM.Translate(float64(o.Position.X), float64(o.Position.Y))
