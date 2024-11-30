@@ -3,10 +3,15 @@ package main
 import (
 	"log/slog"
 
-	"github.com/jonesrussell/gimbal/internal/game"
+	"go.uber.org/zap"
+
+	"github.com/jonesrussell/gimbal/game"
 )
 
 func main() {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+
 	speed := 0.04
 	g, err := game.NewGimlarGame(speed)
 	if err != nil {

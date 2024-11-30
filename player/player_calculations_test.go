@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/jonesrussell/gimbal/internal/logger"
+	"github.com/jonesrussell/gimbal/logger"
 	"github.com/solarlune/resolv"
 )
 

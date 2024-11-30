@@ -1,11 +1,8 @@
-Got it! Let's adapt the rules for your project. Given your requirements and the simplicity often needed in game development, I recommend using `dig` for dependency injection. Also, we'll update the project structure to reflect modern Go practices.
-
-### Updated Project Rules
-
 # Core Project Rules
 - Always use the project's import path `github.com/jonesrussell/gimbal`
 - Always implement proper interface abstractions following Go best practices
 - Use `dig` for dependency injection
+- Do not use internal/ or core/ packages, use the root package instead
 
 # Dependency Injection & Application Structure
 - Integrate `dig` for dependency injection:

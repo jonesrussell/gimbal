@@ -89,7 +89,12 @@ tasks:
   lint:
     desc: Run linter
     cmds:
-      - golangci-lint run
+      - |
+        if ! command -v golangci-lint >/dev/null 2>&1; then
+          echo "golangci-lint could not be found. Installing..."
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        fi
+      - golangci-lint run --fix --config .golangci.yml
 
   vet:
     desc: Run Go vet
@@ -106,3 +111,8 @@ tasks:
   all:
     desc: Run format, lint, test, and build
     deps: [fmt, lint, test, build]
+
+  init:assets:
+    desc: Create assets directory if it doesn't exist
+    cmds:
+      - mkdir -p core/assets
