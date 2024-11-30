@@ -3,10 +3,106 @@
 version: '3'
 
 vars:
-  GREETING: Hello, World!
+  USERNAME: jonesrussell
+  PROJECTNAME: gimbal
+  VERSION: v0.1.0
+  BINARY_DIR: bin
+  BINARY_NAME: gimbal
+  WASM_EXEC_PATH: '{{default "$(go env GOROOT)/misc/wasm/wasm_exec.js" .WASM_EXEC_PATH}}'
+  ITCH_USERNAME: '{{default "jonesrussell" .ITCH_USERNAME}}'
+  ITCH_PATH: gimbal
 
 tasks:
-  default:
+  serve:
+    desc: Starts a local server for development
     cmds:
-      - echo "{{.GREETING}}"
-    silent: true
+      - |
+        if ! command -v wasmserve >/dev/null 2>&1; then
+          echo "wasmserve could not be found. You can install it with: go install github.com/hajimehoshi/wasmserve@latest" >&2
+          exit 1
+        fi
+      - echo "Hosting game on http://localhost:4242"
+      - cd cmd/gimbal/ && wasmserve -http=":4242" -allow-origin='*' -tags .
+
+  build:linux:
+    desc: Build Linux target
+    cmds:
+      - rm -rf build/linux
+      - mkdir -p build/linux/{{.PROJECTNAME}}
+      - go build -tags build -o build/linux/{{.PROJECTNAME}}/{{.PROJECTNAME}} ./cmd/gimbal
+
+  build:win32:
+    desc: Build Win32 target
+    cmds:
+      - rm -rf build/win32
+      - mkdir -p build/win32/{{.PROJECTNAME}}
+      - GOOS=windows go build -tags build -o build/win32/{{.PROJECTNAME}}/{{.PROJECTNAME}}.exe ./cmd/gimbal
+
+  build:web:
+    desc: Build WebAssembly target
+    cmds:
+      - rm -rf build/web
+      - mkdir -p build/web
+      - GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm ./cmd/gimbal
+      - cp -r html/* build/web
+      - cp {{.WASM_EXEC_PATH}} build/web
+
+  build:
+    desc: Build all targets
+    deps: [build:linux, build:win32, build:web]
+
+  itch:
+    desc: Upload to itch.io
+    deps: [clean:build, build]
+    cmds:
+      - butler push --if-changed build/win32 {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:windows
+      - butler push --if-changed build/linux {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:linux-amd64
+      - butler push build/web {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:web
+      - echo "Project is live on http://{{.ITCH_USERNAME}}.itch.io/{{.ITCH_PATH}}"
+
+  run:
+    desc: Run the application
+    cmds:
+      - go run ./cmd/gimbal
+
+  clean:build:
+    desc: Clean build directory
+    cmds:
+      - rm -rf build
+
+  clean:
+    desc: Clean all artifacts
+    cmds:
+      - task: clean:build
+      - rm -rf game.wasm site.zip
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v ./...
+
+  fmt:
+    desc: Format Go code
+    cmds:
+      - go fmt ./...
+
+  lint:
+    desc: Run linter
+    cmds:
+      - golangci-lint run
+
+  vet:
+    desc: Run Go vet
+    cmds:
+      - go vet ./...
+
+  mod:
+    desc: Tidy and download Go modules
+    cmds:
+      - go mod tidy
+      - go clean -modcache
+      - go mod download
+
+  all:
+    desc: Run format, lint, test, and build
+    deps: [fmt, lint, test, build]
