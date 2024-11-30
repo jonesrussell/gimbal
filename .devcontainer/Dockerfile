@@ -2,8 +2,15 @@ FROM mcr.microsoft.com/devcontainers/go:1-1.23-bookworm
 
 # Install X11 development libraries
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends libxxf86vm-dev libxinerama-dev \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+&& apt-get -y install --no-install-recommends \
+    libxxf86vm-dev \
+    libxinerama-dev \
+    libx11-dev \
+    libxrandr-dev \
+    libxcursor-dev \
+    libxi-dev \
+    libgl1-mesa-dev \
+&& apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Switch to vscode user to install golang tools
 USER vscode
