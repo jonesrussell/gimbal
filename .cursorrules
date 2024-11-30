@@ -1,0 +1,74 @@
+Got it! Let's adapt the rules for your project. Given your requirements and the simplicity often needed in game development, I recommend using `dig` for dependency injection. Also, we'll update the project structure to reflect modern Go practices.
+
+### Updated Project Rules
+
+# Core Project Rules
+- Always use the project's import path `github.com/jonesrussell/gimbal`
+- Always implement proper interface abstractions following Go best practices
+- Use `dig` for dependency injection
+
+# Dependency Injection & Application Structure
+- Integrate `dig` for dependency injection:
+  - Initialize DI container in `main.go`
+  - Use DI modules for organizing dependencies
+  - Handle errors appropriately
+  - Ensure proper logger initialization before other dependencies
+
+# Core Dependencies
+Always use:
+- `github.com/hajimehoshi/ebiten/v2` for game development
+- `go.uber.org/zap` for structured logging
+
+# Concurrency & Safety
+- Always use `sync.RWMutex` for concurrent operations in shared data structures
+- Always use `context.Context` for cancellation and timeouts
+- Never skip error handling
+- Never use `init()` functions except for DI module registration
+
+# Code Organization
+Files named `types.go` should only contain interface and type definitions
+
+# Component Separation
+The separation of concerns is now:
+- `core/types.go`: Interface and type definitions
+- `core/game.go`: Main game loop and logic
+- `core/input.go`: Input handling
+- `core/render.go`: Rendering logic
+- `assets/`: Game assets like images, sounds, etc.
+- `systems/`: Game systems like physics, AI, etc.
+
+# Main Structure
+- `main.go`: Main application setup and DI integration
+- `config/`: Configuration and settings management
+- `cmd/`: Command-line tools and utilities (if needed)
+
+# Testing & Quality
+- Run code through `golangci-lint` before suggesting changes
+- Implement unit tests for all components
+- Use `mockery` for interface mocking
+- Include integration tests where appropriate
+
+# Documentation
+- Include GoDoc comments for exported types and functions
+- Maintain `README.md` with current setup instructions
+- Document configuration options
+
+# Logging Standards
+- Always use structured logging with `zap`
+- Include relevant context in log fields
+- Use appropriate log levels (debug, info, warn, error)
+
+# Error Handling
+- Always implement proper error handling and avoid panics
+- Use error wrapping with `fmt.Errorf("context: %w", err)`
+- Return errors rather than logging and continuing
+
+# Debug Mode Standards
+When debug flag (-v, --verbose) is enabled:
+- Show detailed debug logs
+- Use development logger configuration
+- Include debug level messages
+- Show detailed timestamps
+- Include caller information
+- Display colored log output
+- Show full error stack traces
