@@ -6,17 +6,17 @@ Gimbal is a simple, fun game built using the Ebiten game library and the Ebiteng
 
 This project uses the following technologies:
 
-- **Go**: The programming language used to develop the game. Version: `1.21`
-- **Ebitengine**: An open-source game engine for the Go programming language. Version: `v2.6`
-- **Makefile**: Used for building and running the game.
-- **HTML**: Contains the index.html file for the game for WASM.
+- **Go**: The programming language used to develop the game. Version: `1.23`
+- **Ebitengine**: An open-source game engine for the Go programming language. Version: `v2.6.6`
+- **Task**: Modern task runner and build tool that aims to be simpler and easier to use than Make
+- **HTML**: Contains the index.html file for the game for WASM
 
 ## Running the Game
 
 To run the game, navigate to the directory where this repository is cloned and run the following command:
 
 ```bash
-make run
+task run
 ```
 
 ## Controls
@@ -28,22 +28,25 @@ The game is controlled using the left and right arrow keys or the 'A' and 'D' ke
 Follow these steps to set up the project on your local machine:
 
 1. **Install Go**
-    - Visit the [Go downloads page](https://golang.org/dl/) and download the latest version for your operating system.
-    - Install Go by following the prompts.
+    - Visit the [Go downloads page](https://golang.org/dl/) and download the latest version for your operating system
+    - Install Go by following the prompts
 
-2. **Set Up Go Environment**
-    - Open a terminal or command prompt.
-    - Check that Go has been installed correctly by typing `go version`. You should see the Go version you installed.
+2. **Install Task**
+    - Visit [Task installation guide](https://taskfile.dev/installation/)
+    - Or install with:
+    ```bash
+    go install github.com/go-task/task/v3/cmd/task@latest
+    ```
 
 3. **Clone the Repository**
-    - Navigate to the directory where you want to clone the repository.
-    - Run `git clone https://github.com/jonesrussell/gimbal.git` to clone the repository.
+    - Navigate to the directory where you want to clone the repository
+    - Run `git clone https://github.com/jonesrussell/gimbal.git` to clone the repository
 
 4. **Install Dependencies**
-    - Navigate to the cloned repository's directory.
-    - Run `go mod download` to download the necessary Go modules.
+    - Navigate to the cloned repository's directory
+    - Run `go mod download` to download the necessary Go modules
 
-You should now have the game set up and ready to run on your local machine. To run the game, use the command `make run`.
+You should now have the game set up and ready to run on your local machine. To run the game, use the command `task run`.
 
 ## Building the Game
 
@@ -52,19 +55,19 @@ The game can be built for Linux, Windows (Win32), and WebAssembly. To build the 
 - For Linux:
 
   ```bash
-  make build/linux
+  task build:linux
   ```
 
 - For Windows (Win32):
 
   ```bash
-  make build/win32
+  task build:win32
   ```
 
 - For WebAssembly:
 
   ```bash
-  make build/web
+  task build:web
   ```
 
 ## Development Roadmap
