@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/devcontainers/go:1-1.23-bookworm
 
-# Install MariaDB client
+# Install X11 development libraries
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends mariadb-client \
+    && apt-get -y install --no-install-recommends libxxf86vm-dev libxinerama-dev \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Switch to vscode user to install golang tools
@@ -20,4 +20,4 @@ ENV PATH="/home/vscode/go/bin:${PATH}"
 # USER root
 
 # [Optional] Uncomment this line to install global node packages.
-# RUN su vscode -c "source /usr/local/share/nvm/nvm.sh && npm install -g <your-package-here>" 2>&1 
+# RUN su vscode -c "source /usr/local/share/nvm/nvm.sh && npm install -g <your-package-here>" 2>&1
