@@ -2,7 +2,9 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
 	"name": "Gimbal",
-	"image": "mcr.microsoft.com/devcontainers/go:1-1.23-bookworm",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
 	"mounts": [
 		"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly"
 	],
