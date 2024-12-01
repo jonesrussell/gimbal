@@ -222,8 +222,8 @@ func (player *Player) getRotatedSprite() *ebiten.Image {
 // calculatePosition calculates the new position based on the current viewAngle
 func (player *Player) calculatePosition() resolv.Vector {
 	return resolv.Vector{
-		X: center.X + radius*math.Cos(player.viewAngle),
-		Y: center.Y - radius*math.Sin(player.viewAngle),
+		X: float64(center.X) + radius*math.Cos(player.viewAngle),
+		Y: float64(center.Y) - radius*math.Sin(player.viewAngle),
 	}
 }
 

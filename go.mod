@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/hajimehoshi/ebiten/v2 v2.6.6
 	github.com/solarlune/resolv v0.7.0
+	go.uber.org/dig v1.18.0
 	go.uber.org/zap v1.27.0
 )
 

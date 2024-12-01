@@ -10,9 +10,9 @@ import (
 	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/jonesrussell/gimbal/logger"
 	"github.com/jonesrussell/gimbal/player"
 	"github.com/solarlune/resolv"
+	"go.uber.org/zap"
 )
 
 //go:embed assets/*
@@ -42,6 +42,7 @@ type GimlarGame struct {
 	space  *resolv.Space
 	prevX  float64
 	prevY  float64
+	logger *zap.Logger
 }
 
 func init() {
@@ -50,16 +51,17 @@ func init() {
 	starImage.Fill(color.White)
 }
 
-func NewGimlarGame(speed float64) (*GimlarGame, error) {
+func NewGimlarGame(logger *zap.Logger, config *Config) (*GimlarGame, error) {
 	Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 
 	g := &GimlarGame{
 		player: &player.Player{},
 		stars:  []Star{},
-		speed:  speed,
+		speed:  config.Speed,
 		space:  &resolv.Space{},
 		prevX:  0,
 		prevY:  0,
+		logger: logger,
 	}
 
 	// Initialize stars
@@ -73,18 +75,18 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	// Load the player sprite.
 	imageData, rfErr := assets.ReadFile("assets/player.png")
 	if rfErr != nil {
-		logger.GlobalLogger.Error("Failed to load player image: %v", rfErr)
+		logger.Error("Failed to load player image", zap.Error(rfErr))
 	}
 
 	image, _, err := image.Decode(bytes.NewReader(imageData))
 	if err != nil {
-		logger.GlobalLogger.Error("Failed to decode player image: %v", err)
+		logger.Error("Failed to decode player image", zap.Error(err))
 	}
 
 	var npErr error
 	g.player, npErr = player.NewPlayer(handler, g.speed, image)
 	if npErr != nil {
-		logger.GlobalLogger.Error("Failed to create player: %v", npErr)
+		logger.Error("Failed to create player", zap.Error(npErr))
 		return nil, npErr // Return the error instead of exiting
 	}
 
@@ -113,7 +115,9 @@ func (g *GimlarGame) Update() error {
 
 	// Log the player's position after updating if it has changed
 	if g.player.Object.Position.X != g.prevX || g.player.Object.Position.Y != g.prevY {
-		logger.GlobalLogger.Debug("Player position after update", "X", g.player.Object.Position.X, "Y", g.player.Object.Position.Y)
+		g.logger.Debug("Player position after update",
+			zap.Float64("X", g.player.Object.Position.X),
+			zap.Float64("Y", g.player.Object.Position.Y))
 		g.prevX = g.player.Object.Position.X
 		g.prevY = g.player.Object.Position.Y
 	}

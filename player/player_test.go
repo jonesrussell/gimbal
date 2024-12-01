@@ -1,4 +1,4 @@
-package game
+package player
 
 import (
 	_ "image/png"

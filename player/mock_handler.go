@@ -23,3 +23,8 @@ func (mh *MockHandler) ReleaseKey(key ebiten.Key) {
 func (mh *MockHandler) IsKeyPressed(key ebiten.Key) bool {
 	return mh.pressedKeys[key]
 }
+
+// Add this method to implement InputHandlerInterface
+func (m *MockHandler) HandleInput() {
+	// Mock implementation
+}

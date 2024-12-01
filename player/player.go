@@ -232,3 +232,9 @@ func (player *Player) calculatePosition() resolv.Vector {
 func (player *Player) calculateAngle() float64 {
 	return player.viewAngle - math.Pi/2
 }
+
+// Add this method if it's needed
+func (p *Player) calculateCoordinates() (float64, float64) {
+	// Implementation here
+	return 0, 0 // Replace with actual calculation
+}
