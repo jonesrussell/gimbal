@@ -11,6 +11,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/logger"
+	"github.com/jonesrussell/gimbal/player"
 	"github.com/solarlune/resolv"
 )
 
@@ -35,7 +36,7 @@ var (
 )
 
 type GimlarGame struct {
-	player *Player
+	player *player.Player
 	stars  []Star
 	speed  float64
 	space  *resolv.Space
@@ -53,7 +54,7 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 
 	g := &GimlarGame{
-		player: &Player{},
+		player: &player.Player{},
 		stars:  []Star{},
 		speed:  speed,
 		space:  &resolv.Space{},
@@ -67,7 +68,7 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	}
 	g.stars = initializeStars(100, starImage)
 
-	handler := &InputHandler{}
+	handler := player.NewInputHandler()
 
 	// Load the player sprite.
 	imageData, rfErr := assets.ReadFile("assets/player.png")
@@ -81,7 +82,7 @@ func NewGimlarGame(speed float64) (*GimlarGame, error) {
 	}
 
 	var npErr error
-	g.player, npErr = NewPlayer(handler, g.speed, image)
+	g.player, npErr = player.NewPlayer(handler, g.speed, image)
 	if npErr != nil {
 		logger.GlobalLogger.Error("Failed to create player: %v", npErr)
 		return nil, npErr // Return the error instead of exiting

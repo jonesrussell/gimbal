@@ -23,7 +23,23 @@ gimbal/
 └── web/            # Web/WASM specific code
 ```
 
-3. **Implement Entity Component System (ECS)**
+3. **Configuration Management**
+- Create `config` package for centralized configuration
+- Implement configuration injection using `dig`
+- Move screen-dependent values to config:
+  - Screen dimensions
+  - Player positioning
+  - Game constants
+- Support different config profiles:
+  - Development
+  - Production
+  - Testing
+- Add configuration validation
+- Implement hot-reloading for development
+- Add environment variable support
+- Create configuration documentation
+
+4. **Implement Entity Component System (ECS)**
 - Use `github.com/bytearena/ecs` for ECS implementation
 - Components:
   - Position

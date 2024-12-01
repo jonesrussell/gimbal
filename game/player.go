@@ -218,3 +218,18 @@ func (player *Player) getRotatedSprite() *ebiten.Image {
 		image.Rect(0, 0, player.Sprite.Bounds().Dx(), player.Sprite.Bounds().Dy()),
 	).(*ebiten.Image)
 }
+
+// calculatePosition calculates the new position based on the current viewAngle
+func (player *Player) calculatePosition() resolv.Vector {
+	return resolv.Vector{
+		X: center.X + radius*math.Cos(player.viewAngle),
+		Y: center.Y - radius*math.Sin(player.viewAngle),
+	}
+}
+
+// calculateAngle calculates the rotation angle for the player sprite
+func (player *Player) calculateAngle() float64 {
+	// The angle is offset by -π/2 (90 degrees) because the sprite's default orientation
+	// might be different from what we want
+	return player.viewAngle - math.Pi/2
+}

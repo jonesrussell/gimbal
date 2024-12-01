@@ -1,4 +1,4 @@
-package game
+package player
 
 import (
 	"errors"
@@ -35,9 +35,10 @@ type Player struct {
 	PlayerPosition
 	PlayerSprite
 	PlayerPath
-	viewAngle float64
-	direction float64
-	angle     float64
+	viewAngle   float64
+	direction   float64
+	angle       float64
+	gameStarted bool
 }
 
 // NewPlayer creates a new instance of a player with the given input handler, speed, and sprite image.
@@ -59,8 +60,8 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 	initialAngle := math.Pi * 1.5 // 270 degrees or bottom of the screen
 
 	// calculate the initial X and Y positions of the player based on the center point and the initial angle
-	initialX := center.X + int(radius*math.Cos(initialAngle))
-	initialY := center.Y - int(radius*math.Sin(initialAngle)) - playerHeight/2
+	initialX := float64(center.X) + radius*math.Cos(initialAngle)
+	initialY := float64(center.Y) - radius*math.Sin(initialAngle) - float64(playerHeight)/2
 
 	// create a new instance of a player with the given input handler, initial position, and sprite image
 	player := &Player{
@@ -81,9 +82,9 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 }
 
 func (player *Player) Update() {
-	if !gameStarted {
+	if !player.gameStarted {
 		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
-		gameStarted = true
+		player.gameStarted = true
 	}
 
 	oldOrientation := player.viewAngle
@@ -217,4 +218,17 @@ func (player *Player) getRotatedSprite() *ebiten.Image {
 	return player.Sprite.SubImage(
 		image.Rect(0, 0, player.Sprite.Bounds().Dx(), player.Sprite.Bounds().Dy()),
 	).(*ebiten.Image)
+}
+
+// calculatePosition calculates the new position based on the current viewAngle
+func (player *Player) calculatePosition() resolv.Vector {
+	return resolv.Vector{
+		X: center.X + radius*math.Cos(player.viewAngle),
+		Y: center.Y - radius*math.Sin(player.viewAngle),
+	}
+}
+
+// calculateAngle calculates the rotation angle for the player sprite
+func (player *Player) calculateAngle() float64 {
+	return player.viewAngle - math.Pi/2
 }
