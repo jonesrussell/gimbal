@@ -6,7 +6,6 @@ import (
 
 // InputHandlerInterface defines the contract for handling player input
 type InputHandlerInterface interface {
+	HandleInput() (float64, float64)
 	IsKeyPressed(ebiten.Key) bool
-	HandleInput()
-	// Add other required methods based on your implementation
 }

@@ -7,44 +7,42 @@ import (
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 
-	"github.com/jonesrussell/gimbal/game"
+	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/engine"
 )
 
 func main() {
-	// Initialize logger first
-	logger, err := zap.NewProduction()
-	if err != nil {
-		fmt.Printf("Failed to initialize logger: %v\n", err)
-		os.Exit(1)
-	}
-	defer logger.Sync()
-
 	// Create DI container
 	container := dig.New()
 
 	// Provide logger
-	if err := container.Provide(func() *zap.Logger { return logger }); err != nil {
-		logger.Fatal("Failed to provide logger", zap.Error(err))
-	}
-
-	// Provide game configuration
-	if err := container.Provide(func() *game.Config {
-		return &game.Config{
-			Speed: 0.04,
-		}
+	if err := container.Provide(func() (*zap.Logger, error) {
+		return zap.NewProduction()
 	}); err != nil {
-		logger.Fatal("Failed to provide game config", zap.Error(err))
+		fmt.Printf("Failed to provide logger: %v\n", err)
+		os.Exit(1)
 	}
 
-	// Provide game instance
-	if err := container.Provide(game.NewGimlarGame); err != nil {
-		logger.Fatal("Failed to provide game instance", zap.Error(err))
-	}
-
-	// Invoke game runner
-	if err := container.Invoke(func(g *game.GimlarGame) error {
-		return g.Run()
+	// Provide config
+	if err := container.Provide(func(logger *zap.Logger) (*config.Config, error) {
+		config.Init(logger)
+		return config.Load("development")
 	}); err != nil {
-		logger.Fatal("Failed to run game", zap.Error(err))
+		fmt.Printf("Failed to provide config: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Provide game engine
+	if err := container.Provide(engine.NewGame); err != nil {
+		fmt.Printf("Failed to provide game engine: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Run the game
+	if err := container.Invoke(func(game *engine.Game) error {
+		return game.Run()
+	}); err != nil {
+		fmt.Printf("Failed to run game: %v\n", err)
+		os.Exit(1)
 	}
 }

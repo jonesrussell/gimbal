@@ -8,7 +8,7 @@ const (
 	playerHeight = 32
 
 	// Player positioning
-	radius = 100
+	radius = 8.0
 
 	// Game state
 	gameStarted = false
@@ -22,8 +22,7 @@ const (
 
 var (
 	// Define center as a struct or use float64 values
-	center         = struct{ X, Y float64 }{X: 400, Y: 300} // adjust values as needed
-	radius float64 = 100                                    // adjust value as needed
+	center = struct{ X, Y float64 }{X: 400, Y: 300} // adjust values as needed
 )
 
 var Debug bool = false

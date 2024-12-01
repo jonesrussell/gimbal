@@ -177,7 +177,7 @@ func (player *Player) drawRectangle(screen *ebiten.Image) {
 	screen.DrawImage(img, op)
 }
 
-func (player *Player) updatePosition() {
+func (player *Player) UpdatePosition() {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
 	player.Object.Update()

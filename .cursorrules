@@ -2,7 +2,7 @@
 - Always use the project's import path `github.com/jonesrussell/gimbal`
 - Always implement proper interface abstractions following Go best practices
 - Use `dig` for dependency injection
-- Do not use internal/ or core/ packages, use the root package instead
+- Follow https://go.dev/doc/modules/layout
 
 # Dependency Injection & Application Structure
 - Integrate `dig` for dependency injection:

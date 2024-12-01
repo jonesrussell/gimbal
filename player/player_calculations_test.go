@@ -2,6 +2,7 @@ package player
 
 import (
 	"log/slog"
+	"math"
 	"reflect"
 	"testing"
 
@@ -22,15 +23,11 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 		path      []resolv.Vector
 		logger    slog.Logger
 	}
-	type args struct {
-		angle float64
-	}
 	tests := []struct {
 		name   string
 		fields fields
-		args   args
-		want   int
-		want1  int
+		want   float64
+		want1  float64
 	}{
 		{
 			name: "case 1: default angle and speed",
@@ -45,11 +42,8 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 				path:      nil,
 				logger:    logger.NewSlogHandler(slog.LevelInfo),
 			},
-			args: args{
-				angle: 0,
-			},
-			want:  500,
-			want1: 232,
+			want:  500.0,
+			want1: 232.0,
 		},
 		{
 			name: "case 2: 45 degree angle with speed",
@@ -64,11 +58,8 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 				path:      nil,
 				logger:    logger.NewSlogHandler(slog.LevelInfo),
 			},
-			args: args{
-				angle: 45,
-			},
-			want:  414,
-			want1: 79,
+			want:  414.0,
+			want1: 79.0,
 		},
 	}
 	for _, tt := range tests {
@@ -90,12 +81,13 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 				direction: tt.fields.direction,
 				angle:     tt.fields.angle,
 			}
-			got, got1 := player.calculateCoordinates(tt.args.angle)
-			if got != tt.want {
+			got, got1 := player.calculateCoordinates()
+			const epsilon = 0.000001
+			if math.Abs(got-tt.want) > epsilon {
 				t.Errorf("Player.calculateCoordinates() got = %v, want %v", got, tt.want)
 			}
-			if got1 != tt.want1 {
-				t.Errorf("Player.calculateCoordinates() got1 = %v, want %v", got1, tt.want1)
+			if math.Abs(got1-tt.want1) > epsilon {
+				t.Errorf("Player.calculateCoordinates() got1 = %v, want1 %v", got1, tt.want1)
 			}
 		})
 	}

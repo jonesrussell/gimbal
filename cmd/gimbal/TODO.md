@@ -1,53 +1,110 @@
-### Phase 1: Code Modernization & Architecture
-
-1. **Update Dependencies**
-- Upgrade to Go 1.23 for performance improvements and new features
-- Update Ebitengine to v2.6.6 (latest stable)
-- Add `go.uber.org/dig` for dependency injection
-- Add `go.uber.org/zap` for better logging
-- Add `github.com/stretchr/testify` for testing
-- Add `github.com/vektra/mockery/v2` for mocks
-
-2. **Restructure Project Layout**
+## Current Project Structure
 ```
 gimbal/
 ├── cmd/
 │   └── gimbal/
+│       ├── main.go          # Main application entry point
+│       └── TODO.md          # This file
 ├── internal/
-│   ├── engine/      # Game engine components
-│   ├── entities/    # Game entities (player, enemies)
-│   ├── systems/     # Game systems (collision, scoring)
-│   ├── assets/      # Game assets
-│   └── ui/          # UI components
-├── pkg/             # Reusable packages
-└── web/            # Web/WASM specific code
+│   ├── config/             # Configuration management
+│   │   ├── config.go       # Configuration loading and management
+│   │   └── config.development.json # Development configuration
+│   ├── engine/            # Game engine components
+│   │   ├── game.go        # Game engine implementation
+│   │   ├── types.go       # Engine interfaces and types
+│   │   ├── constants.go   # Game states and interfaces
+│   │   └── stars.go       # Star system implementation
+│   ├── entities/          # [TODO] Game entities
+│   ├── systems/           # [TODO] Game systems
+│   ├── assets/            # [TODO] Game assets
+│   └── ui/                # [TODO] UI components
+└── go.mod                 # Module definition
+
+[TODO] Additional directories to be created:
+├── pkg/                   # Reusable packages
+└── web/                  # Web/WASM specific code
 ```
 
-3. **Configuration Management**
-- Create `config` package for centralized configuration
-- Implement configuration injection using `dig`
-- Move screen-dependent values to config:
-  - Screen dimensions
-  - Player positioning
-  - Game constants
-- Support different config profiles:
-  - Development
-  - Production
-  - Testing
-- Add configuration validation
-- Implement hot-reloading for development
-- Add environment variable support
-- Create configuration documentation
+### Phase 1: Code Modernization & Architecture
 
-4. **Implement Entity Component System (ECS)**
-- Use `github.com/bytearena/ecs` for ECS implementation
-- Components:
-  - Position
-  - Sprite
-  - Collision
-  - Movement
-  - Health
-  - Score
+1. **Update Dependencies**
+- [ ] Upgrade to Go 1.23 for performance improvements and new features
+- [ ] Update Ebitengine to v2.6.6 (latest stable)
+- [x] Add `go.uber.org/dig` for dependency injection
+- [x] Add `go.uber.org/zap` for better logging
+- [ ] Add `github.com/stretchr/testify` for testing
+- [ ] Add `github.com/vektra/mockery/v2` for mocks
+
+2. **Restructure Project Layout**
+- [x] Create basic directory structure
+- [x] Move packages to internal/
+- [x] Create engine package with basic interfaces
+- [x] Implement game engine structure
+- [x] Move core/constants.go to engine/
+- [x] Move core/stars.go to engine/
+- [x] Remove deprecated core directory
+- [ ] Fix import paths in main.go
+- [ ] Set up DI container
+- [ ] Ensure all packages are properly exposed and importable
+
+3. **Configuration Management**
+- [x] Create `config` package for centralized configuration
+- [x] Move config to internal/
+- [x] Implement configuration injection using `dig`
+- [x] Move screen-dependent values from constants.go to config
+- [x] Add configuration for number of stars
+- [ ] Support different config profiles
+- [ ] Add configuration validation
+- [ ] Implement hot-reloading for development
+- [ ] Add environment variable support
+- [ ] Create configuration documentation
+
+4. **Code Quality**
+- [ ] Fix linting errors:
+  - [x] Fix undefined config.Screen in stars.go
+  - [ ] Fix import cycle in game package
+  - [ ] Fix unused variables in game_test.go
+  - [ ] Fix player package redeclarations
+  - [ ] Fix player calculation tests
+- [ ] Add golangci-lint to CI pipeline
+- [ ] Set up pre-commit hooks for linting
+
+5. **Immediate Next Steps**
+1. Fix remaining lint errors:
+   - [ ] Clean up player package constants
+   - [ ] Update player calculation tests
+   - [ ] Remove unused test variables
+   - [ ] Fix type mismatches in tests
+
+2. Create assets package for resource management:
+   - [ ] Implement AssetManager interface
+   - [ ] Add basic image loading functionality
+   - [ ] Add error handling for missing assets
+   - [ ] Integrate with DI container
+
+3. Implement proper star initialization:
+   - [ ] Move star image loading to asset manager
+   - [ ] Add error handling for failed initialization
+   - [ ] Add star configuration validation
+   - [ ] Implement star pool for better performance
+
+4. Configuration Fixes:
+   - [ ] Implement proper config.New function in config package
+   - [ ] Fix config initialization in engine/stars.go
+   - [ ] Add proper config injection in game package
+   - [ ] Document config initialization pattern
+
+5. Type Definition Fixes:
+   - [ ] Fix Game type definition in game package
+   - [ ] Ensure proper type exports
+   - [ ] Fix circular dependencies if any
+   - [ ] Add missing interface implementations
+
+6. Test Cleanup:
+   - [ ] Remove unused speed variables from game tests
+   - [ ] Properly use player variable in player tests
+   - [ ] Add proper test assertions
+   - [ ] Implement test helpers for common setup
 
 ### Phase 2: Core Features for Alpha
 
@@ -147,83 +204,3 @@ jobs:
 - Set up Google Analytics for web version
 - Add telemetry for gameplay metrics
 - Implement crash reporting
-
-### Implementation Plan
-
-1. First, let's update the main game loop in `core/game.go`:
-
-```go
-package engine
-
-type GameState int
-
-const (
-    StateTitle GameState = iota
-    StatePlaying
-    StatePaused
-    StateGameOver
-)
-
-type Game struct {
-    state     GameState
-    world     *ecs.World
-    systems   []System
-    renderer  *Renderer
-    input     *InputSystem
-    assets    *AssetManager
-    logger    *zap.Logger
-}
-
-func NewGame(logger *zap.Logger) (*Game, error) {
-    g := &Game{
-        state:  StateTitle,
-        world:  ecs.NewWorld(),
-        logger: logger,
-    }
-    
-    // Initialize systems
-    g.systems = []System{
-        NewMovementSystem(g.world),
-        NewCollisionSystem(g.world),
-        NewRenderSystem(g.world),
-    }
-    
-    return g, nil
-}
-```
-
-2. Then update the player implementation to use ECS:
-
-```go
-package entities
-
-type Player struct {
-    *ecs.BasicEntity
-    *components.Position
-    *components.Sprite
-    *components.Movement
-    *components.Health
-    *components.Weapon
-}
-
-func NewPlayer(world *ecs.World) *Player {
-    player := &Player{
-        BasicEntity: ecs.NewBasic(),
-        Position:    &components.Position{},
-        Sprite:      &components.Sprite{},
-        Movement:    &components.Movement{},
-        Health:      &components.Health{Lives: 3},
-        Weapon:      &components.Weapon{},
-    }
-    
-    world.AddEntity(player)
-    return player
-}
-```
-
-3. Next Steps:
-- Set up dependency injection with dig
-- Implement basic systems (Movement, Collision, Render)
-- Add state management
-- Create asset loading system
-- Implement input handling

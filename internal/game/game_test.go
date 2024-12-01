@@ -5,6 +5,9 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+
+	"github.com/jonesrussell/gimbal/internal/config"
 )
 
 func TestNewGimlarGame(t *testing.T) {
@@ -12,9 +15,14 @@ func TestNewGimlarGame(t *testing.T) {
 
 	// Setup
 	speed := 1.0 // Example speed value
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	config := config.New()
 
 	// Execute
-	game, err := NewGimlarGame(speed)
+	game, err := NewGimlarGame(logger, config)
 
 	// Assert
 	assert.NoError(t, err)             // Ensure no error is returned
@@ -28,7 +36,12 @@ func TestNewGimlarGame(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	// Setup
 	speed := 1.0 // Example speed value
-	game, err := NewGimlarGame(speed)
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	config := config.New()
+	game, err := NewGimlarGame(logger, config)
 	if err != nil {
 		t.Fatalf("Failed to create game: %v", err)
 	}
@@ -45,7 +58,12 @@ func TestUpdate(t *testing.T) {
 func TestDraw(t *testing.T) {
 	// Setup
 	speed := 1.0 // Example speed value
-	game, err := NewGimlarGame(speed)
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	config := config.New()
+	game, err := NewGimlarGame(logger, config)
 	if err != nil {
 		t.Fatalf("Failed to create game: %v", err)
 	}
@@ -69,7 +87,12 @@ func TestDraw(t *testing.T) {
 func TestPlayerMovement(t *testing.T) {
 	// Setup
 	speed := 1.0 // Example speed value
-	game, err := NewGimlarGame(speed)
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	config := config.New()
+	game, err := NewGimlarGame(logger, config)
 	if err != nil {
 		t.Fatalf("Failed to create game: %v", err)
 	}
@@ -90,7 +113,12 @@ func TestPlayerMovement(t *testing.T) {
 func TestStarMovement(t *testing.T) {
 	// Setup
 	speed := 1.0 // Example speed value
-	game, err := NewGimlarGame(speed)
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	config := config.New()
+	game, err := NewGimlarGame(logger, config)
 	if err != nil {
 		t.Fatalf("Failed to create game: %v", err)
 	}
@@ -113,4 +141,11 @@ func TestStarMovement(t *testing.T) {
 	// Check that the star's position has changed after the movement
 	finalPosition := stars[0].X
 	assert.NotEqual(t, initialPosition, finalPosition)
+}
+
+func TestGame_Update(t *testing.T) {
+	cfg := config.New()
+	// Remove unused speed variable
+	game := NewGimlarGame(cfg)
+	// Rest of test...
 }
