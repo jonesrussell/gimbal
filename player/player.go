@@ -19,7 +19,7 @@ type PlayerInput struct {
 }
 
 type PlayerPosition struct {
-	Object *resolv.Object
+	Object *resolv.ConvexPolygon
 }
 
 type PlayerSprite struct {
@@ -69,13 +69,21 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 	initialX := float64(screenCenter.X) + radius*(-1.0)
 	initialY := float64(screenCenter.Y) + radius
 
+	// Create a rectangular polygon for collision
+	playerShape := resolv.NewRectangle(
+		float64(initialX),
+		float64(initialY),
+		float64(playerWidth),
+		float64(playerHeight),
+	)
+
 	// create a new instance of a player with the given input handler, initial position, and sprite image
 	player := &Player{
 		PlayerInput: PlayerInput{
 			input: input,
 		},
 		PlayerPosition: PlayerPosition{
-			Object: resolv.NewObject(float64(initialX), float64(initialY), float64(playerWidth), float64(playerHeight)),
+			Object: playerShape,
 		},
 		PlayerSprite: PlayerSprite{
 			Sprite: ebiten.NewImageFromImage(spriteImage),
@@ -91,15 +99,14 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 
 func (player *Player) Update() {
 	if !player.gameStarted {
-		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
+		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", player.Object.Position().X, "Y", player.Object.Position().Y)
 		player.gameStarted = true
 	}
 
 	oldOrientation := player.viewAngle
 	oldDirection := player.direction
 	oldAngle := player.angle
-	oldX := player.Object.Position.X
-	oldY := player.Object.Position.Y
+	oldPosition := player.Object.Position()
 
 	if player.input.IsKeyPressed(ebiten.KeyLeft) {
 		player.direction = -1
@@ -114,23 +121,21 @@ func (player *Player) Update() {
 	position := player.calculatePosition()
 	logger.GlobalLogger.Info("position", "full", position)
 
-	player.Object = resolv.NewObject(
-		position.X,
-		position.Y,
-		float64(playerWidth),
-		float64(playerHeight),
-	)
+	// Update the polygon's position
+	player.Object.SetPosition(position.X, position.Y)
 
 	player.angle = player.calculateAngle()
 
-	if player.viewAngle != oldOrientation || player.direction != oldDirection || player.angle != oldAngle || player.Object.Position.X != oldX || player.Object.Position.Y != oldY {
-		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", float64(player.Object.Position.X), "Y", float64(player.Object.Position.Y))
+	newPosition := player.Object.Position()
+	if player.viewAngle != oldOrientation || player.direction != oldDirection || player.angle != oldAngle || newPosition != oldPosition {
+		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", newPosition.X, "Y", newPosition.Y)
 	}
 
 	// Add the current position to the path
-	player.path = append(player.path, player.Object.Position)
+	player.path = append(player.path, newPosition)
 
-	player.Object.Update()
+	// Remove the call to Update, as ConvexPolygon does not have an Update method
+	// player.Object.Update()
 }
 
 var prevRectX, prevRectY float64
@@ -166,12 +171,14 @@ func (player *Player) drawPath(screen *ebiten.Image) {
 func (player *Player) drawRectangle(screen *ebiten.Image) {
 	// Create a new image for the rectangle
 	rectColor := color.RGBA{255, 0, 0, 255}
-	img := ebiten.NewImage(int(player.Object.Size.X), int(player.Object.Size.Y))
+	bounds := player.Object.Bounds()
+	img := ebiten.NewImage(int(bounds.Width()), int(bounds.Height()))
 	img.Fill(rectColor)
 
 	// Calculate the rectangle's top-left corner position
-	rectX := player.Object.Position.X - player.Object.Size.X/2
-	rectY := player.Object.Position.Y - player.Object.Size.Y/2
+	pos := player.Object.Position()
+	rectX := pos.X - bounds.Width()/2
+	rectY := pos.Y - bounds.Height()/2
 
 	// Check if rectX or rectY has changed since the last call
 	if rectX != prevRectX || rectY != prevRectY {
@@ -186,9 +193,9 @@ func (player *Player) drawRectangle(screen *ebiten.Image) {
 }
 
 func (player *Player) UpdatePosition() {
+	pos := player.Object.Position()
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(player.Object.Position.X, player.Object.Position.Y)
-	player.Object.Update()
+	op.GeoM.Translate(pos.X, pos.Y)
 }
 
 func (player *Player) drawSprite(screen *ebiten.Image) {
@@ -215,9 +222,8 @@ func (player *Player) createSpriteOptions() *ebiten.DrawImageOptions {
 	spriteOp.GeoM.Rotate(player.angle)
 
 	// Translate the rotated and scaled sprite to the player's position
-	spriteX := player.Object.Position.X
-	spriteY := player.Object.Position.Y
-	spriteOp.GeoM.Translate(spriteX, spriteY)
+	pos := player.Object.Position()
+	spriteOp.GeoM.Translate(pos.X, pos.Y)
 
 	return spriteOp
 }
@@ -236,8 +242,9 @@ func (player *Player) calculateAngle() float64 {
 // Add this method if it's needed
 func (p *Player) calculateCoordinates() (float64, float64) {
 	// Use the Object's position and player's angle
-	x := p.Object.Position.X + (p.Speed * math.Cos(p.angle))
-	y := p.Object.Position.Y + (p.Speed * math.Sin(p.angle))
+	pos := p.Object.Position()
+	x := pos.X + (p.Speed * math.Cos(p.angle))
+	y := pos.Y + (p.Speed * math.Sin(p.angle))
 
 	return x, y
 }

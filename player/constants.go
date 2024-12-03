@@ -2,8 +2,8 @@ package player
 
 const (
 	// Player dimensions
-	playerWidth  = 32
-	playerHeight = 32
+	playerWidth  = 32.0
+	playerHeight = 32.0
 
 	// Movement constants
 	radius    = 100.0
