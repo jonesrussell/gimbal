@@ -6,10 +6,7 @@ import "github.com/hajimehoshi/ebiten/v2"
 type GameState int
 
 const (
-	StateTitle GameState = iota
-	StatePlaying
-	StatePaused
-	StateGameOver
+	StatePlaying GameState = iota
 )
 
 // Debug controls global debug state
