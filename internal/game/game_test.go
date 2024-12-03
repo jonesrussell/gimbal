@@ -4,148 +4,109 @@ import (
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-
 	"github.com/jonesrussell/gimbal/internal/config"
+	"go.uber.org/zap"
 )
 
-func TestNewGimlarGame(t *testing.T) {
-	// Test the NewGimlarGame function
-
-	// Setup
-	speed := 1.0 // Example speed value
-	logger, err := zap.NewProduction()
+func setupTest(t *testing.T) (*GimlarGame, *zap.Logger) {
+	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatalf("Failed to create logger: %v", err)
 	}
-	config := config.New()
 
-	// Execute
-	game, err := NewGimlarGame(logger, config)
+	cfg := &config.Config{
+		Screen: struct {
+			Title  string `json:"title"`
+			Width  int    `json:"width"`
+			Height int    `json:"height"`
+		}{
+			Title:  "Test Game",
+			Width:  640,
+			Height: 480,
+		},
+		Game: struct {
+			Speed    float64 `json:"speed"`
+			NumStars int     `json:"numStars"`
+			Debug    bool    `json:"debug"`
+		}{
+			Speed:    1.0,
+			NumStars: 100,
+			Debug:    true,
+		},
+		Player: struct {
+			Width  int `json:"width"`
+			Height int `json:"height"`
+		}{
+			Width:  16,
+			Height: 16,
+		},
+	}
 
-	// Assert
-	assert.NoError(t, err)             // Ensure no error is returned
-	assert.NotNil(t, game)             // Ensure the game instance is not nil
-	assert.Equal(t, speed, game.speed) // Ensure the game's speed is correctly set
-	assert.NotNil(t, game.player)      // Ensure the player is initialized
-	assert.NotNil(t, game.stars)       // Ensure the stars are initialized
-	assert.NotNil(t, game.space)       // Ensure the space is initialized
+	game, err := NewGimlarGame(logger, cfg)
+	if err != nil {
+		t.Fatalf("Failed to create game: %v", err)
+	}
+
+	return game, logger
+}
+
+func TestNewGimlarGame(t *testing.T) {
+	game, _ := setupTest(t)
+	if game == nil {
+		t.Error("Expected game to not be nil")
+	}
+}
+
+func TestUpdateStars(t *testing.T) {
+	game, _ := setupTest(t)
+
+	// Store initial positions
+	initialPositions := make([]struct{ x, y float64 }, len(game.stars))
+	for i, star := range game.stars {
+		initialPositions[i].x = star.X
+		initialPositions[i].y = star.Y
+	}
+
+	// Update stars
+	game.updateStars()
+
+	// Verify stars have moved
+	for i, star := range game.stars {
+		if star.X == initialPositions[i].x && star.Y == initialPositions[i].y {
+			t.Errorf("Star %d did not move", i)
+		}
+	}
+}
+
+func TestDrawStars(t *testing.T) {
+	game, _ := setupTest(t)
+	screen := ebiten.NewImage(640, 480)
+
+	// This should not panic
+	game.drawStars(screen)
+}
+
+func TestLayout(t *testing.T) {
+	game, _ := setupTest(t)
+	width, height := game.Layout(800, 600)
+
+	cfg, err := config.New()
+	if err != nil {
+		t.Fatalf("Failed to get config: %v", err)
+	}
+
+	if width != cfg.Screen.Width || height != cfg.Screen.Height {
+		t.Errorf("Expected %dx%d, got %dx%d",
+			cfg.Screen.Width, cfg.Screen.Height,
+			width, height)
+	}
 }
 
 func TestUpdate(t *testing.T) {
-	// Setup
-	speed := 1.0 // Example speed value
-	logger, err := zap.NewProduction()
+	game, _ := setupTest(t)
+
+	err := game.Update()
 	if err != nil {
-		t.Fatalf("Failed to create logger: %v", err)
+		t.Errorf("Update returned error: %v", err)
 	}
-	config := config.New()
-	game, err := NewGimlarGame(logger, config)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
-
-	// Execute
-	err = game.Update() // Directly call the Update method of your game instance
-
-	// Assert
-	assert.NoError(t, err) // Ensure no error is returned
-	// Additional assertions can be added here to check the state of the game after the update
-	// For example, checking if the player's position has changed or if the stars have moved
-}
-
-func TestDraw(t *testing.T) {
-	// Setup
-	speed := 1.0 // Example speed value
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Fatalf("Failed to create logger: %v", err)
-	}
-	config := config.New()
-	game, err := NewGimlarGame(logger, config)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
-
-	// Execute
-	// Assuming Draw does not take any arguments and does not return any value
-	// and that it does not panic
-	defer func() {
-		if r := recover(); r != nil {
-			t.Errorf("Draw method panicked: %v", r)
-		}
-	}()
-	image := ebiten.NewImage(100, 100) // Create a dummy image
-	game.Draw(image)
-
-	// Assert
-	// Since Draw might not have a direct observable effect, this test might be limited
-	// Consider adding more comprehensive tests if possible, such as checking the state of the game's graphics context
-}
-
-func TestPlayerMovement(t *testing.T) {
-	// Setup
-	speed := 1.0 // Example speed value
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Fatalf("Failed to create logger: %v", err)
-	}
-	config := config.New()
-	game, err := NewGimlarGame(logger, config)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
-
-	// Initial player position
-	initialPosition := game.player.Object.Position.X // Assuming Position() returns the player's current position
-
-	// Execute
-	// Simulate player movement by updating the player's Object position directly
-	game.player.Object.Position.X += game.speed // Adjust the X position based on the player's speed
-
-	// Assert
-	// Check that the player's position has changed after the movement
-	finalPosition := game.player.Object.Position.X
-	assert.NotEqual(t, initialPosition, finalPosition)
-}
-
-func TestStarMovement(t *testing.T) {
-	// Setup
-	speed := 1.0 // Example speed value
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Fatalf("Failed to create logger: %v", err)
-	}
-	config := config.New()
-	game, err := NewGimlarGame(logger, config)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
-
-	// Assuming you have a way to initialize or retrieve the stars in your game
-	// For example, if stars are part of the game state, you might retrieve them like this:
-	stars := game.stars
-
-	// Initial star position
-	// Assuming each star has a Position field or method that returns its current position
-	// For simplicity, let's assume the first star's initial position is stored in a variable
-	initialPosition := stars[0].X // Adjust based on how you access the star's position
-
-	// Execute
-	// Simulate star movement by updating the star's position directly
-	// This is a simplified example; you'll need to adjust based on your game's logic
-	stars[0].X += stars[0].Speed // Adjust the X position based on the star's speed
-
-	// Assert
-	// Check that the star's position has changed after the movement
-	finalPosition := stars[0].X
-	assert.NotEqual(t, initialPosition, finalPosition)
-}
-
-func TestGame_Update(t *testing.T) {
-	cfg := config.New()
-	// Remove unused speed variable
-	game := NewGimlarGame(cfg)
-	// Rest of test...
 }

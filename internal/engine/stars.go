@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 
@@ -15,44 +16,50 @@ type Star struct {
 	Image                    *ebiten.Image
 }
 
-func init() {
-	cfg := config.New()
-	screenWidth := cfg.Screen.Width
-	screenHeight := cfg.Screen.Height
-	// ... other config.Get() calls
-}
+// Remove init() function since it's not needed and variables are unused
 
-func initializeStars(numStars int, starImage *ebiten.Image) []Star {
+func initializeStars(numStars int, starImage *ebiten.Image) ([]Star, error) {
+	cfg, err := config.New()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize stars: %w", err)
+	}
+
 	stars := make([]Star, numStars)
 	for i := range stars {
 		stars[i] = Star{
-			X:     float64(config.New().Screen.Width) / 2,
-			Y:     float64(config.New().Screen.Height) / 2,
+			X:     float64(cfg.Screen.Width) / 2,
+			Y:     float64(cfg.Screen.Height) / 2,
 			Size:  rand.Float64()*5 + 1,
 			Angle: rand.Float64() * 2 * math.Pi,
 			Speed: rand.Float64() * 2,
 			Image: starImage,
 		}
 	}
-	return stars
+	return stars, nil
 }
 
-func (g *Game) updateStars() {
+func (g *Game) updateStars() error {
+	cfg, err := config.New()
+	if err != nil {
+		return fmt.Errorf("failed to update stars: %w", err)
+	}
+
 	for i := range g.stars {
 		// Update star position based on its angle and speed
 		g.stars[i].X += g.stars[i].Speed * math.Cos(g.stars[i].Angle)
 		g.stars[i].Y += g.stars[i].Speed * math.Sin(g.stars[i].Angle)
 
 		// If star goes off screen, reset it to the center
-		if g.stars[i].X < 0 || g.stars[i].X > float64(config.New().Screen.Width) ||
-			g.stars[i].Y < 0 || g.stars[i].Y > float64(config.New().Screen.Height) {
-			g.stars[i].X = float64(config.New().Screen.Width) / 2
-			g.stars[i].Y = float64(config.New().Screen.Height) / 2
+		if g.stars[i].X < 0 || g.stars[i].X > float64(cfg.Screen.Width) ||
+			g.stars[i].Y < 0 || g.stars[i].Y > float64(cfg.Screen.Height) {
+			g.stars[i].X = float64(cfg.Screen.Width) / 2
+			g.stars[i].Y = float64(cfg.Screen.Height) / 2
 			g.stars[i].Size = rand.Float64() * 5
 			g.stars[i].Angle = rand.Float64() * 2 * math.Pi
 			g.stars[i].Speed = rand.Float64() * 2
 		}
 	}
+	return nil
 }
 
 func (g *Game) drawStars(screen *ebiten.Image) {

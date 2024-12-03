@@ -1,11 +1,13 @@
 {
     "screen": {
         "width": 800,
-        "height": 600,
-        "title": "Gimbal"
+        "height": 600
     },
     "game": {
-        "numStars": 100,
-        "debug": true
+        "speed": 5.0
+    },
+    "player": {
+        "width": 32,
+        "height": 32
     }
 } 

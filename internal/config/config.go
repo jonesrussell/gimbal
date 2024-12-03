@@ -8,18 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type Config struct {
-	Screen struct {
-		Width  int    `json:"width"`
-		Height int    `json:"height"`
-		Title  string `json:"title"`
-	} `json:"screen"`
-	Game struct {
-		NumStars int  `json:"numStars"`
-		Debug    bool `json:"debug"`
-	} `json:"game"`
-}
-
 var (
 	config *Config
 	logger *zap.Logger
@@ -53,13 +41,22 @@ func Load(env string) (*Config, error) {
 	return config, nil
 }
 
-func New() *Config {
+func New() (*Config, error) {
+	if logger == nil {
+		logConfig := zap.NewDevelopmentConfig()
+		log, err := logConfig.Build()
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize logger: %w", err)
+		}
+		logger = log
+	}
+
 	if config == nil {
 		var err error
 		config, err = Load("development") // Default to development
 		if err != nil {
-			logger.Fatal("Failed to load config", zap.Error(err))
+			return nil, fmt.Errorf("failed to load config: %w", err)
 		}
 	}
-	return config
+	return config, nil
 }

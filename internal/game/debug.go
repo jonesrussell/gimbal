@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/jonesrussell/gimbal/internal/config"
 )
 
 const (
@@ -21,15 +22,21 @@ func DebugPrintStar(star Star) {
 }
 
 // DrawDebugGridOverlay draws a grid overlay for debugging purposes.
-func DrawDebugGridOverlay(screen *ebiten.Image) {
+func DrawDebugGridOverlay(screen *ebiten.Image) error {
 	if Debug {
-		for i := 0; i < screenWidth; i += debugGridSpacing {
-			vector.StrokeLine(screen, float32(i), 0, float32(i), float32(screenHeight), 1, color.White, false)
+		cfg, err := config.New()
+		if err != nil {
+			return fmt.Errorf("failed to get config for debug grid: %w", err)
 		}
-		for i := 0; i < screenHeight; i += debugGridSpacing {
-			vector.StrokeLine(screen, 0, float32(i), float32(screenWidth), float32(i), 1, color.White, false)
+
+		for i := 0; i < cfg.Screen.Width; i += debugGridSpacing {
+			vector.StrokeLine(screen, float32(i), 0, float32(i), float32(cfg.Screen.Height), 1, color.White, false)
+		}
+		for i := 0; i < cfg.Screen.Height; i += debugGridSpacing {
+			vector.StrokeLine(screen, 0, float32(i), float32(cfg.Screen.Width), float32(i), 1, color.White, false)
 		}
 	}
+	return nil
 }
 
 func (g *GimlarGame) DrawDebugInfo(screen *ebiten.Image) {
@@ -40,12 +47,18 @@ func (g *GimlarGame) DrawDebugInfo(screen *ebiten.Image) {
 	g.DrawDebugGrid(screen)
 }
 
-func (g *GimlarGame) DrawDebugGrid(screen *ebiten.Image) {
+func (g *GimlarGame) DrawDebugGrid(screen *ebiten.Image) error {
+	cfg, err := config.New()
+	if err != nil {
+		return fmt.Errorf("failed to get config for debug grid: %w", err)
+	}
+
 	// Draw grid overlay
-	for i := 0; i < screenWidth; i += debugGridSpacing {
-		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(screenHeight), 1, color.White, false)
+	for i := 0; i < cfg.Screen.Width; i += debugGridSpacing {
+		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(cfg.Screen.Height), 1, color.White, false)
 	}
-	for i := 0; i < screenHeight; i += debugGridSpacing {
-		vector.StrokeLine(screen, 0, float32(i), float32(screenWidth), float32(i), 1, color.White, false)
+	for i := 0; i < cfg.Screen.Height; i += debugGridSpacing {
+		vector.StrokeLine(screen, 0, float32(i), float32(cfg.Screen.Width), float32(i), 1, color.White, false)
 	}
+	return nil
 }

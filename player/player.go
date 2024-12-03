@@ -30,6 +30,10 @@ type PlayerPath struct {
 	path []resolv.Vector
 }
 
+type Position struct {
+	X, Y float64
+}
+
 type Player struct {
 	PlayerInput
 	PlayerPosition
@@ -38,12 +42,14 @@ type Player struct {
 	viewAngle   float64
 	direction   float64
 	angle       float64
+	Speed       float64
 	gameStarted bool
+	center      image.Point
 }
 
 // NewPlayer creates a new instance of a player with the given input handler, speed, and sprite image.
 // If any of the arguments are nil, an error is returned.
-func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Image) (*Player, error) {
+func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Image, screenCenter image.Point) (*Player, error) {
 	if input == nil {
 		return nil, errors.New("input handler cannot be nil")
 	}
@@ -59,9 +65,9 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 	// calculate the initial angle of the player (270 degrees)
 	initialAngle := math.Pi * 1.5 // 270 degrees or bottom of the screen
 
-	// calculate the initial X and Y positions of the player based on the center point and the initial angle
-	initialX := float64(center.X) + radius*math.Cos(initialAngle)
-	initialY := float64(center.Y) - radius*math.Sin(initialAngle) - float64(playerHeight)/2
+	// calculate the initial X and Y positions using the provided center
+	initialX := float64(screenCenter.X) + radius*(-1.0)
+	initialY := float64(screenCenter.Y) + radius
 
 	// create a new instance of a player with the given input handler, initial position, and sprite image
 	player := &Player{
@@ -76,6 +82,8 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 		},
 		PlayerPath: PlayerPath{},
 		viewAngle:  initialAngle,
+		Speed:      speed,
+		center:     screenCenter,
 	}
 
 	return player, nil
@@ -220,14 +228,6 @@ func (player *Player) getRotatedSprite() *ebiten.Image {
 	).(*ebiten.Image)
 }
 
-// calculatePosition calculates the new position based on the current viewAngle
-func (player *Player) calculatePosition() resolv.Vector {
-	return resolv.Vector{
-		X: center.X + radius*math.Cos(player.viewAngle),
-		Y: center.Y - radius*math.Sin(player.viewAngle),
-	}
-}
-
 // calculateAngle calculates the rotation angle for the player sprite
 func (player *Player) calculateAngle() float64 {
 	return player.viewAngle - math.Pi/2
@@ -235,6 +235,22 @@ func (player *Player) calculateAngle() float64 {
 
 // Add this method if it's needed
 func (p *Player) calculateCoordinates() (float64, float64) {
-	// Implementation here
-	return 0, 0 // Replace with actual calculation
+	// Use the Object's position and player's angle
+	x := p.Object.Position.X + (p.Speed * math.Cos(p.angle))
+	y := p.Object.Position.Y + (p.Speed * math.Sin(p.angle))
+
+	return x, y
+}
+
+func (p *Player) calculatePosition() resolv.Vector {
+	x, y := p.calculateCoordinates()
+
+	// Add boundary checks using the screen dimensions
+	screenWidth := float64(p.center.X * 2)  // Assuming center is half the screen width
+	screenHeight := float64(p.center.Y * 2) // Assuming center is half the screen height
+
+	x = math.Max(0, math.Min(x, screenWidth))
+	y = math.Max(0, math.Min(y, screenHeight))
+
+	return resolv.Vector{X: x, Y: y}
 }
