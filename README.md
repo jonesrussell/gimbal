@@ -38,11 +38,16 @@ Follow these steps to set up the project on your local machine:
     go install github.com/go-task/task/v3/cmd/task@latest
     ```
 
-3. **Clone the Repository**
+3. **Install Required Dependencies (Ubuntu/Debian)**
+    ```bash
+    sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libxxf86vm-dev
+    ```
+
+4. **Clone the Repository**
     - Navigate to the directory where you want to clone the repository
     - Run `git clone https://github.com/jonesrussell/gimbal.git` to clone the repository
 
-4. **Install Dependencies**
+5. **Install Dependencies**
     - Navigate to the cloned repository's directory
     - Run `go mod download` to download the necessary Go modules
 
