@@ -17,6 +17,7 @@ type Game struct {
 	gameState GameEngine
 	stars     []Star
 	state     GameState
+	player    *Player
 }
 
 // NewGame creates a new game instance with dependencies
@@ -44,6 +45,11 @@ func NewGame(logger *zap.Logger, config *config.Config, gameState GameEngine) (*
 		state:     StatePlaying,
 	}
 
+	// Initialize player
+	playerImage := ebiten.NewImage(20, 20)
+	playerImage.Fill(color.RGBA{R: 0, G: 255, B: 0, A: 255}) // Green player
+	g.player = NewPlayer(playerImage, float64(g.config.Screen.Width/2), float64(g.config.Screen.Height/2))
+
 	// Initialize stars
 	starImage := ebiten.NewImage(1, 1)
 	starImage.Fill(color.White)
@@ -62,12 +68,14 @@ func NewGame(logger *zap.Logger, config *config.Config, gameState GameEngine) (*
 // Update handles game logic per frame
 func (g *Game) Update() error {
 	g.updateStars()
+	g.player.Update()
 	return g.gameState.Update()
 }
 
 // Draw handles rendering
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawStars(screen)
+	g.player.Draw(screen)
 	g.gameState.Draw(screen)
 }
 
