@@ -20,7 +20,6 @@ func setupTest(t *testing.T) (*GimlarGame, *zap.Logger) {
 			Width  int    `json:"width"`
 			Height int    `json:"height"`
 		}{
-			Title:  "Test Game",
 			Width:  640,
 			Height: 480,
 		},
@@ -29,16 +28,7 @@ func setupTest(t *testing.T) (*GimlarGame, *zap.Logger) {
 			NumStars int     `json:"numStars"`
 			Debug    bool    `json:"debug"`
 		}{
-			Speed:    1.0,
-			NumStars: 100,
-			Debug:    true,
-		},
-		Player: struct {
-			Width  int `json:"width"`
-			Height int `json:"height"`
-		}{
-			Width:  16,
-			Height: 16,
+			Debug: true,
 		},
 	}
 
@@ -61,14 +51,9 @@ func TestLayout(t *testing.T) {
 	game, _ := setupTest(t)
 	width, height := game.Layout(800, 600)
 
-	cfg, err := config.New()
-	if err != nil {
-		t.Fatalf("Failed to get config: %v", err)
-	}
-
-	if width != cfg.Screen.Width || height != cfg.Screen.Height {
+	if width != game.config.Screen.Width || height != game.config.Screen.Height {
 		t.Errorf("Expected %dx%d, got %dx%d",
-			cfg.Screen.Width, cfg.Screen.Height,
+			game.config.Screen.Width, game.config.Screen.Height,
 			width, height)
 	}
 }

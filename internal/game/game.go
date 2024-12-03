@@ -11,8 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var Debug bool
-
 type GimlarGame struct {
 	player *player.Player
 	speed  float64
@@ -39,7 +37,7 @@ func NewGimlarGame(logger *zap.Logger, cfg *config.Config) (*GimlarGame, error) 
 		zap.Int("screen_height", cfg.Screen.Height))
 
 	// Set Debug based on environment variable or config
-	Debug = cfg.Game.Debug
+	engine.Debug = cfg.Game.Debug
 
 	g := &GimlarGame{
 		player: &player.Player{},

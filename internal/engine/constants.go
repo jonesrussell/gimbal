@@ -12,6 +12,9 @@ const (
 	StateGameOver
 )
 
+// Debug controls global debug state
+var Debug bool
+
 // GameEngine represents the core game interface
 type GameEngine interface {
 	Update() error

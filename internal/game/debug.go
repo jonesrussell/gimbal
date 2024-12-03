@@ -17,14 +17,14 @@ const (
 
 // DebugPrintStar prints the debug information for a star.
 func DebugPrintStar(star engine.Star) {
-	if Debug {
+	if engine.Debug {
 		fmt.Printf("Star: X=%.2f, Y=%.2f, Size=%.2f\n", star.X, star.Y, star.Size)
 	}
 }
 
 // DrawDebugGridOverlay draws a grid overlay for debugging purposes.
 func DrawDebugGridOverlay(screen *ebiten.Image) error {
-	if Debug {
+	if engine.Debug {
 		cfg, err := config.New()
 		if err != nil {
 			return fmt.Errorf("failed to get config for debug grid: %w", err)
