@@ -31,11 +31,14 @@ func NewGame(logger *zap.Logger, config *config.Config, gameState GameEngine) (*
 	// Initialize stars
 	starImage := ebiten.NewImage(1, 1)
 	starImage.Fill(color.White)
-	stars, err := initializeStars(100, starImage) // Adjust number as needed
+	stars, err := initializeStars(g.config.Game.NumStars, starImage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize stars: %w", err)
 	}
 	g.stars = stars
+
+	logger.Debug("Initialized stars",
+		zap.Int("numStars", g.config.Game.NumStars))
 
 	return g, nil
 }

@@ -39,21 +39,16 @@ func initializeStars(numStars int, starImage *ebiten.Image) ([]Star, error) {
 }
 
 func (g *Game) updateStars() error {
-	cfg, err := config.New()
-	if err != nil {
-		return fmt.Errorf("failed to update stars: %w", err)
-	}
-
 	for i := range g.stars {
 		// Update star position based on its angle and speed
 		g.stars[i].X += g.stars[i].Speed * math.Cos(g.stars[i].Angle)
 		g.stars[i].Y += g.stars[i].Speed * math.Sin(g.stars[i].Angle)
 
 		// If star goes off screen, reset it to the center
-		if g.stars[i].X < 0 || g.stars[i].X > float64(cfg.Screen.Width) ||
-			g.stars[i].Y < 0 || g.stars[i].Y > float64(cfg.Screen.Height) {
-			g.stars[i].X = float64(cfg.Screen.Width) / 2
-			g.stars[i].Y = float64(cfg.Screen.Height) / 2
+		if g.stars[i].X < 0 || g.stars[i].X > float64(g.config.Screen.Width) ||
+			g.stars[i].Y < 0 || g.stars[i].Y > float64(g.config.Screen.Height) {
+			g.stars[i].X = float64(g.config.Screen.Width) / 2
+			g.stars[i].Y = float64(g.config.Screen.Height) / 2
 			g.stars[i].Size = rand.Float64() * 5
 			g.stars[i].Angle = rand.Float64() * 2 * math.Pi
 			g.stars[i].Speed = rand.Float64() * 2
