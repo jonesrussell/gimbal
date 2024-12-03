@@ -6,7 +6,7 @@ type MockImage struct {
 	drawn bool
 }
 
-func (mi *MockImage) DrawImage(image *ebiten.Image, options *ebiten.DrawImageOptions) {
+func (mi *MockImage) DrawImage(_ *ebiten.Image, _ *ebiten.DrawImageOptions) {
 	mi.drawn = true
 }
 

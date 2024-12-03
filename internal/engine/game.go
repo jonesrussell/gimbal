@@ -73,7 +73,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 // Layout returns the game's screen dimensions
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return g.config.Screen.Width, g.config.Screen.Height
+	return outsideWidth, outsideHeight
 }
 
 // Run starts the game loop
