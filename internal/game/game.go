@@ -24,12 +24,13 @@ type GimlarGame struct {
 // GimlarGame should implement engine.GameEngine
 var _ engine.GameEngine = (*GimlarGame)(nil)
 
+// NewGimlarGame creates a new game instance
 func NewGimlarGame(logger *zap.Logger, cfg *config.Config) (*GimlarGame, error) {
-	if logger == nil {
-		return nil, fmt.Errorf("logger is nil")
-	}
-	if cfg == nil {
-		return nil, fmt.Errorf("config is nil")
+	switch {
+	case logger == nil:
+		return nil, fmt.Errorf("logger is required")
+	case cfg == nil:
+		return nil, fmt.Errorf("config is required")
 	}
 
 	logger.Info("NewGimlarGame called with config",
@@ -55,18 +56,12 @@ func NewGimlarGame(logger *zap.Logger, cfg *config.Config) (*GimlarGame, error) 
 
 // Update implements engine.GameEngine
 func (g *GimlarGame) Update() error {
-	if g.logger == nil {
-		return fmt.Errorf("logger is nil in Update()")
-	}
 	g.logger.Debug("Update frame")
 	return nil
 }
 
 // Draw implements engine.GameEngine
 func (g *GimlarGame) Draw(screen *ebiten.Image) {
-	if g.logger == nil {
-		panic("logger is nil in Draw()")
-	}
 	if screen == nil {
 		g.logger.Error("Draw called with nil screen")
 		return
@@ -81,12 +76,11 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 }
 
 func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
-	if g.logger != nil {
-		g.logger.Debug("Layout called",
-			zap.Int("outsideWidth", outsideWidth),
-			zap.Int("outsideHeight", outsideHeight),
-			zap.Int("returnWidth", g.config.Screen.Width),
-			zap.Int("returnHeight", g.config.Screen.Height))
-	}
+	g.logger.Debug("Layout called",
+		zap.Int("outsideWidth", outsideWidth),
+		zap.Int("outsideHeight", outsideHeight),
+		zap.Int("returnWidth", g.config.Screen.Width),
+		zap.Int("returnHeight", g.config.Screen.Height))
+
 	return g.config.Screen.Width, g.config.Screen.Height
 }

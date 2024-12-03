@@ -26,10 +26,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Provide config
-	if err := container.Provide(func(logger *zap.Logger) (*config.Config, error) {
-		config.Init(logger)
-		return config.Load("development")
+	// Provide config manager
+	if err := container.Provide(func(logger *zap.Logger) (*config.Manager, error) {
+		env := os.Getenv("ENV")
+		if env == "" {
+			env = "development"
+		}
+		manager, err := config.NewManager(logger, env)
+		if err != nil {
+			return nil, err
+		}
+		if err := manager.Load(); err != nil {
+			return nil, err
+		}
+		return manager, nil
+	}); err != nil {
+		fmt.Printf("Failed to provide config manager: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Provide config for backward compatibility
+	if err := container.Provide(func(manager *config.Manager) *config.Config {
+		return manager.Get()
 	}); err != nil {
 		fmt.Printf("Failed to provide config: %v\n", err)
 		os.Exit(1)

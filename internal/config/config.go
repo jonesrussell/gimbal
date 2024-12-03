@@ -8,55 +8,72 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	config *Config
+// Manager handles configuration loading and management
+type Manager struct {
 	logger *zap.Logger
-)
-
-func Init(l *zap.Logger) {
-	logger = l
+	config *Config
+	env    string
 }
 
-func Load(env string) (*Config, error) {
-	if config != nil {
-		return config, nil
+// NewManager creates a new configuration manager
+func NewManager(logger *zap.Logger, env string) (*Manager, error) {
+	if logger == nil {
+		return nil, fmt.Errorf("logger is required")
 	}
 
-	configPath := fmt.Sprintf("internal/config/config.%s.json", env)
+	if env == "" {
+		env = "development" // Default environment
+	}
+
+	return &Manager{
+		logger: logger,
+		env:    env,
+	}, nil
+}
+
+// Load reads and parses the configuration file
+func (m *Manager) Load() error {
+	configPath := fmt.Sprintf("internal/config/config.%s.json", m.env)
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("reading config file: %w", err)
+		return fmt.Errorf("reading config file: %w", err)
 	}
 
-	config = &Config{}
+	config := &Config{}
 	if err := json.Unmarshal(data, config); err != nil {
-		return nil, fmt.Errorf("parsing config file: %w", err)
+		return fmt.Errorf("parsing config file: %w", err)
 	}
 
-	logger.Info("Configuration loaded",
-		zap.String("environment", env),
+	m.config = config
+	m.logger.Info("Configuration loaded",
+		zap.String("environment", m.env),
 		zap.Int("screen.width", config.Screen.Width),
 		zap.Int("screen.height", config.Screen.Height))
 
-	return config, nil
+	return nil
 }
 
+// Get returns the current configuration
+func (m *Manager) Get() *Config {
+	return m.config
+}
+
+// For backward compatibility during transition
 func New() (*Config, error) {
-	if logger == nil {
-		logConfig := zap.NewDevelopmentConfig()
-		log, err := logConfig.Build()
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize logger: %w", err)
-		}
-		logger = log
+	logConfig := zap.NewDevelopmentConfig()
+	logger, err := logConfig.Build()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize logger: %w", err)
 	}
 
-	if config == nil {
-		var err error
-		config, err = Load("development") // Default to development
-		if err != nil {
-			return nil, fmt.Errorf("failed to load config: %w", err)
-		}
+	manager, err := NewManager(logger, "development")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create config manager: %w", err)
 	}
-	return config, nil
+
+	if err := manager.Load(); err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	return manager.Get(), nil
 }
