@@ -10,7 +10,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-	"github.com/jonesrussell/gimbal/logger"
 	"github.com/solarlune/resolv"
 )
 
@@ -58,84 +57,43 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 		return nil, errors.New("speed must be greater than zero")
 	}
 
-	if spriteImage == nil {
-		return nil, errors.New("sprite image cannot be nil")
-	}
-
-	// calculate the initial angle of the player (270 degrees)
-	initialAngle := math.Pi * 1.5 // 270 degrees or bottom of the screen
-
-	// calculate the initial X and Y positions using the provided center
-	initialX := float64(screenCenter.X) + radius*(-1.0)
-	initialY := float64(screenCenter.Y) + radius
-
-	// Create a rectangular polygon for collision
-	playerShape := resolv.NewRectangle(
-		float64(initialX),
-		float64(initialY),
-		float64(playerWidth),
-		float64(playerHeight),
-	)
-
-	// create a new instance of a player with the given input handler, initial position, and sprite image
+	playerImage := ebiten.NewImageFromImage(spriteImage)
 	player := &Player{
-		PlayerInput: PlayerInput{
-			input: input,
-		},
+		PlayerInput: PlayerInput{input: input},
 		PlayerPosition: PlayerPosition{
-			Object: playerShape,
+			Object: resolv.NewConvexPolygon(
+				float64(screenCenter.X),
+				float64(screenCenter.Y),
+				[]float64{
+					-16, -16,
+					16, -16,
+					16, 16,
+					-16, 16,
+				},
+			),
 		},
-		PlayerSprite: PlayerSprite{
-			Sprite: ebiten.NewImageFromImage(spriteImage),
-		},
-		PlayerPath: PlayerPath{},
-		viewAngle:  initialAngle,
-		Speed:      speed,
-		center:     screenCenter,
+		PlayerSprite: PlayerSprite{Sprite: playerImage},
+		Speed:        speed,
+		center:       screenCenter,
 	}
 
 	return player, nil
 }
 
-func (player *Player) Update() {
-	if !player.gameStarted {
-		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", player.Object.Position().X, "Y", player.Object.Position().Y)
-		player.gameStarted = true
+func (p *Player) Update() {
+	// Update the player's angle based on input
+	if p.input.IsKeyPressed(ebiten.KeyLeft) {
+		p.angle -= 0.05
+	}
+	if p.input.IsKeyPressed(ebiten.KeyRight) {
+		p.angle += 0.05
 	}
 
-	oldOrientation := player.viewAngle
-	oldDirection := player.direction
-	oldAngle := player.angle
-	oldPosition := player.Object.Position()
-
-	if player.input.IsKeyPressed(ebiten.KeyLeft) {
-		player.direction = -1
-		player.viewAngle -= AngleStep
-	} else if player.input.IsKeyPressed(ebiten.KeyRight) {
-		player.direction = 1
-		player.viewAngle += AngleStep
-	} else {
-		player.direction = 0
-	}
-
-	position := player.calculatePosition()
-	logger.GlobalLogger.Info("position", "full", position)
-
-	// Update the polygon's position
-	player.Object.SetPosition(position.X, position.Y)
-
-	player.angle = player.calculateAngle()
-
-	newPosition := player.Object.Position()
-	if player.viewAngle != oldOrientation || player.direction != oldDirection || player.angle != oldAngle || newPosition != oldPosition {
-		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", newPosition.X, "Y", newPosition.Y)
-	}
-
-	// Add the current position to the path
-	player.path = append(player.path, newPosition)
-
-	// Remove the call to Update, as ConvexPolygon does not have an Update method
-	// player.Object.Update()
+	// Calculate new position based on angle
+	p.PlayerPosition.Object.SetPosition(
+		float64(p.center.X)+math.Cos(p.angle)*radius,
+		float64(p.center.Y)+math.Sin(p.angle)*radius,
+	)
 }
 
 var prevRectX, prevRectY float64

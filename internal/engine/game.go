@@ -2,12 +2,16 @@ package engine
 
 import (
 	"fmt"
+	"image"
 	"image/color"
+	_ "image/png"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"go.uber.org/zap"
 
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/player"
 )
 
 // Game represents the main game engine
@@ -17,7 +21,7 @@ type Game struct {
 	gameState GameEngine
 	stars     []Star
 	state     GameState
-	player    *Player
+	player    *player.Player
 }
 
 // NewGame creates a new game instance with dependencies
@@ -45,10 +49,19 @@ func NewGame(logger *zap.Logger, config *config.Config, gameState GameEngine) (*
 		state:     StatePlaying,
 	}
 
-	// Initialize player
-	playerImage := ebiten.NewImage(20, 20)
-	playerImage.Fill(color.RGBA{R: 0, G: 255, B: 0, A: 255}) // Green player
-	g.player = NewPlayer(playerImage, float64(g.config.Screen.Width/2), float64(g.config.Screen.Height/2))
+	// Initialize player with proper circular movement
+	center := image.Point{X: g.config.Screen.Width / 2, Y: g.config.Screen.Height / 2}
+	inputHandler := player.NewInputHandler()
+	playerSprite, err := loadPlayerSprite()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load player sprite: %w", err)
+	}
+
+	p, err := player.NewPlayer(inputHandler, g.config.Game.Speed, playerSprite, center)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create player: %w", err)
+	}
+	g.player = p
 
 	// Initialize stars
 	starImage := ebiten.NewImage(1, 1)
@@ -90,4 +103,21 @@ func (g *Game) Run() error {
 	ebiten.SetWindowTitle(g.config.Screen.Title)
 
 	return ebiten.RunGame(g)
+}
+
+func loadPlayerSprite() (image.Image, error) {
+	// Open the sprite file from the assets directory
+	f, err := os.Open("assets/images/player.png")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open player sprite: %w", err)
+	}
+	defer f.Close()
+
+	// Decode the image
+	img, _, err := image.Decode(f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode player sprite: %w", err)
+	}
+
+	return img, nil
 }
