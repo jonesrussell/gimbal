@@ -14,18 +14,34 @@ import (
 type Game struct {
 	logger    *zap.Logger
 	config    *config.Config
-	gameState GameEngine // Interface for game state
+	gameState GameEngine
 	stars     []Star
 	state     GameState
 }
 
 // NewGame creates a new game instance with dependencies
 func NewGame(logger *zap.Logger, config *config.Config, gameState GameEngine) (*Game, error) {
+	if logger == nil {
+		return nil, fmt.Errorf("logger is required")
+	}
+	if config == nil {
+		return nil, fmt.Errorf("config is required")
+	}
+	if gameState == nil {
+		return nil, fmt.Errorf("gameState is required")
+	}
+
+	// Set global debug flag
+	Debug = config.Game.Debug
+
+	logger.Debug("Debug mode",
+		zap.Bool("enabled", Debug))
+
 	g := &Game{
 		logger:    logger,
 		config:    config,
 		gameState: gameState,
-		state:     StatePlaying, // Or StateTitle if you want to start with a title screen
+		state:     StatePlaying,
 	}
 
 	// Initialize stars
