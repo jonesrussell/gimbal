@@ -4,7 +4,8 @@
         "height": 600
     },
     "game": {
-        "speed": 5.0
+        "speed": 5.0,
+        "debug": true
     },
     "player": {
         "width": 32,

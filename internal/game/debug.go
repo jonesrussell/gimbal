@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/engine"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 // DebugPrintStar prints the debug information for a star.
-func DebugPrintStar(star Star) {
+func DebugPrintStar(star engine.Star) {
 	if Debug {
 		fmt.Printf("Star: X=%.2f, Y=%.2f, Size=%.2f\n", star.X, star.Y, star.Size)
 	}

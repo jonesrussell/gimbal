@@ -57,35 +57,6 @@ func TestNewGimlarGame(t *testing.T) {
 	}
 }
 
-func TestUpdateStars(t *testing.T) {
-	game, _ := setupTest(t)
-
-	// Store initial positions
-	initialPositions := make([]struct{ x, y float64 }, len(game.stars))
-	for i, star := range game.stars {
-		initialPositions[i].x = star.X
-		initialPositions[i].y = star.Y
-	}
-
-	// Update stars
-	game.updateStars()
-
-	// Verify stars have moved
-	for i, star := range game.stars {
-		if star.X == initialPositions[i].x && star.Y == initialPositions[i].y {
-			t.Errorf("Star %d did not move", i)
-		}
-	}
-}
-
-func TestDrawStars(t *testing.T) {
-	game, _ := setupTest(t)
-	screen := ebiten.NewImage(640, 480)
-
-	// This should not panic
-	game.drawStars(screen)
-}
-
 func TestLayout(t *testing.T) {
 	game, _ := setupTest(t)
 	width, height := game.Layout(800, 600)
@@ -109,4 +80,12 @@ func TestUpdate(t *testing.T) {
 	if err != nil {
 		t.Errorf("Update returned error: %v", err)
 	}
+}
+
+func TestDraw(t *testing.T) {
+	game, _ := setupTest(t)
+	screen := ebiten.NewImage(640, 480)
+
+	// This should not panic
+	game.Draw(screen)
 }
