@@ -9,6 +9,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/solarlune/resolv"
 )
@@ -94,11 +95,11 @@ func (p *Player) Update() {
 	newY := float64(p.center.Y) + math.Sin(p.angle)*radius
 
 	// Calculate rotation angle to face center
-	// Subtract π/2 to adjust for sprite orientation (assuming sprite faces right by default)
+	// Add π to rotate 180 degrees (sprite faces inward)
 	p.viewAngle = math.Atan2(
 		float64(p.center.Y)-newY,
 		float64(p.center.X)-newX,
-	) - math.Pi/2
+	) - math.Pi/2 + math.Pi
 
 	// Update position
 	p.PlayerPosition.Object.SetPosition(newX, newY)
@@ -107,15 +108,61 @@ func (p *Player) Update() {
 var prevRectX, prevRectY float64
 
 func (player *Player) Draw(screen *ebiten.Image) {
-	// Draw the player's sprite
+	// Draw the regular sprite
 	player.drawSprite(screen)
 
+	// Draw debug visualization if debug mode is enabled
 	if Debug {
-		// Draw the player's path
-		player.drawPath(screen)
-		// Draw the rectangle image onto the screen
-		player.drawRectangle(screen)
+		player.drawDebugRotation(screen)
 	}
+}
+
+func (p *Player) drawDebugRotation(screen *ebiten.Image) {
+	pos := p.Object.Position()
+
+	// Draw line from player to center (direction vector)
+	vector.StrokeLine(
+		screen,
+		float32(pos.X),
+		float32(pos.Y),
+		float32(p.center.X),
+		float32(p.center.Y),
+		1,
+		color.RGBA{R: 255, G: 0, B: 0, A: 255}, // Red line
+		false,
+	)
+
+	// Draw angle arc
+	radius := 20.0 // Small radius for angle visualization
+	startAngle := p.angle - math.Pi/4
+	endAngle := p.angle + math.Pi/4
+
+	for angle := startAngle; angle <= endAngle; angle += 0.1 {
+		x := pos.X + math.Cos(angle)*radius
+		y := pos.Y + math.Sin(angle)*radius
+		vector.StrokeLine(
+			screen,
+			float32(pos.X),
+			float32(pos.Y),
+			float32(x),
+			float32(y),
+			1,
+			color.RGBA{R: 0, G: 255, B: 0, A: 255}, // Green arc
+			false,
+		)
+	}
+
+	// Draw text showing angle values
+	text := fmt.Sprintf("Angle: %.2f°\nView: %.2f°",
+		p.angle*180/math.Pi,
+		p.viewAngle*180/math.Pi,
+	)
+	ebitenutil.DebugPrintAt(
+		screen,
+		text,
+		int(pos.X)+10,
+		int(pos.Y)-20,
+	)
 }
 
 // Draw the players path
