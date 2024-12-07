@@ -34,7 +34,7 @@ func main() {
 	logger, err := initLogger()
 	if err != nil {
 		fmt.Printf("Failed to initialize logger: %v\n", err)
-		os.Exit(1)
+		return
 	}
 	defer logger.Sync()
 
@@ -118,12 +118,14 @@ func main() {
 	}); err != nil {
 		logger.Error("failed to run game", zap.Error(err))
 		os.Exit(1)
+		return
 	}
 
 	// Wait for all goroutines to complete
 	if err := g.Wait(); err != nil {
 		logger.Error("error during shutdown", zap.Error(err))
 		os.Exit(1)
+		return
 	}
 }
 
