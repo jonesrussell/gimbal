@@ -57,7 +57,7 @@ func NewGame(logger *zap.Logger, cfg *config.Config, gameState GameEngine, asset
 
 	// Initialize player with proper circular movement
 	center := image.Point{X: g.config.Screen.Width / 2, Y: g.config.Screen.Height / 2}
-	inputHandler := player.NewInputHandler()
+	inputHandler := player.NewInputHandler(g.logger)
 	playerSprite, err := g.assets.LoadImage(context.Background(), "images/player.png")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load player sprite: %w", err)
