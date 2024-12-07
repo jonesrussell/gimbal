@@ -95,7 +95,7 @@ func main() {
 		gameState *game.GimlarGame,
 		assets core.AssetManager,
 	) (*engine.Game, error) {
-		return engine.NewGame(logger, cfg, gameState, assets)
+		return engine.NewGame(logger, cfg, gameState, assets, cancel)
 	}); err != nil {
 		logger.Fatal("Failed to provide game engine", zap.Error(err))
 	}

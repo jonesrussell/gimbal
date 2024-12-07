@@ -17,17 +17,21 @@ import (
 
 // Game represents the main game engine
 type Game struct {
-	logger    *zap.Logger
-	config    *config.Config
-	assets    core.AssetManager
-	gameState GameEngine
-	player    *player.Player
-	stars     []Star
-	state     GameState
+	// 8-byte aligned fields (pointers and slices)
+	player    *player.Player     // 8 bytes
+	logger    *zap.Logger        // 8 bytes
+	config    *config.Config     // 8 bytes
+	assets    core.AssetManager  // 8 bytes (interface)
+	gameState GameEngine         // 8 bytes (interface)
+	cancel    context.CancelFunc // 8 bytes (function pointer)
+	stars     []Star             // 24 bytes (slice header)
+
+	// 4-byte aligned fields
+	state GameState // 4 bytes
 }
 
 // NewGame creates a new game instance with dependencies
-func NewGame(logger *zap.Logger, cfg *config.Config, gameState GameEngine, assets core.AssetManager) (*Game, error) {
+func NewGame(logger *zap.Logger, cfg *config.Config, gameState GameEngine, assets core.AssetManager, cancel context.CancelFunc) (*Game, error) {
 	if logger == nil {
 		return nil, fmt.Errorf("logger is required")
 	}
@@ -39,6 +43,9 @@ func NewGame(logger *zap.Logger, cfg *config.Config, gameState GameEngine, asset
 	}
 	if assets == nil {
 		return nil, fmt.Errorf("assets is required")
+	}
+	if cancel == nil {
+		return nil, fmt.Errorf("cancel function is required")
 	}
 
 	// Set global debug flag
@@ -53,6 +60,7 @@ func NewGame(logger *zap.Logger, cfg *config.Config, gameState GameEngine, asset
 		gameState: gameState,
 		assets:    assets,
 		state:     StatePlaying,
+		cancel:    cancel,
 	}
 
 	// Initialize player with proper circular movement
@@ -86,6 +94,12 @@ func NewGame(logger *zap.Logger, cfg *config.Config, gameState GameEngine, asset
 
 // Update handles game logic per frame
 func (g *Game) Update() error {
+	if ebiten.IsWindowBeingClosed() {
+		g.logger.Info("window close requested")
+		g.cancel()
+		return fmt.Errorf("window closed")
+	}
+
 	if err := g.updateStars(); err != nil {
 		return fmt.Errorf("failed to update stars: %w", err)
 	}
