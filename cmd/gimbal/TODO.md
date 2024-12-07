@@ -83,7 +83,25 @@ gimbal/
 - [ ] Add movement calculations
 - [ ] Set up physics debug visualization
 
-2. **Input System**
+2. **Player Movement System**
+- [ ] Add debug visualization of the rotation angle
+  - [ ] Draw direction vector
+  - [ ] Show angle values
+  - [ ] Visualize rotation pivot point
+- [ ] Implement rotation speed configuration
+  - [ ] Add rotation speed to config.json
+  - [ ] Add acceleration/deceleration options
+  - [ ] Support different speed modes
+- [ ] Add rotation smoothing
+  - [ ] Implement lerp-based smoothing
+  - [ ] Add configurable smoothing factor
+  - [ ] Support different smoothing algorithms
+- [ ] Create rotation behavior configuration
+  - [ ] Add rotation constraints
+  - [ ] Support different rotation modes
+  - [ ] Add rotation presets
+
+3. **Input System**
 - [ ] Create systems/input/types.go
 - [ ] Implement input handling
 - [ ] Add input mapping configuration

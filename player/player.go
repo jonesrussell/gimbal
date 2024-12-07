@@ -81,7 +81,7 @@ func NewPlayer(input InputHandlerInterface, speed float64, spriteImage image.Ima
 }
 
 func (p *Player) Update() {
-	// Update the player's angle based on input
+	// Update orbital position
 	if p.input.IsKeyPressed(ebiten.KeyLeft) {
 		p.angle -= 0.05
 	}
@@ -89,11 +89,19 @@ func (p *Player) Update() {
 		p.angle += 0.05
 	}
 
-	// Calculate new position based on angle
-	p.PlayerPosition.Object.SetPosition(
-		float64(p.center.X)+math.Cos(p.angle)*radius,
-		float64(p.center.Y)+math.Sin(p.angle)*radius,
-	)
+	// Calculate new position
+	newX := float64(p.center.X) + math.Cos(p.angle)*radius
+	newY := float64(p.center.Y) + math.Sin(p.angle)*radius
+
+	// Calculate rotation angle to face center
+	// Subtract π/2 to adjust for sprite orientation (assuming sprite faces right by default)
+	p.viewAngle = math.Atan2(
+		float64(p.center.Y)-newY,
+		float64(p.center.X)-newX,
+	) - math.Pi/2
+
+	// Update position
+	p.PlayerPosition.Object.SetPosition(newX, newY)
 }
 
 var prevRectX, prevRectY float64
@@ -165,21 +173,20 @@ func (player *Player) drawSprite(screen *ebiten.Image) {
 }
 
 func (player *Player) createSpriteOptions() *ebiten.DrawImageOptions {
-	// Calculate the sprite's top-left corner position
 	width := player.Sprite.Bounds().Dx()
-	someValue := float64(width) / 2 // Convert to float64 and divide by 2
 	height := float64(player.Sprite.Bounds().Dy())
-
 	spriteOp := &ebiten.DrawImageOptions{}
 
-	// Translate the sprite so that its center is at the origin
-	spriteOp.GeoM.Translate(-someValue, -height/2)
+	// Center the sprite
+	spriteOp.GeoM.Translate(-float64(width)/2, -height/2)
 
-	// Scale the sprite to 1/10th size and rotate
+	// Scale the sprite to 1/10th size
 	spriteOp.GeoM.Scale(0.1, 0.1)
-	spriteOp.GeoM.Rotate(player.angle)
 
-	// Translate the rotated and scaled sprite to the player's position
+	// Use viewAngle for rotation instead of angle
+	spriteOp.GeoM.Rotate(player.viewAngle)
+
+	// Move to player position
 	pos := player.Object.Position()
 	spriteOp.GeoM.Translate(pos.X, pos.Y)
 
