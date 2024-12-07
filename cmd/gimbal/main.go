@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"go.uber.org/dig"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/engine"
@@ -13,17 +17,31 @@ import (
 )
 
 func main() {
+	// Create root context with cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Setup signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Create DI container
 	container := dig.New()
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Create logger instance
+	logger, err := initLogger()
+	if err != nil {
+		fmt.Printf("Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer logger.Sync()
 
 	// Provide logger
-	if err := container.Provide(func() (*zap.Logger, error) {
-		if os.Getenv("DEBUG") == "true" {
-			return zap.NewDevelopment()
-		}
-		return zap.NewProduction()
+	if err := container.Provide(func() *zap.Logger {
+		return logger
 	}); err != nil {
-		fmt.Printf("Failed to provide logger: %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Failed to provide logger", zap.Error(err))
 	}
 
 	// Provide config manager
@@ -41,37 +59,58 @@ func main() {
 		}
 		return manager, nil
 	}); err != nil {
-		fmt.Printf("Failed to provide config manager: %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Failed to provide config manager", zap.Error(err))
 	}
 
 	// Provide config for backward compatibility
 	if err := container.Provide(func(manager *config.Manager) *config.Config {
 		return manager.Get()
 	}); err != nil {
-		fmt.Printf("Failed to provide config: %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Failed to provide config", zap.Error(err))
 	}
 
 	// Provide game state
 	if err := container.Provide(game.NewGimlarGame); err != nil {
-		fmt.Printf("Failed to provide game state: %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Failed to provide game state", zap.Error(err))
 	}
 
 	// Provide game engine
 	if err := container.Provide(func(logger *zap.Logger, cfg *config.Config, gameState *game.GimlarGame) (*engine.Game, error) {
 		return engine.NewGame(logger, cfg, gameState)
 	}); err != nil {
-		fmt.Printf("Failed to provide game engine: %v\n", err)
+		logger.Fatal("Failed to provide game engine", zap.Error(err))
+	}
+
+	// Add shutdown handler
+	g.Go(func() error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case sig := <-sigChan:
+			logger.Info("received shutdown signal", zap.String("signal", sig.String()))
+			cancel()
+			return nil
+		}
+	})
+
+	// Run the game engine
+	if err := container.Invoke(func(game *engine.Game) error {
+		return game.Run()
+	}); err != nil {
+		logger.Error("failed to run game", zap.Error(err))
 		os.Exit(1)
 	}
 
-	// Run the game engine
-	if err := container.Invoke(func(g *engine.Game) error {
-		return g.Run()
-	}); err != nil {
-		fmt.Printf("Failed to run game: %v\n", err)
+	// Wait for all goroutines to complete
+	if err := g.Wait(); err != nil {
+		logger.Error("error during shutdown", zap.Error(err))
 		os.Exit(1)
 	}
+}
+
+func initLogger() (*zap.Logger, error) {
+	if os.Getenv("DEBUG") == "true" {
+		return zap.NewDevelopment()
+	}
+	return zap.NewProduction()
 }
