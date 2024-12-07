@@ -15,21 +15,27 @@ import (
 )
 
 // Implementation-specific types
-type (
-	assetCache struct {
-		images map[string]*ebiten.Image // 8 bytes (pointer to a map)
-		sounds map[string][]byte        // 8 bytes (pointer to a map)
-		// Total size: 16 bytes
-	}
+type assetManagerImpl struct {
+	baseDir string // 16 bytes (string)
 
-	assetManagerImpl struct {
-		cache   assetCache          // 16 bytes (struct containing maps)
-		logger  *zap.Logger         // 8 bytes (pointer)
-		config  *AssetManagerConfig // 8 bytes (pointer)
-		mu      sync.RWMutex        // 8 bytes (mutex)
-		baseDir string              // 16 bytes (8 bytes pointer + 8 bytes length)
-	}
-)
+	// 8-byte fields
+	images map[string]*ebiten.Image // 8 bytes (pointer)
+	sounds map[string][]byte        // 8 bytes (pointer)
+	logger *zap.Logger              // 8 bytes (pointer)
+	config *AssetManagerConfig      // 8 bytes (pointer)
+	mu     sync.RWMutex             // 8 bytes (mutex)
+}
+
+// Memory layout visualization:
+// |-----------------------------------------------|
+// | mu (8 bytes)                                  |
+// |-----------------------------------------------|
+// | logger (8) | config (8)                       |
+// |-----------------------------------------------|
+// | images (8) | sounds (8)                       |
+// |-----------------------------------------------|
+// | baseDir (16 bytes)                            |
+// |-----------------------------------------------|
 
 // Verify that assetManagerImpl implements AssetManager interface
 var _ NewAssetManager = NewAssetManagerImpl
@@ -54,10 +60,8 @@ func NewAssetManagerImpl(logger *zap.Logger, opts ...AssetOption) (AssetManager,
 		logger:  logger,
 		baseDir: config.BaseDir,
 		config:  config,
-		cache: assetCache{
-			images: make(map[string]*ebiten.Image, config.CacheSize),
-			sounds: make(map[string][]byte, config.CacheSize),
-		},
+		images:  make(map[string]*ebiten.Image, config.CacheSize),
+		sounds:  make(map[string][]byte, config.CacheSize),
 	}
 
 	return am, nil
@@ -69,7 +73,7 @@ func (am *assetManagerImpl) LoadImage(ctx context.Context, path string) (*ebiten
 		return nil, ctx.Err()
 	default:
 		am.mu.RLock()
-		if img, ok := am.cache.images[path]; ok {
+		if img, ok := am.images[path]; ok {
 			am.mu.RUnlock()
 			return img, nil
 		}
@@ -80,7 +84,7 @@ func (am *assetManagerImpl) LoadImage(ctx context.Context, path string) (*ebiten
 		defer am.mu.Unlock()
 
 		// Double check after acquiring write lock
-		if img, ok := am.cache.images[path]; ok {
+		if img, ok := am.images[path]; ok {
 			return img, nil
 		}
 
@@ -97,7 +101,7 @@ func (am *assetManagerImpl) LoadImage(ctx context.Context, path string) (*ebiten
 		}
 
 		ebitenImg := ebiten.NewImageFromImage(img)
-		am.cache.images[path] = ebitenImg
+		am.images[path] = ebitenImg
 
 		am.logger.Debug("loaded image",
 			zap.String("path", path),
@@ -114,7 +118,7 @@ func (am *assetManagerImpl) LoadSound(ctx context.Context, path string) ([]byte,
 		return nil, ctx.Err()
 	default:
 		am.mu.RLock()
-		if sound, ok := am.cache.sounds[path]; ok {
+		if sound, ok := am.sounds[path]; ok {
 			am.mu.RUnlock()
 			return sound, nil
 		}
@@ -125,7 +129,7 @@ func (am *assetManagerImpl) LoadSound(ctx context.Context, path string) ([]byte,
 		defer am.mu.Unlock()
 
 		// Double check after acquiring write lock
-		if sound, ok := am.cache.sounds[path]; ok {
+		if sound, ok := am.sounds[path]; ok {
 			return sound, nil
 		}
 
@@ -135,7 +139,7 @@ func (am *assetManagerImpl) LoadSound(ctx context.Context, path string) ([]byte,
 			return nil, fmt.Errorf("failed to load sound %s: %w", path, err)
 		}
 
-		am.cache.sounds[path] = sound
+		am.sounds[path] = sound
 		am.logger.Debug("loaded sound",
 			zap.String("path", path),
 			zap.Int("size", len(sound)))
@@ -204,14 +208,14 @@ func (am *assetManagerImpl) Cleanup(ctx context.Context) error {
 		defer am.mu.Unlock()
 
 		// Clear image cache
-		for path, img := range am.cache.images {
+		for path, img := range am.images {
 			img.Dispose()
-			delete(am.cache.images, path)
+			delete(am.images, path)
 		}
 
 		// Clear sound cache
-		for path := range am.cache.sounds {
-			delete(am.cache.sounds, path)
+		for path := range am.sounds {
+			delete(am.sounds, path)
 		}
 
 		am.logger.Info("cleaned up asset manager")

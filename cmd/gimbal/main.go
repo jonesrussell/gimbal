@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/core"
 	"github.com/jonesrussell/gimbal/internal/engine"
 	"github.com/jonesrussell/gimbal/internal/game"
 )
@@ -74,9 +75,27 @@ func main() {
 		logger.Fatal("Failed to provide game state", zap.Error(err))
 	}
 
+	// Provide asset manager
+	if err := container.Provide(func(logger *zap.Logger, manager *config.Manager) (core.AssetManager, error) {
+		cfg := manager.Get()
+		return core.NewAssetManagerImpl(logger,
+			core.WithBaseDir("assets"),
+			core.WithCacheSize(1000),
+			core.WithSound(true),
+			core.WithAssetDebug(cfg.Game.Debug),
+		)
+	}); err != nil {
+		logger.Fatal("Failed to provide asset manager", zap.Error(err))
+	}
+
 	// Provide game engine
-	if err := container.Provide(func(logger *zap.Logger, cfg *config.Config, gameState *game.GimlarGame) (*engine.Game, error) {
-		return engine.NewGame(logger, cfg, gameState)
+	if err := container.Provide(func(
+		logger *zap.Logger,
+		cfg *config.Config,
+		gameState *game.GimlarGame,
+		assets core.AssetManager,
+	) (*engine.Game, error) {
+		return engine.NewGame(logger, cfg, gameState, assets)
 	}); err != nil {
 		logger.Fatal("Failed to provide game engine", zap.Error(err))
 	}

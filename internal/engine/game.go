@@ -1,16 +1,17 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"image/color"
 	_ "image/png"
-	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"go.uber.org/zap"
 
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/core"
 	"github.com/jonesrussell/gimbal/player"
 )
 
@@ -19,40 +20,45 @@ type Game struct {
 	logger    *zap.Logger
 	config    *config.Config
 	gameState GameEngine
+	assets    core.AssetManager
 	stars     []Star
 	state     GameState
 	player    *player.Player
 }
 
 // NewGame creates a new game instance with dependencies
-func NewGame(logger *zap.Logger, config *config.Config, gameState GameEngine) (*Game, error) {
+func NewGame(logger *zap.Logger, cfg *config.Config, gameState GameEngine, assets core.AssetManager) (*Game, error) {
 	if logger == nil {
 		return nil, fmt.Errorf("logger is required")
 	}
-	if config == nil {
+	if cfg == nil {
 		return nil, fmt.Errorf("config is required")
 	}
 	if gameState == nil {
 		return nil, fmt.Errorf("gameState is required")
 	}
+	if assets == nil {
+		return nil, fmt.Errorf("assets is required")
+	}
 
 	// Set global debug flag
-	Debug = config.Game.Debug
+	Debug = cfg.Game.Debug
 
 	logger.Debug("Debug mode",
 		zap.Bool("enabled", Debug))
 
 	g := &Game{
 		logger:    logger,
-		config:    config,
+		config:    cfg,
 		gameState: gameState,
+		assets:    assets,
 		state:     StatePlaying,
 	}
 
 	// Initialize player with proper circular movement
 	center := image.Point{X: g.config.Screen.Width / 2, Y: g.config.Screen.Height / 2}
 	inputHandler := player.NewInputHandler()
-	playerSprite, err := loadPlayerSprite()
+	playerSprite, err := g.assets.LoadImage(context.Background(), "images/player.png")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load player sprite: %w", err)
 	}
@@ -80,7 +86,9 @@ func NewGame(logger *zap.Logger, config *config.Config, gameState GameEngine) (*
 
 // Update handles game logic per frame
 func (g *Game) Update() error {
-	g.updateStars()
+	if err := g.updateStars(); err != nil {
+		return fmt.Errorf("failed to update stars: %w", err)
+	}
 	g.player.Update()
 	return g.gameState.Update()
 }
@@ -103,21 +111,4 @@ func (g *Game) Run() error {
 	ebiten.SetWindowTitle(g.config.Screen.Title)
 
 	return ebiten.RunGame(g)
-}
-
-func loadPlayerSprite() (image.Image, error) {
-	// Open the sprite file from the assets directory
-	f, err := os.Open("assets/images/player.png")
-	if err != nil {
-		return nil, fmt.Errorf("failed to open player sprite: %w", err)
-	}
-	defer f.Close()
-
-	// Decode the image
-	img, _, err := image.Decode(f)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode player sprite: %w", err)
-	}
-
-	return img, nil
 }

@@ -20,12 +20,18 @@ type (
 
 	rendererImpl struct {
 		sprites []sprite
-		cache   assetCache
 		mu      sync.RWMutex
 		logger  *zap.Logger
 		config  *RenderConfig
 	}
 )
+
+// Memory layout visualization:
+// |-----------------------------------------------|
+// | sprites slice (ptr, len, cap) | mu            |
+// |-----------------------------------------------|
+// | logger ptr | config ptr       | padding       |
+// |-----------------------------------------------|
 
 // Implementation of NewRenderer constructor type from types.go
 var _ NewRenderer = NewRendererImpl
