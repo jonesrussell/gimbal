@@ -19,10 +19,10 @@ type (
 	}
 
 	rendererImpl struct {
-		sprites []sprite
 		mu      sync.RWMutex
 		logger  *zap.Logger
 		config  *RenderConfig
+		sprites []sprite
 	}
 )
 

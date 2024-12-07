@@ -12,13 +12,13 @@ import (
 )
 
 type GimlarGame struct {
-	player *player.Player
-	speed  float64
-	space  *resolv.Space
-	prevX  float64
-	prevY  float64
-	logger *zap.Logger
-	config *config.Config
+	logger *zap.Logger    // 8 bytes
+	config *config.Config // 8 bytes
+	player *player.Player // 8 bytes
+	space  *resolv.Space  // 8 bytes
+	speed  float64        // 8 bytes
+	prevX  float64        // 8 bytes
+	prevY  float64        // 8 bytes
 }
 
 // GimlarGame should implement engine.GameEngine

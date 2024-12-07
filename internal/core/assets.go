@@ -16,14 +16,13 @@ import (
 
 // Implementation-specific types
 type assetManagerImpl struct {
-	baseDir string // 16 bytes (string)
-
-	// 8-byte fields
-	images map[string]*ebiten.Image // 8 bytes (pointer)
-	sounds map[string][]byte        // 8 bytes (pointer)
-	logger *zap.Logger              // 8 bytes (pointer)
-	config *AssetManagerConfig      // 8 bytes (pointer)
-	mu     sync.RWMutex             // 8 bytes (mutex)
+	// 8-byte aligned fields
+	images  map[string]*ebiten.Image // 8 bytes
+	sounds  map[string][]byte        // 8 bytes
+	logger  *zap.Logger              // 8 bytes
+	config  *AssetManagerConfig      // 8 bytes
+	baseDir string                   // 16 bytes
+	mu      sync.RWMutex             // 8 bytes
 }
 
 // Memory layout visualization:
@@ -200,27 +199,17 @@ func (am *assetManagerImpl) preloadAsset(ctx context.Context, path string) error
 }
 
 func (am *assetManagerImpl) Cleanup(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		am.mu.Lock()
-		defer am.mu.Unlock()
+	am.mu.Lock()
+	defer am.mu.Unlock()
 
-		// Clear image cache
-		for path, img := range am.images {
-			img.Dispose()
-			delete(am.images, path)
+	for _, img := range am.images {
+		if img != nil {
+			img.Deallocate()
 		}
-
-		// Clear sound cache
-		for path := range am.sounds {
-			delete(am.sounds, path)
-		}
-
-		am.logger.Info("cleaned up asset manager")
-		return nil
 	}
+	am.images = nil
+	am.sounds = nil
+	return nil
 }
 
 // Asset manager options

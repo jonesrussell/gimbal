@@ -19,11 +19,11 @@ import (
 type Game struct {
 	logger    *zap.Logger
 	config    *config.Config
-	gameState GameEngine
 	assets    core.AssetManager
+	gameState GameEngine
+	player    *player.Player
 	stars     []Star
 	state     GameState
-	player    *player.Player
 }
 
 // NewGame creates a new game instance with dependencies

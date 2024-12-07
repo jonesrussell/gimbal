@@ -10,13 +10,13 @@ import (
 )
 
 type gameImpl struct {
-	systems  []System     // slice: 24 bytes
-	input    InputHandler // interface: 16 bytes
-	renderer Renderer     // interface: 16 bytes
-	assets   AssetManager // interface: 16 bytes
-	mu       sync.RWMutex // mutex: 8 bytes
-	logger   *zap.Logger  // ptr: 8 bytes
-	config   *GameConfig  // ptr: 8 bytes
+	mu       sync.RWMutex // 8 bytes
+	logger   *zap.Logger  // 8 bytes
+	config   *GameConfig  // 8 bytes
+	input    InputHandler // 16 bytes
+	renderer Renderer     // 16 bytes
+	assets   AssetManager // 16 bytes
+	systems  []System     // 24 bytes
 }
 
 // NewGameImpl creates a new game instance with named return values
