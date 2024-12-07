@@ -3,27 +3,45 @@
 - Always implement proper interface abstractions following Go best practices
 - Use `dig` for dependency injection
 - Follow https://go.dev/doc/modules/layout
+- Use Go 1.23 or later
+- Implement graceful shutdown patterns
+- Use context timeouts for all operations
 
 # Dependency Injection & Application Structure
-- Integrate `dig` for dependency injection:
+- Integrate `dig for dependency injection:
   - Initialize DI container in `main.go`
   - Use DI modules for organizing dependencies
   - Handle errors appropriately
   - Ensure proper logger initialization before other dependencies
+`  - Provide constructor functions for all injectable types
+  - Use functional options pattern for configurable components
+  - Implement proper cleanup/shutdown methods
 
 # Core Dependencies
 Always use:
 - `github.com/hajimehoshi/ebiten/v2` for game development
 - `go.uber.org/zap` for structured logging
+Additional required dependencies:
+- `github.com/stretchr/testify` for testing
+- `github.com/vektra/mockery/v2` for mock generation
+- `golang.org/x/sync/errgroup` for concurrent error handling
 
 # Concurrency & Safety
 - Always use `sync.RWMutex` for concurrent operations in shared data structures
 - Always use `context.Context` for cancellation and timeouts
 - Never skip error handling
 - Never use `init()` functions except for DI module registration
+- Use errgroup.Group for concurrent operations
+- Implement graceful shutdown handlers
+- Use sync.Pool for frequently allocated objects
+- Add timeouts to all blocking operations
 
 # Code Organization
 Files named `types.go` should only contain interface and type definitions
+- Keep package names simple and clear
+- Use internal/pkg pattern for shared code
+- Maintain max file size of 500 lines
+- Group related types in separate files
 
 # Component Separation
 The separation of concerns is now:
@@ -44,6 +62,10 @@ The separation of concerns is now:
 - Implement unit tests for all components
 - Use `mockery` for interface mocking
 - Include integration tests where appropriate
+- Maintain minimum 80% code coverage
+- Include benchmark tests for critical paths
+- Add fuzz testing for input handling
+- Use table-driven tests where appropriate
 
 # Documentation
 - Include GoDoc comments for exported types and functions
@@ -59,6 +81,10 @@ The separation of concerns is now:
 - Always implement proper error handling and avoid panics
 - Use error wrapping with `fmt.Errorf("context: %w", err)`
 - Return errors rather than logging and continuing
+- Implement custom error types for domain-specific errors
+- Add error codes for different error categories
+- Include stack traces in debug mode
+- Implement retry mechanisms where appropriate
 
 # Debug Mode Standards
 When debug flag (-v, --verbose) is enabled:
@@ -69,3 +95,9 @@ When debug flag (-v, --verbose) is enabled:
 - Include caller information
 - Display colored log output
 - Show full error stack traces
+
+# Performance Standards
+- Use sync.Pool for frequently allocated objects
+- Implement proper memory management
+- Profile CPU usage in critical paths
+- Monitor and optimize garbage collection

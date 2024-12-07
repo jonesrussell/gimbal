@@ -3,204 +3,112 @@
 gimbal/
 ├── cmd/
 │   └── gimbal/
-│       ├── main.go          # Main application entry point
+│       ├── main.go          # Main application entry point with DI container
 │       └── TODO.md          # This file
 ├── internal/
+│   ├── core/               # Core game components
+│   │   ├── types.go        # Core interfaces and type definitions
+│   │   ├── game.go         # Main game loop and logic
+│   │   ├── input.go        # Input handling
+│   │   └── render.go       # Rendering logic
 │   ├── config/             # Configuration management
-│   │   ├── config.go       # Configuration loading and management
-│   │   └── config.development.json # Development configuration
-│   ├── engine/            # Game engine components
-│   │   ├── game.go        # Game engine implementation
-│   │   ├── types.go       # Engine interfaces and types
-│   │   ├── constants.go   # Game states and interfaces
-│   │   └── stars.go       # Star system implementation
-│   ├── entities/          # [TODO] Game entities
-│   ├── systems/           # [TODO] Game systems
-│   ├── assets/            # [TODO] Game assets
-│   └── ui/                # [TODO] UI components
-└── go.mod                 # Module definition
-
-[TODO] Additional directories to be created:
-├── pkg/                   # Reusable packages
-└── web/                  # Web/WASM specific code
+│   │   ├── types.go        # Config interfaces
+│   │   ├── config.go       # Configuration loading
+│   │   └── debug.go        # Debug mode configuration
+│   ├── systems/            # Game systems (physics, AI, etc.)
+│   │   └── types.go        # System interfaces
+│   └── assets/             # Game assets management
+└── go.mod                  # Module definition
 ```
 
-### Phase 1: Code Modernization & Architecture
+### Phase 1: Core Infrastructure
 
-1. **Update Dependencies**
-- [ ] Upgrade to Go 1.23 for performance improvements and new features
-- [ ] Update Ebitengine to v2.6.6 (latest stable)
-- [x] Add `go.uber.org/dig` for dependency injection
-- [x] Add `go.uber.org/zap` for better logging
-- [ ] Add `github.com/stretchr/testify` for testing
-- [ ] Add `github.com/vektra/mockery/v2` for mocks
+1. **Dependency Setup**
+- [ ] Configure dig container in main.go
+- [ ] Set up zap logger with proper levels
+- [ ] Implement context.Context usage
+- [ ] Add proper error handling with wrapping
+- [ ] Configure debug mode flags
 
-2. **Restructure Project Layout**
-- [x] Create basic directory structure
-- [x] Move packages to internal/
-- [x] Create engine package with basic interfaces
-- [x] Implement game engine structure
-- [x] Move core/constants.go to engine/
-- [x] Move core/stars.go to engine/
-- [x] Remove deprecated core directory
-- [ ] Fix import paths in main.go
-- [ ] Set up DI container
-- [ ] Ensure all packages are properly exposed and importable
+2. **Core Package Implementation**
+- [ ] Create core/types.go with interfaces
+- [ ] Implement game loop in core/game.go
+- [ ] Add input handling in core/input.go
+- [ ] Set up rendering in core/render.go
+- [ ] Add proper RWMutex usage for concurrent operations
 
 3. **Configuration Management**
-- [x] Create `config` package for centralized configuration
-- [x] Move config to internal/
-- [x] Implement configuration injection using `dig`
-- [x] Move screen-dependent values from constants.go to config
-- [x] Add configuration for number of stars
-- [ ] Support different config profiles
-- [ ] Add configuration validation
+- [ ] Implement config loading with validation
+- [ ] Add debug mode configuration
+- [ ] Set up environment variable support
+- [ ] Add configuration documentation
 - [ ] Implement hot-reloading for development
-- [ ] Add environment variable support
-- [ ] Create configuration documentation
 
-4. **Code Quality**
-- [ ] Fix linting errors:
-  - [x] Fix undefined config.Screen in stars.go
-  - [ ] Fix import cycle in game package
-  - [ ] Fix unused variables in game_test.go
-  - [ ] Fix player package redeclarations
-  - [ ] Fix player calculation tests
-- [ ] Add golangci-lint to CI pipeline
-- [ ] Set up pre-commit hooks for linting
+4. **Asset Management**
+- [ ] Create asset loading system
+- [ ] Implement proper error handling
+- [ ] Add asset validation
+- [ ] Set up asset preloading
+- [ ] Add asset cleanup on shutdown
 
-5. **Immediate Next Steps**
-1. Fix remaining lint errors:
-   - [ ] Clean up player package constants
-   - [ ] Update player calculation tests
-   - [ ] Remove unused test variables
-   - [ ] Fix type mismatches in tests
+5. **Logging Infrastructure**
+- [ ] Configure structured logging with zap
+- [ ] Add debug level messages
+- [ ] Implement context fields in logs
+- [ ] Set up development vs production logging
+- [ ] Add error stack traces for debug mode
 
-2. Create assets package for resource management:
-   - [ ] Implement AssetManager interface
-   - [ ] Add basic image loading functionality
-   - [ ] Add error handling for missing assets
-   - [ ] Integrate with DI container
+6. **Testing Setup**
+- [ ] Add mockery for interfaces
+- [ ] Set up unit tests
+- [ ] Configure integration tests
+- [ ] Add golangci-lint
+- [ ] Set up GitHub Actions CI
 
-3. Implement proper star initialization:
-   - [ ] Move star image loading to asset manager
-   - [ ] Add error handling for failed initialization
-   - [ ] Add star configuration validation
-   - [ ] Implement star pool for better performance
+### Phase 2: Game Systems
 
-4. Configuration Fixes:
-   - [ ] Implement proper config.New function in config package
-   - [ ] Fix config initialization in engine/stars.go
-   - [ ] Add proper config injection in game package
-   - [ ] Document config initialization pattern
+1. **Physics System**
+- [ ] Create systems/physics/types.go
+- [ ] Implement collision detection
+- [ ] Add movement calculations
+- [ ] Set up physics debug visualization
 
-5. Type Definition Fixes:
-   - [ ] Fix Game type definition in game package
-   - [ ] Ensure proper type exports
-   - [ ] Fix circular dependencies if any
-   - [ ] Add missing interface implementations
+2. **Input System**
+- [ ] Create systems/input/types.go
+- [ ] Implement input handling
+- [ ] Add input mapping configuration
+- [ ] Set up input debugging
 
-6. Test Cleanup:
-   - [ ] Remove unused speed variables from game tests
-   - [ ] Properly use player variable in player tests
-   - [ ] Add proper test assertions
-   - [ ] Implement test helpers for common setup
+3. **Rendering System**
+- [ ] Create systems/render/types.go
+- [ ] Implement sprite rendering
+- [ ] Add particle systems
+- [ ] Set up debug rendering
 
-### Phase 2: Core Features for Alpha
+### Phase 3: Documentation
 
-1. **Player Mechanics**
-- Smooth circular movement
-- Shooting mechanics
-- Basic collision detection
-- Physics system integration
+1. **Code Documentation**
+- [ ] Add GoDoc comments for all exported types
+- [ ] Document configuration options
+- [ ] Add architecture diagrams
+- [ ] Create setup instructions
 
-2. **Enemy System**
-- Basic enemy spawning
-- Simple movement patterns
-- Collision with player/bullets
-- Basic AI behavior system
+2. **Debug Documentation**
+- [ ] Document debug flags
+- [ ] Add logging level documentation
+- [ ] Document error handling patterns
+- [ ] Add development mode features
 
-3. **Scoring System**
-- Basic point system
-- Score display
-- High score persistence
-- Score multipliers
+### Phase 4: Quality Assurance
 
-4. **Game States**
-- Title screen
-- Game over screen
-- Pause functionality
-- State persistence
+1. **Testing**
+- [ ] Achieve 80% code coverage
+- [ ] Add performance benchmarks
+- [ ] Implement integration tests
+- [ ] Add system tests
 
-### Phase 3: Testing & CI/CD
-
-1. **Testing Infrastructure**
-- Unit tests using testify
-- Integration tests
-- Performance benchmarks
-- Mock generation with mockery
-- Test coverage reporting
-
-2. **CI/CD Pipeline**
-```yaml
-name: Gimbal CI/CD
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev xorg-dev
-      - name: Test
-        run: go test -v ./... -coverprofile=coverage.txt
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.txt
-      - name: Build
-        run: make build
-
-  release:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Build releases
-        run: |
-          make build/linux
-          make build/win32
-          make build/web
-```
-
-### Phase 4: Alpha Release Checklist
-
-1. **Documentation**
-- Update README with alpha status
-- Add CONTRIBUTING.md
-- Add CHANGELOG.md
-- Generate and host GoDoc
-- Add architecture diagrams
-
-2. **Distribution**
-- Create GitHub release
-- Set up itch.io page
-- Enable GitHub Pages for web version
-- Create installation instructions
-
-3. **Monitoring**
-- Add Sentry.io for error tracking
-- Set up Google Analytics for web version
-- Add telemetry for gameplay metrics
-- Implement crash reporting
+2. **Linting & Static Analysis**
+- [ ] Configure golangci-lint
+- [ ] Add pre-commit hooks
+- [ ] Set up security scanning
+- [ ] Implement code quality gates
