@@ -16,7 +16,7 @@
 			"installZsh": true,
 			"installOhMyZsh": true,
 			"installOhMyZshConfig": true,
-			"upgradePackages": true,
+			"upgradePackages": true,	
 			"username": "vscode",
 			"userUid": "automatic",
 			"userGid": "automatic"
