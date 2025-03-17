@@ -47,7 +47,15 @@
 				"mtxr.sqltools",
 				"eamodio.gitlens",
 				"GitHub.vscode-pull-request-github"
-			]
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh",
+				"terminal.integrated.profiles.linux": {
+					"zsh": {
+						"path": "/usr/bin/zsh"
+					}
+				}
+			}
 		}
 	},
 	"remoteUser": "vscode",
