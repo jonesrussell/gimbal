@@ -5,6 +5,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/jonesrussell/gimbal/internal/physics"
 	"github.com/solarlune/resolv"
 )
@@ -35,12 +36,30 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 		float64(config.Size.Height),
 	)
 
+	// Start at the bottom of the screen (270 degrees)
+	initialAngle := common.Angle(common.BottomAngle * common.DegreesToRadians)
+
+	// Debug logging
+	logger.GlobalLogger.Debug("Creating new player",
+		"config", map[string]any{
+			"position": config.Position,
+			"size":     config.Size,
+			"radius":   config.Radius,
+			"speed":    config.Speed,
+		},
+		"sprite_size", map[string]any{
+			"width":  sprite.Bounds().Dx(),
+			"height": sprite.Bounds().Dy(),
+		},
+		"initial_angle", initialAngle,
+	)
+
 	return &Player{
 		coords: coords,
 		config: config,
 		sprite: sprite,
 		shape:  shape,
-		angle:  0,
+		angle:  initialAngle,
 		path:   make([]resolv.Vector, 0),
 	}, nil
 }
@@ -60,18 +79,40 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	pos := p.GetPosition()
 	op := &ebiten.DrawImageOptions{}
 
+	// Calculate scaling to match configured size
+	scaleX := float64(p.config.Size.Width) / float64(p.sprite.Bounds().Dx())
+	scaleY := float64(p.config.Size.Height) / float64(p.sprite.Bounds().Dy())
+
 	// Calculate offsets for rotation
 	offsetX := -float64(p.config.Size.Width) / common.CenterDivisor
 	offsetY := -float64(p.config.Size.Height) / common.CenterDivisor
 
-	// Apply rotation around center
+	// Apply transformations
 	op.GeoM.Translate(offsetX, offsetY)
 	op.GeoM.Rotate(float64(p.angle.ToRadians()))
+	op.GeoM.Scale(scaleX, scaleY)
 
 	// Move to final position
 	finalX := pos.X + float64(p.config.Size.Width)/common.CenterDivisor
 	finalY := pos.Y + float64(p.config.Size.Height)/common.CenterDivisor
 	op.GeoM.Translate(finalX, finalY)
+
+	// Debug logging
+	logger.GlobalLogger.Debug("Drawing player",
+		"position", map[string]any{
+			"x": pos.X,
+			"y": pos.Y,
+		},
+		"angle", p.angle,
+		"scale", map[string]any{
+			"x": scaleX,
+			"y": scaleY,
+		},
+		"final_position", map[string]any{
+			"x": finalX,
+			"y": finalY,
+		},
+	)
 
 	screen.DrawImage(p.sprite, op)
 }

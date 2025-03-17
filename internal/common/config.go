@@ -3,7 +3,7 @@ package common
 const (
 	DefaultScreenWidth  = 640
 	DefaultScreenHeight = 480
-	DefaultPlayerSize   = 16
+	DefaultPlayerSize   = 32 // Doubled from 16
 	DefaultNumStars     = 100
 	DefaultSpeed        = 0.04
 	DefaultStarSize     = 5.0
@@ -84,15 +84,21 @@ func WithAngleStep(step float64) GameOption {
 // DefaultConfig returns a default game configuration
 func DefaultConfig() *GameConfig {
 	return &GameConfig{
-		ScreenSize: Size{Width: DefaultScreenWidth, Height: DefaultScreenHeight},
-		PlayerSize: Size{Width: DefaultPlayerSize, Height: DefaultPlayerSize},
-		Radius:     float64(DefaultScreenHeight/CenterDivisor) * DefaultRadiusRatio,
-		NumStars:   DefaultNumStars,
-		Debug:      false,
-		Speed:      DefaultSpeed,
-		StarSize:   DefaultStarSize,
-		StarSpeed:  DefaultStarSpeed,
-		AngleStep:  DefaultAngleStep,
+		ScreenSize: Size{
+			Width:  DefaultScreenWidth,
+			Height: DefaultScreenHeight,
+		},
+		PlayerSize: Size{
+			Width:  DefaultPlayerSize,
+			Height: DefaultPlayerSize,
+		},
+		Radius:    float64(DefaultScreenHeight/CenterDivisor) * DefaultRadiusRatio,
+		NumStars:  DefaultNumStars,
+		Debug:     false,
+		Speed:     DefaultSpeed,
+		StarSize:  DefaultStarSize,
+		StarSpeed: DefaultStarSpeed,
+		AngleStep: DefaultAngleStep,
 	}
 }
 

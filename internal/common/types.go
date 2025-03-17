@@ -11,6 +11,10 @@ const (
 	DegreesInRadian = 180.0 / math.Pi
 	// RadiansInDegree represents the number of radians in one degree
 	RadiansInDegree = math.Pi / 180.0
+	// DegreesToRadians is the conversion factor from degrees to radians
+	DegreesToRadians = math.Pi / 180
+	// BottomAngle represents the angle at the bottom of the screen (270 degrees)
+	BottomAngle = 270
 )
 
 // Point represents a 2D point in the game world

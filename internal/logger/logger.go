@@ -4,14 +4,30 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
 var GlobalLogger slog.Logger
 
 func init() {
-	// Initialize the global logger with default settings
-	GlobalLogger = NewSlogHandler(slog.LevelInfo)
+	// Get log level from environment variable, default to info
+	level := slog.LevelInfo
+	if levelStr := os.Getenv("LOG_LEVEL"); levelStr != "" {
+		switch strings.ToUpper(levelStr) {
+		case "DEBUG":
+			level = slog.LevelDebug
+		case "INFO":
+			level = slog.LevelInfo
+		case "WARN":
+			level = slog.LevelWarn
+		case "ERROR":
+			level = slog.LevelError
+		}
+	}
+
+	// Initialize the global logger with the configured level
+	GlobalLogger = NewSlogHandler(level)
 }
 
 func NewSlogHandler(level slog.Level) slog.Logger {
