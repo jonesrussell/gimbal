@@ -13,10 +13,21 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     libxcursor-dev \
     libxi-dev \
     libgl1-mesa-dev \
+    xorg-dev \
+    libxtst-dev \
+    libpng++-dev \
     bash \
     curl \
     gnupg \
     zsh \
+    git \
+    wget \
+    vim \
+    make \
+    build-essential \
+    libxext-dev \
+    libxrender-dev \
+    x11-apps \
 && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js LTS
@@ -65,3 +76,21 @@ USER vscode
 
 # [Optional] Uncomment this line to install global node packages.
 # RUN su vscode -c "npm install -g <your-package-here>"
+
+# Install Go tools
+RUN go install golang.org/x/tools/gopls@latest \
+    && go install github.com/go-delve/delve/cmd/dlv@latest \
+    && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest \
+    && go install github.com/cosmtrek/air@latest
+
+# Set environment variables
+ENV DISPLAY=host.docker.internal:0.0
+ENV XAUTHORITY=/home/vscode/.Xauthority
+
+# Create non-root user
+RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/vscode \
+    && chmod 0440 /etc/sudoers.d/vscode
+
+WORKDIR /workspaces/gimbal
+
+CMD ["sleep", "infinity"]
