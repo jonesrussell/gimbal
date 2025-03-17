@@ -126,7 +126,7 @@ func (g *GimlarGame) Update() error {
 // Draw implements ebiten.Game interface
 func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	// Draw stars
-	g.drawStars(screen)
+	g.stars.Draw(screen)
 
 	// Draw player
 	g.player.Draw(screen)
