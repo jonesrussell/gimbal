@@ -14,8 +14,17 @@ import (
 	"github.com/solarlune/resolv"
 )
 
+const (
+	initialAngleMultiplier = 1.5 // 270 degrees or bottom of the screen
+	radiusDivisor          = 4
+	spriteScaleFactor      = 0.1
+	spriteCenterDivisor    = 2
+	pathStrokeWidth        = 1.0
+	debugAlpha             = 255
+)
+
 type PlayerInput struct {
-	input InputHandlerInterface
+	Input InputHandlerInterface
 }
 
 type PlayerPosition struct {
@@ -27,7 +36,7 @@ type PlayerSprite struct {
 }
 
 type PlayerPath struct {
-	path []resolv.Vector
+	Path []resolv.Vector
 }
 
 type Player struct {
@@ -35,10 +44,10 @@ type Player struct {
 	PlayerPosition
 	PlayerSprite
 	PlayerPath
-	viewAngle float64
-	direction float64
-	angle     float64
-	config    *GameConfig
+	ViewAngle float64
+	Direction float64
+	Angle     float64
+	Config    *GameConfig
 }
 
 // NewPlayer creates a new instance of a player with the given input handler, speed, and sprite image.
@@ -57,12 +66,12 @@ func NewPlayer(input InputHandlerInterface, config *GameConfig, spriteImage imag
 	}
 
 	// calculate the initial angle of the player (270 degrees)
-	initialAngle := math.Pi * 1.5 // 270 degrees or bottom of the screen
+	initialAngle := math.Pi * initialAngleMultiplier
 
 	// calculate the initial X and Y positions of the player based on the center point and the initial angle
 	centerX := float64(config.ScreenWidth) / 2
 	centerY := float64(config.ScreenHeight) / 2
-	radius := float64(config.ScreenHeight) / 4
+	radius := float64(config.ScreenHeight) / radiusDivisor
 
 	initialX := centerX + radius*math.Cos(initialAngle)
 	initialY := centerY - radius*math.Sin(initialAngle) - float64(config.PlayerHeight)/2
@@ -70,7 +79,7 @@ func NewPlayer(input InputHandlerInterface, config *GameConfig, spriteImage imag
 	// create a new instance of a player with the given input handler, initial position, and sprite image
 	player := &Player{
 		PlayerInput: PlayerInput{
-			input: input,
+			Input: input,
 		},
 		PlayerPosition: PlayerPosition{
 			Object: resolv.NewRectangle(initialX, initialY, float64(config.PlayerWidth), float64(config.PlayerHeight)),
@@ -79,8 +88,8 @@ func NewPlayer(input InputHandlerInterface, config *GameConfig, spriteImage imag
 			Sprite: ebiten.NewImageFromImage(spriteImage),
 		},
 		PlayerPath: PlayerPath{},
-		viewAngle:  initialAngle,
-		config:     config,
+		ViewAngle:  initialAngle,
+		Config:     config,
 	}
 
 	return player, nil
@@ -88,42 +97,58 @@ func NewPlayer(input InputHandlerInterface, config *GameConfig, spriteImage imag
 
 func (player *Player) Update() {
 	pos := player.Object.Position()
-	logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", pos.X, "Y", pos.Y)
+	logger.GlobalLogger.Debug(
+		"Player",
+		"viewAngle", player.ViewAngle,
+		"direction", player.Direction,
+		"angle", player.Angle,
+		"X", pos.X,
+		"Y", pos.Y,
+	)
 
-	oldOrientation := player.viewAngle
-	oldDirection := player.direction
-	oldAngle := player.angle
+	oldOrientation := player.ViewAngle
+	oldDirection := player.Direction
+	oldAngle := player.Angle
 	oldPos := player.Object.Position()
 
-	if player.input.IsKeyPressed(ebiten.KeyLeft) {
-		player.direction = -1
-		player.viewAngle -= player.config.AngleStep
-	} else if player.input.IsKeyPressed(ebiten.KeyRight) {
-		player.direction = 1
-		player.viewAngle += player.config.AngleStep
-	} else {
-		player.direction = 0
+	switch {
+	case player.Input.IsKeyPressed(ebiten.KeyLeft):
+		player.Direction = -1
+		player.ViewAngle -= player.Config.AngleStep
+	case player.Input.IsKeyPressed(ebiten.KeyRight):
+		player.Direction = 1
+		player.ViewAngle += player.Config.AngleStep
+	default:
+		player.Direction = 0
 	}
 
-	position := player.calculatePosition()
+	position := player.CalculatePosition()
 	logger.GlobalLogger.Info("position", "full", position)
 
 	player.Object = resolv.NewRectangle(
 		position.X,
 		position.Y,
-		float64(player.config.PlayerWidth),
-		float64(player.config.PlayerHeight),
+		float64(player.Config.PlayerWidth),
+		float64(player.Config.PlayerHeight),
 	)
 
-	player.angle = player.calculateAngle()
+	player.Angle = player.CalculateAngle()
 
 	newPos := player.Object.Position()
-	if player.viewAngle != oldOrientation || player.direction != oldDirection || player.angle != oldAngle || newPos.X != oldPos.X || newPos.Y != oldPos.Y {
-		logger.GlobalLogger.Debug("Player", "viewAngle", player.viewAngle, "direction", player.direction, "angle", player.angle, "X", newPos.X, "Y", newPos.Y)
+	if player.ViewAngle != oldOrientation || player.Direction != oldDirection ||
+		player.Angle != oldAngle || newPos.X != oldPos.X || newPos.Y != oldPos.Y {
+		logger.GlobalLogger.Debug(
+			"Player",
+			"viewAngle", player.ViewAngle,
+			"direction", player.Direction,
+			"angle", player.Angle,
+			"X", newPos.X,
+			"Y", newPos.Y,
+		)
 	}
 
 	// Add the current position to the path
-	player.path = append(player.path, newPos)
+	player.Path = append(player.Path, newPos)
 }
 
 var prevRectX, prevRectY float64
@@ -132,7 +157,7 @@ func (player *Player) Draw(screen *ebiten.Image) {
 	// Draw the player's sprite
 	player.drawSprite(screen)
 
-	if player.config.Debug {
+	if player.Config.Debug {
 		// Draw the player's path
 		player.drawPath(screen)
 		// Draw the rectangle image onto the screen
@@ -142,15 +167,15 @@ func (player *Player) Draw(screen *ebiten.Image) {
 
 // Draw the players path
 func (player *Player) drawPath(screen *ebiten.Image) {
-	for i := 0; i < len(player.path)-1; i++ {
+	for i := range player.Path[:len(player.Path)-1] {
 		vector.StrokeLine(
 			screen,
-			float32(player.path[i].X),
-			float32(player.path[i].Y),
-			float32(player.path[i+1].X),
-			float32(player.path[i+1].Y),
-			1.0,
-			color.RGBA{255, 0, 0, 255},
+			float32(player.Path[i].X),
+			float32(player.Path[i].Y),
+			float32(player.Path[i+1].X),
+			float32(player.Path[i+1].Y),
+			pathStrokeWidth,
+			color.RGBA{255, 0, 0, debugAlpha},
 			false,
 		)
 	}
@@ -158,14 +183,14 @@ func (player *Player) drawPath(screen *ebiten.Image) {
 
 func (player *Player) drawRectangle(screen *ebiten.Image) {
 	// Create a new image for the rectangle
-	rectColor := color.RGBA{255, 0, 0, 255}
-	img := ebiten.NewImage(int(player.config.PlayerWidth), int(player.config.PlayerHeight))
+	rectColor := color.RGBA{255, 0, 0, debugAlpha}
+	img := ebiten.NewImage(int(player.Config.PlayerWidth), int(player.Config.PlayerHeight))
 	img.Fill(rectColor)
 
 	// Get the position and calculate the rectangle's top-left corner position
 	pos := player.Object.Position()
-	rectX := pos.X - float64(player.config.PlayerWidth)/2
-	rectY := pos.Y - float64(player.config.PlayerHeight)/2
+	rectX := pos.X - float64(player.Config.PlayerWidth)/2
+	rectY := pos.Y - float64(player.Config.PlayerHeight)/2
 
 	// Check if rectX or rectY has changed since the last call
 	if rectX != prevRectX || rectY != prevRectY {
@@ -196,17 +221,17 @@ func (player *Player) drawSprite(screen *ebiten.Image) {
 func (player *Player) createSpriteOptions() *ebiten.DrawImageOptions {
 	// Calculate the sprite's top-left corner position
 	width := player.Sprite.Bounds().Dx()
-	someValue := float64(width) / 2 // Convert to float64 and divide by 2
+	someValue := float64(width) / spriteCenterDivisor
 	height := float64(player.Sprite.Bounds().Dy())
 
 	spriteOp := &ebiten.DrawImageOptions{}
 
 	// Translate the sprite so that its center is at the origin
-	spriteOp.GeoM.Translate(-someValue, -height/2)
+	spriteOp.GeoM.Translate(-someValue, -height/spriteCenterDivisor)
 
 	// Scale the sprite to 1/10th size and rotate
-	spriteOp.GeoM.Scale(0.1, 0.1)
-	spriteOp.GeoM.Rotate(player.angle)
+	spriteOp.GeoM.Scale(spriteScaleFactor, spriteScaleFactor)
+	spriteOp.GeoM.Rotate(player.Angle)
 
 	// Translate the rotated and scaled sprite to the player's position
 	pos := player.Object.Position()
@@ -216,37 +241,42 @@ func (player *Player) createSpriteOptions() *ebiten.DrawImageOptions {
 }
 
 func (player *Player) getRotatedSprite() *ebiten.Image {
-	return player.Sprite.SubImage(
+	img, ok := player.Sprite.SubImage(
 		image.Rect(0, 0, player.Sprite.Bounds().Dx(), player.Sprite.Bounds().Dy()),
 	).(*ebiten.Image)
+	if !ok {
+		logger.GlobalLogger.Error("Failed to get rotated sprite: type assertion failed")
+		return nil
+	}
+	return img
 }
 
 // GetAngle returns the player's current angle
 func (player *Player) GetAngle() float64 {
-	return player.angle
+	return player.Angle
 }
 
 // SetAngle sets the player's current angle
 func (player *Player) SetAngle(angle float64) {
-	player.angle = angle
+	player.Angle = angle
 }
 
 // GetDirection returns the player's current direction
 func (player *Player) GetDirection() float64 {
-	return player.direction
+	return player.Direction
 }
 
 // SetDirection sets the player's current direction
 func (player *Player) SetDirection(direction float64) {
-	player.direction = direction
+	player.Direction = direction
 }
 
 // GetViewAngle returns the player's current view angle
 func (player *Player) GetViewAngle() float64 {
-	return player.viewAngle
+	return player.ViewAngle
 }
 
 // SetViewAngle sets the player's current view angle
 func (player *Player) SetViewAngle(viewAngle float64) {
-	player.viewAngle = viewAngle
+	player.ViewAngle = viewAngle
 }
