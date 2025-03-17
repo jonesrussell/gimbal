@@ -16,6 +16,13 @@ import (
 	"github.com/jonesrussell/gimbal/internal/logger"
 )
 
+const (
+	// DebugTextMargin is the margin for debug text from screen edges
+	DebugTextMargin = 10
+	// DebugTextLineHeight is the vertical spacing between debug text lines
+	DebugTextLineHeight = 20
+)
+
 //go:embed assets/*
 var assets embed.FS
 
@@ -168,6 +175,8 @@ func (g *GimlarGame) drawDebugInfo(screen *ebiten.Image) {
 		"position", fmt.Sprintf("(%.2f, %.2f)", pos.X, pos.Y),
 		"angle", fmt.Sprintf("%.2f°", angle),
 	)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Position: (%.2f, %.2f)", pos.X, pos.Y), 10, 10)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Angle: %.2f°", angle), 10, 30)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Position: (%.2f, %.2f)", pos.X, pos.Y),
+		DebugTextMargin, DebugTextMargin)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Angle: %.2f°", angle),
+		DebugTextMargin, DebugTextMargin+DebugTextLineHeight)
 }

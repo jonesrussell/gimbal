@@ -9,6 +9,11 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
+const (
+	// RandomBitShift is the number of bits to shift for random float64 generation
+	RandomBitShift = 64
+)
+
 // Manager handles multiple stars and implements Entity interface
 type Manager struct {
 	stars        []*Star
@@ -26,7 +31,7 @@ func randomFloat64() float64 {
 	if _, err := rand.Read(b[:]); err != nil {
 		return 0
 	}
-	return float64(binary.LittleEndian.Uint64(b[:])) / (1 << 64)
+	return float64(binary.LittleEndian.Uint64(b[:])) / (1 << RandomBitShift)
 }
 
 // NewManager creates a new star manager
