@@ -11,6 +11,13 @@ import (
 	"github.com/solarlune/resolv"
 )
 
+const (
+	// HalfDivisor is used to calculate half of a dimension
+	HalfDivisor = 2
+	// LogIntervalSeconds is the interval in seconds between position logs
+	LogIntervalSeconds = 5
+)
+
 // Player represents the player entity in the game
 type Player struct {
 	coords      *physics.CoordinateSystem
@@ -84,7 +91,7 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 		speed:       config.Speed,
 		size:        config.Size,
 		lastLog:     time.Now(),
-		logInterval: time.Second * 5,
+		logInterval: time.Second * LogIntervalSeconds,
 	}
 
 	logger.GlobalLogger.Debug("Player created",
@@ -104,57 +111,32 @@ func (p *Player) Update() {
 	p.shape.SetPosition(pos.X, pos.Y)
 }
 
-// Draw implements Entity interface
+// Draw draws the player sprite
 func (p *Player) Draw(screen *ebiten.Image) {
-	// Only log once per second
-	now := time.Now()
-	if now.Sub(p.lastLog) >= p.logInterval {
-		pos := p.GetPosition()
-		logger.GlobalLogger.Debug("Drawing player",
-			"position", map[string]float64{
-				"x": pos.X,
-				"y": pos.Y,
-			},
-			"angle", p.GetAngle().ToRadians(),
-			"scale", map[string]float64{
-				"x": float64(p.size.Width) / float64(p.sprite.Bounds().Dx()),
-				"y": float64(p.size.Height) / float64(p.sprite.Bounds().Dy()),
-			},
-			"final_position", map[string]float64{
-				"x": pos.X + float64(p.size.Width)/2,
-				"y": pos.Y + float64(p.size.Height)/2,
-			},
-		)
-		p.lastLog = now
+	if p.sprite == nil {
+		return
 	}
 
-	// Create GeoM for transformations
-	geoM := ebiten.GeoM{}
+	// Calculate sprite offset to center it
+	offsetX := float64(p.sprite.Bounds().Dx()) / HalfDivisor
+	offsetY := float64(p.sprite.Bounds().Dy()) / HalfDivisor
 
-	// Calculate scale based on sprite size
-	scaleX := float64(p.size.Width) / float64(p.sprite.Bounds().Dx())
-	scaleY := float64(p.size.Height) / float64(p.sprite.Bounds().Dy())
+	// Create transformation options
+	op := &ebiten.DrawImageOptions{}
 
-	// Move to origin for rotation
-	offsetX := float64(p.sprite.Bounds().Dx()) / 2
-	offsetY := float64(p.sprite.Bounds().Dy()) / 2
-	geoM.Translate(-offsetX, -offsetY)
+	// Translate to center of sprite
+	op.GeoM.Translate(-offsetX, -offsetY)
 
-	// Apply rotation based on facing angle
-	geoM.Rotate(p.facingAngle.ToRadians())
+	// Rotate sprite based on facing angle
+	op.GeoM.Rotate(p.facingAngle.ToRadians())
 
-	// Apply scale
-	geoM.Scale(scaleX, scaleY)
-
-	// Move to final position
-	finalX := p.GetPosition().X + float64(p.size.Width)/2
-	finalY := p.GetPosition().Y + float64(p.size.Height)/2
-	geoM.Translate(finalX, finalY)
+	// Translate to final position
+	finalX := p.GetPosition().X + float64(p.size.Width)/HalfDivisor
+	finalY := p.GetPosition().Y + float64(p.size.Height)/HalfDivisor
+	op.GeoM.Translate(finalX, finalY)
 
 	// Draw the sprite
-	screen.DrawImage(p.sprite, &ebiten.DrawImageOptions{
-		GeoM: geoM,
-	})
+	screen.DrawImage(p.sprite, op)
 }
 
 // GetPosition implements Entity interface

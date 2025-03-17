@@ -240,21 +240,21 @@ func TestGame_Update(t *testing.T) {
 	g.SetInputHandler(testHandler)
 
 	// Test initial state
-	assert.Equal(t, common.Angle(0), g.GetPlayer().GetAngle())
-	assert.Equal(t, common.Angle(0), g.GetPlayer().GetFacingAngle())
+	assert.InDelta(t, float64(common.Angle(0)), float64(g.GetPlayer().GetAngle()), 0.001)
+	assert.InDelta(t, float64(common.Angle(0)), float64(g.GetPlayer().GetFacingAngle()), 0.001)
 
 	// Test left movement
 	testHandler.SimulateKeyPress(ebiten.KeyLeft)
 	g.Update()
-	assert.Equal(t, common.Angle(-2), g.GetPlayer().GetAngle())
-	assert.Equal(t, common.Angle(0), g.GetPlayer().GetFacingAngle())
+	assert.InDelta(t, float64(common.Angle(-2)), float64(g.GetPlayer().GetAngle()), 0.001)
+	assert.InDelta(t, float64(common.Angle(0)), float64(g.GetPlayer().GetFacingAngle()), 0.001)
 
 	// Test right movement
 	testHandler.SimulateKeyRelease(ebiten.KeyLeft)
 	testHandler.SimulateKeyPress(ebiten.KeyRight)
 	g.Update()
-	assert.Equal(t, common.Angle(0), g.GetPlayer().GetAngle())
-	assert.Equal(t, common.Angle(0), g.GetPlayer().GetFacingAngle())
+	assert.InDelta(t, float64(common.Angle(0)), float64(g.GetPlayer().GetAngle()), 0.001)
+	assert.InDelta(t, float64(common.Angle(0)), float64(g.GetPlayer().GetFacingAngle()), 0.001)
 
 	// Test pause
 	testHandler.SimulateKeyRelease(ebiten.KeyRight)
