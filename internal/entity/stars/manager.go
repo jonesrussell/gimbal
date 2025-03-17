@@ -7,6 +7,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/entity/player"
+	ebitensprite "github.com/jonesrussell/gimbal/internal/entity/player/ebiten"
 )
 
 const (
@@ -18,7 +20,7 @@ const (
 type Manager struct {
 	stars        []*Star
 	screenBounds common.Size
-	baseSprite   *ebiten.Image
+	baseSprite   player.Drawable
 	config       struct {
 		starSize  float64
 		starSpeed float64
@@ -37,8 +39,9 @@ func randomFloat64() float64 {
 // NewManager creates a new star manager
 func NewManager(bounds common.Size, numStars int, starSize, starSpeed float64) *Manager {
 	// Create base sprite for stars
-	baseSprite := ebiten.NewImage(1, 1)
-	baseSprite.Fill(color.White)
+	baseImage := ebiten.NewImage(1, 1)
+	baseImage.Fill(color.White)
+	baseSprite := ebitensprite.NewSprite(baseImage)
 
 	m := &Manager{
 		stars:        make([]*Star, numStars),
@@ -77,8 +80,8 @@ func (m *Manager) Update() {
 	}
 }
 
-// Draw implements Entity interface
-func (m *Manager) Draw(screen *ebiten.Image) {
+// Draw implements the Drawable interface
+func (m *Manager) Draw(screen any) {
 	for _, star := range m.stars {
 		star.Draw(screen)
 	}

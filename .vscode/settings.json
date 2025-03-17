@@ -11,5 +11,17 @@
   "go.useLanguageServer": true,
   "gopls": {
     "ui.diagnostic.staticcheck": true
-  }
+  },
+  "go.testFlags": [
+    "-v"
+  ],
+  "go.testTimeout": "30s",
+  "go.testOnSave": false,
+  "go.testEnv": {
+    "DISPLAY": ":99"
+  },
+  "go.testEnvVars": {
+    "EBITEN_TEST": "1"
+  },
+  "go.testCommand": "sh -c 'cd ${workspaceFolder} && ./scripts/test.sh'"
 }

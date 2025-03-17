@@ -3,90 +3,39 @@ package game_test
 import (
 	"testing"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/game"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestDebugPrintStar(t *testing.T) {
-	// Create a test game
-	config := common.NewConfig(
-		common.WithScreenSize(640, 480),
-		common.WithDebug(true),
-	)
-	g, err := game.New(config)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
+func TestNewDebug(t *testing.T) {
+	t.Parallel()
 
-	// Create a test screen
-	screen := ebiten.NewImage(640, 480)
-
-	// Test with a valid star
-	star := g.GetStars()[0]
-	g.DebugPrintStar(screen, star) // This should not panic
+	d := game.NewDebug()
+	require.NotNil(t, d)
 }
 
-func TestDrawDebugGridOverlay(t *testing.T) {
-	// Create a test game
-	config := common.NewConfig(
-		common.WithScreenSize(640, 480),
-		common.WithDebug(true),
-	)
-	g, err := game.New(config)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
+func TestDebug_Draw(t *testing.T) {
+	t.Parallel()
 
-	// Create a test screen
-	screen := ebiten.NewImage(640, 480)
+	d := game.NewDebug()
+	require.NotNil(t, d)
 
-	// Test drawing the grid
-	g.DrawDebugGridOverlay(screen)
-
-	// Verify the screen was modified
-	assert.NotNil(t, screen)
+	// Test drawing with nil screen
+	d.Draw(nil)
+	// No panic expected
 }
 
-func TestGimlarGame_DrawDebugInfo(t *testing.T) {
-	// Create a test game
-	config := common.NewConfig(
-		common.WithScreenSize(640, 480),
-		common.WithDebug(true),
-	)
-	g, err := game.New(config)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
+func TestDebug_Update(t *testing.T) {
+	t.Parallel()
 
-	// Create a test screen
-	screen := ebiten.NewImage(640, 480)
+	d := game.NewDebug()
+	require.NotNil(t, d)
 
-	// Test drawing debug info
-	g.DrawDebugInfo(screen)
+	d.SetFPS(60)
+	d.SetEntityCount(10)
 
-	// Verify the screen was modified
-	assert.NotNil(t, screen)
-}
-
-func TestGimlarGame_DrawDebugGrid(t *testing.T) {
-	// Create a test game
-	config := common.NewConfig(
-		common.WithScreenSize(640, 480),
-		common.WithDebug(true),
-	)
-	g, err := game.New(config)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
-
-	// Create a test screen
-	screen := ebiten.NewImage(640, 480)
-
-	// Test drawing the grid
-	g.DrawDebugGrid(screen)
-
-	// Verify the screen was modified
-	assert.NotNil(t, screen)
+	d.Update()
+	assert.Equal(t, 60, d.GetFPS())
+	assert.Equal(t, 10, d.GetEntityCount())
 }

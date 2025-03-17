@@ -2,10 +2,8 @@ package player
 
 import (
 	"errors"
-	"image"
 	"time"
 
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/jonesrussell/gimbal/internal/physics"
@@ -19,28 +17,25 @@ const (
 	LogIntervalSeconds = 5
 )
 
-// SpriteImage defines the interface for sprite images
-type SpriteImage interface {
-	Bounds() image.Rectangle
+// Drawable interface defines the methods required for drawing
+type Drawable interface {
+	Draw(screen any, op any)
 }
 
 // Player represents the player entity in the game
 type Player struct {
 	coords      *physics.CoordinateSystem
 	config      *common.EntityConfig
-	sprite      SpriteImage
+	sprite      Drawable
 	shape       resolv.IShape
 	posAngle    common.Angle // Angle around the circle (position)
-	facingAngle common.Angle // Direction the player is facing
-	path        []resolv.Vector
-	speed       float64
-	size        common.Size
+	facingAngle common.Angle // Angle the player is facing
 	lastLog     time.Time
 	logInterval time.Duration
 }
 
 // New creates a new player instance
-func New(config *common.EntityConfig, sprite SpriteImage) (*Player, error) {
+func New(config *common.EntityConfig, sprite Drawable) (*Player, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
 	}
@@ -58,54 +53,31 @@ func New(config *common.EntityConfig, sprite SpriteImage) (*Player, error) {
 				"width":  config.Size.Width,
 				"height": config.Size.Height,
 			},
-			"radius": config.Radius,
 			"speed":  config.Speed,
+			"radius": config.Radius,
 		},
 	)
 
-	// Create coordinate system for circular movement
-	// Center point should be at the center of the screen
-	center := common.Point{
-		X: config.Position.X,
-		Y: config.Position.Y,
-	}
-	coords := physics.NewCoordinateSystem(center, config.Radius)
-
-	// Start at bottom (180 degrees) and face center (0 degrees)
-	posAngle := common.Angle(common.AngleDown) // Position at bottom
-	facingAngle := common.Angle(0)             // Face center
-
-	initialPos := coords.CalculateCircularPosition(posAngle)
-
-	// Create player collision shape as a rectangle
-	shape := resolv.NewRectangle(
-		initialPos.X,
-		initialPos.Y,
-		float64(config.Size.Width),
-		float64(config.Size.Height),
-	)
+	// Create coordinate system
+	coords := physics.NewCoordinateSystem(config.Position, config.Radius)
 
 	// Create player with initial position
 	player := &Player{
 		coords:      coords,
 		config:      config,
 		sprite:      sprite,
-		shape:       shape,
-		posAngle:    posAngle,
-		facingAngle: facingAngle,
-		path:        make([]resolv.Vector, 0),
-		speed:       config.Speed,
-		size:        config.Size,
+		posAngle:    common.Angle(0),
+		facingAngle: common.Angle(0),
 		lastLog:     time.Now(),
 		logInterval: time.Second * LogIntervalSeconds,
 	}
 
-	logger.GlobalLogger.Debug("Player created",
-		"position", map[string]float64{
-			"x": initialPos.X,
-			"y": initialPos.Y,
-		},
-		"angle", posAngle.ToRadians()/common.DegreesToRadians,
+	// Create collision shape
+	player.shape = resolv.NewRectangle(
+		config.Position.X-float64(config.Size.Width)/2,
+		config.Position.Y-float64(config.Size.Height)/2,
+		float64(config.Size.Width),
+		float64(config.Size.Height),
 	)
 
 	return player, nil
@@ -117,39 +89,11 @@ func (p *Player) Update() {
 	p.shape.SetPosition(pos.X, pos.Y)
 }
 
-// Draw draws the player on the screen
-func (p *Player) Draw(screen *ebiten.Image) {
-	if p.sprite == nil {
-		return
+// Draw implements the Drawable interface
+func (p *Player) Draw(screen any, op any) {
+	if p.sprite != nil {
+		p.sprite.Draw(screen, op)
 	}
-
-	// Type assert the sprite to *ebiten.Image for drawing
-	ebitenSprite, ok := p.sprite.(*ebiten.Image)
-	if !ok {
-		return
-	}
-
-	// Get current position
-	pos := p.coords.CalculateCircularPosition(p.posAngle)
-
-	// Calculate sprite offset to center it
-	offsetX := float64(p.sprite.Bounds().Dx()) / HalfDivisor
-	offsetY := float64(p.sprite.Bounds().Dy()) / HalfDivisor
-
-	// Create transformation options
-	op := &ebiten.DrawImageOptions{}
-
-	// Translate to center of sprite
-	op.GeoM.Translate(-offsetX, -offsetY)
-
-	// Rotate sprite based on facing angle
-	op.GeoM.Rotate(p.facingAngle.ToRadians())
-
-	// Translate to final position
-	op.GeoM.Translate(pos.X, pos.Y)
-
-	// Draw the sprite
-	screen.DrawImage(ebitenSprite, op)
 }
 
 // GetPosition implements Entity interface
@@ -164,7 +108,7 @@ func (p *Player) SetPosition(pos common.Point) {
 
 // GetSpeed implements Movable interface
 func (p *Player) GetSpeed() float64 {
-	return p.speed
+	return p.config.Speed
 }
 
 // GetAngle returns the player's current position angle
@@ -189,7 +133,7 @@ func (p *Player) SetFacingAngle(angle common.Angle) {
 
 // GetBounds implements Collidable interface
 func (p *Player) GetBounds() common.Size {
-	return p.size
+	return p.config.Size
 }
 
 // CheckCollision implements Collidable interface
@@ -221,6 +165,6 @@ func (p *Player) Config() *common.EntityConfig {
 }
 
 // Sprite returns the player's sprite
-func (p *Player) Sprite() SpriteImage {
+func (p *Player) Sprite() Drawable {
 	return p.sprite
 }

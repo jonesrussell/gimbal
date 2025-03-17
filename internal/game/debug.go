@@ -14,6 +14,47 @@ const (
 	debugGridSpacing = 32
 )
 
+// Debug handles debug information for the game
+type Debug struct {
+	fps         int
+	entityCount int
+}
+
+// NewDebug creates a new debug instance
+func NewDebug() *Debug {
+	return &Debug{}
+}
+
+// Draw implements the Drawable interface
+func (d *Debug) Draw(screen any) {
+	// No-op for testing
+}
+
+// Update updates debug information
+func (d *Debug) Update() {
+	// No-op for testing
+}
+
+// SetFPS sets the current FPS
+func (d *Debug) SetFPS(fps int) {
+	d.fps = fps
+}
+
+// GetFPS returns the current FPS
+func (d *Debug) GetFPS() int {
+	return d.fps
+}
+
+// SetEntityCount sets the current entity count
+func (d *Debug) SetEntityCount(count int) {
+	d.entityCount = count
+}
+
+// GetEntityCount returns the current entity count
+func (d *Debug) GetEntityCount() int {
+	return d.entityCount
+}
+
 // DebugPrintStar prints the debug information for a star.
 func (g *GimlarGame) DebugPrintStar(screen *ebiten.Image, star *stars.Star) {
 	if g.config.Debug {

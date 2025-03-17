@@ -1,8 +1,8 @@
 package stars
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/entity/player"
 )
 
 // Star represents a star in the game
@@ -10,13 +10,13 @@ type Star struct {
 	position common.Point
 	speed    float64
 	size     float64
-	sprite   *ebiten.Image
+	sprite   player.Drawable
 	bounds   common.Size
 	angle    float64
 }
 
 // New creates a new star instance
-func New(pos common.Point, speed, size float64, sprite *ebiten.Image) *Star {
+func New(pos common.Point, speed, size float64, sprite player.Drawable) *Star {
 	return &Star{
 		position: pos,
 		speed:    speed,
@@ -38,16 +38,11 @@ func (s *Star) Update() {
 	}
 }
 
-// Draw implements Entity interface
-func (s *Star) Draw(screen *ebiten.Image) {
-	if s.sprite == nil {
-		return
+// Draw implements the Drawable interface
+func (s *Star) Draw(screen any) {
+	if s.sprite != nil {
+		s.sprite.Draw(screen, nil)
 	}
-
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(s.size, s.size)
-	op.GeoM.Translate(s.position.X, s.position.Y)
-	screen.DrawImage(s.sprite, op)
 }
 
 // GetPosition implements Entity interface
@@ -92,7 +87,7 @@ func (s *Star) SetAngle(angle float64) {
 }
 
 // GetSprite returns the star's sprite
-func (s *Star) GetSprite() *ebiten.Image {
+func (s *Star) GetSprite() player.Drawable {
 	return s.sprite
 }
 
