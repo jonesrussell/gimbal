@@ -31,7 +31,7 @@ type GimlarGame struct {
 	config   *common.GameConfig
 	player   *player.Player
 	stars    *stars.Manager
-	input    *input.Handler
+	input    input.Interface
 	isPaused bool
 }
 
@@ -198,17 +198,12 @@ func (g *GimlarGame) drawDebugInfo(screen *ebiten.Image) {
 		DebugTextMargin, DebugTextMargin+DebugTextLineHeight)
 }
 
-// SimulateKeyPress simulates a key press for testing
-func (g *GimlarGame) SimulateKeyPress(key ebiten.Key) {
-	g.input.SimulateKeyPress(key)
+// SetInputHandler sets the input handler for the game
+func (g *GimlarGame) SetInputHandler(handler input.Interface) {
+	g.input = handler
 }
 
-// SimulateKeyRelease simulates a key release for testing
-func (g *GimlarGame) SimulateKeyRelease(key ebiten.Key) {
-	g.input.SimulateKeyRelease(key)
-}
-
-// EnableTestMode enables test mode for input simulation
-func (g *GimlarGame) EnableTestMode(enabled bool) {
-	g.input.SetTestMode(enabled)
+// IsPaused returns whether the game is paused
+func (g *GimlarGame) IsPaused() bool {
+	return g.isPaused
 }

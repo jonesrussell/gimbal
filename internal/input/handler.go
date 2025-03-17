@@ -11,74 +11,54 @@ const (
 	MovementSpeedDegreesPerFrame = 2
 )
 
+// Interface defines the input handler interface
+type Interface interface {
+	HandleInput()
+	IsKeyPressed(key ebiten.Key) bool
+	GetMovementInput() common.Angle
+	IsQuitPressed() bool
+	IsPausePressed() bool
+	// Simulation methods for testing
+	SimulateKeyPress(key ebiten.Key)
+	SimulateKeyRelease(key ebiten.Key)
+}
+
 // Handler handles game input
 type Handler struct {
 	keyState map[ebiten.Key]bool
-	testMode bool
 }
 
 // New creates a new input handler
 func New() *Handler {
 	return &Handler{
 		keyState: make(map[ebiten.Key]bool),
-		testMode: false,
-	}
-}
-
-// SetTestMode enables test mode for key simulation
-func (h *Handler) SetTestMode(enabled bool) {
-	h.testMode = enabled
-}
-
-// SimulateKeyPress simulates a key press for testing
-func (h *Handler) SimulateKeyPress(key ebiten.Key) {
-	if h.testMode {
-		h.keyState[key] = true
-		logger.GlobalLogger.Debug("Key pressed", "key", key)
-	}
-}
-
-// SimulateKeyRelease simulates a key release for testing
-func (h *Handler) SimulateKeyRelease(key ebiten.Key) {
-	if h.testMode {
-		h.keyState[key] = false
-		logger.GlobalLogger.Debug("Key released", "key", key)
 	}
 }
 
 // HandleInput implements InputHandler interface
 func (h *Handler) HandleInput() {
-	if !h.testMode {
-		// Update key states
-		for key := ebiten.Key(0); key <= ebiten.KeyMax; key++ {
-			wasPressed := h.keyState[key]
-			isPressed := ebiten.IsKeyPressed(key)
-			h.keyState[key] = isPressed
+	// Update key states
+	for key := ebiten.Key(0); key <= ebiten.KeyMax; key++ {
+		wasPressed := h.keyState[key]
+		isPressed := ebiten.IsKeyPressed(key)
+		h.keyState[key] = isPressed
 
-			// Log key state changes for arrow keys
-			if key == ebiten.KeyLeft || key == ebiten.KeyRight {
-				logger.GlobalLogger.Debug("Arrow key state",
-					"key", key,
-					"was_pressed", wasPressed,
-					"is_pressed", isPressed,
-					"key_left", ebiten.KeyLeft,
-					"key_right", ebiten.KeyRight,
-				)
-			}
+		// Log key state changes for arrow keys
+		if key == ebiten.KeyLeft || key == ebiten.KeyRight {
+			logger.GlobalLogger.Debug("Arrow key state",
+				"key", key,
+				"was_pressed", wasPressed,
+				"is_pressed", isPressed,
+				"key_left", ebiten.KeyLeft,
+				"key_right", ebiten.KeyRight,
+			)
 		}
 	}
 }
 
 // IsKeyPressed implements InputHandler interface
 func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
-	isPressed := h.keyState[key]
-	logger.GlobalLogger.Debug("Key check",
-		"key", key,
-		"is_pressed", isPressed,
-		"key_left", ebiten.KeyLeft,
-		"key_right", ebiten.KeyRight,
-	)
-	return isPressed
+	return ebiten.IsKeyPressed(key)
 }
 
 // GetMovementInput returns the movement direction based on key states
@@ -116,3 +96,9 @@ func (h *Handler) IsQuitPressed() bool {
 func (h *Handler) IsPausePressed() bool {
 	return h.IsKeyPressed(ebiten.KeySpace)
 }
+
+// SimulateKeyPress is a no-op for the real input handler
+func (h *Handler) SimulateKeyPress(key ebiten.Key) {}
+
+// SimulateKeyRelease is a no-op for the real input handler
+func (h *Handler) SimulateKeyRelease(key ebiten.Key) {}
