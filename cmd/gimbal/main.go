@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/game"
 )
 
@@ -12,18 +13,15 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Create game configuration with options
-	config := game.NewConfig(
-		game.WithDebug(os.Getenv("DEBUG") != ""),
-		game.WithSpeed(game.DefaultSpeed),
-		game.WithStarSettings(game.DefaultStarSize, game.DefaultStarSpeed),
-		game.WithAngleStep(game.DefaultAngleStep),
+	config := common.NewConfig(
+		common.WithDebug(os.Getenv("DEBUG") != ""),
+		common.WithSpeed(common.DefaultSpeed),
+		common.WithStarSettings(common.DefaultStarSize, common.DefaultStarSpeed),
+		common.WithAngleStep(common.DefaultAngleStep),
 	)
 
-	// Create input handler
-	input := &game.InputHandler{}
-
 	// Initialize game
-	g, initErr := game.NewGimlarGame(config, input)
+	g, initErr := game.New(config)
 	if initErr != nil {
 		logger.Error("Failed to initialize game", "error", initErr)
 		os.Exit(1)

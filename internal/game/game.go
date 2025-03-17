@@ -137,6 +137,21 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	}
 }
 
+// GetPlayer returns the player entity
+func (g *GimlarGame) GetPlayer() *player.Player {
+	return g.player
+}
+
+// GetRadius returns the game's radius
+func (g *GimlarGame) GetRadius() float64 {
+	return g.config.Radius
+}
+
+// GetStars returns the stars from the star manager
+func (g *GimlarGame) GetStars() []*stars.Star {
+	return g.stars.GetStars()
+}
+
 // Run starts the game loop
 func (g *GimlarGame) Run() error {
 	ebiten.SetWindowSize(g.config.ScreenSize.Width, g.config.ScreenSize.Height)

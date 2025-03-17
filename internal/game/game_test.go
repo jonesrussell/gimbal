@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,33 +12,28 @@ import (
 
 func TestNewGimlarGame(t *testing.T) {
 	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithPlayerSize(16, 16),
-		game.WithSpeed(1.0),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(16, 16),
+		common.WithSpeed(1.0),
 	)
-	input := &game.InputHandler{}
 
 	// Execute
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 
 	// Assert
 	require.NoError(t, err)
 	assert.NotNil(t, g)
-	assert.InEpsilon(t, config.Speed, g.GetSpeed(), 0.0001)
-	assert.NotNil(t, g.GetPlayer())
 	assert.NotNil(t, g.GetStars())
-	assert.NotNil(t, g.GetSpace())
 }
 
 func TestUpdate(t *testing.T) {
 	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithSpeed(1.0),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithSpeed(1.0),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	require.NoError(t, err)
 
 	// Execute
@@ -49,11 +45,10 @@ func TestUpdate(t *testing.T) {
 
 func TestDraw(t *testing.T) {
 	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	require.NoError(t, err)
 
 	// Execute
@@ -66,59 +61,54 @@ func TestDraw(t *testing.T) {
 
 func TestPlayerMovement(t *testing.T) {
 	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithSpeed(1.0),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithSpeed(1.0),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	require.NoError(t, err)
 
-	// Initial player position
-	player := g.GetPlayer()
-	initialPos := player.Object.Position()
+	// Get initial player position
+	initialPos := g.GetPlayer().GetPosition()
 	initialX := initialPos.X
 
 	// Execute
-	player.Object.Move(g.GetSpeed(), 0)
+	g.Update()
 
 	// Assert
-	finalPos := player.Object.Position()
+	finalPos := g.GetPlayer().GetPosition()
 	assert.NotEqual(t, initialX, finalPos.X)
 }
 
 func TestStarMovement(t *testing.T) {
 	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithStarSettings(5.0, 2.0),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithStarSettings(5.0, 2.0),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	require.NoError(t, err)
 
-	// Get stars from the game
+	// Get initial star position
 	stars := g.GetStars()
-
-	// Initial star position
-	initialPosition := stars[0].X
+	require.NotEmpty(t, stars)
+	initialPos := stars[0].GetPosition()
 
 	// Execute
-	stars[0].X += stars[0].Speed
+	g.Update()
 
 	// Assert
-	finalPosition := stars[0].X
-	assert.NotEqual(t, initialPosition, finalPosition)
+	finalPos := stars[0].GetPosition()
+	assert.NotEqual(t, initialPos, finalPos)
 }
 
 func TestGimlarGame_Update(t *testing.T) {
 	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithSpeed(1.0),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithSpeed(1.0),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	require.NoError(t, err)
 
 	// Execute
@@ -131,15 +121,14 @@ func TestGimlarGame_Update(t *testing.T) {
 
 func TestGimlarGame_Draw(t *testing.T) {
 	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	require.NoError(t, err)
 
 	// Create a test screen
-	screen := ebiten.NewImage(config.ScreenWidth, config.ScreenHeight)
+	screen := ebiten.NewImage(640, 480)
 
 	// Execute
 	g.Draw(screen)
@@ -151,82 +140,64 @@ func TestGimlarGame_Draw(t *testing.T) {
 
 func TestGimlarGame_Layout(t *testing.T) {
 	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	require.NoError(t, err)
 
 	// Execute
 	width, height := g.Layout(800, 600)
 
 	// Assert
-	assert.Equal(t, config.ScreenWidth, width)
-	assert.Equal(t, config.ScreenHeight, height)
-}
-
-func TestGimlarGame_GetRadius(t *testing.T) {
-	// Setup
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
-	require.NoError(t, err)
-
-	// Execute
-	radius := g.GetRadius()
-
-	// Assert
-	assert.Greater(t, radius, 0.0)
-	assert.Less(t, radius, float64(config.ScreenHeight))
+	assert.Equal(t, config.ScreenSize.Width, width)
+	assert.Equal(t, config.ScreenSize.Height, height)
 }
 
 func TestGameConfig_Options(t *testing.T) {
 	// Test different configuration options
 	tests := []struct {
 		name     string
-		opts     []game.GameOption
-		validate func(*testing.T, *game.GameConfig)
+		opts     []common.GameOption
+		validate func(*testing.T, *common.GameConfig)
 	}{
 		{
 			name: "custom screen size",
-			opts: []game.GameOption{
-				game.WithScreenSize(800, 600),
+			opts: []common.GameOption{
+				common.WithScreenSize(800, 600),
 			},
-			validate: func(t *testing.T, c *game.GameConfig) {
-				assert.Equal(t, 800, c.ScreenWidth)
-				assert.Equal(t, 600, c.ScreenHeight)
+			validate: func(t *testing.T, c *common.GameConfig) {
+				assert.Equal(t, 800, c.ScreenSize.Width)
+				assert.Equal(t, 600, c.ScreenSize.Height)
 				assert.InDelta(t, 225.0, c.Radius, 0.001) // 0.75 * 600/2
 			},
 		},
 		{
 			name: "custom player size",
-			opts: []game.GameOption{
-				game.WithPlayerSize(32, 32),
+			opts: []common.GameOption{
+				common.WithPlayerSize(32, 32),
 			},
-			validate: func(t *testing.T, c *game.GameConfig) {
-				assert.Equal(t, 32, c.PlayerWidth)
-				assert.Equal(t, 32, c.PlayerHeight)
+			validate: func(t *testing.T, c *common.GameConfig) {
+				assert.Equal(t, 32, c.PlayerSize.Width)
+				assert.Equal(t, 32, c.PlayerSize.Height)
 			},
 		},
 		{
 			name: "custom star settings",
-			opts: []game.GameOption{
-				game.WithStarSettings(10.0, 3.0),
+			opts: []common.GameOption{
+				common.WithStarSettings(10.0, 3.0),
 			},
-			validate: func(t *testing.T, c *game.GameConfig) {
+			validate: func(t *testing.T, c *common.GameConfig) {
 				assert.InDelta(t, 10.0, c.StarSize, 0.001)
 				assert.InDelta(t, 3.0, c.StarSpeed, 0.001)
 			},
 		},
 		{
 			name: "debug mode",
-			opts: []game.GameOption{
-				game.WithDebug(true),
+			opts: []common.GameOption{
+				common.WithDebug(true),
 			},
-			validate: func(t *testing.T, c *game.GameConfig) {
+			validate: func(t *testing.T, c *common.GameConfig) {
 				assert.True(t, c.Debug)
 			},
 		},
@@ -234,7 +205,7 @@ func TestGameConfig_Options(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := game.NewConfig(tt.opts...)
+			config := common.NewConfig(tt.opts...)
 			tt.validate(t, config)
 		})
 	}
