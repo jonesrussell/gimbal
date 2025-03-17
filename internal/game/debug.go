@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/jonesrussell/gimbal/internal/entity/stars"
 )
 
 const (
@@ -14,9 +15,11 @@ const (
 )
 
 // DebugPrintStar prints the debug information for a star.
-func (g *GimlarGame) DebugPrintStar(screen *ebiten.Image, star Star) {
+func (g *GimlarGame) DebugPrintStar(screen *ebiten.Image, star *stars.Star) {
 	if g.config.Debug {
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("Star: X=%.2f, Y=%.2f, Size=%.2f", star.X, star.Y, star.Size))
+		pos := star.GetPosition()
+		size := star.GetSize()
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("Star: X=%.2f, Y=%.2f, Size=%.2f", pos.X, pos.Y, size))
 	}
 }
 
