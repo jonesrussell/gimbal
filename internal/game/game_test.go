@@ -1,116 +1,237 @@
-package game
+package game_test
 
 import (
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/jonesrussell/gimbal/internal/game"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewGimlarGame(t *testing.T) {
-	// Test the NewGimlarGame function
-
 	// Setup
-	speed := 1.0 // Example speed value
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+		game.WithPlayerSize(16, 16),
+		game.WithSpeed(1.0),
+	)
+	input := &game.InputHandler{}
 
 	// Execute
-	game, err := NewGimlarGame(speed)
+	g, err := game.NewGimlarGame(config, input)
 
 	// Assert
-	assert.NoError(t, err)             // Ensure no error is returned
-	assert.NotNil(t, game)             // Ensure the game instance is not nil
-	assert.Equal(t, speed, game.speed) // Ensure the game's speed is correctly set
-	assert.NotNil(t, game.player)      // Ensure the player is initialized
-	assert.NotNil(t, game.stars)       // Ensure the stars are initialized
-	assert.NotNil(t, game.space)       // Ensure the space is initialized
+	require.NoError(t, err)
+	assert.NotNil(t, g)
+	assert.InEpsilon(t, config.Speed, g.GetSpeed(), 0.0001)
+	assert.NotNil(t, g.GetPlayer())
+	assert.NotNil(t, g.GetStars())
+	assert.NotNil(t, g.GetSpace())
 }
 
 func TestUpdate(t *testing.T) {
 	// Setup
-	speed := 1.0 // Example speed value
-	game, err := NewGimlarGame(speed)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+		game.WithSpeed(1.0),
+	)
+	input := &game.InputHandler{}
+	g, err := game.NewGimlarGame(config, input)
+	require.NoError(t, err)
 
 	// Execute
-	err = game.Update() // Directly call the Update method of your game instance
+	err = g.Update()
 
 	// Assert
-	assert.NoError(t, err) // Ensure no error is returned
-	// Additional assertions can be added here to check the state of the game after the update
-	// For example, checking if the player's position has changed or if the stars have moved
+	require.NoError(t, err)
 }
 
 func TestDraw(t *testing.T) {
 	// Setup
-	speed := 1.0 // Example speed value
-	game, err := NewGimlarGame(speed)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+	)
+	input := &game.InputHandler{}
+	g, err := game.NewGimlarGame(config, input)
+	require.NoError(t, err)
 
 	// Execute
-	// Assuming Draw does not take any arguments and does not return any value
-	// and that it does not panic
-	defer func() {
-		if r := recover(); r != nil {
-			t.Errorf("Draw method panicked: %v", r)
-		}
-	}()
-	image := ebiten.NewImage(100, 100) // Create a dummy image
-	game.Draw(image)
+	image := ebiten.NewImage(100, 100)
+	g.Draw(image)
 
 	// Assert
-	// Since Draw might not have a direct observable effect, this test might be limited
-	// Consider adding more comprehensive tests if possible, such as checking the state of the game's graphics context
+	assert.NotNil(t, image)
 }
 
 func TestPlayerMovement(t *testing.T) {
 	// Setup
-	speed := 1.0 // Example speed value
-	game, err := NewGimlarGame(speed)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+		game.WithSpeed(1.0),
+	)
+	input := &game.InputHandler{}
+	g, err := game.NewGimlarGame(config, input)
+	require.NoError(t, err)
 
 	// Initial player position
-	initialPosition := game.player.Object.Position.X // Assuming Position() returns the player's current position
+	player := g.GetPlayer()
+	initialPos := player.Object.Position()
+	initialX := initialPos.X
 
 	// Execute
-	// Simulate player movement by updating the player's Object position directly
-	game.player.Object.Position.X += game.speed // Adjust the X position based on the player's speed
+	player.Object.Move(g.GetSpeed(), 0)
 
 	// Assert
-	// Check that the player's position has changed after the movement
-	finalPosition := game.player.Object.Position.X
-	assert.NotEqual(t, initialPosition, finalPosition)
+	finalPos := player.Object.Position()
+	assert.NotEqual(t, initialX, finalPos.X)
 }
 
 func TestStarMovement(t *testing.T) {
 	// Setup
-	speed := 1.0 // Example speed value
-	game, err := NewGimlarGame(speed)
-	if err != nil {
-		t.Fatalf("Failed to create game: %v", err)
-	}
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+		game.WithStarSettings(5.0, 2.0),
+	)
+	input := &game.InputHandler{}
+	g, err := game.NewGimlarGame(config, input)
+	require.NoError(t, err)
 
-	// Assuming you have a way to initialize or retrieve the stars in your game
-	// For example, if stars are part of the game state, you might retrieve them like this:
-	stars := game.stars
+	// Get stars from the game
+	stars := g.GetStars()
 
 	// Initial star position
-	// Assuming each star has a Position field or method that returns its current position
-	// For simplicity, let's assume the first star's initial position is stored in a variable
-	initialPosition := stars[0].X // Adjust based on how you access the star's position
+	initialPosition := stars[0].X
 
 	// Execute
-	// Simulate star movement by updating the star's position directly
-	// This is a simplified example; you'll need to adjust based on your game's logic
-	stars[0].X += stars[0].Speed // Adjust the X position based on the star's speed
+	stars[0].X += stars[0].Speed
 
 	// Assert
-	// Check that the star's position has changed after the movement
 	finalPosition := stars[0].X
 	assert.NotEqual(t, initialPosition, finalPosition)
+}
+
+func TestGimlarGame_Update(t *testing.T) {
+	// Setup
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+		game.WithSpeed(1.0),
+	)
+	input := &game.InputHandler{}
+	g, err := game.NewGimlarGame(config, input)
+	require.NoError(t, err)
+
+	// Execute
+	err = g.Update()
+
+	// Assert
+	require.NoError(t, err)
+	assert.NotNil(t, g.GetPlayer())
+}
+
+func TestGimlarGame_Draw(t *testing.T) {
+	// Setup
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+	)
+	input := &game.InputHandler{}
+	g, err := game.NewGimlarGame(config, input)
+	require.NoError(t, err)
+
+	// Execute
+	g.Draw(nil)
+
+	// Assert
+	assert.NotNil(t, g.GetPlayer())
+}
+
+func TestGimlarGame_Layout(t *testing.T) {
+	// Setup
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+	)
+	input := &game.InputHandler{}
+	g, err := game.NewGimlarGame(config, input)
+	require.NoError(t, err)
+
+	// Execute
+	width, height := g.Layout(800, 600)
+
+	// Assert
+	assert.Equal(t, config.ScreenWidth, width)
+	assert.Equal(t, config.ScreenHeight, height)
+}
+
+func TestGimlarGame_GetRadius(t *testing.T) {
+	// Setup
+	config := game.NewConfig(
+		game.WithScreenSize(640, 480),
+	)
+	input := &game.InputHandler{}
+	g, err := game.NewGimlarGame(config, input)
+	require.NoError(t, err)
+
+	// Execute
+	radius := g.GetRadius()
+
+	// Assert
+	assert.Greater(t, radius, 0.0)
+	assert.Less(t, radius, float64(config.ScreenHeight))
+}
+
+func TestGameConfig_Options(t *testing.T) {
+	// Test different configuration options
+	tests := []struct {
+		name     string
+		opts     []game.GameOption
+		validate func(*testing.T, *game.GameConfig)
+	}{
+		{
+			name: "custom screen size",
+			opts: []game.GameOption{
+				game.WithScreenSize(800, 600),
+			},
+			validate: func(t *testing.T, c *game.GameConfig) {
+				assert.Equal(t, 800, c.ScreenWidth)
+				assert.Equal(t, 600, c.ScreenHeight)
+				assert.InDelta(t, 225.0, c.Radius, 0.001) // 0.75 * 600/2
+			},
+		},
+		{
+			name: "custom player size",
+			opts: []game.GameOption{
+				game.WithPlayerSize(32, 32),
+			},
+			validate: func(t *testing.T, c *game.GameConfig) {
+				assert.Equal(t, 32, c.PlayerWidth)
+				assert.Equal(t, 32, c.PlayerHeight)
+			},
+		},
+		{
+			name: "custom star settings",
+			opts: []game.GameOption{
+				game.WithStarSettings(10.0, 3.0),
+			},
+			validate: func(t *testing.T, c *game.GameConfig) {
+				assert.InDelta(t, 10.0, c.StarSize, 0.001)
+				assert.InDelta(t, 3.0, c.StarSpeed, 0.001)
+			},
+		},
+		{
+			name: "debug mode",
+			opts: []game.GameOption{
+				game.WithDebug(true),
+			},
+			validate: func(t *testing.T, c *game.GameConfig) {
+				assert.True(t, c.Debug)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := game.NewConfig(tt.opts...)
+			tt.validate(t, config)
+		})
+	}
 }

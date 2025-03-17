@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"os"
-	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/logger"
@@ -17,89 +15,72 @@ import (
 //go:embed assets/*
 var assets embed.FS
 
-const (
-	screenWidth  = 640
-	screenHeight = 480
-	playerWidth  = 16
-	playerHeight = 16
-)
-
-var (
-	radius = float64(screenHeight/2) * 0.75
-	center = image.Point{X: screenWidth / 2, Y: screenHeight / 2}
-
-	starImage *ebiten.Image
-
-	gameStarted bool
-	Debug       bool
-)
-
 type GimlarGame struct {
-	player *Player
-	stars  []Star
-	speed  float64
-	space  *resolv.Space
-	prevX  float64
-	prevY  float64
+	config      *GameConfig
+	player      *Player
+	stars       []Star
+	space       *resolv.Space
+	prevX       float64
+	prevY       float64
+	input       InputHandlerInterface
+	starImage   *ebiten.Image
+	gameStarted bool
 }
 
-func init() {
+func NewGimlarGame(config *GameConfig, input InputHandlerInterface) (*GimlarGame, error) {
+	if config == nil {
+		config = DefaultConfig()
+	}
+
+	if input == nil {
+		return nil, fmt.Errorf("input handler cannot be nil")
+	}
+
 	// Create a single star image that will be used for all stars
-	starImage = ebiten.NewImage(1, 1)
+	starImage := ebiten.NewImage(1, 1)
 	starImage.Fill(color.White)
-}
-
-func NewGimlarGame(speed float64) (*GimlarGame, error) {
-	Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 
 	g := &GimlarGame{
-		player: &Player{},
-		stars:  []Star{},
-		speed:  speed,
-		space:  &resolv.Space{},
-		prevX:  0,
-		prevY:  0,
+		config:      config,
+		input:       input,
+		prevX:       0,
+		prevY:       0,
+		starImage:   starImage,
+		gameStarted: false,
 	}
 
 	// Initialize stars
-	if starImage == nil {
-		return nil, fmt.Errorf("starImage is not loaded")
-	}
-	g.stars = initializeStars(100, starImage)
+	g.stars = initializeStars(config.NumStars, starImage)
 
-	handler := &InputHandler{}
-
-	// Load the player sprite.
-	imageData, rfErr := assets.ReadFile("assets/player.png")
-	if rfErr != nil {
-		logger.GlobalLogger.Error("Failed to load player image: %v", rfErr)
-	}
-
-	image, _, err := image.Decode(bytes.NewReader(imageData))
+	// Load the player sprite
+	imageData, err := assets.ReadFile("assets/player.png")
 	if err != nil {
-		logger.GlobalLogger.Error("Failed to decode player image: %v", err)
+		return nil, fmt.Errorf("failed to load player image: %w", err)
 	}
 
-	var npErr error
-	g.player, npErr = NewPlayer(handler, g.speed, image)
-	if npErr != nil {
-		logger.GlobalLogger.Error("Failed to create player: %v", npErr)
-		return nil, npErr // Return the error instead of exiting
+	img, _, err := image.Decode(bytes.NewReader(imageData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode player image: %w", err)
 	}
 
-	g.space = resolv.NewSpace(screenWidth, screenHeight, playerWidth, playerHeight)
+	g.player, err = NewPlayer(input, config, img)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create player: %w", err)
+	}
+
+	g.space = resolv.NewSpace(config.ScreenWidth, config.ScreenHeight, config.PlayerWidth, config.PlayerHeight)
 	g.space.Add(g.player.Object)
 
 	return g, nil
 }
 
 func (g *GimlarGame) Run() error {
-	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowSize(g.config.ScreenWidth, g.config.ScreenHeight)
 	return ebiten.RunGame(g)
 }
 
 func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
+	return g.config.ScreenWidth, g.config.ScreenHeight
 }
 
 func (g *GimlarGame) Update() error {
@@ -111,10 +92,11 @@ func (g *GimlarGame) Update() error {
 	g.player.updatePosition()
 
 	// Log the player's position after updating if it has changed
-	if g.player.Object.Position.X != g.prevX || g.player.Object.Position.Y != g.prevY {
-		logger.GlobalLogger.Debug("Player position after update", "X", g.player.Object.Position.X, "Y", g.player.Object.Position.Y)
-		g.prevX = g.player.Object.Position.X
-		g.prevY = g.player.Object.Position.Y
+	pos := g.player.Object.Position()
+	if pos.X != g.prevX || pos.Y != g.prevY {
+		logger.GlobalLogger.Debug("Player position after update", "X", pos.X, "Y", pos.Y)
+		g.prevX = pos.X
+		g.prevY = pos.Y
 	}
 
 	return nil
@@ -128,16 +110,35 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	g.drawPlayer(screen)
 
 	// Draw debug info if debug is true
-	if Debug {
+	if g.config.Debug {
 		g.DrawDebugInfo(screen)
 	}
 }
 
 func (g *GimlarGame) drawPlayer(screen *ebiten.Image) {
-	// Assuming the player has a Draw method
 	g.player.Draw(screen)
 }
 
 func (g *GimlarGame) GetRadius() float64 {
-	return radius
+	return g.config.Radius
+}
+
+// GetSpeed returns the game's speed
+func (g *GimlarGame) GetSpeed() float64 {
+	return g.config.Speed
+}
+
+// GetPlayer returns the game's player
+func (g *GimlarGame) GetPlayer() *Player {
+	return g.player
+}
+
+// GetStars returns the game's stars
+func (g *GimlarGame) GetStars() []Star {
+	return g.stars
+}
+
+// GetSpace returns the game's space
+func (g *GimlarGame) GetSpace() *resolv.Space {
+	return g.space
 }
