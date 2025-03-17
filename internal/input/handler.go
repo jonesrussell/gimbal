@@ -6,6 +6,11 @@ import (
 	"github.com/jonesrussell/gimbal/internal/logger"
 )
 
+const (
+	// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
+	MovementSpeedDegreesPerFrame = 2
+)
+
 // Handler handles game input
 type Handler struct {
 	keyState map[ebiten.Key]bool
@@ -92,10 +97,10 @@ func (h *Handler) GetMovementInput() common.Angle {
 
 	switch {
 	case leftPressed:
-		angle = common.Angle(-2) // -2 degrees per frame
+		angle = common.Angle(-MovementSpeedDegreesPerFrame) // Move counter-clockwise
 		logger.GlobalLogger.Debug("Movement input", "direction", "left", "angle", angle)
 	case rightPressed:
-		angle = common.Angle(2) // 2 degrees per frame
+		angle = common.Angle(MovementSpeedDegreesPerFrame) // Move clockwise
 		logger.GlobalLogger.Debug("Movement input", "direction", "right", "angle", angle)
 	}
 
