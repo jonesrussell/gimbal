@@ -103,6 +103,18 @@ tasks:
       - go clean -modcache
       - go mod download
 
-  all:
-    desc: Run format, lint, test, and build
-    deps: [fmt, lint, test, build]
+  test:
+    desc: "Run the tests"
+    cmds:
+      - go test -v ./...
+
+  test:cover:
+    desc: "Run tests with coverage"
+    cmds:
+      - mkdir -p coverage
+      - go test -coverprofile=coverage/coverage.out ./...
+      - go tool cover -html=coverage/coverage.out -o coverage/coverage.html
+      - go tool cover -func=coverage/coverage.out
+    generates:
+      - coverage/coverage.out
+      - coverage/coverage.html
