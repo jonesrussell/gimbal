@@ -43,7 +43,7 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 	}
 
 	logger.GlobalLogger.Debug("Creating new player with config",
-		"config", map[string]interface{}{
+		"config", map[string]any{
 			"position": map[string]float64{
 				"x": config.Position.X,
 				"y": config.Position.Y,
