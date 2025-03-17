@@ -61,8 +61,12 @@ USER root
 # Create zsh completion directory and fix permissions
 RUN mkdir -p /usr/local/share/zsh/site-functions && \
     touch /usr/local/share/zsh/site-functions/_task && \
+    chown -R root:root /usr/local/share/zsh && \
     chmod -R 755 /usr/local/share/zsh && \
-    chmod 644 /usr/local/share/zsh/site-functions/_task
+    chmod 644 /usr/local/share/zsh/site-functions/_task && \
+    # Ensure Go directories have correct permissions after all operations
+    find /go -type d -exec chown vscode:vscode {} \; && \
+    find /go -type f -exec chown vscode:vscode {} \;
 
 # Switch back to vscode user as final user
 USER vscode
