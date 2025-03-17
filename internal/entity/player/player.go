@@ -57,8 +57,8 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 	}
 	coords := physics.NewCoordinateSystem(center, config.Radius)
 
-	// Calculate initial position at the bottom of the screen (270 degrees)
-	initialAngle := common.Angle(270 * common.DegreesToRadians)
+	// Calculate initial position at the bottom of the screen (180 degrees)
+	initialAngle := common.Angle(common.AngleDown) // Start at bottom
 	logger.GlobalLogger.Debug("Setting initial angle",
 		"angle_rad", initialAngle.ToRadians(),
 		"angle_deg", initialAngle.ToRadians()/common.DegreesToRadians,
