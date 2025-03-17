@@ -9,10 +9,6 @@ import (
 	"github.com/solarlune/resolv"
 )
 
-const (
-	playerHeightDivisor = 2
-)
-
 // Player represents the player entity in the game
 type Player struct {
 	coords *physics.CoordinateSystem
@@ -65,22 +61,21 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 
 	// Apply rotation around center
-	op.GeoM.Translate(-float64(p.config.Size.Width)/2, -float64(p.config.Size.Height)/2)
+	op.GeoM.Translate(-float64(p.config.Size.Width)/common.CenterDivisor, -float64(p.config.Size.Height)/common.CenterDivisor)
 	op.GeoM.Rotate(float64(p.angle.ToRadians()))
-	op.GeoM.Translate(pos.X+float64(p.config.Size.Width)/2, pos.Y+float64(p.config.Size.Height)/2)
+	op.GeoM.Translate(pos.X+float64(p.config.Size.Width)/common.CenterDivisor, pos.Y+float64(p.config.Size.Height)/common.CenterDivisor)
 
 	screen.DrawImage(p.sprite, op)
 }
 
 // GetPosition implements Entity interface
 func (p *Player) GetPosition() common.Point {
-	heightOffset := float64(p.config.Size.Height) / playerHeightDivisor
-	return p.coords.CalculateCircularPosition(p.angle, heightOffset)
+	return p.coords.CalculateCircularPosition(p.angle)
 }
 
 // SetPosition implements Movable interface
 func (p *Player) SetPosition(pos common.Point) {
-	p.shape.SetPosition(pos.X, pos.Y)
+	p.coords.SetPosition(pos)
 }
 
 // GetSpeed implements Movable interface
@@ -88,15 +83,14 @@ func (p *Player) GetSpeed() float64 {
 	return p.config.Speed
 }
 
-// SetAngle implements Rotatable interface
-func (p *Player) SetAngle(angle common.Angle) {
-	p.angle = physics.ValidateAngle(angle)
-	p.Update()
-}
-
-// GetAngle implements Rotatable interface
+// GetAngle returns the player's current angle
 func (p *Player) GetAngle() common.Angle {
 	return p.angle
+}
+
+// SetAngle sets the player's angle
+func (p *Player) SetAngle(angle common.Angle) {
+	p.angle = angle.Normalize()
 }
 
 // GetBounds implements Collidable interface

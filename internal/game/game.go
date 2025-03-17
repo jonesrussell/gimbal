@@ -8,6 +8,7 @@ import (
 	"image"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/entity/player"
 	"github.com/jonesrussell/gimbal/internal/entity/stars"
@@ -58,8 +59,8 @@ func New(config *common.GameConfig) (*GimlarGame, error) {
 	// Create player entity
 	playerConfig := &common.EntityConfig{
 		Position: common.Point{
-			X: float64(config.ScreenSize.Width / 2),
-			Y: float64(config.ScreenSize.Height / 2),
+			X: float64(config.ScreenSize.Width) / common.CenterDivisor,
+			Y: float64(config.ScreenSize.Height) / common.CenterDivisor,
 		},
 		Size: common.Size{
 			Width:  config.PlayerSize.Width,
@@ -167,4 +168,6 @@ func (g *GimlarGame) drawDebugInfo(screen *ebiten.Image) {
 		"position", fmt.Sprintf("(%.2f, %.2f)", pos.X, pos.Y),
 		"angle", fmt.Sprintf("%.2f°", angle),
 	)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Position: (%.2f, %.2f)", pos.X, pos.Y), 10, 10)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Angle: %.2f°", angle), 10, 30)
 }

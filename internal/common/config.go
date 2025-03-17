@@ -10,6 +10,8 @@ const (
 	DefaultStarSpeed    = 2.0
 	DefaultAngleStep    = 0.05
 	DefaultRadiusRatio  = 0.75
+	// CenterDivisor is used to calculate the center point by dividing dimensions
+	CenterDivisor = 2
 )
 
 // GameConfig holds all configurable parameters for the game
@@ -32,7 +34,7 @@ type GameOption func(*GameConfig)
 func WithScreenSize(width, height int) GameOption {
 	return func(c *GameConfig) {
 		c.ScreenSize = Size{Width: width, Height: height}
-		c.Radius = float64(height/2) * DefaultRadiusRatio
+		c.Radius = float64(height/CenterDivisor) * DefaultRadiusRatio
 	}
 }
 
@@ -84,7 +86,7 @@ func DefaultConfig() *GameConfig {
 	return &GameConfig{
 		ScreenSize: Size{Width: DefaultScreenWidth, Height: DefaultScreenHeight},
 		PlayerSize: Size{Width: DefaultPlayerSize, Height: DefaultPlayerSize},
-		Radius:     float64(DefaultScreenHeight/2) * DefaultRadiusRatio,
+		Radius:     float64(DefaultScreenHeight/CenterDivisor) * DefaultRadiusRatio,
 		NumStars:   DefaultNumStars,
 		Debug:      false,
 		Speed:      DefaultSpeed,
