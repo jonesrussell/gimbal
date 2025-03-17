@@ -57,16 +57,19 @@ linters-settings:
             desc: "Use github.com/google/uuid instead, satori's package is not maintained"
           - pkg: "github.com/gofrs/uuid$"
             desc: "Use github.com/gofrs/uuid/v5 or later, it was not a go module before v5"
+          # Enforce use of standard library crypto packages over x/crypto
+          - pkg: "golang.org/x/crypto/.*"
+            desc: "Use standard library crypto packages instead of x/crypto"
       # Rules for enforcing type aliases
       type_aliases:
         deny:
-          - pkg: "github.com/jonesrussell/gocrawl/internal/logger.Interface"
+          - pkg: "github.com/jonesrussell/gimbal/internal/logger.Interface"
             desc: "Use common.Logger type alias instead of logger.Interface directly"
-          - pkg: "github.com/jonesrussell/gocrawl/internal/storage.Interface"
+          - pkg: "github.com/jonesrussell/gimbal/internal/storage.Interface"
             desc: "Use common.Storage type alias instead of storage.Interface directly"
-          - pkg: "github.com/jonesrussell/gocrawl/internal/sources.Sources"
+          - pkg: "github.com/jonesrussell/gimbal/internal/sources.Sources"
             desc: "Use common.Sources type alias instead of sources.Sources directly"
-          - pkg: "github.com/jonesrussell/gocrawl/internal/config.Config"
+          - pkg: "github.com/jonesrussell/gimbal/internal/config.Config"
             desc: "Use common.Config type alias instead of config.Config directly"
         files:
           - "!internal/logger/*"    # Exclude the logger package itself
@@ -205,6 +208,9 @@ linters-settings:
       - os.WriteFile
       - prometheus.ExponentialBuckets.*
       - prometheus.LinearBuckets
+      # Add new Go 1.24 functions
+      - runtime.AddCleanup
+      - os.Root
 
   nakedret:
     # Make an issue if func has more lines of code than this setting, and it has naked returns.
@@ -267,6 +273,8 @@ linters-settings:
     # Exclude cmd/root.go from the forbidigo check
     exclude:
       - "cmd/root\\.go"  # This regex matches the root.go file
+    forbid:
+      - "runtime\\.SetFinalizer"  # Enforce use of runtime.AddCleanup instead
 
   stylecheck:
     # https://staticcheck.io/docs/options#checks
