@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/input"
+	"github.com/jonesrussell/gimbal/internal/input/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,9 +16,18 @@ func TestHandler_GetMovementInput(t *testing.T) {
 	assert.InDelta(t, float64(common.Angle(0)), float64(angle), 0.001)
 }
 
-func TestHandler_IsKeyPressed(t *testing.T) {
-	h := input.New()
-	// Test with a key that's not pressed
+func TestHandler_KeyPress(t *testing.T) {
+	t.Parallel()
+
+	h := test.NewHandler()
+
+	// Test key press
+	assert.False(t, h.IsKeyPressed(ebiten.KeyA))
+	h.SimulateKeyPress(ebiten.KeyA)
+	assert.True(t, h.IsKeyPressed(ebiten.KeyA))
+
+	// Test key release
+	h.SimulateKeyRelease(ebiten.KeyA)
 	assert.False(t, h.IsKeyPressed(ebiten.KeyA))
 }
 

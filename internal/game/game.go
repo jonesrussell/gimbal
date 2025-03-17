@@ -11,6 +11,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/entity/player"
+	ebitensprite "github.com/jonesrussell/gimbal/internal/entity/player/ebiten"
 	"github.com/jonesrussell/gimbal/internal/entity/stars"
 	"github.com/jonesrussell/gimbal/internal/input"
 	"github.com/jonesrussell/gimbal/internal/logger"
@@ -79,7 +80,9 @@ func New(config *common.GameConfig) (*GimlarGame, error) {
 		Radius: config.Radius,
 	}
 
-	player, err := player.New(playerConfig, ebiten.NewImageFromImage(img))
+	// Create player sprite
+	playerSprite := ebitensprite.NewSprite(ebiten.NewImageFromImage(img))
+	player, err := player.New(playerConfig, playerSprite)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %w", err)
 	}
@@ -152,11 +155,18 @@ func (g *GimlarGame) Update() error {
 
 // Draw implements ebiten.Game interface
 func (g *GimlarGame) Draw(screen *ebiten.Image) {
+	// Skip drawing if screen is nil (testing)
+	if screen == nil {
+		return
+	}
+
 	// Draw stars
 	g.stars.Draw(screen)
 
 	// Draw player
-	g.player.Draw(screen)
+	if g.player != nil {
+		g.player.Draw(screen, nil)
+	}
 
 	// Draw debug info if enabled
 	if g.config.Debug {
