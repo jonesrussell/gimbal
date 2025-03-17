@@ -17,7 +17,8 @@ type Player struct {
 	config      *common.EntityConfig
 	sprite      *ebiten.Image
 	shape       resolv.IShape
-	angle       common.Angle
+	posAngle    common.Angle // Angle around the circle (position)
+	facingAngle common.Angle // Direction the player is facing
 	path        []resolv.Vector
 	speed       float64
 	size        common.Size
@@ -57,14 +58,11 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 	}
 	coords := physics.NewCoordinateSystem(center, config.Radius)
 
-	// Calculate initial position at the bottom of the screen (180 degrees)
-	// but face the center (0 degrees)
-	initialAngle := common.Angle(common.AngleDown) // Start at bottom
-	logger.GlobalLogger.Debug("Setting initial angle",
-		"angle_deg", initialAngle.ToRadians()/common.DegreesToRadians,
-	)
+	// Start at bottom (180 degrees) and face center (0 degrees)
+	posAngle := common.Angle(common.AngleDown) // Position at bottom
+	facingAngle := common.Angle(0)             // Face center
 
-	initialPos := coords.CalculateCircularPosition(initialAngle)
+	initialPos := coords.CalculateCircularPosition(posAngle)
 
 	// Create player collision shape as a rectangle
 	shape := resolv.NewRectangle(
@@ -80,12 +78,13 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 		config:      config,
 		sprite:      sprite,
 		shape:       shape,
-		angle:       common.Angle(0), // Face the center
+		posAngle:    posAngle,
+		facingAngle: facingAngle,
 		path:        make([]resolv.Vector, 0),
 		speed:       config.Speed,
 		size:        config.Size,
 		lastLog:     time.Now(),
-		logInterval: time.Second * 5, // Only log every 5 seconds
+		logInterval: time.Second * 5,
 	}
 
 	logger.GlobalLogger.Debug("Player created",
@@ -93,7 +92,7 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 			"x": initialPos.X,
 			"y": initialPos.Y,
 		},
-		"angle", initialAngle.ToRadians()/common.DegreesToRadians,
+		"angle", posAngle.ToRadians()/common.DegreesToRadians,
 	)
 
 	return player, nil
@@ -141,8 +140,8 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	offsetY := float64(p.sprite.Bounds().Dy()) / 2
 	geoM.Translate(-offsetX, -offsetY)
 
-	// Apply rotation
-	geoM.Rotate(p.GetAngle().ToRadians())
+	// Apply rotation based on facing angle
+	geoM.Rotate(p.facingAngle.ToRadians())
 
 	// Apply scale
 	geoM.Scale(scaleX, scaleY)
@@ -160,7 +159,7 @@ func (p *Player) Draw(screen *ebiten.Image) {
 
 // GetPosition implements Entity interface
 func (p *Player) GetPosition() common.Point {
-	return p.coords.CalculateCircularPosition(p.angle)
+	return p.coords.CalculateCircularPosition(p.posAngle)
 }
 
 // SetPosition implements Movable interface
@@ -173,14 +172,24 @@ func (p *Player) GetSpeed() float64 {
 	return p.speed
 }
 
-// GetAngle returns the player's current angle
+// GetAngle returns the player's current position angle
 func (p *Player) GetAngle() common.Angle {
-	return p.angle
+	return p.posAngle
 }
 
-// SetAngle sets the player's angle
+// SetAngle sets the player's position angle
 func (p *Player) SetAngle(angle common.Angle) {
-	p.angle = angle.Normalize()
+	p.posAngle = angle.Normalize()
+}
+
+// GetFacingAngle returns the direction the player is facing
+func (p *Player) GetFacingAngle() common.Angle {
+	return p.facingAngle
+}
+
+// SetFacingAngle sets the direction the player is facing
+func (p *Player) SetFacingAngle(angle common.Angle) {
+	p.facingAngle = angle.Normalize()
 }
 
 // GetBounds implements Collidable interface
