@@ -8,7 +8,7 @@ vars:
   VERSION: v0.1.0
   BINARY_DIR: bin
   BINARY_NAME: gimbal
-  WASM_EXEC_PATH: '{{default "$(go env GOROOT)/misc/wasm/wasm_exec.js" .WASM_EXEC_PATH}}'
+  WASM_EXEC_PATH: '{{default "$(go env GOROOT)/lib/wasm/wasm_exec.js" .WASM_EXEC_PATH}}'
   ITCH_USERNAME: '{{default "jonesrussell" .ITCH_USERNAME}}'
   ITCH_PATH: gimbal
 
@@ -45,6 +45,14 @@ tasks:
       - mkdir -p build/web
       - GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm ./cmd/gimbal
       - cp -r html/* build/web
+      - |
+        if [ ! -f {{.WASM_EXEC_PATH}} ]; then
+          echo "Error: wasm_exec.js not found at {{.WASM_EXEC_PATH}}"
+          echo "Please copy wasm_exec.js from your Go installation to:"
+          echo "{{.WASM_EXEC_PATH}}"
+          echo "You can find it in your Go installation directory under misc/wasm/wasm_exec.js"
+          exit 1
+        fi
       - cp {{.WASM_EXEC_PATH}} build/web
 
   build:
