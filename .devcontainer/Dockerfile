@@ -16,6 +16,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     bash \
     curl \
     gnupg \
+    zsh \
 && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js LTS
@@ -44,8 +45,11 @@ ENV PATH="/home/vscode/go/bin:${PATH}"
 # Switch back to root for any further operations
 USER root
 
-# Fix permissions for zsh completions
-RUN chmod g-w,o-w /usr/local/share/zsh/site-functions/_task
+# Create zsh completion directory and fix permissions
+RUN mkdir -p /usr/local/share/zsh/site-functions && \
+    touch /usr/local/share/zsh/site-functions/_task && \
+    chmod -R 755 /usr/local/share/zsh && \
+    chmod 644 /usr/local/share/zsh/site-functions/_task
 
 # Switch back to vscode user as final user
 USER vscode
