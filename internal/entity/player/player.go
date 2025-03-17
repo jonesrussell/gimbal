@@ -2,6 +2,7 @@ package player
 
 import (
 	"errors"
+	"image"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -18,11 +19,16 @@ const (
 	LogIntervalSeconds = 5
 )
 
+// SpriteImage defines the interface for sprite images
+type SpriteImage interface {
+	Bounds() image.Rectangle
+}
+
 // Player represents the player entity in the game
 type Player struct {
 	coords      *physics.CoordinateSystem
 	config      *common.EntityConfig
-	sprite      *ebiten.Image
+	sprite      SpriteImage
 	shape       resolv.IShape
 	posAngle    common.Angle // Angle around the circle (position)
 	facingAngle common.Angle // Direction the player is facing
@@ -34,7 +40,7 @@ type Player struct {
 }
 
 // New creates a new player instance
-func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
+func New(config *common.EntityConfig, sprite SpriteImage) (*Player, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
 	}
@@ -111,11 +117,20 @@ func (p *Player) Update() {
 	p.shape.SetPosition(pos.X, pos.Y)
 }
 
-// Draw draws the player sprite
+// Draw draws the player on the screen
 func (p *Player) Draw(screen *ebiten.Image) {
 	if p.sprite == nil {
 		return
 	}
+
+	// Type assert the sprite to *ebiten.Image for drawing
+	ebitenSprite, ok := p.sprite.(*ebiten.Image)
+	if !ok {
+		return
+	}
+
+	// Get current position
+	pos := p.coords.CalculateCircularPosition(p.posAngle)
 
 	// Calculate sprite offset to center it
 	offsetX := float64(p.sprite.Bounds().Dx()) / HalfDivisor
@@ -131,12 +146,10 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	op.GeoM.Rotate(p.facingAngle.ToRadians())
 
 	// Translate to final position
-	finalX := p.GetPosition().X + float64(p.size.Width)/HalfDivisor
-	finalY := p.GetPosition().Y + float64(p.size.Height)/HalfDivisor
-	op.GeoM.Translate(finalX, finalY)
+	op.GeoM.Translate(pos.X, pos.Y)
 
 	// Draw the sprite
-	screen.DrawImage(p.sprite, op)
+	screen.DrawImage(ebitenSprite, op)
 }
 
 // GetPosition implements Entity interface
@@ -200,4 +213,14 @@ func (p *Player) CheckCollision(other common.Collidable) bool {
 	// Check for intersection
 	intersection := p.shape.Intersection(otherShape)
 	return !intersection.IsEmpty()
+}
+
+// Config returns the player's configuration
+func (p *Player) Config() *common.EntityConfig {
+	return p.config
+}
+
+// Sprite returns the player's sprite
+func (p *Player) Sprite() SpriteImage {
+	return p.sprite
 }
