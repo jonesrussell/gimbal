@@ -3,6 +3,7 @@ package input
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/logger"
 )
 
 // Handler handles game input
@@ -28,6 +29,7 @@ func (h *Handler) SetTestMode(enabled bool) {
 func (h *Handler) SimulateKeyPress(key ebiten.Key) {
 	if h.testMode {
 		h.keyState[key] = true
+		logger.GlobalLogger.Debug("Key pressed", "key", key)
 	}
 }
 
@@ -35,6 +37,7 @@ func (h *Handler) SimulateKeyPress(key ebiten.Key) {
 func (h *Handler) SimulateKeyRelease(key ebiten.Key) {
 	if h.testMode {
 		h.keyState[key] = false
+		logger.GlobalLogger.Debug("Key released", "key", key)
 	}
 }
 
@@ -42,26 +45,58 @@ func (h *Handler) SimulateKeyRelease(key ebiten.Key) {
 func (h *Handler) HandleInput() {
 	if !h.testMode {
 		// Update key states
-		for key := ebiten.Key0; key <= ebiten.KeyMax; key++ {
-			h.keyState[key] = ebiten.IsKeyPressed(key)
+		for key := ebiten.Key(0); key <= ebiten.KeyMax; key++ {
+			wasPressed := h.keyState[key]
+			isPressed := ebiten.IsKeyPressed(key)
+			h.keyState[key] = isPressed
+
+			// Log key state changes for arrow keys
+			if key == ebiten.KeyLeft || key == ebiten.KeyRight {
+				logger.GlobalLogger.Debug("Arrow key state",
+					"key", key,
+					"was_pressed", wasPressed,
+					"is_pressed", isPressed,
+					"key_left", ebiten.KeyLeft,
+					"key_right", ebiten.KeyRight,
+				)
+			}
 		}
 	}
 }
 
 // IsKeyPressed implements InputHandler interface
 func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
-	return h.keyState[key]
+	isPressed := h.keyState[key]
+	logger.GlobalLogger.Debug("Key check",
+		"key", key,
+		"is_pressed", isPressed,
+		"key_left", ebiten.KeyLeft,
+		"key_right", ebiten.KeyRight,
+	)
+	return isPressed
 }
 
 // GetMovementInput returns the movement direction based on key states
 func (h *Handler) GetMovementInput() common.Angle {
 	var angle common.Angle
 
+	leftPressed := ebiten.IsKeyPressed(ebiten.KeyLeft)
+	rightPressed := ebiten.IsKeyPressed(ebiten.KeyRight)
+
+	logger.GlobalLogger.Debug("Movement check",
+		"left_pressed", leftPressed,
+		"right_pressed", rightPressed,
+		"key_left", ebiten.KeyLeft,
+		"key_right", ebiten.KeyRight,
+	)
+
 	switch {
-	case h.IsKeyPressed(ebiten.KeyLeft):
-		angle = common.Angle(-common.DegreesToRadians) // -1 degree in radians
-	case h.IsKeyPressed(ebiten.KeyRight):
-		angle = common.Angle(common.DegreesToRadians) // 1 degree in radians
+	case leftPressed:
+		angle = common.Angle(-2) // -2 degrees per frame
+		logger.GlobalLogger.Debug("Movement input", "direction", "left", "angle", angle)
+	case rightPressed:
+		angle = common.Angle(2) // 2 degrees per frame
+		logger.GlobalLogger.Debug("Movement input", "direction", "right", "angle", angle)
 	}
 
 	return angle
