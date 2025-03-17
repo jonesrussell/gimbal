@@ -15,7 +15,7 @@ const (
 	RotationOffset = math.Pi / 2
 )
 
-// CoordinateSystem handles coordinate transformations and calculations
+// CoordinateSystem handles coordinate transformations
 type CoordinateSystem struct {
 	center common.Point
 	radius float64
@@ -29,19 +29,23 @@ func NewCoordinateSystem(center common.Point, radius float64) *CoordinateSystem 
 	}
 }
 
-// CalculateCircularPosition calculates a position on a circle given an angle
-func (cs *CoordinateSystem) CalculateCircularPosition(angle common.Angle, heightOffset float64) common.Point {
-	angleRad := angle.ToRadians()
-
-	// Calculate raw coordinates
-	rawX := cs.center.X + cs.radius*math.Cos(angleRad)
-	// Subtract sin for screen coordinates (Y increases downward)
-	rawY := cs.center.Y - cs.radius*math.Sin(angleRad) - heightOffset
-
+// CalculateCircularPosition calculates a point on a circle given an angle
+func (cs *CoordinateSystem) CalculateCircularPosition(angle common.Angle) common.Point {
+	rad := angle.ToRadians()
 	return common.Point{
-		X: math.Round(rawX),
-		Y: math.Round(rawY),
+		X: cs.center.X + cs.radius*math.Cos(rad),
+		Y: cs.center.Y + cs.radius*math.Sin(rad),
 	}
+}
+
+// GetCenter returns the center point of the coordinate system
+func (cs *CoordinateSystem) GetCenter() common.Point {
+	return cs.center
+}
+
+// GetRadius returns the radius of the coordinate system
+func (cs *CoordinateSystem) GetRadius() float64 {
+	return cs.radius
 }
 
 // CalculateAngle calculates the angle between a point and the center

@@ -1,8 +1,9 @@
 package stars
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"image/color"
-	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
@@ -17,6 +18,15 @@ type Manager struct {
 		starSize  float64
 		starSpeed float64
 	}
+}
+
+// randomFloat64 generates a random float64 between 0 and 1 using crypto/rand
+func randomFloat64() float64 {
+	var b [8]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return 0
+	}
+	return float64(binary.LittleEndian.Uint64(b[:])) / (1 << 64)
 }
 
 // NewManager creates a new star manager
@@ -46,8 +56,8 @@ func NewManager(bounds common.Size, numStars int, starSize, starSpeed float64) *
 func (m *Manager) initializeStars() {
 	for i := range m.stars {
 		pos := common.Point{
-			X: rand.Float64() * float64(m.screenBounds.Width),
-			Y: rand.Float64() * float64(m.screenBounds.Height),
+			X: randomFloat64() * float64(m.screenBounds.Width),
+			Y: randomFloat64() * float64(m.screenBounds.Height),
 		}
 		star := New(pos, m.config.starSpeed, m.config.starSize, m.baseSprite)
 		star.SetBounds(m.screenBounds)
@@ -73,8 +83,8 @@ func (m *Manager) Draw(screen *ebiten.Image) {
 func (m *Manager) GetPosition() common.Point {
 	// Manager doesn't have a position, return center of screen
 	return common.Point{
-		X: float64(m.screenBounds.Width / 2),
-		Y: float64(m.screenBounds.Height / 2),
+		X: float64(m.screenBounds.Width) / common.CenterDivisor,
+		Y: float64(m.screenBounds.Height) / common.CenterDivisor,
 	}
 }
 

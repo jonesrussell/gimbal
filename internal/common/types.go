@@ -4,6 +4,15 @@ import (
 	"math"
 )
 
+const (
+	// DegreesInCircle represents the number of degrees in a circle
+	DegreesInCircle = 360.0
+	// DegreesInRadian represents the number of degrees in one radian
+	DegreesInRadian = 180.0 / math.Pi
+	// RadiansInDegree represents the number of radians in one degree
+	RadiansInDegree = math.Pi / 180.0
+)
+
 // Point represents a 2D point in the game world
 type Point struct {
 	X, Y float64
@@ -19,12 +28,12 @@ type Angle float64
 
 // ToRadians converts the angle from degrees to radians
 func (a Angle) ToRadians() float64 {
-	return float64(a) * (math.Pi / 180)
+	return float64(a) * RadiansInDegree
 }
 
 // FromRadians creates an Angle from radians
 func FromRadians(rad float64) Angle {
-	return Angle(rad * (180 / math.Pi))
+	return Angle(rad * DegreesInRadian)
 }
 
 // Add returns the sum of two angles
@@ -51,10 +60,10 @@ func (a Angle) Div(scalar float64) Angle {
 func (a Angle) Normalize() Angle {
 	angle := float64(a)
 	for angle < 0 {
-		angle += 360
+		angle += DegreesInCircle
 	}
-	for angle >= 360 {
-		angle -= 360
+	for angle >= DegreesInCircle {
+		angle -= DegreesInCircle
 	}
 	return Angle(angle)
 }
