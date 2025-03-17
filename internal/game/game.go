@@ -180,3 +180,18 @@ func (g *GimlarGame) drawDebugInfo(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Angle: %.2f°", angle),
 		DebugTextMargin, DebugTextMargin+DebugTextLineHeight)
 }
+
+// SimulateKeyPress simulates a key press for testing
+func (g *GimlarGame) SimulateKeyPress(key ebiten.Key) {
+	g.input.SimulateKeyPress(key)
+}
+
+// SimulateKeyRelease simulates a key release for testing
+func (g *GimlarGame) SimulateKeyRelease(key ebiten.Key) {
+	g.input.SimulateKeyRelease(key)
+}
+
+// EnableTestMode enables test mode for input simulation
+func (g *GimlarGame) EnableTestMode(enabled bool) {
+	g.input.SetTestMode(enabled)
+}
