@@ -14,24 +14,24 @@ func main() {
 	// Create game configuration with options
 	config := game.NewConfig(
 		game.WithDebug(os.Getenv("DEBUG") != ""),
-		game.WithSpeed(0.04),
-		game.WithStarSettings(5.0, 2.0),
-		game.WithAngleStep(0.05),
+		game.WithSpeed(game.DefaultSpeed),
+		game.WithStarSettings(game.DefaultStarSize, game.DefaultStarSpeed),
+		game.WithAngleStep(game.DefaultAngleStep),
 	)
 
 	// Create input handler
 	input := &game.InputHandler{}
 
 	// Initialize game
-	g, err := game.NewGimlarGame(config, input)
-	if err != nil {
-		logger.Error("Failed to initialize game", "error", err)
+	g, initErr := game.NewGimlarGame(config, input)
+	if initErr != nil {
+		logger.Error("Failed to initialize game", "error", initErr)
 		os.Exit(1)
 	}
 
 	// Run game
-	if err := g.Run(); err != nil {
-		logger.Error("Failed to run game", "error", err)
+	if runErr := g.Run(); runErr != nil {
+		logger.Error("Failed to run game", "error", runErr)
 		os.Exit(1)
 	}
 }

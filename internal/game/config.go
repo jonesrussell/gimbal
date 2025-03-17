@@ -7,10 +7,10 @@ const (
 	defaultScreenHeight = 480
 	defaultPlayerSize   = 16
 	defaultNumStars     = 100
-	defaultSpeed        = 0.04
-	defaultStarSize     = 5.0
-	defaultStarSpeed    = 2.0
-	defaultAngleStep    = 0.05
+	DefaultSpeed        = 0.04
+	DefaultStarSize     = 5.0
+	DefaultStarSpeed    = 2.0
+	DefaultAngleStep    = 0.05
 	defaultRadiusRatio  = 0.75
 	screenCenterDivisor = 2
 )
@@ -99,10 +99,10 @@ func DefaultConfig() *GameConfig {
 		Center:       image.Point{X: defaultScreenWidth / screenCenterDivisor, Y: defaultScreenHeight / screenCenterDivisor},
 		NumStars:     defaultNumStars,
 		Debug:        false,
-		Speed:        defaultSpeed,
-		StarSize:     defaultStarSize,
-		StarSpeed:    defaultStarSpeed,
-		AngleStep:    defaultAngleStep,
+		Speed:        DefaultSpeed,
+		StarSize:     DefaultStarSize,
+		StarSpeed:    DefaultStarSpeed,
+		AngleStep:    DefaultAngleStep,
 	}
 }
 
