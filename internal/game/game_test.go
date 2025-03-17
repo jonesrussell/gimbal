@@ -68,16 +68,29 @@ func TestPlayerMovement(t *testing.T) {
 	g, err := game.New(config)
 	require.NoError(t, err)
 
+	// Enable test mode for input simulation
+	g.EnableTestMode(true)
+
 	// Get initial player position
 	initialPos := g.GetPlayer().GetPosition()
-	initialX := initialPos.X
+	initialAngle := g.GetPlayer().GetAngle()
+
+	// Simulate right movement input
+	g.SimulateKeyPress(ebiten.KeyRight)
 
 	// Execute
 	g.Update()
 
 	// Assert
 	finalPos := g.GetPlayer().GetPosition()
-	assert.NotEqual(t, initialX, finalPos.X)
+	finalAngle := g.GetPlayer().GetAngle()
+
+	// The player should have moved in a circular path
+	assert.NotEqual(t, initialPos, finalPos)
+	assert.NotEqual(t, initialAngle, finalAngle)
+
+	// Cleanup
+	g.SimulateKeyRelease(ebiten.KeyRight)
 }
 
 func TestStarMovement(t *testing.T) {

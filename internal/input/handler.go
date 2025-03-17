@@ -8,20 +8,43 @@ import (
 // Handler handles game input
 type Handler struct {
 	keyState map[ebiten.Key]bool
+	testMode bool
 }
 
 // New creates a new input handler
 func New() *Handler {
 	return &Handler{
 		keyState: make(map[ebiten.Key]bool),
+		testMode: false,
+	}
+}
+
+// SetTestMode enables test mode for key simulation
+func (h *Handler) SetTestMode(enabled bool) {
+	h.testMode = enabled
+}
+
+// SimulateKeyPress simulates a key press for testing
+func (h *Handler) SimulateKeyPress(key ebiten.Key) {
+	if h.testMode {
+		h.keyState[key] = true
+	}
+}
+
+// SimulateKeyRelease simulates a key release for testing
+func (h *Handler) SimulateKeyRelease(key ebiten.Key) {
+	if h.testMode {
+		h.keyState[key] = false
 	}
 }
 
 // HandleInput implements InputHandler interface
 func (h *Handler) HandleInput() {
-	// Update key states
-	for key := ebiten.Key0; key <= ebiten.KeyMax; key++ {
-		h.keyState[key] = ebiten.IsKeyPressed(key)
+	if !h.testMode {
+		// Update key states
+		for key := ebiten.Key0; key <= ebiten.KeyMax; key++ {
+			h.keyState[key] = ebiten.IsKeyPressed(key)
+		}
 	}
 }
 
