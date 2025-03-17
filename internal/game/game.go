@@ -121,6 +121,14 @@ func (g *GimlarGame) Update() error {
 			// Use Angle.Add for angle addition
 			newAngle := currentAngle.Add(step)
 			g.player.SetAngle(newAngle)
+
+			logger.GlobalLogger.Debug("Updating player angle",
+				"input_angle", inputAngle.ToRadians()/common.DegreesToRadians,
+				"current_angle", currentAngle.ToRadians()/common.DegreesToRadians,
+				"angle_step", g.config.AngleStep,
+				"step", step.ToRadians()/common.DegreesToRadians,
+				"new_angle", newAngle.ToRadians()/common.DegreesToRadians,
+			)
 		}
 
 		// Update entities

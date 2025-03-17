@@ -59,9 +59,9 @@ func (h *Handler) GetMovementInput() common.Angle {
 
 	switch {
 	case h.IsKeyPressed(ebiten.KeyLeft):
-		angle -= 1
+		angle = common.Angle(-common.DegreesToRadians) // -1 degree in radians
 	case h.IsKeyPressed(ebiten.KeyRight):
-		angle += 1
+		angle = common.Angle(common.DegreesToRadians) // 1 degree in radians
 	}
 
 	return angle

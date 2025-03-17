@@ -2,6 +2,7 @@ package player
 
 import (
 	"errors"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
@@ -12,12 +13,16 @@ import (
 
 // Player represents the player entity in the game
 type Player struct {
-	coords *physics.CoordinateSystem
-	config *common.EntityConfig
-	sprite *ebiten.Image
-	shape  resolv.IShape
-	angle  common.Angle
-	path   []resolv.Vector
+	coords      *physics.CoordinateSystem
+	config      *common.EntityConfig
+	sprite      *ebiten.Image
+	shape       resolv.IShape
+	angle       common.Angle
+	path        []resolv.Vector
+	speed       float64
+	size        common.Size
+	lastLog     time.Time
+	logInterval time.Duration
 }
 
 // New creates a new player instance
@@ -25,43 +30,82 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
 	}
+	if sprite == nil {
+		return nil, errors.New("sprite cannot be nil")
+	}
 
-	coords := physics.NewCoordinateSystem(config.Position, config.Radius)
+	logger.GlobalLogger.Debug("Creating new player with config",
+		"config", map[string]interface{}{
+			"position": map[string]float64{
+				"x": config.Position.X,
+				"y": config.Position.Y,
+			},
+			"size": map[string]int{
+				"width":  config.Size.Width,
+				"height": config.Size.Height,
+			},
+			"radius": config.Radius,
+			"speed":  config.Speed,
+		},
+	)
+
+	// Create coordinate system for circular movement
+	// Center point should be at the center of the screen
+	center := common.Point{
+		X: config.Position.X,
+		Y: config.Position.Y,
+	}
+	coords := physics.NewCoordinateSystem(center, config.Radius)
+
+	// Calculate initial position at the bottom of the screen (270 degrees)
+	initialAngle := common.Angle(270 * common.DegreesToRadians)
+	logger.GlobalLogger.Debug("Setting initial angle",
+		"angle_rad", initialAngle.ToRadians(),
+		"angle_deg", initialAngle.ToRadians()/common.DegreesToRadians,
+	)
+
+	initialPos := coords.CalculateCircularPosition(initialAngle)
 
 	// Create player collision shape as a rectangle
 	shape := resolv.NewRectangle(
-		config.Position.X,
-		config.Position.Y,
+		initialPos.X,
+		initialPos.Y,
 		float64(config.Size.Width),
 		float64(config.Size.Height),
 	)
 
-	// Start at the bottom of the screen (270 degrees)
-	initialAngle := common.Angle(common.BottomAngle * common.DegreesToRadians)
+	// Create player with initial position
+	player := &Player{
+		coords:      coords,
+		config:      config,
+		sprite:      sprite,
+		shape:       shape,
+		angle:       initialAngle,
+		path:        make([]resolv.Vector, 0),
+		speed:       config.Speed,
+		size:        config.Size,
+		lastLog:     time.Now(),
+		logInterval: time.Second, // Only log once per second
+	}
 
-	// Debug logging
-	logger.GlobalLogger.Debug("Creating new player",
-		"config", map[string]any{
-			"position": config.Position,
-			"size":     config.Size,
-			"radius":   config.Radius,
-			"speed":    config.Speed,
-		},
-		"sprite_size", map[string]any{
+	logger.GlobalLogger.Debug("Player created",
+		"sprite_size", map[string]int{
 			"width":  sprite.Bounds().Dx(),
 			"height": sprite.Bounds().Dy(),
 		},
-		"initial_angle", initialAngle,
+		"initial_angle", initialAngle.ToRadians(),
+		"initial_position", map[string]float64{
+			"x": initialPos.X,
+			"y": initialPos.Y,
+		},
+		"center", map[string]float64{
+			"x": center.X,
+			"y": center.Y,
+		},
+		"radius", config.Radius,
 	)
 
-	return &Player{
-		coords: coords,
-		config: config,
-		sprite: sprite,
-		shape:  shape,
-		angle:  initialAngle,
-		path:   make([]resolv.Vector, 0),
-	}, nil
+	return player, nil
 }
 
 // Update implements Entity interface
@@ -72,49 +116,55 @@ func (p *Player) Update() {
 
 // Draw implements Entity interface
 func (p *Player) Draw(screen *ebiten.Image) {
-	if p.sprite == nil {
-		return
+	// Only log once per second
+	now := time.Now()
+	if now.Sub(p.lastLog) >= p.logInterval {
+		pos := p.GetPosition()
+		logger.GlobalLogger.Debug("Drawing player",
+			"position", map[string]float64{
+				"x": pos.X,
+				"y": pos.Y,
+			},
+			"angle", p.GetAngle().ToRadians(),
+			"scale", map[string]float64{
+				"x": float64(p.size.Width) / float64(p.sprite.Bounds().Dx()),
+				"y": float64(p.size.Height) / float64(p.sprite.Bounds().Dy()),
+			},
+			"final_position", map[string]float64{
+				"x": pos.X + float64(p.size.Width)/2,
+				"y": pos.Y + float64(p.size.Height)/2,
+			},
+		)
+		p.lastLog = now
 	}
 
-	pos := p.GetPosition()
-	op := &ebiten.DrawImageOptions{}
+	// Create GeoM for transformations
+	geoM := ebiten.GeoM{}
 
-	// Calculate scaling to match configured size
-	scaleX := float64(p.config.Size.Width) / float64(p.sprite.Bounds().Dx())
-	scaleY := float64(p.config.Size.Height) / float64(p.sprite.Bounds().Dy())
+	// Calculate scale based on sprite size
+	scaleX := float64(p.size.Width) / float64(p.sprite.Bounds().Dx())
+	scaleY := float64(p.size.Height) / float64(p.sprite.Bounds().Dy())
 
-	// Calculate offsets for rotation
-	offsetX := -float64(p.config.Size.Width) / common.CenterDivisor
-	offsetY := -float64(p.config.Size.Height) / common.CenterDivisor
+	// Move to origin for rotation
+	offsetX := float64(p.sprite.Bounds().Dx()) / 2
+	offsetY := float64(p.sprite.Bounds().Dy()) / 2
+	geoM.Translate(-offsetX, -offsetY)
 
-	// Apply transformations
-	op.GeoM.Translate(offsetX, offsetY)
-	op.GeoM.Rotate(float64(p.angle.ToRadians()))
-	op.GeoM.Scale(scaleX, scaleY)
+	// Apply rotation
+	geoM.Rotate(p.GetAngle().ToRadians())
+
+	// Apply scale
+	geoM.Scale(scaleX, scaleY)
 
 	// Move to final position
-	finalX := pos.X + float64(p.config.Size.Width)/common.CenterDivisor
-	finalY := pos.Y + float64(p.config.Size.Height)/common.CenterDivisor
-	op.GeoM.Translate(finalX, finalY)
+	finalX := p.GetPosition().X + float64(p.size.Width)/2
+	finalY := p.GetPosition().Y + float64(p.size.Height)/2
+	geoM.Translate(finalX, finalY)
 
-	// Debug logging
-	logger.GlobalLogger.Debug("Drawing player",
-		"position", map[string]any{
-			"x": pos.X,
-			"y": pos.Y,
-		},
-		"angle", p.angle,
-		"scale", map[string]any{
-			"x": scaleX,
-			"y": scaleY,
-		},
-		"final_position", map[string]any{
-			"x": finalX,
-			"y": finalY,
-		},
-	)
-
-	screen.DrawImage(p.sprite, op)
+	// Draw the sprite
+	screen.DrawImage(p.sprite, &ebiten.DrawImageOptions{
+		GeoM: geoM,
+	})
 }
 
 // GetPosition implements Entity interface
@@ -129,7 +179,7 @@ func (p *Player) SetPosition(pos common.Point) {
 
 // GetSpeed implements Movable interface
 func (p *Player) GetSpeed() float64 {
-	return p.config.Speed
+	return p.speed
 }
 
 // GetAngle returns the player's current angle
@@ -144,7 +194,7 @@ func (p *Player) SetAngle(angle common.Angle) {
 
 // GetBounds implements Collidable interface
 func (p *Player) GetBounds() common.Size {
-	return p.config.Size
+	return p.size
 }
 
 // CheckCollision implements Collidable interface
