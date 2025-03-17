@@ -23,11 +23,11 @@ func (g *GimlarGame) DebugPrintStar(screen *ebiten.Image, star Star) {
 // DrawDebugGridOverlay draws a grid overlay for debugging purposes.
 func (g *GimlarGame) DrawDebugGridOverlay(screen *ebiten.Image) {
 	if g.config.Debug {
-		for i := 0; i < g.config.ScreenWidth; i += debugGridSpacing {
-			vector.StrokeLine(screen, float32(i), 0, float32(i), float32(g.config.ScreenHeight), 1, color.White, false)
+		for i := 0; i < g.config.ScreenSize.Width; i += debugGridSpacing {
+			vector.StrokeLine(screen, float32(i), 0, float32(i), float32(g.config.ScreenSize.Height), 1, color.White, false)
 		}
-		for i := 0; i < g.config.ScreenHeight; i += debugGridSpacing {
-			vector.StrokeLine(screen, 0, float32(i), float32(g.config.ScreenWidth), float32(i), 1, color.White, false)
+		for i := 0; i < g.config.ScreenSize.Height; i += debugGridSpacing {
+			vector.StrokeLine(screen, 0, float32(i), float32(g.config.ScreenSize.Width), float32(i), 1, color.White, false)
 		}
 	}
 }
@@ -42,10 +42,10 @@ func (g *GimlarGame) DrawDebugInfo(screen *ebiten.Image) {
 
 func (g *GimlarGame) DrawDebugGrid(screen *ebiten.Image) {
 	// Draw grid overlay
-	for i := 0; i < g.config.ScreenWidth; i += debugGridSpacing {
-		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(g.config.ScreenHeight), 1, color.White, false)
+	for i := 0; i < g.config.ScreenSize.Width; i += debugGridSpacing {
+		vector.StrokeLine(screen, float32(i), 0, float32(i), float32(g.config.ScreenSize.Height), 1, color.White, false)
 	}
-	for i := 0; i < g.config.ScreenHeight; i += debugGridSpacing {
-		vector.StrokeLine(screen, 0, float32(i), float32(g.config.ScreenWidth), float32(i), 1, color.White, false)
+	for i := 0; i < g.config.ScreenSize.Height; i += debugGridSpacing {
+		vector.StrokeLine(screen, 0, float32(i), float32(g.config.ScreenSize.Width), float32(i), 1, color.White, false)
 	}
 }

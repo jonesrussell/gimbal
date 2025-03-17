@@ -138,11 +138,15 @@ func TestGimlarGame_Draw(t *testing.T) {
 	g, err := game.NewGimlarGame(config, input)
 	require.NoError(t, err)
 
+	// Create a test screen
+	screen := ebiten.NewImage(config.ScreenWidth, config.ScreenHeight)
+
 	// Execute
-	g.Draw(nil)
+	g.Draw(screen)
 
 	// Assert
 	assert.NotNil(t, g.GetPlayer())
+	assert.NotNil(t, screen)
 }
 
 func TestGimlarGame_Layout(t *testing.T) {

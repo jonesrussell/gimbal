@@ -3,9 +3,12 @@ package game
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"fmt"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 const (
@@ -47,42 +50,53 @@ func initializeStars(numStars int, starImage *ebiten.Image) []Star {
 }
 
 func (g *GimlarGame) updateStars() {
-	for i := range g.stars {
-		// Update star position based on its angle and speed
-		g.stars[i].X += g.stars[i].Speed * math.Cos(g.stars[i].Angle)
-		g.stars[i].Y += g.stars[i].Speed * math.Sin(g.stars[i].Angle)
+	stars := g.stars.GetStars()
+	for _, star := range stars {
+		pos := star.GetPosition()
+		speed := star.GetSpeed()
+		angle := star.GetAngle()
 
-		// If star goes off screen, reset it to the center
-		if g.stars[i].X < 0 || g.stars[i].X > float64(g.config.ScreenWidth) ||
-			g.stars[i].Y < 0 || g.stars[i].Y > float64(g.config.ScreenHeight) {
-			g.stars[i].X = float64(g.config.ScreenWidth) / screenCenterDivisor
-			g.stars[i].Y = float64(g.config.ScreenHeight) / screenCenterDivisor
-			g.stars[i].Size = randomFloat64() * maxStarSize
-			g.stars[i].Angle = randomFloat64() * twoPi
-			g.stars[i].Speed = randomFloat64() * maxStarSpeed
+		// Update position based on speed and angle
+		pos.X += speed * math.Cos(angle)
+		pos.Y += speed * math.Sin(angle)
+
+		// Reset star if it goes off screen
+		if pos.X < 0 || pos.X > float64(g.config.ScreenSize.Width) ||
+			pos.Y < 0 || pos.Y > float64(g.config.ScreenSize.Height) {
+			// Reset to center with random properties
+			pos = common.Point{
+				X: float64(g.config.ScreenSize.Width) / 2,
+				Y: float64(g.config.ScreenSize.Height) / 2,
+			}
+			star.SetPosition(pos)
+			star.SetSpeed(randomFloat64() * 2)
+			star.SetAngle(randomFloat64() * 2 * math.Pi)
+			star.SetSize(randomFloat64() * 2)
+			continue
 		}
+
+		star.SetPosition(pos)
 	}
 }
 
 func (g *GimlarGame) drawStars(screen *ebiten.Image) {
-	for _, star := range g.stars {
-		// Calculate the size of the star image
-		size := int(star.Size * starSizeMultiplier)
-		if size < minStarSize {
-			size = minStarSize
+	stars := g.stars.GetStars()
+	for _, star := range stars {
+		pos := star.GetPosition()
+		sprite := star.GetSprite()
+		size := star.GetSize()
+
+		if sprite == nil {
+			continue
 		}
 
-		// Create an option to position the star
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(float64(size), float64(size))
-		op.GeoM.Translate(star.X-float64(size)/starSizeMultiplier, star.Y-float64(size)/starSizeMultiplier)
+		op.GeoM.Scale(size, size)
+		op.GeoM.Translate(pos.X, pos.Y)
+		screen.DrawImage(sprite, op)
 
-		// Draw the star using the Image field of the Star struct
-		screen.DrawImage(star.Image, op)
-
-		// Debugging output
 		if g.config.Debug {
-			g.DebugPrintStar(screen, star)
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Star: pos=(%v,%v) size=%v", pos.X, pos.Y, size), int(pos.X), int(pos.Y))
 		}
 	}
 }
