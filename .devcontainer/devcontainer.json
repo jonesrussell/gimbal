@@ -21,13 +21,6 @@
 			"userUid": "automatic",
 			"userGid": "automatic"
 		},
-		"ghcr.io/devcontainers/features/node:1": {
-			"nodeGypDependencies": true,
-			"installYarnUsingApt": true,
-			"version": "lts",
-			"pnpmVersion": "latest",
-			"nvmVersion": "latest"
-		},
 		"ghcr.io/devcontainers/features/github-cli:1": {
 			"installDirectlyFromGitHubRelease": true,
 			"version": "latest"
@@ -56,5 +49,7 @@
 				"GitHub.vscode-pull-request-github"
 			]
 		}
-	}
+	},
+	"remoteUser": "vscode",
+	"updateRemoteUserUID": true
 }
