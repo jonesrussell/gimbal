@@ -8,6 +8,9 @@
 	"mounts": [
 		"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly"
 	],
+	"runArgs": [
+		"--env=DISPLAY=${localEnv:DISPLAY}"
+	],
 	"features": {
 		"ghcr.io/eitsupi/devcontainer-features/go-task:1": {
 			"version": "latest"
