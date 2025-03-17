@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/game"
+	"github.com/jonesrussell/gimbal/internal/game/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,29 +69,31 @@ func TestPlayerMovement(t *testing.T) {
 	g, err := game.New(config)
 	require.NoError(t, err)
 
-	// Enable test mode for input simulation
-	g.EnableTestMode(true)
+	// Create test input handler
+	testInput := test.NewTestHandler()
+	g.SetInputHandler(testInput)
 
-	// Get initial player position
+	// Get initial player position and angle
 	initialPos := g.GetPlayer().GetPosition()
 	initialAngle := g.GetPlayer().GetAngle()
 
 	// Simulate right movement input
-	g.SimulateKeyPress(ebiten.KeyRight)
+	testInput.SimulateKeyPress(ebiten.KeyRight)
 
-	// Execute
-	g.Update()
+	// Execute update
+	err = g.Update()
+	require.NoError(t, err)
 
-	// Assert
+	// Get final position and angle
 	finalPos := g.GetPlayer().GetPosition()
 	finalAngle := g.GetPlayer().GetAngle()
 
 	// The player should have moved in a circular path
-	assert.NotEqual(t, initialPos, finalPos)
-	assert.NotEqual(t, initialAngle, finalAngle)
+	assert.NotEqual(t, initialPos, finalPos, "Player position should change")
+	assert.NotEqual(t, initialAngle, finalAngle, "Player angle should change")
 
 	// Cleanup
-	g.SimulateKeyRelease(ebiten.KeyRight)
+	testInput.SimulateKeyRelease(ebiten.KeyRight)
 }
 
 func TestStarMovement(t *testing.T) {
@@ -222,4 +225,45 @@ func TestGameConfig_Options(t *testing.T) {
 			tt.validate(t, config)
 		})
 	}
+}
+
+func TestGame_Update(t *testing.T) {
+	t.Parallel()
+
+	// Create a new game instance with default config
+	config := common.DefaultConfig()
+	g, err := game.New(config)
+	require.NoError(t, err)
+
+	// Create a test input handler
+	testHandler := test.NewTestHandler()
+	g.SetInputHandler(testHandler)
+
+	// Test initial state
+	assert.Equal(t, common.Angle(0), g.GetPlayer().GetAngle())
+	assert.Equal(t, common.Angle(0), g.GetPlayer().GetFacingAngle())
+
+	// Test left movement
+	testHandler.SimulateKeyPress(ebiten.KeyLeft)
+	g.Update()
+	assert.Equal(t, common.Angle(-2), g.GetPlayer().GetAngle())
+	assert.Equal(t, common.Angle(0), g.GetPlayer().GetFacingAngle())
+
+	// Test right movement
+	testHandler.SimulateKeyRelease(ebiten.KeyLeft)
+	testHandler.SimulateKeyPress(ebiten.KeyRight)
+	g.Update()
+	assert.Equal(t, common.Angle(0), g.GetPlayer().GetAngle())
+	assert.Equal(t, common.Angle(0), g.GetPlayer().GetFacingAngle())
+
+	// Test pause
+	testHandler.SimulateKeyRelease(ebiten.KeyRight)
+	testHandler.SimulateKeyPress(ebiten.KeySpace)
+	g.Update()
+	require.True(t, g.IsPaused())
+
+	// Test unpause
+	testHandler.SimulateKeyRelease(ebiten.KeySpace)
+	g.Update()
+	require.False(t, g.IsPaused())
 }
