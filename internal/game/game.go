@@ -104,6 +104,7 @@ func (g *GimlarGame) Update() error {
 	// Check for pause
 	if g.input.IsPausePressed() {
 		g.isPaused = !g.isPaused
+		logger.GlobalLogger.Debug("Game paused", "is_paused", g.isPaused)
 	}
 
 	// Check for quit
@@ -114,20 +115,26 @@ func (g *GimlarGame) Update() error {
 	if !g.isPaused {
 		// Update player angle based on input
 		inputAngle := g.input.GetMovementInput()
+		logger.GlobalLogger.Debug("Game update",
+			"input_angle", inputAngle,
+			"is_paused", g.isPaused,
+		)
+
 		if inputAngle != 0 {
 			currentAngle := g.player.GetAngle()
-			// Use Angle.Mul for scalar multiplication
-			step := inputAngle.Mul(g.config.AngleStep)
-			// Use Angle.Add for angle addition
-			newAngle := currentAngle.Add(step)
+			// Add the input angle to the current position angle
+			newAngle := currentAngle.Add(inputAngle)
 			g.player.SetAngle(newAngle)
 
-			logger.GlobalLogger.Debug("Updating player angle",
-				"input_angle", inputAngle.ToRadians()/common.DegreesToRadians,
-				"current_angle", currentAngle.ToRadians()/common.DegreesToRadians,
-				"angle_step", g.config.AngleStep,
-				"step", step.ToRadians()/common.DegreesToRadians,
-				"new_angle", newAngle.ToRadians()/common.DegreesToRadians,
+			// Keep the player facing the center
+			g.player.SetFacingAngle(common.Angle(0))
+
+			logger.GlobalLogger.Debug("Player movement",
+				"input_angle", inputAngle,
+				"current_angle", currentAngle,
+				"new_angle", newAngle,
+				"position", g.player.GetPosition(),
+				"facing_angle", g.player.GetFacingAngle(),
 			)
 		}
 
