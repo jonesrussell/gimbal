@@ -21,6 +21,7 @@ const (
 	spriteCenterDivisor    = 2
 	pathStrokeWidth        = 1.0
 	debugAlpha             = 255
+	positionDivisor        = 2 // Used for dividing screen dimensions and player dimensions
 )
 
 type PlayerInput struct {
@@ -69,12 +70,12 @@ func NewPlayer(input InputHandlerInterface, config *GameConfig, spriteImage imag
 	initialAngle := math.Pi * initialAngleMultiplier
 
 	// calculate the initial X and Y positions of the player based on the center point and the initial angle
-	centerX := float64(config.ScreenWidth) / 2
-	centerY := float64(config.ScreenHeight) / 2
+	centerX := float64(config.ScreenWidth) / positionDivisor
+	centerY := float64(config.ScreenHeight) / positionDivisor
 	radius := float64(config.ScreenHeight) / radiusDivisor
 
 	initialX := centerX + radius*math.Cos(initialAngle)
-	initialY := centerY - radius*math.Sin(initialAngle) - float64(config.PlayerHeight)/2
+	initialY := centerY - radius*math.Sin(initialAngle) - float64(config.PlayerHeight)/positionDivisor
 
 	// create a new instance of a player with the given input handler, initial position, and sprite image
 	player := &Player{
@@ -184,13 +185,13 @@ func (player *Player) drawPath(screen *ebiten.Image) {
 func (player *Player) drawRectangle(screen *ebiten.Image) {
 	// Create a new image for the rectangle
 	rectColor := color.RGBA{255, 0, 0, debugAlpha}
-	img := ebiten.NewImage(int(player.Config.PlayerWidth), int(player.Config.PlayerHeight))
+	img := ebiten.NewImage(player.Config.PlayerWidth, player.Config.PlayerHeight)
 	img.Fill(rectColor)
 
 	// Get the position and calculate the rectangle's top-left corner position
 	pos := player.Object.Position()
-	rectX := pos.X - float64(player.Config.PlayerWidth)/2
-	rectY := pos.Y - float64(player.Config.PlayerHeight)/2
+	rectX := pos.X - float64(player.Config.PlayerWidth)/positionDivisor
+	rectY := pos.Y - float64(player.Config.PlayerHeight)/positionDivisor
 
 	// Check if rectX or rectY has changed since the last call
 	if rectX != prevRectX || rectY != prevRectY {
