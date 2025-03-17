@@ -25,11 +25,24 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g npm@latest
 
-# Create the user
+# Create the user and set up Go environment
 RUN groupadd --gid 1000 vscode \
     && useradd --uid 1000 --gid 1000 -m vscode \
     && mkdir -p /home/vscode/go/bin \
+    && mkdir -p /go/pkg/mod \
+    && mkdir -p /go/bin \
+    && mkdir -p /go/pkg/mod/cache \
+    && mkdir -p /go/pkg/mod/cache/download \
+    && mkdir -p /go/pkg/sumdb \
+    && chmod -R 777 /go \
+    && find /go -type d -exec chown vscode:vscode {} \; \
+    && find /go -type f -exec chown vscode:vscode {} \; \
     && chown -R vscode:vscode /home/vscode
+
+# Set GOPATH and ensure Go uses the correct permissions
+ENV GOPATH=/go
+ENV GO111MODULE=on
+ENV GOFLAGS=-modcacherw
 
 # Switch to vscode user to install golang tools
 USER vscode
