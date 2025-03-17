@@ -3,6 +3,7 @@ package game
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -33,7 +34,7 @@ func NewGimlarGame(config *GameConfig, input InputHandlerInterface) (*GimlarGame
 	}
 
 	if input == nil {
-		return nil, fmt.Errorf("input handler cannot be nil")
+		return nil, errors.New("input handler cannot be nil")
 	}
 
 	// Create a single star image that will be used for all stars
