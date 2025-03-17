@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/logger"
 )
 
 const (
@@ -36,10 +37,29 @@ func (cs *CoordinateSystem) CalculateCircularPosition(angle common.Angle) common
 	// - 0° points right
 	// - 90° points down
 	// - 180° points left
-	// - 270° points up
+	// - 270° points down
+	x := cs.center.X + cs.radius*math.Cos(rad)
+	y := cs.center.Y - cs.radius*math.Sin(rad) // Negative sin to match our coordinate system
+
+	logger.GlobalLogger.Debug("Calculating circular position",
+		"center", map[string]float64{
+			"x": cs.center.X,
+			"y": cs.center.Y,
+		},
+		"radius", cs.radius,
+		"angle_rad", rad,
+		"angle_deg", rad/common.DegreesToRadians,
+		"cos", math.Cos(rad),
+		"sin", math.Sin(rad),
+		"result", map[string]float64{
+			"x": x,
+			"y": y,
+		},
+	)
+
 	return common.Point{
-		X: cs.center.X + cs.radius*math.Cos(rad),
-		Y: cs.center.Y - cs.radius*math.Sin(rad), // Negative sin to match our coordinate system
+		X: x,
+		Y: y,
 	}
 }
 
