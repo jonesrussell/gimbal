@@ -4,18 +4,18 @@ import (
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/game"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDebugPrintStar(t *testing.T) {
 	// Create a test game
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithDebug(true),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithDebug(true),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	if err != nil {
 		t.Fatalf("Failed to create game: %v", err)
 	}
@@ -24,24 +24,17 @@ func TestDebugPrintStar(t *testing.T) {
 	screen := ebiten.NewImage(640, 480)
 
 	// Test with a valid star
-	star := game.Star{
-		X:     100.0,
-		Y:     200.0,
-		Size:  5.0,
-		Angle: 0.0,
-		Speed: 1.0,
-	}
+	star := g.GetStars()[0]
 	g.DebugPrintStar(screen, star) // This should not panic
 }
 
 func TestDrawDebugGridOverlay(t *testing.T) {
 	// Create a test game
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithDebug(true),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithDebug(true),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	if err != nil {
 		t.Fatalf("Failed to create game: %v", err)
 	}
@@ -58,12 +51,11 @@ func TestDrawDebugGridOverlay(t *testing.T) {
 
 func TestGimlarGame_DrawDebugInfo(t *testing.T) {
 	// Create a test game
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithDebug(true),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithDebug(true),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	if err != nil {
 		t.Fatalf("Failed to create game: %v", err)
 	}
@@ -80,12 +72,11 @@ func TestGimlarGame_DrawDebugInfo(t *testing.T) {
 
 func TestGimlarGame_DrawDebugGrid(t *testing.T) {
 	// Create a test game
-	config := game.NewConfig(
-		game.WithScreenSize(640, 480),
-		game.WithDebug(true),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithDebug(true),
 	)
-	input := &game.InputHandler{}
-	g, err := game.NewGimlarGame(config, input)
+	g, err := game.New(config)
 	if err != nil {
 		t.Fatalf("Failed to create game: %v", err)
 	}
