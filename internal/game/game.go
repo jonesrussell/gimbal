@@ -126,8 +126,10 @@ func (g *GimlarGame) Update() error {
 			newAngle := currentAngle.Add(inputAngle)
 			g.player.SetAngle(newAngle)
 
-			// Keep the player facing the center
-			g.player.SetFacingAngle(common.Angle(0))
+			// Make the player face the center by setting facing angle to 180 degrees from position angle
+			// This ensures the player always points towards the center
+			centerFacingAngle := newAngle.Add(common.Angle(180))
+			g.player.SetFacingAngle(centerFacingAngle)
 
 			logger.GlobalLogger.Debug("Player movement",
 				"input_angle", inputAngle,
