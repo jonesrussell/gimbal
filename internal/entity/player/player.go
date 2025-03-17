@@ -60,10 +60,18 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	pos := p.GetPosition()
 	op := &ebiten.DrawImageOptions{}
 
+	// Calculate offsets for rotation
+	offsetX := -float64(p.config.Size.Width) / common.CenterDivisor
+	offsetY := -float64(p.config.Size.Height) / common.CenterDivisor
+
 	// Apply rotation around center
-	op.GeoM.Translate(-float64(p.config.Size.Width)/common.CenterDivisor, -float64(p.config.Size.Height)/common.CenterDivisor)
+	op.GeoM.Translate(offsetX, offsetY)
 	op.GeoM.Rotate(float64(p.angle.ToRadians()))
-	op.GeoM.Translate(pos.X+float64(p.config.Size.Width)/common.CenterDivisor, pos.Y+float64(p.config.Size.Height)/common.CenterDivisor)
+
+	// Move to final position
+	finalX := pos.X + float64(p.config.Size.Width)/common.CenterDivisor
+	finalY := pos.Y + float64(p.config.Size.Height)/common.CenterDivisor
+	op.GeoM.Translate(finalX, finalY)
 
 	screen.DrawImage(p.sprite, op)
 }
