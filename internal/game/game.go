@@ -21,6 +21,8 @@ const (
 	DebugTextMargin = 10
 	// DebugTextLineHeight is the vertical spacing between debug text lines
 	DebugTextLineHeight = 20
+	// FacingAngleOffset is the angle offset to make the player face the center
+	FacingAngleOffset = 180
 )
 
 //go:embed assets/*
@@ -128,7 +130,7 @@ func (g *GimlarGame) Update() error {
 
 			// Make the player face the center by setting facing angle to 180 degrees from position angle
 			// This ensures the player always points towards the center
-			centerFacingAngle := newAngle.Add(common.Angle(180))
+			centerFacingAngle := newAngle.Add(common.Angle(FacingAngleOffset))
 			g.player.SetFacingAngle(centerFacingAngle)
 
 			logger.GlobalLogger.Debug("Player movement",
