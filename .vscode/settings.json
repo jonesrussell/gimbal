@@ -1,3 +1,15 @@
 {
-    "intelephense.environment.phpVersion": "8.2"
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "editor.defaultFormatter": "golang.go",
+  "go.lintFlags": [
+    "--fast"
+  ],
+  "go.lintOnSave": "package",
+  "go.lintTool": "golangci-lint",
+  "go.useLanguageServer": true,
+  "gopls": {
+    "ui.diagnostic.staticcheck": true
+  }
 }
