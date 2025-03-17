@@ -38,6 +38,11 @@ func (cs *CoordinateSystem) CalculateCircularPosition(angle common.Angle) common
 	}
 }
 
+// SetPosition sets the center point of the coordinate system
+func (cs *CoordinateSystem) SetPosition(pos common.Point) {
+	cs.center = pos
+}
+
 // GetCenter returns the center point of the coordinate system
 func (cs *CoordinateSystem) GetCenter() common.Point {
 	return cs.center
