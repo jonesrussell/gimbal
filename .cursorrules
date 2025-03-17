@@ -1,0 +1,57 @@
+# Cursor rules file to complement golangci-lint configuration and guide developers.
+
+Code Organization & Structure:
+  - Ensure files are modular and maintain a single responsibility principle.
+  - Avoid global state and limit function complexity (cyclop max-complexity: 30, package-average 10).
+  - Keep functions under 100 lines or 50 statements (funlen).
+  - Use consistent naming conventions and avoid type stuttering.
+
+Dependency Injection & Interfaces:
+  - Utilize fx.In and fx.Out for dependency injection.
+  - Define interfaces in the consuming package, not where implemented.
+  - Use type aliases from the common package:
+    - `common.Logger` for `logger.Interface`
+    - `common.Storage` for `storage.Interface`
+    - `common.Config` for `config.Config`
+  - New* constructors must be defined only in `module.go`.
+
+Error Handling:
+  - Validate all errors, including type assertion errors and SQL Row/Statement closures.
+  - Use `errors.New` for simple errors, and wrap errors with context when applicable.
+  - Check error return values consistently and use descriptive variable names.
+
+Testing:
+  - Write tests in separate `_test` packages.
+  - Use `t.Parallel()` appropriately and ensure isolation in test cases.
+  - Apply consistent assertions using `require` and `testify`.
+
+Linting & Rules:
+  - Exclude specific rules for certain files or patterns:
+    - Exclude `(noinspection|TODO)` for `godot`.
+    - Exclude `//noinspection` for `gocritic`.
+    - Exclude `_test.go` files from bodyclose, dupl, errcheck, funlen, goconst, gosec, noctx, and wrapcheck linters.
+  - Custom rules:
+    - Enforce `common.Logger` alias instead of `logger.Interface` (gocritic).
+    - Enforce `common.Storage` alias instead of `storage.Interface` (gocritic).
+    - Enforce `common.Config` alias instead of `config.Config` (gocritic).
+
+Style & Best Practices:
+  - Use `any` over `interface{}` where possible.
+  - Avoid magic numbers and document them with named constants.
+  - Close HTTP response bodies and ensure exhaustive checks for switch statements and maps.
+  - Follow `stylecheck` initialism rules and maintain proper formatting.
+
+Dependencies:
+  - Use up-to-date canonical import paths.
+  - Avoid deprecated libraries by using recommended alternatives.
+
+Documentation:
+  - Clearly comment on code and complex patterns with examples.
+  - End comments with periods and ensure consistency.
+  - Avoid TODO/FIXME without actionable plans.
+
+Advanced Checks:
+  - Apply revive rules such as `use-any`.
+  - Configure exclude-rules and custom checks to reinforce team practices.
+  - Maximize linting precision while minimizing redundant warnings (`max-same-issues: 50`).
+

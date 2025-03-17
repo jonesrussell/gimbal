@@ -81,21 +81,13 @@ tasks:
     cmds:
       - go test -v ./...
 
-  fmt:
-    desc: Format Go code
+  lint:
+    desc: "Lint the Go code"
     cmds:
       - go fmt ./...
-
-  lint:
-    desc: Run linter
-    cmds:
-      - golangci-lint run
-
-  vet:
-    desc: Run Go vet
-    cmds:
       - go vet ./...
-
+      - golangci-lint run ./...
+      
   mod:
     desc: Tidy and download Go modules
     cmds:

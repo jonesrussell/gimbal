@@ -16,11 +16,12 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 		angle     float64
 		speed     float64
 		direction float64
-		Object    *resolv.Object
+		Object    *resolv.ConvexPolygon
 		Sprite    *ebiten.Image
 		viewAngle float64
 		path      []resolv.Vector
 		logger    slog.Logger
+		config    *GameConfig
 	}
 	type args struct {
 		angle float64
@@ -29,8 +30,8 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   int
-		want1  int
+		want   float64
+		want1  float64
 	}{
 		{
 			name: "case 1: default angle and speed",
@@ -44,12 +45,13 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 				viewAngle: 0,
 				path:      nil,
 				logger:    logger.NewSlogHandler(slog.LevelInfo),
+				config:    DefaultConfig(),
 			},
 			args: args{
 				angle: 0,
 			},
-			want:  500,
-			want1: 232,
+			want:  500.0,
+			want1: 232.0,
 		},
 		{
 			name: "case 2: 45 degree angle with speed",
@@ -63,12 +65,13 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 				viewAngle: 45,
 				path:      nil,
 				logger:    logger.NewSlogHandler(slog.LevelInfo),
+				config:    DefaultConfig(),
 			},
 			args: args{
 				angle: 45,
 			},
-			want:  414,
-			want1: 79,
+			want:  414.0,
+			want1: 79.0,
 		},
 	}
 	for _, tt := range tests {
@@ -89,6 +92,7 @@ func TestPlayer_calculateCoordinates(t *testing.T) {
 				viewAngle: tt.fields.viewAngle,
 				direction: tt.fields.direction,
 				angle:     tt.fields.angle,
+				config:    tt.fields.config,
 			}
 			got, got1 := player.calculateCoordinates(tt.args.angle)
 			if got != tt.want {
@@ -107,10 +111,11 @@ func TestPlayer_calculatePosition(t *testing.T) {
 		angle     float64
 		speed     float64
 		direction float64
-		Object    *resolv.Object
+		Object    *resolv.ConvexPolygon
 		Sprite    *ebiten.Image
 		viewAngle float64
 		path      []resolv.Vector
+		config    *GameConfig
 	}
 	tests := []struct {
 		name   string
@@ -124,10 +129,11 @@ func TestPlayer_calculatePosition(t *testing.T) {
 				angle:     0,
 				speed:     0,
 				direction: 0,
-				Object:    resolv.NewObject(0, 0, 16, 16),
+				Object:    resolv.NewRectangle(0, 0, 16, 16),
 				Sprite:    nil,
 				viewAngle: 0,
 				path:      nil,
+				config:    DefaultConfig(),
 			},
 			want: resolv.Vector{X: 500.00, Y: 232.00},
 		},
@@ -138,10 +144,11 @@ func TestPlayer_calculatePosition(t *testing.T) {
 				angle:     0,
 				speed:     5,
 				direction: 0,
-				Object:    resolv.NewObject(0, 0, 16, 16),
+				Object:    resolv.NewRectangle(0, 0, 16, 16),
 				Sprite:    nil,
 				viewAngle: 0,
 				path:      nil,
+				config:    DefaultConfig(),
 			},
 			want: resolv.Vector{X: 500.00, Y: 232.00},
 		},
@@ -152,10 +159,11 @@ func TestPlayer_calculatePosition(t *testing.T) {
 				angle:     45,
 				speed:     5,
 				direction: 0,
-				Object:    resolv.NewObject(0, 0, 16, 16),
+				Object:    resolv.NewRectangle(0, 0, 16, 16),
 				Sprite:    nil,
 				viewAngle: 0,
 				path:      nil,
+				config:    DefaultConfig(),
 			},
 			want: resolv.Vector{X: 500.00, Y: 232.00}, // Considering simple trigonometric calculations without actual game physics
 		},
@@ -178,6 +186,7 @@ func TestPlayer_calculatePosition(t *testing.T) {
 				viewAngle: tt.fields.viewAngle,
 				direction: tt.fields.direction,
 				angle:     tt.fields.angle,
+				config:    tt.fields.config,
 			}
 			got := player.calculatePosition()
 			if !reflect.DeepEqual(got, tt.want) {
