@@ -58,9 +58,9 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 	coords := physics.NewCoordinateSystem(center, config.Radius)
 
 	// Calculate initial position at the bottom of the screen (180 degrees)
+	// but face the center (0 degrees)
 	initialAngle := common.Angle(common.AngleDown) // Start at bottom
 	logger.GlobalLogger.Debug("Setting initial angle",
-		"angle_rad", initialAngle.ToRadians(),
 		"angle_deg", initialAngle.ToRadians()/common.DegreesToRadians,
 	)
 
@@ -80,29 +80,20 @@ func New(config *common.EntityConfig, sprite *ebiten.Image) (*Player, error) {
 		config:      config,
 		sprite:      sprite,
 		shape:       shape,
-		angle:       initialAngle,
+		angle:       common.Angle(0), // Face the center
 		path:        make([]resolv.Vector, 0),
 		speed:       config.Speed,
 		size:        config.Size,
 		lastLog:     time.Now(),
-		logInterval: time.Second, // Only log once per second
+		logInterval: time.Second * 5, // Only log every 5 seconds
 	}
 
 	logger.GlobalLogger.Debug("Player created",
-		"sprite_size", map[string]int{
-			"width":  sprite.Bounds().Dx(),
-			"height": sprite.Bounds().Dy(),
-		},
-		"initial_angle", initialAngle.ToRadians(),
-		"initial_position", map[string]float64{
+		"position", map[string]float64{
 			"x": initialPos.X,
 			"y": initialPos.Y,
 		},
-		"center", map[string]float64{
-			"x": center.X,
-			"y": center.Y,
-		},
-		"radius", config.Radius,
+		"angle", initialAngle.ToRadians()/common.DegreesToRadians,
 	)
 
 	return player, nil
