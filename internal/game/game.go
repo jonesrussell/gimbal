@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -29,6 +30,14 @@ const (
 	RadiusDivisor = 3
 	// DefaultTPS is the default ticks per second for the game loop
 	DefaultTPS = 60
+	// LogInterval is the number of frames between periodic log messages
+	LogInterval = DefaultTPS * 5 // Log every 5 seconds
+	// FacingUpwardAngle is the angle representing facing upward
+	FacingUpwardAngle = 270
+	// SpeedNormalizationFactor normalizes speed with frame rate
+	SpeedNormalizationFactor = 60
+	// HalfDivisor is used for division by 2
+	HalfDivisor = 2
 )
 
 //go:embed assets/*
@@ -42,6 +51,10 @@ type GimlarGame struct {
 	inputHandler input.Interface
 	logger       common.Logger
 	isPaused     bool
+	// State tracking for logging
+	lastLoggedPos common.Point
+	frameCount    int
+	logInterval   int
 }
 
 // New creates a new game instance
@@ -95,12 +108,12 @@ func New(config *common.GameConfig, logger common.Logger) (*GimlarGame, error) {
 	// Create player entity
 	playerConfig := &common.EntityConfig{
 		Position: common.Point{
-			X: float64(config.ScreenSize.Width) / common.CenterDivisor,
-			Y: float64(config.ScreenSize.Height) / common.CenterDivisor,
+			X: float64(config.ScreenSize.Width) / common.CenterDivisor,      // Center X (320)
+			Y: float64(config.ScreenSize.Height - config.PlayerSize.Height), // Bottom Y (480 - 32)
 		},
-		Size:   config.ScreenSize,
+		Size:   common.Size{Width: config.PlayerSize.Width, Height: config.PlayerSize.Height},
 		Speed:  config.Speed,
-		Radius: float64(config.ScreenSize.Height) / RadiusDivisor,
+		Radius: 0, // We don't need radius for direct positioning
 	}
 
 	// Create player sprite
@@ -109,9 +122,15 @@ func New(config *common.GameConfig, logger common.Logger) (*GimlarGame, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %w", err)
 	}
+
+	// Set initial angle to face upward
+	player.SetFacingAngle(common.Angle(FacingUpwardAngle)) // Face upward
+
 	logger.Debug("Player created",
 		"position", player.GetPosition(),
-		"angle", player.GetAngle(),
+		"facing_angle", player.GetFacingAngle(),
+		"screen_height", config.ScreenSize.Height,
+		"player_height", config.PlayerSize.Height,
 	)
 
 	return &GimlarGame{
@@ -121,6 +140,8 @@ func New(config *common.GameConfig, logger common.Logger) (*GimlarGame, error) {
 		inputHandler: inputHandler,
 		logger:       logger,
 		isPaused:     false,
+		frameCount:   0,
+		logInterval:  LogInterval,
 	}, nil
 }
 
@@ -131,15 +152,15 @@ func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
 
 // Update implements ebiten.Game interface
 func (g *GimlarGame) Update() error {
+	g.frameCount++
+
 	// Handle input
 	g.inputHandler.HandleInput()
 
 	// Check for pause
 	if g.inputHandler.IsPausePressed() {
 		g.isPaused = !g.isPaused
-		g.logger.Debug("Game paused",
-			"is_paused", g.isPaused,
-		)
+		g.logger.Debug("Game paused", "is_paused", g.isPaused)
 	}
 
 	// Check for quit
@@ -148,37 +169,63 @@ func (g *GimlarGame) Update() error {
 		return errors.New("game quit requested")
 	}
 
-	if !g.isPaused {
-		// Update player angle based on input
-		inputAngle := g.inputHandler.GetMovementInput()
-		g.logger.Debug("Game update",
-			"input_angle", inputAngle,
-			"is_paused", g.isPaused,
-		)
+	if g.isPaused {
+		return nil
+	}
 
-		if inputAngle != 0 {
-			currentAngle := g.player.GetAngle()
-			// Add the input angle to the current position angle
-			newAngle := currentAngle.Add(inputAngle)
-			g.player.SetAngle(newAngle)
+	// Update player position based on input
+	inputAngle := g.inputHandler.GetMovementInput()
 
-			// Make the player face the center by setting facing angle to 180 degrees from position angle
-			// This ensures the player always points towards the center
-			centerFacingAngle := newAngle.Add(common.Angle(FacingAngleOffset))
-			g.player.SetFacingAngle(centerFacingAngle)
+	if inputAngle != 0 {
+		// Move player left/right along bottom of screen
+		pos := g.player.GetPosition()
+		speed := g.player.GetSpeed()
 
-			g.logger.Debug("Player movement",
-				"input_angle", inputAngle,
-				"current_angle", currentAngle,
-				"new_angle", newAngle,
-				"position", g.player.GetPosition(),
-				"facing_angle", g.player.GetFacingAngle(),
-			)
+		// Convert input angle to movement direction (-1 for left, 1 for right)
+		direction := float64(0)
+		if inputAngle > 0 {
+			direction = 1 // Right
+		} else if inputAngle < 0 {
+			direction = -1 // Left
 		}
 
-		// Update entities
-		g.player.Update()
-		g.stars.Update()
+		// Calculate new X position
+		newX := pos.X + direction*speed*SpeedNormalizationFactor
+
+		// Clamp to screen bounds (accounting for player width)
+		playerWidth := float64(g.config.PlayerSize.Width)
+		minX := playerWidth / HalfDivisor
+		maxX := float64(g.config.ScreenSize.Width) - playerWidth/HalfDivisor
+		newX = math.Max(minX, math.Min(maxX, newX))
+
+		// Update position
+		g.player.SetPosition(common.Point{
+			X: newX,
+			Y: pos.Y,
+		})
+
+		// Only log significant movement
+		g.logger.Debug("Player moved",
+			"position", g.player.GetPosition(),
+		)
+	}
+
+	// Update entities
+	g.player.Update()
+	g.stars.Update()
+
+	// Log state periodically or when it changes significantly
+	if g.frameCount%LogInterval == 0 {
+		pos := g.player.GetPosition()
+		if pos != g.lastLoggedPos {
+			g.logger.Debug("Game state",
+				"frame", g.frameCount,
+				"position", pos,
+				"tps", ebiten.ActualTPS(),
+				"fps", ebiten.ActualFPS(),
+			)
+			g.lastLoggedPos = pos
+		}
 	}
 
 	return nil
@@ -188,33 +235,25 @@ func (g *GimlarGame) Update() error {
 func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	// Skip drawing if screen is nil (testing)
 	if screen == nil {
-		g.logger.Debug("Skipping draw - screen is nil")
 		return
 	}
 
 	// Clear the screen with a dark background
 	screen.Fill(color.RGBA{0, 0, 0, 255})
-	g.logger.Debug("Screen cleared")
 
 	// Draw stars
 	if g.stars != nil {
 		g.stars.Draw(screen)
-		g.logger.Debug("Stars drawn")
 	}
 
 	// Draw player
 	if g.player != nil {
 		g.player.Draw(screen, nil)
-		g.logger.Debug("Player drawn",
-			"position", g.player.GetPosition(),
-			"angle", g.player.GetAngle(),
-		)
 	}
 
 	// Draw debug info if enabled
 	if g.config.Debug {
 		g.drawDebugInfo(screen)
-		g.logger.Debug("Debug info drawn")
 	}
 }
 
@@ -276,14 +315,10 @@ func (g *GimlarGame) Run() error {
 // drawDebugInfo draws debug information on screen
 func (g *GimlarGame) drawDebugInfo(screen *ebiten.Image) {
 	pos := g.player.GetPosition()
-	angle := g.player.GetAngle()
-	g.logger.Debug("Debug info",
-		"position", fmt.Sprintf("(%.2f, %.2f)", pos.X, pos.Y),
-		"angle", fmt.Sprintf("%.2f°", angle),
-	)
+	facingAngle := g.player.GetFacingAngle()
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Position: (%.2f, %.2f)", pos.X, pos.Y),
 		DebugTextMargin, DebugTextMargin)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Angle: %.2f°", angle),
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Facing: %.2f°", float64(facingAngle)),
 		DebugTextMargin, DebugTextMargin+DebugTextLineHeight)
 }
 
