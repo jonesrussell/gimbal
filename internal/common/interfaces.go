@@ -2,6 +2,15 @@ package common
 
 import "github.com/hajimehoshi/ebiten/v2"
 
+// Logger represents a logging interface
+type Logger interface {
+	Debug(msg string, fields ...any)
+	Info(msg string, fields ...any)
+	Warn(msg string, fields ...any)
+	Error(msg string, fields ...any)
+	Sync() error
+}
+
 // Entity represents any game object that can be updated and drawn
 type Entity interface {
 	Update()

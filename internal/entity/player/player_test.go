@@ -6,6 +6,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/entity/player"
+	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,6 +25,8 @@ func TestMain(m *testing.M) {
 
 func TestNew(t *testing.T) {
 	t.Parallel()
+
+	mockLogger := logger.NewMock()
 
 	tests := []struct {
 		name    string
@@ -65,7 +68,7 @@ func TestNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := player.New(tt.config, tt.sprite)
+			got, err := player.New(tt.config, tt.sprite, mockLogger)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -83,6 +86,8 @@ func TestNew(t *testing.T) {
 func TestPlayer_Angle(t *testing.T) {
 	t.Parallel()
 
+	mockLogger := logger.NewMock()
+
 	// Create test config
 	config := &common.EntityConfig{
 		Position: common.Point{X: 100, Y: 100},
@@ -95,7 +100,7 @@ func TestPlayer_Angle(t *testing.T) {
 	sprite := player.NewTestSprite(32, 32)
 
 	// Create player
-	p, err := player.New(config, sprite)
+	p, err := player.New(config, sprite, mockLogger)
 	require.NoError(t, err)
 
 	// Test angle setting and getting
@@ -112,6 +117,8 @@ func TestPlayer_Angle(t *testing.T) {
 func TestPlayer_Position(t *testing.T) {
 	t.Parallel()
 
+	mockLogger := logger.NewMock()
+
 	// Create test config
 	config := &common.EntityConfig{
 		Position: common.Point{X: 100, Y: 100},
@@ -124,7 +131,7 @@ func TestPlayer_Position(t *testing.T) {
 	sprite := player.NewTestSprite(32, 32)
 
 	// Create player
-	p, err := player.New(config, sprite)
+	p, err := player.New(config, sprite, mockLogger)
 	require.NoError(t, err)
 	require.NotNil(t, p)
 
@@ -142,6 +149,8 @@ func TestPlayer_Position(t *testing.T) {
 
 func TestPlayer_Update(t *testing.T) {
 	t.Parallel()
+
+	mockLogger := logger.NewMock()
 
 	tests := []struct {
 		name     string
@@ -186,7 +195,7 @@ func TestPlayer_Update(t *testing.T) {
 			sprite := player.NewTestSprite(32, 32)
 
 			// Create player
-			p, err := player.New(config, sprite)
+			p, err := player.New(config, sprite, mockLogger)
 			require.NoError(t, err)
 			require.NotNil(t, p)
 

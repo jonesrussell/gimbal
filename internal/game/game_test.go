@@ -7,37 +7,76 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/game"
 	inputtest "github.com/jonesrussell/gimbal/internal/input/test"
+	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/jonesrussell/gimbal/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNew(t *testing.T) {
-	test.EnsureXvfb(t)
 	t.Parallel()
 
-	config := common.NewConfig(
-		common.WithScreenSize(640, 480),
-		common.WithDebug(true),
-	)
+	mockLogger := logger.NewMock()
 
-	g, err := game.New(config)
+	tests := []struct {
+		name    string
+		config  *common.GameConfig
+		wantErr bool
+	}{
+		{
+			name:    "nil config",
+			config:  nil,
+			wantErr: true,
+		},
+		{
+			name:    "valid config",
+			config:  common.NewConfig(),
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := game.New(tt.config, mockLogger)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.NotNil(t, got)
+		})
+	}
+}
+
+func TestGame_Layout(t *testing.T) {
+	t.Parallel()
+
+	mockLogger := logger.NewMock()
+
+	config := common.NewConfig()
+	g, err := game.New(config, mockLogger)
 	require.NoError(t, err)
-	assert.NotNil(t, g)
-	assert.NotNil(t, g.GetPlayer())
-	assert.NotNil(t, g.GetStars())
+
+	width, height := g.Layout(800, 600)
+	assert.Equal(t, config.ScreenSize.Width, width)
+	assert.Equal(t, config.ScreenSize.Height, height)
 }
 
 func TestGame_Update(t *testing.T) {
 	test.EnsureXvfb(t)
 	t.Parallel()
 
+	mockLogger := logger.NewMock()
+
 	config := common.NewConfig(
 		common.WithScreenSize(640, 480),
 		common.WithDebug(true),
 	)
 
-	g, err := game.New(config)
+	g, err := game.New(config, mockLogger)
 	require.NoError(t, err)
 
 	// Test player movement
@@ -65,12 +104,14 @@ func TestGame_Draw(t *testing.T) {
 	test.EnsureXvfb(t)
 	t.Parallel()
 
+	mockLogger := logger.NewMock()
+
 	config := common.NewConfig(
 		common.WithScreenSize(640, 480),
 		common.WithDebug(true),
 	)
 
-	g, err := game.New(config)
+	g, err := game.New(config, mockLogger)
 	require.NoError(t, err)
 
 	// Test drawing with nil screen
@@ -82,12 +123,14 @@ func TestGame_Input(t *testing.T) {
 	test.EnsureXvfb(t)
 	t.Parallel()
 
+	mockLogger := logger.NewMock()
+
 	config := common.NewConfig(
 		common.WithScreenSize(640, 480),
 		common.WithDebug(true),
 	)
 
-	g, err := game.New(config)
+	g, err := game.New(config, mockLogger)
 	require.NoError(t, err)
 
 	testHandler := inputtest.NewHandler()

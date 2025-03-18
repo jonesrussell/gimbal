@@ -3,8 +3,6 @@ package input
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/logger"
-	"go.uber.org/zap"
 )
 
 const (
@@ -26,74 +24,53 @@ type Interface interface {
 
 // Handler handles input for the game
 type Handler struct {
-	leftPressed  bool
-	rightPressed bool
-	pausePressed bool
-	quitPressed  bool
+	logger common.Logger
 }
 
 // New creates a new input handler
-func New() *Handler {
-	return &Handler{}
+func New(logger common.Logger) *Handler {
+	return &Handler{
+		logger: logger,
+	}
 }
 
-// HandleInput handles input for the current frame
+// HandleInput processes input events
 func (h *Handler) HandleInput() {
-	// Check arrow keys
-	h.leftPressed = ebiten.IsKeyPressed(ebiten.KeyArrowLeft)
-	h.rightPressed = ebiten.IsKeyPressed(ebiten.KeyArrowRight)
-	h.pausePressed = ebiten.IsKeyPressed(ebiten.KeySpace)
-	h.quitPressed = ebiten.IsKeyPressed(ebiten.KeyEscape)
-
-	logger.GlobalLogger.Debug("Arrow key state",
-		zap.Bool("left", h.leftPressed),
-		zap.Bool("right", h.rightPressed),
-		zap.Bool("pause", h.pausePressed),
-		zap.Bool("quit", h.quitPressed),
-	)
+	// Log input state for debugging
+	if h.logger != nil {
+		h.logger.Debug("Input state",
+			"left", ebiten.IsKeyPressed(ebiten.KeyLeft),
+			"right", ebiten.IsKeyPressed(ebiten.KeyRight),
+			"space", ebiten.IsKeyPressed(ebiten.KeySpace),
+			"escape", ebiten.IsKeyPressed(ebiten.KeyEscape),
+		)
+	}
 }
 
-// IsKeyPressed implements InputHandler interface
+// IsKeyPressed checks if a key is pressed
 func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
 	return ebiten.IsKeyPressed(key)
 }
 
-// GetMovementInput returns the movement input angle
-func (h *Handler) GetMovementInput() common.Angle {
-	logger.GlobalLogger.Debug("Movement check",
-		zap.Bool("left", h.leftPressed),
-		zap.Bool("right", h.rightPressed),
-	)
-
-	if h.leftPressed {
-		angle := common.Angle(-1)
-		logger.GlobalLogger.Debug("Movement input",
-			zap.String("direction", "left"),
-			zap.Any("angle", angle),
-		)
-		return angle
-	}
-
-	if h.rightPressed {
-		angle := common.Angle(1)
-		logger.GlobalLogger.Debug("Movement input",
-			zap.String("direction", "right"),
-			zap.Any("angle", angle),
-		)
-		return angle
-	}
-
-	return 0
-}
-
-// IsQuitPressed returns whether the quit key is pressed
-func (h *Handler) IsQuitPressed() bool {
-	return h.quitPressed
-}
-
-// IsPausePressed returns whether the pause key is pressed
+// IsPausePressed checks if the pause key is pressed
 func (h *Handler) IsPausePressed() bool {
-	return h.pausePressed
+	return ebiten.IsKeyPressed(ebiten.KeySpace)
+}
+
+// IsQuitPressed checks if the quit key is pressed
+func (h *Handler) IsQuitPressed() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyEscape)
+}
+
+// GetMovementInput returns the movement angle based on input
+func (h *Handler) GetMovementInput() common.Angle {
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
+		return -common.DefaultAngleStep
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyRight) {
+		return common.DefaultAngleStep
+	}
+	return 0
 }
 
 // SimulateKeyPress is a no-op for the real input handler
