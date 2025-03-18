@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -15,6 +16,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/entity/stars"
 	"github.com/jonesrussell/gimbal/internal/input"
 	"github.com/jonesrussell/gimbal/internal/logger"
+	"go.uber.org/zap"
 )
 
 const (
@@ -44,8 +46,15 @@ func New(config *common.GameConfig) (*GimlarGame, error) {
 		return nil, errors.New("config cannot be nil")
 	}
 
+	logger.GlobalLogger.Debug("Creating new game instance",
+		zap.Any("screen_size", config.ScreenSize),
+		zap.Any("player_size", config.PlayerSize),
+		zap.Int("num_stars", config.NumStars),
+	)
+
 	// Create input handler
 	inputHandler := input.New()
+	logger.GlobalLogger.Debug("Input handler created")
 
 	// Create star manager
 	starManager := stars.NewManager(
@@ -54,30 +63,40 @@ func New(config *common.GameConfig) (*GimlarGame, error) {
 		config.StarSize,
 		config.StarSpeed,
 	)
+	logger.GlobalLogger.Debug("Star manager created",
+		zap.Int("num_stars", len(starManager.GetStars())),
+	)
 
 	// Load the player sprite
 	imageData, err := assets.ReadFile("assets/player.png")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load player image: %w", err)
 	}
+	logger.GlobalLogger.Debug("Player image loaded",
+		zap.Int("size", len(imageData)),
+	)
 
 	img, _, err := image.Decode(bytes.NewReader(imageData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode player image: %w", err)
 	}
+	logger.GlobalLogger.Debug("Player image decoded",
+		zap.Any("bounds", img.Bounds()),
+		zap.Any("color_model", img.ColorModel()),
+	)
 
 	// Create player entity
 	playerConfig := &common.EntityConfig{
 		Position: common.Point{
 			X: float64(config.ScreenSize.Width) / common.CenterDivisor,
-			Y: float64(config.ScreenSize.Height) / common.CenterDivisor,
+			Y: float64(config.ScreenSize.Height), // Start at bottom
 		},
 		Size: common.Size{
-			Width:  config.PlayerSize.Width,
-			Height: config.PlayerSize.Height,
+			Width:  32, // Player sprite size
+			Height: 32, // Player sprite size
 		},
 		Speed:  config.Speed,
-		Radius: config.Radius,
+		Radius: float64(config.ScreenSize.Height) / 3, // Radius for circular movement
 	}
 
 	// Create player sprite
@@ -86,6 +105,10 @@ func New(config *common.GameConfig) (*GimlarGame, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %w", err)
 	}
+	logger.GlobalLogger.Debug("Player created",
+		zap.Any("position", player.GetPosition()),
+		zap.Any("angle", player.GetAngle()),
+	)
 
 	return &GimlarGame{
 		config:   config,
@@ -109,11 +132,14 @@ func (g *GimlarGame) Update() error {
 	// Check for pause
 	if g.input.IsPausePressed() {
 		g.isPaused = !g.isPaused
-		logger.GlobalLogger.Debug("Game paused", "is_paused", g.isPaused)
+		logger.GlobalLogger.Debug("Game paused",
+			zap.Bool("is_paused", g.isPaused),
+		)
 	}
 
 	// Check for quit
 	if g.input.IsQuitPressed() {
+		logger.GlobalLogger.Debug("Quit requested")
 		return errors.New("game quit requested")
 	}
 
@@ -121,8 +147,8 @@ func (g *GimlarGame) Update() error {
 		// Update player angle based on input
 		inputAngle := g.input.GetMovementInput()
 		logger.GlobalLogger.Debug("Game update",
-			"input_angle", inputAngle,
-			"is_paused", g.isPaused,
+			zap.Any("input_angle", inputAngle),
+			zap.Bool("is_paused", g.isPaused),
 		)
 
 		if inputAngle != 0 {
@@ -137,11 +163,11 @@ func (g *GimlarGame) Update() error {
 			g.player.SetFacingAngle(centerFacingAngle)
 
 			logger.GlobalLogger.Debug("Player movement",
-				"input_angle", inputAngle,
-				"current_angle", currentAngle,
-				"new_angle", newAngle,
-				"position", g.player.GetPosition(),
-				"facing_angle", g.player.GetFacingAngle(),
+				zap.Any("input_angle", inputAngle),
+				zap.Any("current_angle", currentAngle),
+				zap.Any("new_angle", newAngle),
+				zap.Any("position", g.player.GetPosition()),
+				zap.Any("facing_angle", g.player.GetFacingAngle()),
 			)
 		}
 
@@ -157,20 +183,33 @@ func (g *GimlarGame) Update() error {
 func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	// Skip drawing if screen is nil (testing)
 	if screen == nil {
+		logger.GlobalLogger.Debug("Skipping draw - screen is nil")
 		return
 	}
 
+	// Clear the screen with a dark background
+	screen.Fill(color.RGBA{0, 0, 0, 255})
+	logger.GlobalLogger.Debug("Screen cleared")
+
 	// Draw stars
-	g.stars.Draw(screen)
+	if g.stars != nil {
+		g.stars.Draw(screen)
+		logger.GlobalLogger.Debug("Stars drawn")
+	}
 
 	// Draw player
 	if g.player != nil {
 		g.player.Draw(screen, nil)
+		logger.GlobalLogger.Debug("Player drawn",
+			zap.Any("position", g.player.GetPosition()),
+			zap.Any("angle", g.player.GetAngle()),
+		)
 	}
 
 	// Draw debug info if enabled
 	if g.config.Debug {
 		g.drawDebugInfo(screen)
+		logger.GlobalLogger.Debug("Debug info drawn")
 	}
 }
 
@@ -191,8 +230,22 @@ func (g *GimlarGame) GetStars() []*stars.Star {
 
 // Run starts the game loop
 func (g *GimlarGame) Run() error {
+	logger.GlobalLogger.Debug("Setting up game window",
+		zap.Int("width", g.config.ScreenSize.Width),
+		zap.Int("height", g.config.ScreenSize.Height),
+	)
+
 	ebiten.SetWindowSize(g.config.ScreenSize.Width, g.config.ScreenSize.Height)
 	ebiten.SetWindowTitle("Gimbal Game")
+
+	// Set window options for better visibility
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
+	ebiten.SetFullscreen(false)
+
+	// Set FPS to 60
+	ebiten.SetMaxTPS(60)
+
+	logger.GlobalLogger.Debug("Starting game loop")
 	return ebiten.RunGame(g)
 }
 
@@ -201,8 +254,8 @@ func (g *GimlarGame) drawDebugInfo(screen *ebiten.Image) {
 	pos := g.player.GetPosition()
 	angle := g.player.GetAngle()
 	logger.GlobalLogger.Debug("Debug info",
-		"position", fmt.Sprintf("(%.2f, %.2f)", pos.X, pos.Y),
-		"angle", fmt.Sprintf("%.2f°", angle),
+		zap.Any("position", fmt.Sprintf("(%.2f, %.2f)", pos.X, pos.Y)),
+		zap.Any("angle", fmt.Sprintf("%.2f°", angle)),
 	)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Position: (%.2f, %.2f)", pos.X, pos.Y),
 		DebugTextMargin, DebugTextMargin)

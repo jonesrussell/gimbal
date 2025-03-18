@@ -2,12 +2,15 @@ package player
 
 import (
 	"errors"
+	"math"
 	"time"
 
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/jonesrussell/gimbal/internal/physics"
 	"github.com/solarlune/resolv"
+	"go.uber.org/zap"
 )
 
 const (
@@ -43,19 +46,17 @@ func New(config *common.EntityConfig, sprite Drawable) (*Player, error) {
 		return nil, errors.New("sprite cannot be nil")
 	}
 
-	logger.GlobalLogger.Debug("Creating new player with config",
-		"config", map[string]any{
-			"position": map[string]float64{
-				"x": config.Position.X,
-				"y": config.Position.Y,
-			},
-			"size": map[string]int{
-				"width":  config.Size.Width,
-				"height": config.Size.Height,
-			},
-			"speed":  config.Speed,
-			"radius": config.Radius,
-		},
+	logger.GlobalLogger.Debug("Creating new player",
+		zap.Any("position", map[string]float64{
+			"x": config.Position.X,
+			"y": config.Position.Y,
+		}),
+		zap.Any("size", map[string]int{
+			"width":  config.Size.Width,
+			"height": config.Size.Height,
+		}),
+		zap.Float64("speed", config.Speed),
+		zap.Float64("radius", config.Radius),
 	)
 
 	// Create coordinate system
@@ -85,14 +86,55 @@ func New(config *common.EntityConfig, sprite Drawable) (*Player, error) {
 
 // Update implements Entity interface
 func (p *Player) Update() {
-	pos := p.GetPosition()
-	p.shape.SetPosition(pos.X, pos.Y)
+	// Calculate center of the screen
+	centerX := float64(p.config.Size.Width) / HalfDivisor
+	centerY := float64(p.config.Size.Height) / HalfDivisor
+
+	// Get current position
+	pos := p.coords.CalculateCircularPosition(p.posAngle)
+
+	// Calculate angle to face center
+	dx := centerX - pos.X
+	dy := centerY - pos.Y
+	facingAngle := math.Atan2(dy, dx) * 180 / math.Pi
+	p.SetFacingAngle(common.Angle(facingAngle))
+
+	// Update collision shape
+	p.shape.SetPosition(pos.X-16, pos.Y-16) // Center the 32x32 collision box
+
+	// Log position periodically
+	if time.Since(p.lastLog) >= p.logInterval {
+		logger.GlobalLogger.Debug("Player position updated",
+			zap.Float64("x", pos.X),
+			zap.Float64("y", pos.Y),
+			zap.Float64("angle", float64(p.posAngle)),
+			zap.Float64("facing_angle", float64(p.facingAngle)),
+			zap.Float64("center_x", centerX),
+			zap.Float64("center_y", centerY),
+		)
+		p.lastLog = time.Now()
+	}
 }
 
 // Draw implements the Drawable interface
 func (p *Player) Draw(screen any, op any) {
 	if p.sprite != nil {
-		p.sprite.Draw(screen, op)
+		// Create draw options if none provided
+		drawOp := &ebiten.DrawImageOptions{}
+		if ebitenOp, ok := op.(*ebiten.DrawImageOptions); ok {
+			drawOp = ebitenOp
+		}
+
+		// Set rotation based on facing angle
+		// Add 90 degrees to make sprite face upward by default
+		rotationAngle := float64(p.GetFacingAngle())*math.Pi/180 + math.Pi/2
+		drawOp.GeoM.Rotate(rotationAngle)
+
+		// Set position after rotation
+		pos := p.GetPosition()
+		drawOp.GeoM.Translate(pos.X, pos.Y)
+
+		p.sprite.Draw(screen, drawOp)
 	}
 }
 

@@ -1,55 +1,57 @@
 package logger
 
 import (
-	"log/slog"
 	"os"
 	"runtime"
 	"strings"
-	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-var GlobalLogger slog.Logger
+var GlobalLogger *zap.Logger
 
 func init() {
 	// Get log level from environment variable, default to info
-	level := slog.LevelInfo
+	level := zapcore.InfoLevel
 	if levelStr := os.Getenv("LOG_LEVEL"); levelStr != "" {
 		switch strings.ToUpper(levelStr) {
 		case "DEBUG":
-			level = slog.LevelDebug
+			level = zapcore.DebugLevel
 		case "INFO":
-			level = slog.LevelInfo
+			level = zapcore.InfoLevel
 		case "WARN":
-			level = slog.LevelWarn
+			level = zapcore.WarnLevel
 		case "ERROR":
-			level = slog.LevelError
+			level = zapcore.ErrorLevel
 		}
 	}
 
-	// Initialize the global logger with the configured level
-	GlobalLogger = NewSlogHandler(level)
-}
+	// Create encoder config
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
 
-func NewSlogHandler(level slog.Level) slog.Logger {
-	logHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level:     level, // Use the provided logging level
-		AddSource: true,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.TimeKey {
-				a.Key = "UTCTime"
-				a.Value = slog.TimeValue(time.Now().UTC())
-			}
-			return a
-		},
-	}).WithAttrs([]slog.Attr{
-		slog.Group("app_details",
-			slog.Int("pid", os.Getpid()),
-			slog.String("go_version", runtime.Version()),
-		),
-	})
+	// Create core
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(encoderConfig),
+		zapcore.AddSync(os.Stdout),
+		level,
+	)
 
-	logger := slog.New(logHandler)
-	slog.SetDefault(logger)
-
-	return *logger
+	// Create logger with fields
+	GlobalLogger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).With(
+		zap.Int("pid", os.Getpid()),
+		zap.String("go_version", runtime.Version()),
+	)
 }
