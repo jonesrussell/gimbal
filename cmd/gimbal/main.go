@@ -8,7 +8,6 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/game"
 	"github.com/jonesrussell/gimbal/internal/logger"
-	"go.uber.org/zap"
 )
 
 // ExitCode represents the program's exit status
@@ -29,13 +28,26 @@ func run() error {
 		os.Setenv("LOG_LEVEL", "DEBUG")
 	}
 
+	// Create logger
+	log, err := logger.New()
+	if err != nil {
+		return fmt.Errorf("failed to create logger: %w", err)
+	}
+
+	// Ensure logger is flushed on exit
+	defer func() {
+		if err := log.Sync(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to sync logger: %v\n", err)
+		}
+	}()
+
 	// Log system information
-	logger.GlobalLogger.Info("Starting game",
-		zap.String("goos", runtime.GOOS),
-		zap.String("goarch", runtime.GOARCH),
-		zap.Int("num_cpu", runtime.NumCPU()),
-		zap.String("go_version", runtime.Version()),
-		zap.String("log_level", os.Getenv("LOG_LEVEL")),
+	log.Info("Starting game",
+		"goos", runtime.GOOS,
+		"goarch", runtime.GOARCH,
+		"num_cpu", runtime.NumCPU(),
+		"go_version", runtime.Version(),
+		"log_level", os.Getenv("LOG_LEVEL"),
 	)
 
 	// Create game configuration with options
@@ -46,38 +58,28 @@ func run() error {
 		common.WithAngleStep(common.DefaultAngleStep),
 	)
 
-	logger.GlobalLogger.Info("Game configuration created",
-		zap.Any("screen_size", config.ScreenSize),
-		zap.Any("player_size", config.PlayerSize),
-		zap.Int("num_stars", config.NumStars),
-		zap.Bool("debug", config.Debug),
+	log.Info("Game configuration created",
+		"screen_size", config.ScreenSize,
+		"player_size", config.PlayerSize,
+		"num_stars", config.NumStars,
+		"debug", config.Debug,
 	)
 
 	// Initialize game
-	g, err := game.New(config)
+	g, err := game.New(config, log)
 	if err != nil {
 		return fmt.Errorf("failed to initialize game: %w", err)
 	}
 
-	logger.GlobalLogger.Info("Game initialized successfully")
+	log.Info("Game initialized successfully")
 
 	// Run game
 	return g.Run()
 }
 
 func main() {
-	var exitCode ExitCode
-
-	// Ensure logger is flushed on exit
-	defer func() {
-		if err := logger.Sync(); err != nil {
-			fmt.Printf("Failed to sync logger: %v\n", err)
-		}
-		os.Exit(int(exitCode))
-	}()
-
 	if err := run(); err != nil {
-		logger.GlobalLogger.Error("Game error", zap.Error(err))
-		exitCode = ExitFailure
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 }

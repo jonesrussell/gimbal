@@ -7,10 +7,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/logger"
 	"github.com/jonesrussell/gimbal/internal/physics"
 	"github.com/solarlune/resolv"
-	"go.uber.org/zap"
 )
 
 const (
@@ -18,6 +16,8 @@ const (
 	HalfDivisor = 2
 	// LogIntervalSeconds is the interval in seconds between position logs
 	LogIntervalSeconds = 5
+	// DefaultPlayerSize is the default size of the player
+	DefaultPlayerSize = 100
 )
 
 // Drawable interface defines the methods required for drawing
@@ -35,28 +35,32 @@ type Player struct {
 	facingAngle common.Angle // Angle the player is facing
 	lastLog     time.Time
 	logInterval time.Duration
+	logger      common.Logger
 }
 
 // New creates a new player instance
-func New(config *common.EntityConfig, sprite Drawable) (*Player, error) {
+func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*Player, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
 	}
 	if sprite == nil {
 		return nil, errors.New("sprite cannot be nil")
 	}
+	if logger == nil {
+		return nil, errors.New("logger cannot be nil")
+	}
 
-	logger.GlobalLogger.Debug("Creating new player",
-		zap.Any("position", map[string]float64{
+	logger.Debug("Creating new player",
+		"position", map[string]float64{
 			"x": config.Position.X,
 			"y": config.Position.Y,
-		}),
-		zap.Any("size", map[string]int{
+		},
+		"size", map[string]int{
 			"width":  config.Size.Width,
 			"height": config.Size.Height,
-		}),
-		zap.Float64("speed", config.Speed),
-		zap.Float64("radius", config.Radius),
+		},
+		"speed", config.Speed,
+		"radius", config.Radius,
 	)
 
 	// Create coordinate system
@@ -71,6 +75,7 @@ func New(config *common.EntityConfig, sprite Drawable) (*Player, error) {
 		facingAngle: common.AngleLeft,  // Face the center
 		lastLog:     time.Now(),
 		logInterval: time.Second * LogIntervalSeconds,
+		logger:      logger,
 	}
 
 	// Create collision shape
@@ -86,11 +91,9 @@ func New(config *common.EntityConfig, sprite Drawable) (*Player, error) {
 
 // Update implements Entity interface
 func (p *Player) Update() {
-	// Calculate center of the screen using the radius as reference for screen size
-	screenHeight := p.config.Radius * 3       // Since radius is height/3
-	screenWidth := screenHeight * (4.0 / 3.0) // Standard 4:3 aspect ratio
-	centerX := screenWidth / HalfDivisor
-	centerY := screenHeight / HalfDivisor
+	// Use the actual screen dimensions from config
+	centerX := float64(p.config.Size.Width) / HalfDivisor
+	centerY := float64(p.config.Size.Height) / HalfDivisor
 
 	// Get current position
 	pos := p.coords.CalculateCircularPosition(p.posAngle)
@@ -102,19 +105,17 @@ func (p *Player) Update() {
 	p.SetFacingAngle(common.Angle(facingAngle))
 
 	// Update collision shape
-	p.shape.SetPosition(pos.X-16, pos.Y-16) // Center the 32x32 collision box
+	p.shape.SetPosition(pos.X-float64(DefaultPlayerSize)/2, pos.Y-float64(DefaultPlayerSize)/2)
 
 	// Log position periodically
 	if time.Since(p.lastLog) >= p.logInterval {
-		logger.GlobalLogger.Debug("Player position updated",
-			zap.Float64("x", pos.X),
-			zap.Float64("y", pos.Y),
-			zap.Float64("angle", float64(p.posAngle)),
-			zap.Float64("facing_angle", float64(p.facingAngle)),
-			zap.Float64("center_x", centerX),
-			zap.Float64("center_y", centerY),
-			zap.Float64("screen_width", screenWidth),
-			zap.Float64("screen_height", screenHeight),
+		p.logger.Info("Player position updated",
+			"x", pos.X,
+			"y", pos.Y,
+			"angle", float64(p.posAngle),
+			"facing_angle", float64(p.facingAngle),
+			"center_x", centerX,
+			"center_y", centerY,
 		)
 		p.lastLog = time.Now()
 	}
@@ -129,14 +130,26 @@ func (p *Player) Draw(screen any, op any) {
 			drawOp = ebitenOp
 		}
 
+		// Get current position
+		pos := p.GetPosition()
+
+		// Center the sprite on its position
+		drawOp.GeoM.Translate(-float64(DefaultPlayerSize)/2, -float64(DefaultPlayerSize)/2)
+
 		// Set rotation based on facing angle
-		// Add 90 degrees to make sprite face upward by default
-		rotationAngle := float64(p.GetFacingAngle())*math.Pi/180 + math.Pi/2
+		rotationAngle := float64(p.GetFacingAngle()) * math.Pi / 180
 		drawOp.GeoM.Rotate(rotationAngle)
 
-		// Set position after rotation
-		pos := p.GetPosition()
+		// Move to final position
 		drawOp.GeoM.Translate(pos.X, pos.Y)
+
+		// Draw with debug info
+		p.logger.Debug("Drawing player",
+			"x", pos.X,
+			"y", pos.Y,
+			"rotation", rotationAngle,
+			"facing_angle", float64(p.facingAngle),
+		)
 
 		p.sprite.Draw(screen, drawOp)
 	}
