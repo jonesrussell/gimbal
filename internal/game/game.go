@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -26,6 +27,8 @@ const (
 	FacingAngleOffset = 180
 	// RadiusDivisor is used to calculate the player's orbit radius as a fraction of screen height
 	RadiusDivisor = 3
+	// DefaultTPS is the default ticks per second for the game loop
+	DefaultTPS = 60
 )
 
 //go:embed assets/*
@@ -232,6 +235,18 @@ func (g *GimlarGame) GetStars() []*stars.Star {
 
 // Run starts the game loop
 func (g *GimlarGame) Run() error {
+	// Force stdout to be unbuffered
+	os.Stdout.Sync()
+
+	// Ensure logger is synced on exit
+	if f, ok := g.logger.(interface{ Sync() error }); ok {
+		defer func() {
+			if err := f.Sync(); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to sync logger: %v\n", err)
+			}
+		}()
+	}
+
 	g.logger.Debug("Setting up game window",
 		"width", g.config.ScreenSize.Width,
 		"height", g.config.ScreenSize.Height,
@@ -243,12 +258,19 @@ func (g *GimlarGame) Run() error {
 	// Set window options for better visibility
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetFullscreen(false)
-
-	// Set FPS to 60
-	ebiten.SetMaxTPS(60)
+	ebiten.SetVsyncEnabled(true)
+	ebiten.SetTPS(DefaultTPS)
+	ebiten.SetMaxTPS(DefaultTPS)
 
 	g.logger.Debug("Starting game loop")
-	return ebiten.RunGame(g)
+
+	// Run the game loop
+	if err := ebiten.RunGame(g); err != nil {
+		g.logger.Debug("Game loop ended with error", "error", err)
+		return fmt.Errorf("game loop error: %w", err)
+	}
+
+	return nil
 }
 
 // drawDebugInfo draws debug information on screen

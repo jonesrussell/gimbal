@@ -71,7 +71,7 @@ tasks:
   run:
     desc: Run the application
     cmds:
-      - go run ./cmd/gimbal
+      - LOG_LEVEL=debug go run ./cmd/gimbal
 
   clean:build:
     desc: Clean build directory

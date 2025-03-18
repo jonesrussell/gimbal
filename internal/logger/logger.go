@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -12,17 +14,33 @@ type Logger struct {
 
 // New creates a new logger instance
 func New() (*Logger, error) {
-	// Create a basic console encoder
-	config := zap.NewDevelopmentConfig()
-	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	config.OutputPaths = []string{"stdout"}
-	config.ErrorOutputPaths = []string{"stderr"}
-
-	zapLogger, err := config.Build()
-	if err != nil {
-		return nil, err
+	// Create encoder for console output
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "ts",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
+
+	// Create core with console output
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(encoderConfig),
+		zapcore.Lock(os.Stdout),
+		zapcore.DebugLevel,
+	)
+
+	// Build the logger
+	zapLogger := zap.New(core,
+		zap.Development(),
+		zap.AddStacktrace(zapcore.ErrorLevel),
+	)
 
 	logger := &Logger{
 		Logger: zapLogger,
@@ -67,4 +85,9 @@ func toZapFields(fields ...any) []zap.Field {
 		}
 	}
 	return zapFields
+}
+
+// Sync ensures all buffered logs are written
+func (l *Logger) Sync() error {
+	return l.Logger.Sync()
 }
