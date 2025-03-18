@@ -15,7 +15,6 @@ import (
 	ebitensprite "github.com/jonesrussell/gimbal/internal/entity/player/ebiten"
 	"github.com/jonesrussell/gimbal/internal/entity/stars"
 	"github.com/jonesrussell/gimbal/internal/input"
-	"go.uber.org/zap"
 )
 
 const (
@@ -25,6 +24,8 @@ const (
 	DebugTextLineHeight = 20
 	// FacingAngleOffset is the angle offset to make the player face the center
 	FacingAngleOffset = 180
+	// RadiusDivisor is used to calculate the player's orbit radius as a fraction of screen height
+	RadiusDivisor = 3
 )
 
 //go:embed assets/*
@@ -96,7 +97,7 @@ func New(config *common.GameConfig, logger common.Logger) (*GimlarGame, error) {
 		},
 		Size:   config.ScreenSize,
 		Speed:  config.Speed,
-		Radius: float64(config.ScreenSize.Height) / 3,
+		Radius: float64(config.ScreenSize.Height) / RadiusDivisor,
 	}
 
 	// Create player sprite
@@ -134,7 +135,7 @@ func (g *GimlarGame) Update() error {
 	if g.inputHandler.IsPausePressed() {
 		g.isPaused = !g.isPaused
 		g.logger.Debug("Game paused",
-			zap.Bool("is_paused", g.isPaused),
+			"is_paused", g.isPaused,
 		)
 	}
 
@@ -148,8 +149,8 @@ func (g *GimlarGame) Update() error {
 		// Update player angle based on input
 		inputAngle := g.inputHandler.GetMovementInput()
 		g.logger.Debug("Game update",
-			zap.Any("input_angle", inputAngle),
-			zap.Bool("is_paused", g.isPaused),
+			"input_angle", inputAngle,
+			"is_paused", g.isPaused,
 		)
 
 		if inputAngle != 0 {
@@ -164,11 +165,11 @@ func (g *GimlarGame) Update() error {
 			g.player.SetFacingAngle(centerFacingAngle)
 
 			g.logger.Debug("Player movement",
-				zap.Any("input_angle", inputAngle),
-				zap.Any("current_angle", currentAngle),
-				zap.Any("new_angle", newAngle),
-				zap.Any("position", g.player.GetPosition()),
-				zap.Any("facing_angle", g.player.GetFacingAngle()),
+				"input_angle", inputAngle,
+				"current_angle", currentAngle,
+				"new_angle", newAngle,
+				"position", g.player.GetPosition(),
+				"facing_angle", g.player.GetFacingAngle(),
 			)
 		}
 
@@ -202,8 +203,8 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 	if g.player != nil {
 		g.player.Draw(screen, nil)
 		g.logger.Debug("Player drawn",
-			zap.Any("position", g.player.GetPosition()),
-			zap.Any("angle", g.player.GetAngle()),
+			"position", g.player.GetPosition(),
+			"angle", g.player.GetAngle(),
 		)
 	}
 
@@ -232,8 +233,8 @@ func (g *GimlarGame) GetStars() []*stars.Star {
 // Run starts the game loop
 func (g *GimlarGame) Run() error {
 	g.logger.Debug("Setting up game window",
-		zap.Int("width", g.config.ScreenSize.Width),
-		zap.Int("height", g.config.ScreenSize.Height),
+		"width", g.config.ScreenSize.Width,
+		"height", g.config.ScreenSize.Height,
 	)
 
 	ebiten.SetWindowSize(g.config.ScreenSize.Width, g.config.ScreenSize.Height)
@@ -255,8 +256,8 @@ func (g *GimlarGame) drawDebugInfo(screen *ebiten.Image) {
 	pos := g.player.GetPosition()
 	angle := g.player.GetAngle()
 	g.logger.Debug("Debug info",
-		zap.Any("position", fmt.Sprintf("(%.2f, %.2f)", pos.X, pos.Y)),
-		zap.Any("angle", fmt.Sprintf("%.2f°", angle)),
+		"position", fmt.Sprintf("(%.2f, %.2f)", pos.X, pos.Y),
+		"angle", fmt.Sprintf("%.2f°", angle),
 	)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Position: (%.2f, %.2f)", pos.X, pos.Y),
 		DebugTextMargin, DebugTextMargin)
