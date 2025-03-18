@@ -20,7 +20,9 @@ type Sprite struct {
 
 // NewSprite creates a new Sprite from an ebiten.Image
 func NewSprite(img *ebiten.Image) *Sprite {
-	return &Sprite{img: img}
+	return &Sprite{
+		img: img,
+	}
 }
 
 // Bounds returns the bounds of the sprite
@@ -31,10 +33,12 @@ func (e *Sprite) Bounds() image.Rectangle {
 // Draw implements the DrawableSprite interface
 func (e *Sprite) Draw(screen any, op any) {
 	if ebitenScreen, ok := screen.(*ebiten.Image); ok {
-		// Create default options if none provided
-		drawOp := &ebiten.DrawImageOptions{}
-		if ebitenOp, okOp := op.(*ebiten.DrawImageOptions); okOp {
+		// Use provided options or create new ones
+		var drawOp *ebiten.DrawImageOptions
+		if ebitenOp, ok := op.(*ebiten.DrawImageOptions); ok {
 			drawOp = ebitenOp
+		} else {
+			drawOp = &ebiten.DrawImageOptions{}
 		}
 
 		// Calculate scale to maintain 32x32 size
@@ -42,15 +46,13 @@ func (e *Sprite) Draw(screen any, op any) {
 		scaleX := float64(TargetSize) / float64(bounds.Dx())
 		scaleY := float64(TargetSize) / float64(bounds.Dy())
 
-		// Order of transformations:
-		// 1. Center the sprite (move origin to center)
-		drawOp.GeoM.Translate(-float64(bounds.Dx())/HalfDivisor, -float64(bounds.Dy())/HalfDivisor)
-
-		// 2. Scale to target size
+		// Apply scale transformation first
 		drawOp.GeoM.Scale(scaleX, scaleY)
 
-		// The rotation and final position are handled by the player's Draw method
+		// Add a color tint to make the sprite more visible for debugging
+		drawOp.ColorM.Scale(2.0, 2.0, 2.0, 1.0) // Increased brightness for better visibility
 
+		// Draw the sprite
 		ebitenScreen.DrawImage(e.img, drawOp)
 	}
 }

@@ -52,10 +52,11 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 		return nil, errors.New("logger cannot be nil")
 	}
 
-	logger.Debug("Creating new player",
+	logger.Debug("Creating new player with config",
 		"position", config.Position,
 		"size", config.Size,
 		"speed", config.Speed,
+		"radius", config.Radius,
 	)
 
 	// Create player with initial position
@@ -69,16 +70,22 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 		logger:      logger,
 	}
 
+	logger.Debug("Player initialization complete",
+		"initial_position", player.position,
+		"facing_angle", float64(player.facingAngle),
+		"size", player.config.Size,
+		"log_interval", player.logInterval.Seconds(),
+	)
+
 	return player, nil
 }
 
 // Update implements Entity interface
 func (p *Player) Update() {
-	// Log position periodically
+	// Log position periodically only if it has changed
 	if time.Since(p.lastLog) >= p.logInterval {
-		p.logger.Info("Player position updated",
-			"x", p.position.X,
-			"y", p.position.Y,
+		p.logger.Debug("Player state",
+			"position", p.position,
 			"facing_angle", float64(p.facingAngle),
 		)
 		p.lastLog = time.Now()
@@ -94,22 +101,41 @@ func (p *Player) Draw(screen any, op any) {
 			drawOp = ebitenOp
 		}
 
-		// Center the sprite on its position
-		drawOp.GeoM.Translate(-float64(p.config.Size.Width)/2, -float64(p.config.Size.Height)/2)
+		// Log initial state before transformations
+		p.logger.Debug("Player draw start",
+			"initial_state", map[string]interface{}{
+				"position":     p.position,
+				"size":         p.config.Size,
+				"facing_angle": float64(p.facingAngle),
+			},
+		)
 
-		// Set rotation based on facing angle
+		// Order of transformations:
+		// 1. Center the sprite on its origin point
+		centerOffsetX := -float64(p.config.Size.Width) / HalfDivisor
+		centerOffsetY := -float64(p.config.Size.Height) / HalfDivisor
+		drawOp.GeoM.Translate(centerOffsetX, centerOffsetY)
+
+		// 2. Rotation based on facing angle
 		rotationAngle := float64(p.facingAngle) * DegreesToRadians
 		drawOp.GeoM.Rotate(rotationAngle)
 
-		// Move to final position
+		// 3. Move to final position
 		drawOp.GeoM.Translate(p.position.X, p.position.Y)
 
-		// Draw with debug info
-		p.logger.Debug("Drawing player",
-			"x", p.position.X,
-			"y", p.position.Y,
-			"rotation", rotationAngle,
-			"facing_angle", float64(p.facingAngle),
+		// Log transformation details
+		p.logger.Debug("Player transformations",
+			"transform", map[string]interface{}{
+				"center_offset": map[string]float64{
+					"x": centerOffsetX,
+					"y": centerOffsetY,
+				},
+				"rotation_angle": rotationAngle,
+				"final_position": map[string]float64{
+					"x": p.position.X,
+					"y": p.position.Y,
+				},
+			},
 		)
 
 		p.sprite.Draw(screen, drawOp)
