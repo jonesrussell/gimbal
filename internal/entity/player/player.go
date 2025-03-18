@@ -18,6 +18,12 @@ const (
 	LogIntervalSeconds = 5
 	// DefaultPlayerSize is the default size of the player
 	DefaultPlayerSize = 100
+	// DegreesToRadians is used to convert degrees to radians
+	DegreesToRadians = math.Pi / 180
+	// RadiansToDegrees is used to convert radians to degrees
+	RadiansToDegrees = 180 / math.Pi
+	// FacingCenterOffset is the angle offset to make the player face the center
+	FacingCenterOffset = 180
 )
 
 // Drawable interface defines the methods required for drawing
@@ -80,8 +86,8 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 
 	// Create collision shape
 	player.shape = resolv.NewRectangle(
-		config.Position.X-float64(config.Size.Width)/2,
-		config.Position.Y-float64(config.Size.Height)/2,
+		config.Position.X-float64(config.Size.Width)/HalfDivisor,
+		config.Position.Y-float64(config.Size.Height)/HalfDivisor,
 		float64(config.Size.Width),
 		float64(config.Size.Height),
 	)
@@ -101,11 +107,11 @@ func (p *Player) Update() {
 	// Calculate angle to face center
 	dx := centerX - pos.X
 	dy := centerY - pos.Y
-	facingAngle := math.Atan2(dy, dx) * 180 / math.Pi
+	facingAngle := math.Atan2(dy, dx) * RadiansToDegrees
 	p.SetFacingAngle(common.Angle(facingAngle))
 
 	// Update collision shape
-	p.shape.SetPosition(pos.X-float64(DefaultPlayerSize)/2, pos.Y-float64(DefaultPlayerSize)/2)
+	p.shape.SetPosition(pos.X-float64(DefaultPlayerSize)/HalfDivisor, pos.Y-float64(DefaultPlayerSize)/HalfDivisor)
 
 	// Log position periodically
 	if time.Since(p.lastLog) >= p.logInterval {
@@ -134,10 +140,10 @@ func (p *Player) Draw(screen any, op any) {
 		pos := p.GetPosition()
 
 		// Center the sprite on its position
-		drawOp.GeoM.Translate(-float64(DefaultPlayerSize)/2, -float64(DefaultPlayerSize)/2)
+		drawOp.GeoM.Translate(-float64(DefaultPlayerSize)/HalfDivisor, -float64(DefaultPlayerSize)/HalfDivisor)
 
 		// Set rotation based on facing angle
-		rotationAngle := float64(p.GetFacingAngle()) * math.Pi / 180
+		rotationAngle := float64(p.GetFacingAngle()) * DegreesToRadians
 		drawOp.GeoM.Rotate(rotationAngle)
 
 		// Move to final position
