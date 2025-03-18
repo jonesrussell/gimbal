@@ -22,6 +22,8 @@ const (
 	RadiansToDegrees = 180 / math.Pi
 	// FacingCenterOffset is the angle offset to make the player face the center
 	FacingCenterOffset = 180
+	// DefaultFacingAngle is the default angle the player faces (upward)
+	DefaultFacingAngle = 270
 )
 
 // Drawable interface defines the methods required for drawing
@@ -82,7 +84,7 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 		position:    config.Position,
 		config:      config,
 		sprite:      sprite,
-		facingAngle: common.Angle(270), // Face upward by default
+		facingAngle: common.Angle(DefaultFacingAngle), // Face upward by default
 		lastLog:     time.Now(),
 		logInterval: time.Second * LogIntervalSeconds,
 		logger:      logger,
@@ -134,7 +136,7 @@ func (p *Player) Draw(screen any, op any) {
 
 		// Log transformation details
 		p.logger.Debug("Player transformations",
-			"transform", map[string]interface{}{
+			"transform", map[string]any{
 				"center_offset": map[string]float64{
 					"x": centerOffsetX,
 					"y": centerOffsetY,
