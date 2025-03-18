@@ -43,10 +43,31 @@
 				"mtxr.sqltools-driver-mysql",
 				"mtxr.sqltools",
 				"eamodio.gitlens",
-				"GitHub.vscode-pull-request-github"
-			]
+				"GitHub.vscode-pull-request-github",
+				"streetsidesoftware.code-spell-checker"
+			],
+			"settings": {
+				"go.testOnSave": true,
+				"go.testTimeout": "30s",
+				"go.testFlags": [
+					"-v",
+					"-count=1"
+				],
+				"go.lintOnSave": true,
+				"go.lintFlags": [
+					"--fast"
+				],
+				"go.formatTool": "gofmt",
+				"go.useLanguageServer": true,
+				"go.alternateTools": {
+					"go": "go1.24"
+				}
+			}
 		}
 	},
+	"postCreateCommand": "go mod download",
 	"remoteUser": "vscode",
-	"updateRemoteUserUID": true
+	"updateRemoteUserUID": true,
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/gimbal,type=bind,consistency=cached",
+	"workspaceFolder": "/workspaces/gimbal"
 }
