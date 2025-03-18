@@ -11,7 +11,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func main() {
+// ExitCode represents the program's exit status
+type ExitCode int
+
+const (
+	ExitSuccess ExitCode = 0
+	ExitFailure ExitCode = 1
+)
+
+// run executes the main game logic and returns an error if something goes wrong
+func run() error {
 	// Force stdout to be unbuffered
 	os.Stdout.Sync()
 
@@ -21,17 +30,12 @@ func main() {
 	}
 
 	// Log system information
-	logger.GlobalLogger.Debug("System information",
+	logger.GlobalLogger.Info("Starting game",
 		zap.String("goos", runtime.GOOS),
 		zap.String("goarch", runtime.GOARCH),
 		zap.Int("num_cpu", runtime.NumCPU()),
 		zap.String("go_version", runtime.Version()),
-	)
-
-	logger.GlobalLogger.Debug("Environment variables",
-		zap.String("debug", os.Getenv("DEBUG")),
 		zap.String("log_level", os.Getenv("LOG_LEVEL")),
-		zap.String("goos", os.Getenv("GOOS")),
 	)
 
 	// Create game configuration with options
@@ -42,7 +46,7 @@ func main() {
 		common.WithAngleStep(common.DefaultAngleStep),
 	)
 
-	logger.GlobalLogger.Debug("Game configuration created",
+	logger.GlobalLogger.Info("Game configuration created",
 		zap.Any("screen_size", config.ScreenSize),
 		zap.Any("player_size", config.PlayerSize),
 		zap.Int("num_stars", config.NumStars),
@@ -50,23 +54,30 @@ func main() {
 	)
 
 	// Initialize game
-	g, initErr := game.New(config)
-	if initErr != nil {
-		logger.GlobalLogger.Error("Failed to initialize game",
-			zap.Error(initErr),
-			zap.String("error_type", fmt.Sprintf("%T", initErr)),
-		)
-		os.Exit(1)
+	g, err := game.New(config)
+	if err != nil {
+		return fmt.Errorf("failed to initialize game: %w", err)
 	}
 
-	logger.GlobalLogger.Debug("Game initialized successfully")
+	logger.GlobalLogger.Info("Game initialized successfully")
 
 	// Run game
-	if runErr := g.Run(); runErr != nil {
-		logger.GlobalLogger.Error("Failed to run game",
-			zap.Error(runErr),
-			zap.String("error_type", fmt.Sprintf("%T", runErr)),
-		)
-		os.Exit(1)
+	return g.Run()
+}
+
+func main() {
+	var exitCode ExitCode
+
+	// Ensure logger is flushed on exit
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			fmt.Printf("Failed to sync logger: %v\n", err)
+		}
+		os.Exit(int(exitCode))
+	}()
+
+	if err := run(); err != nil {
+		logger.GlobalLogger.Error("Game error", zap.Error(err))
+		exitCode = ExitFailure
 	}
 }

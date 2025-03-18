@@ -67,8 +67,8 @@ func New(config *common.EntityConfig, sprite Drawable) (*Player, error) {
 		coords:      coords,
 		config:      config,
 		sprite:      sprite,
-		posAngle:    common.Angle(0),
-		facingAngle: common.Angle(0),
+		posAngle:    common.AngleRight, // Start at 0 degrees (right side)
+		facingAngle: common.AngleLeft,  // Face the center
 		lastLog:     time.Now(),
 		logInterval: time.Second * LogIntervalSeconds,
 	}
@@ -86,9 +86,11 @@ func New(config *common.EntityConfig, sprite Drawable) (*Player, error) {
 
 // Update implements Entity interface
 func (p *Player) Update() {
-	// Calculate center of the screen
-	centerX := float64(p.config.Size.Width) / HalfDivisor
-	centerY := float64(p.config.Size.Height) / HalfDivisor
+	// Calculate center of the screen using the radius as reference for screen size
+	screenHeight := p.config.Radius * 3       // Since radius is height/3
+	screenWidth := screenHeight * (4.0 / 3.0) // Standard 4:3 aspect ratio
+	centerX := screenWidth / HalfDivisor
+	centerY := screenHeight / HalfDivisor
 
 	// Get current position
 	pos := p.coords.CalculateCircularPosition(p.posAngle)
@@ -111,6 +113,8 @@ func (p *Player) Update() {
 			zap.Float64("facing_angle", float64(p.facingAngle)),
 			zap.Float64("center_x", centerX),
 			zap.Float64("center_y", centerY),
+			zap.Float64("screen_width", screenWidth),
+			zap.Float64("screen_height", screenHeight),
 		)
 		p.lastLog = time.Now()
 	}
