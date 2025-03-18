@@ -157,6 +157,20 @@ func (p *Player) GetSpeed() float64 {
 	return p.config.Speed
 }
 
+// GetAngle returns the player's current angle
+func (p *Player) GetAngle() common.Angle {
+	return p.facingAngle
+}
+
+// SetAngle sets the player's angle
+func (p *Player) SetAngle(angle common.Angle) {
+	p.facingAngle = angle.Normalize()
+	p.logger.Debug("Player angle set",
+		"angle", float64(angle),
+		"normalized_angle", float64(p.facingAngle),
+	)
+}
+
 // GetFacingAngle returns the direction the player is facing
 func (p *Player) GetFacingAngle() common.Angle {
 	return p.facingAngle
