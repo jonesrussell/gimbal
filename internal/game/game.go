@@ -46,7 +46,7 @@ var assets embed.FS
 // GimlarGame represents the main game state
 type GimlarGame struct {
 	config       *common.GameConfig
-	player       *player.Player
+	player       player.PlayerInterface
 	stars        *stars.Manager
 	inputHandler input.Interface
 	logger       common.Logger
@@ -252,7 +252,7 @@ func (g *GimlarGame) Draw(screen *ebiten.Image) {
 }
 
 // GetPlayer returns the player entity
-func (g *GimlarGame) GetPlayer() *player.Player {
+func (g *GimlarGame) GetPlayer() player.PlayerInterface {
 	return g.player
 }
 

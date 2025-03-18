@@ -29,6 +29,21 @@ type Drawable interface {
 	Draw(screen any, op any)
 }
 
+// PlayerInterface defines the complete set of player behaviors
+type PlayerInterface interface {
+	Drawable
+	Update()
+	GetPosition() common.Point
+	SetPosition(pos common.Point)
+	GetSpeed() float64
+	GetFacingAngle() common.Angle
+	SetFacingAngle(angle common.Angle)
+	GetAngle() common.Angle
+	SetAngle(angle common.Angle)
+	GetBounds() common.Size
+	Config() *common.EntityConfig
+}
+
 // Player represents the player entity in the game
 type Player struct {
 	position    common.Point
@@ -39,6 +54,9 @@ type Player struct {
 	logInterval time.Duration
 	logger      common.Logger
 }
+
+// Ensure Player implements PlayerInterface at compile time
+var _ PlayerInterface = (*Player)(nil)
 
 // New creates a new player instance
 func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*Player, error) {
@@ -80,7 +98,7 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 	return player, nil
 }
 
-// Update implements Entity interface
+// Update implements PlayerInterface
 func (p *Player) Update() {
 	// Log position periodically only if it has changed
 	if time.Since(p.lastLog) >= p.logInterval {
@@ -92,7 +110,7 @@ func (p *Player) Update() {
 	}
 }
 
-// Draw implements the Drawable interface
+// Draw implements PlayerInterface
 func (p *Player) Draw(screen any, op any) {
 	if p.sprite != nil {
 		// Create draw options if none provided
@@ -100,15 +118,6 @@ func (p *Player) Draw(screen any, op any) {
 		if ebitenOp, ok := op.(*ebiten.DrawImageOptions); ok {
 			drawOp = ebitenOp
 		}
-
-		// Log initial state before transformations
-		p.logger.Debug("Player draw start",
-			"initial_state", map[string]interface{}{
-				"position":     p.position,
-				"size":         p.config.Size,
-				"facing_angle": float64(p.facingAngle),
-			},
-		)
 
 		// Order of transformations:
 		// 1. Center the sprite on its origin point
@@ -142,27 +151,27 @@ func (p *Player) Draw(screen any, op any) {
 	}
 }
 
-// GetPosition returns the player's current position
+// GetPosition implements PlayerInterface
 func (p *Player) GetPosition() common.Point {
 	return p.position
 }
 
-// SetPosition sets the player's position
+// SetPosition implements PlayerInterface
 func (p *Player) SetPosition(pos common.Point) {
 	p.position = pos
 }
 
-// GetSpeed returns the player's speed
+// GetSpeed implements PlayerInterface
 func (p *Player) GetSpeed() float64 {
 	return p.config.Speed
 }
 
-// GetAngle returns the player's current angle
+// GetAngle implements PlayerInterface
 func (p *Player) GetAngle() common.Angle {
 	return p.facingAngle
 }
 
-// SetAngle sets the player's angle
+// SetAngle implements PlayerInterface
 func (p *Player) SetAngle(angle common.Angle) {
 	p.facingAngle = angle.Normalize()
 	p.logger.Debug("Player angle set",
@@ -171,22 +180,22 @@ func (p *Player) SetAngle(angle common.Angle) {
 	)
 }
 
-// GetFacingAngle returns the direction the player is facing
+// GetFacingAngle implements PlayerInterface
 func (p *Player) GetFacingAngle() common.Angle {
 	return p.facingAngle
 }
 
-// SetFacingAngle sets the direction the player is facing
+// SetFacingAngle implements PlayerInterface
 func (p *Player) SetFacingAngle(angle common.Angle) {
 	p.facingAngle = angle.Normalize()
 }
 
-// GetBounds returns the player's size
+// GetBounds implements PlayerInterface
 func (p *Player) GetBounds() common.Size {
 	return p.config.Size
 }
 
-// Config returns the player's configuration
+// Config implements PlayerInterface
 func (p *Player) Config() *common.EntityConfig {
 	return p.config
 }
