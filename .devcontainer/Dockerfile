@@ -28,6 +28,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     libxext-dev \
     libxrender-dev \
     x11-apps \
+    xvfb \
+    libasound2-dev \
 && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js LTS
@@ -74,14 +76,12 @@ RUN mkdir -p /usr/local/share/zsh/site-functions && \
 # Switch back to vscode user as final user
 USER vscode
 
-# [Optional] Uncomment this line to install global node packages.
-# RUN su vscode -c "npm install -g <your-package-here>"
-
 # Install Go tools
 RUN go install golang.org/x/tools/gopls@latest \
     && go install github.com/go-delve/delve/cmd/dlv@latest \
     && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest \
-    && go install github.com/cosmtrek/air@latest
+    && go install github.com/cosmtrek/air@latest \
+    && go install github.com/hajimehoshi/wasmserve@latest
 
 # Set environment variables
 ENV DISPLAY=host.docker.internal:0.0
@@ -93,4 +93,17 @@ RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/vscode \
 
 WORKDIR /workspaces/gimbal
 
+# Create a script to start Xvfb and run tests
+RUN echo '#!/bin/bash\n\
+if [ "$1" = "test" ]; then\n\
+    Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &\n\
+    export DISPLAY=:99\n\
+    shift\n\
+    exec "$@"\n\
+else\n\
+    exec "$@"\n\
+fi' > /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]
