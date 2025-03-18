@@ -23,13 +23,13 @@ func NewCoordinateSystem(center common.Point, radius float64) *CoordinateSystem 
 // CalculateCircularPosition calculates a point on a circle given an angle
 func (cs *CoordinateSystem) CalculateCircularPosition(angle common.Angle) common.Point {
 	rad := angle.ToRadians()
-	// In our coordinate system:
-	// - 0° starts at bottom
-	// - 90° points left
-	// - 180° points up
-	// - 270° points right
+	// Convert angle to standard mathematical orientation:
+	// - 0° points right (positive X axis)
+	// - 90° points up (negative Y axis)
+	// - 180° points left (negative X axis)
+	// - 270° points down (positive Y axis)
 	x := cs.center.X + cs.radius*math.Cos(rad)
-	y := cs.center.Y + cs.radius*math.Sin(rad)
+	y := cs.center.Y - cs.radius*math.Sin(rad)
 
 	return common.Point{
 		X: x,
@@ -55,7 +55,7 @@ func (cs *CoordinateSystem) GetRadius() float64 {
 // CalculateAngle calculates the angle between a point and the center
 func (cs *CoordinateSystem) CalculateAngle(pos common.Point) common.Angle {
 	dx := pos.X - cs.center.X
-	dy := pos.Y - cs.center.Y
+	dy := cs.center.Y - pos.Y // Invert Y to match our coordinate system
 	angleRad := math.Atan2(dy, dx)
 	return common.FromRadians(angleRad)
 }

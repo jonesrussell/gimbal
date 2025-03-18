@@ -89,12 +89,9 @@ func New(config *common.GameConfig) (*GimlarGame, error) {
 	playerConfig := &common.EntityConfig{
 		Position: common.Point{
 			X: float64(config.ScreenSize.Width) / common.CenterDivisor,
-			Y: float64(config.ScreenSize.Height), // Start at bottom
+			Y: float64(config.ScreenSize.Height) / common.CenterDivisor,
 		},
-		Size: common.Size{
-			Width:  32, // Player sprite size
-			Height: 32, // Player sprite size
-		},
+		Size:   config.ScreenSize, // Pass screen size for center calculations
 		Speed:  config.Speed,
 		Radius: float64(config.ScreenSize.Height) / 3, // Radius for circular movement
 	}
