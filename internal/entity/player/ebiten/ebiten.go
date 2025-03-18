@@ -35,7 +35,7 @@ func (e *Sprite) Draw(screen any, op any) {
 	if ebitenScreen, ok := screen.(*ebiten.Image); ok {
 		// Use provided options or create new ones
 		var drawOp *ebiten.DrawImageOptions
-		if ebitenOp, ok := op.(*ebiten.DrawImageOptions); ok {
+		if ebitenOp, okOp := op.(*ebiten.DrawImageOptions); okOp {
 			drawOp = ebitenOp
 		} else {
 			drawOp = &ebiten.DrawImageOptions{}
