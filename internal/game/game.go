@@ -173,32 +173,24 @@ func (g *GimlarGame) Update() error {
 		return nil
 	}
 
-	// Update player position based on input
+	// Simplified movement logic
 	inputAngle := g.inputHandler.GetMovementInput()
+	direction := -1.0
+	if !math.Signbit(float64(inputAngle)) {
+		direction = 1.0
+	}
 
 	if inputAngle != 0 {
-		// Move player left/right along bottom of screen
 		pos := g.player.GetPosition()
 		speed := g.player.GetSpeed()
-
-		// Convert input angle to movement direction (-1 for left, 1 for right)
-		direction := float64(0)
-		if inputAngle > 0 {
-			direction = 1 // Right
-		} else if inputAngle < 0 {
-			direction = -1 // Left
-		}
-
-		// Calculate new X position
 		newX := pos.X + direction*speed*SpeedNormalizationFactor
 
-		// Clamp to screen bounds (accounting for player width)
+		// Clamping X-coordinate
 		playerWidth := float64(g.config.PlayerSize.Width)
 		minX := playerWidth / HalfDivisor
 		maxX := float64(g.config.ScreenSize.Width) - playerWidth/HalfDivisor
 		newX = math.Max(minX, math.Min(maxX, newX))
 
-		// Update position
 		g.player.SetPosition(common.Point{
 			X: newX,
 			Y: pos.Y,
@@ -207,6 +199,8 @@ func (g *GimlarGame) Update() error {
 		// Only log significant movement
 		g.logger.Debug("Player moved",
 			"position", g.player.GetPosition(),
+			"input_angle", inputAngle,
+			"direction", direction,
 		)
 	}
 
