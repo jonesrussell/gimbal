@@ -1,69 +1,68 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
 	"name": "Gimbal",
 	"build": {
-		"dockerfile": "Dockerfile"
+			"dockerfile": "Dockerfile"
 	},
 	"mounts": [
-		"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly"
+			"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly",
+			"type=cache,target=/go/pkg/mod"
 	],
 	"runArgs": [
-		"--env=DISPLAY=${localEnv:DISPLAY}"
+			"--env=DISPLAY=${localEnv:DISPLAY}"
 	],
 	"features": {
-		"ghcr.io/eitsupi/devcontainer-features/go-task:1": {
-			"version": "latest"
-		},
-		"ghcr.io/devcontainers/features/common-utils:2": {
-			"installZsh": true,
-			"installOhMyZsh": true,
-			"installOhMyZshConfig": true,
-			"upgradePackages": true,
-			"username": "vscode",
-			"userUid": "automatic",
-			"userGid": "automatic"
-		},
-		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
-			"moby": true,
-			"installDockerBuildx": true,
-			"installDockerComposeSwitch": true,
-			"version": "latest",
-			"dockerDashComposeVersion": "v2"
-		}
+			"ghcr.io/eitsupi/devcontainer-features/go-task:1": {
+					"version": "latest"
+			},
+			"ghcr.io/devcontainers/features/common-utils:2": {
+					"installZsh": true,
+					"installOhMyZsh": true,
+					"installOhMyZshConfig": true,
+					"upgradePackages": true,
+					"username": "vscode",
+					"userUid": "automatic",
+					"userGid": "automatic"
+			},
+			"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+					"moby": true,
+					"installDockerBuildx": true,
+					"installDockerComposeSwitch": true,
+					"version": "latest",
+					"dockerDashComposeVersion": "v2"
+			}
 	},
 	"customizations": {
-		"vscode": {
-			"extensions": [
-				"golang.Go",
-				"ms-azuretools.vscode-docker",
-				"jinliming2.vscode-go-template",
-				"GitHub.vscode-github-actions",
-				"humao.rest-client",
-				"mtxr.sqltools-driver-mysql",
-				"mtxr.sqltools",
-				"eamodio.gitlens",
-				"GitHub.vscode-pull-request-github",
-				"streetsidesoftware.code-spell-checker"
-			],
-			"settings": {
-				"go.testOnSave": true,
-				"go.testTimeout": "30s",
-				"go.testFlags": [
-					"-v",
-					"-count=1"
-				],
-				"go.lintOnSave": "package",
-				"go.lintFlags": [
-					"--fast"
-				],
-				"go.formatTool": "gofmt",
-				"go.useLanguageServer": true,
-				"go.alternateTools": {
-					"go": "go1.24"
-				}
+			"vscode": {
+					"extensions": [
+							"golang.Go",
+							"ms-azuretools.vscode-docker",
+							"jinliming2.vscode-go-template",
+							"GitHub.vscode-github-actions",
+							"humao.rest-client",
+							"mtxr.sqltools-driver-mysql",
+							"mtxr.sqltools",
+							"eamodio.gitlens",
+							"GitHub.vscode-pull-request-github",
+							"streetsidesoftware.code-spell-checker"
+					],
+					"settings": {
+							"go.testOnSave": true,
+							"go.testTimeout": "30s",
+							"go.testFlags": [
+									"-v",
+									"-count=1"
+							],
+							"go.lintOnSave": "package",
+							"go.lintFlags": [
+									"--fast"
+							],
+							"go.formatTool": "gofmt",
+							"go.useLanguageServer": true,
+							"go.alternateTools": {
+									"go": "go1.24"
+							}
+					}
 			}
-		}
 	},
 	"postCreateCommand": "go mod download",
 	"remoteUser": "vscode",
