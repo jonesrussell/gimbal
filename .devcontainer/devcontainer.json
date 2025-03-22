@@ -5,7 +5,7 @@
 	},
 	"mounts": [
 			"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly",
-			"type=cache,target=/go/pkg/mod"
+			"type=volume,source=gimbal-go-modules,target=/go/pkg/mod"
 	],
 	"runArgs": [
 			"--env=DISPLAY=${localEnv:DISPLAY}"
@@ -22,13 +22,6 @@
 					"username": "vscode",
 					"userUid": "automatic",
 					"userGid": "automatic"
-			},
-			"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
-					"moby": true,
-					"installDockerBuildx": true,
-					"installDockerComposeSwitch": true,
-					"version": "latest",
-					"dockerDashComposeVersion": "v2"
 			}
 	},
 	"customizations": {
@@ -37,12 +30,7 @@
 							"golang.Go",
 							"ms-azuretools.vscode-docker",
 							"jinliming2.vscode-go-template",
-							"GitHub.vscode-github-actions",
-							"humao.rest-client",
-							"mtxr.sqltools-driver-mysql",
-							"mtxr.sqltools",
 							"eamodio.gitlens",
-							"GitHub.vscode-pull-request-github",
 							"streetsidesoftware.code-spell-checker"
 					],
 					"settings": {
