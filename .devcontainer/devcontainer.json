@@ -13,22 +13,12 @@
 	"features": {
 			"ghcr.io/eitsupi/devcontainer-features/go-task:1": {
 					"version": "latest"
-			},
-			"ghcr.io/devcontainers/features/common-utils:2": {
-					"installZsh": true,
-					"installOhMyZsh": true,
-					"installOhMyZshConfig": true,
-					"upgradePackages": true,
-					"username": "vscode",
-					"userUid": "automatic",
-					"userGid": "automatic"
 			}
 	},
 	"customizations": {
 			"vscode": {
 					"extensions": [
 							"golang.Go",
-							"ms-azuretools.vscode-docker",
 							"jinliming2.vscode-go-template",
 							"eamodio.gitlens",
 							"streetsidesoftware.code-spell-checker"
@@ -46,15 +36,26 @@
 							],
 							"go.formatTool": "gofmt",
 							"go.useLanguageServer": true,
-							"go.alternateTools": {
-									"go": "go1.24"
+							"go.toolsManagement.autoUpdate": true,
+							"go.coverOnSave": true,
+							"go.coverOnSingleTest": true,
+							"go.coverageDecorator": {
+									"type": "highlight",
+									"coveredHighlightColor": "rgba(64,128,128,0.2)",
+									"uncoveredHighlightColor": "rgba(128,64,64,0.2)"
+							},
+							"[go]": {
+									"editor.formatOnSave": true,
+									"editor.codeActionsOnSave": ["source.organizeImports"]
+							},
+							"gopls": {
+									"ui.semanticTokens": true,
+									"formatting.gofumpt": true
 							}
 					}
 			}
 	},
 	"postCreateCommand": "go mod download",
 	"remoteUser": "vscode",
-	"updateRemoteUserUID": true,
-	"workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/gimbal,type=bind,consistency=cached",
-	"workspaceFolder": "/workspaces/gimbal"
+	"updateRemoteUserUID": true
 }
