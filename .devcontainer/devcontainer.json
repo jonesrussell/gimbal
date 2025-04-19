@@ -4,8 +4,7 @@
 			"dockerfile": "Dockerfile"
 	},
 	"mounts": [
-			"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly",
-			"type=volume,source=gimbal-go-modules,target=/go/pkg/mod"
+			"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly"
 	],
 	"runArgs": [
 			"--env=DISPLAY=${localEnv:DISPLAY}"
@@ -18,10 +17,10 @@
 	"customizations": {
 			"vscode": {
 					"extensions": [
-							"golang.Go",
-							"jinliming2.vscode-go-template",
-							"eamodio.gitlens",
-							"streetsidesoftware.code-spell-checker"
+						"golang.Go",
+						"jinliming2.vscode-go-template",
+						"eamodio.gitlens",
+						"ms-azuretools.vscode-docker"
 					],
 					"settings": {
 							"go.testOnSave": true,
