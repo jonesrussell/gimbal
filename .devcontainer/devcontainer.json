@@ -4,10 +4,16 @@
 			"dockerfile": "Dockerfile"
 	},
 	"mounts": [
-			"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly"
+			"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly",
+			"type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix"
 	],
 	"runArgs": [
-			"--env=DISPLAY=${localEnv:DISPLAY}"
+			"--env=DISPLAY=${localEnv:DISPLAY}",
+			"--env=XAUTHORITY=${localEnv:XAUTHORITY}",
+			"--env=QT_X11_NO_MITSHM=1",
+			"--env=NO_AT_BRIDGE=1",
+			"--ipc=host",
+			"--net=host"
 	],
 	"features": {
 			"ghcr.io/eitsupi/devcontainer-features/go-task:1": {
@@ -20,7 +26,10 @@
 						"golang.Go",
 						"jinliming2.vscode-go-template",
 						"eamodio.gitlens",
-						"ms-azuretools.vscode-docker"
+						"ms-azuretools.vscode-docker",
+						"redhat.vscode-yaml",
+						"streetsidesoftware.code-spell-checker",
+						"golang.go-nightly"
 					],
 					"settings": {
 							"go.testOnSave": true,
@@ -49,12 +58,21 @@
 							},
 							"gopls": {
 									"ui.semanticTokens": true,
-									"formatting.gofumpt": true
-							}
+									"formatting.gofumpt": true,
+									"analyses": {
+											"unusedparams": true,
+											"unusedwrite": true,
+											"unusedvariable": true
+									}
+							},
+							"editor.rulers": [80, 100],
+							"editor.formatOnSave": true,
+							"files.trimTrailingWhitespace": true,
+							"files.insertFinalNewline": true
 					}
 			}
 	},
-	"postCreateCommand": "go mod download",
+	"postCreateCommand": "go mod download && xhost +local:root",
 	"remoteUser": "vscode",
 	"updateRemoteUserUID": true
 }
