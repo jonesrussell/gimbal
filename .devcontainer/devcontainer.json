@@ -1,76 +1,80 @@
 {
 	"name": "Gimbal",
 	"build": {
-			"dockerfile": "Dockerfile"
+		"dockerfile": "Dockerfile"
 	},
 	"mounts": [
-			"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly",
-			"type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix"
+		"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly",
+		"type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix"
 	],
 	"runArgs": [
-			"--env=DISPLAY=${localEnv:DISPLAY}",
-			"--env=XAUTHORITY=${localEnv:XAUTHORITY}",
-			"--env=QT_X11_NO_MITSHM=1",
-			"--env=NO_AT_BRIDGE=1",
-			"--ipc=host",
-			"--net=host"
+		"--env=DISPLAY=${localEnv:DISPLAY}",
+		"--env=XAUTHORITY=${localEnv:XAUTHORITY}",
+		"--env=QT_X11_NO_MITSHM=1",
+		"--env=NO_AT_BRIDGE=1",
+		"--ipc=host",
+		"--net=host"
 	],
 	"features": {
-			"ghcr.io/eitsupi/devcontainer-features/go-task:1": {
-					"version": "latest"
-			}
+		"ghcr.io/eitsupi/devcontainer-features/go-task:1": {
+			"version": "latest"
+		}
 	},
 	"customizations": {
-			"vscode": {
-					"extensions": [
-						"golang.Go",
-						"jinliming2.vscode-go-template",
-						"eamodio.gitlens",
-						"ms-azuretools.vscode-docker",
-						"redhat.vscode-yaml",
-						"streetsidesoftware.code-spell-checker",
-						"golang.go-nightly"
-					],
-					"settings": {
-							"go.testOnSave": true,
-							"go.testTimeout": "30s",
-							"go.testFlags": [
-									"-v",
-									"-count=1"
-							],
-							"go.lintOnSave": "package",
-							"go.lintFlags": [
-									"--fast"
-							],
-							"go.formatTool": "gofmt",
-							"go.useLanguageServer": true,
-							"go.toolsManagement.autoUpdate": true,
-							"go.coverOnSave": true,
-							"go.coverOnSingleTest": true,
-							"go.coverageDecorator": {
-									"type": "highlight",
-									"coveredHighlightColor": "rgba(64,128,128,0.2)",
-									"uncoveredHighlightColor": "rgba(128,64,64,0.2)"
-							},
-							"[go]": {
-									"editor.formatOnSave": true,
-									"editor.codeActionsOnSave": ["source.organizeImports"]
-							},
-							"gopls": {
-									"ui.semanticTokens": true,
-									"formatting.gofumpt": true,
-									"analyses": {
-											"unusedparams": true,
-											"unusedwrite": true,
-											"unusedvariable": true
-									}
-							},
-							"editor.rulers": [80, 100],
-							"editor.formatOnSave": true,
-							"files.trimTrailingWhitespace": true,
-							"files.insertFinalNewline": true
+		"vscode": {
+			"extensions": [
+				"golang.Go",
+				"jinliming2.vscode-go-template",
+				"eamodio.gitlens",
+				"ms-azuretools.vscode-docker",
+				"redhat.vscode-yaml",
+				"golang.go-nightly"
+			],
+			"settings": {
+				"go.testOnSave": true,
+				"go.testTimeout": "30s",
+				"go.testFlags": [
+					"-v",
+					"-count=1"
+				],
+				"go.lintOnSave": "package",
+				"go.lintFlags": [
+					"--fast"
+				],
+				"go.formatTool": "gofmt",
+				"go.useLanguageServer": true,
+				"go.toolsManagement.autoUpdate": true,
+				"go.coverOnSave": true,
+				"go.coverOnSingleTest": true,
+				"go.coverageDecorator": {
+					"type": "highlight",
+					"coveredHighlightColor": "rgba(64,128,128,0.2)",
+					"uncoveredHighlightColor": "rgba(128,64,64,0.2)"
+				},
+				"[go]": {
+					"editor.formatOnSave": true,
+					"editor.codeActionsOnSave": [
+						"source.organizeImports"
+					]
+				},
+				"gopls": {
+					"ui.semanticTokens": true,
+					"formatting.gofumpt": true,
+					"analyses": {
+						"unusedparams": true,
+						"unusedwrite": true,
+						"unusedvariable": true
 					}
+				},
+				"editor.rulers": [
+					80,
+					100
+				],
+				"editor.formatOnSave": true,
+				"files.trimTrailingWhitespace": true,
+				"files.insertFinalNewline": true
 			}
+		}
 	},
 	"postCreateCommand": "go mod download && xhost +local:root",
 	"remoteUser": "vscode",
