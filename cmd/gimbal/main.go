@@ -36,8 +36,8 @@ func run() error {
 
 	// Ensure logger is flushed on exit
 	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to sync logger: %v\n", err)
+		if syncErr := log.Sync(); syncErr != nil {
+			fmt.Fprintf(os.Stderr, "Failed to sync logger: %v\n", syncErr)
 		}
 	}()
 

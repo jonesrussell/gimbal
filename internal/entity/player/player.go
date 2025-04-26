@@ -113,7 +113,7 @@ func (p *Player) Update() {
 }
 
 // Draw implements PlayerInterface
-func (p *Player) Draw(screen any, op any) {
+func (p *Player) Draw(screen, op any) {
 	if p.sprite != nil {
 		// Create draw options if none provided
 		drawOp := &ebiten.DrawImageOptions{}
