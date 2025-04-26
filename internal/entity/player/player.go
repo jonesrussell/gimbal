@@ -125,10 +125,21 @@ func (p *Player) Update() {
 		center := p.config.Position
 		radius := p.config.Radius
 
-		// Calculate position on circle
-		p.position = common.Point{
+		// Calculate new position on circle
+		newPos := common.Point{
 			X: center.X + radius*math.Sin(angleRad),
 			Y: center.Y - radius*math.Cos(angleRad), // Subtract because Y increases downward in screen coordinates
+		}
+
+		// Log if position changed
+		if newPos != p.position {
+			p.logger.Debug("Player orbital position changed",
+				"old_position", p.position,
+				"new_position", newPos,
+				"angle", float64(p.facingAngle),
+				"angle_rad", angleRad,
+			)
+			p.position = newPos
 		}
 	}
 
@@ -137,7 +148,6 @@ func (p *Player) Update() {
 		p.logger.Debug("Player state",
 			"position", p.position,
 			"facing_angle", float64(p.facingAngle),
-			"radius", p.config.Radius,
 		)
 		p.lastLog = time.Now()
 	}
@@ -194,7 +204,14 @@ func (p *Player) GetPosition() common.Point {
 func (p *Player) SetPosition(pos common.Point) {
 	// Only update position if we're not in orbital mode
 	if p.config.Radius == 0 {
-		p.position = pos
+		if pos != p.position {
+			p.logger.Debug("Player position changed",
+				"old_position", p.position,
+				"new_position", pos,
+				"facing_angle", float64(p.facingAngle),
+			)
+			p.position = pos
+		}
 	}
 }
 
@@ -216,9 +233,21 @@ func (p *Player) SetAngle(angle common.Angle) {
 		angleRad := float64(p.facingAngle) * DegreesToRadians
 		center := p.config.Position
 		radius := p.config.Radius
-		p.position = common.Point{
+		newPos := common.Point{
 			X: center.X + radius*math.Sin(angleRad),
 			Y: center.Y - radius*math.Cos(angleRad),
+		}
+
+		// Log if position changed
+		if newPos != p.position {
+			p.logger.Debug("Player angle change caused position update",
+				"old_position", p.position,
+				"new_position", newPos,
+				"old_angle", float64(angle),
+				"new_angle", float64(p.facingAngle),
+				"angle_rad", angleRad,
+			)
+			p.position = newPos
 		}
 	}
 	p.logger.Debug("Player angle set",
