@@ -1,0 +1,35 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Error Handling Guidelines
+
+## Error Validation
+- Always validate errors, including:
+  - Type assertion errors
+  - SQL Row/Statement closures
+  - Network operation results
+  - File operations
+  - External API calls
+
+## Error Creation and Wrapping
+- Use `errors.New` for simple, static errors
+- Wrap errors with context when passing up the call stack
+- Include relevant details in error messages
+- Use error types appropriately for different error categories
+
+## Error Handling Patterns
+- Check error return values consistently
+- Use descriptive variable names for error variables
+- Handle all error cases explicitly
+- Avoid swallowing errors without proper logging or handling
+
+## Resource Cleanup
+- Always close resources in defer statements
+- Handle cleanup errors appropriately
+- Use `defer` statements immediately after resource acquisition
+
+See also:
+- [Testing Standards](mdc:04-testing.mdc)
+- [Code Organization](mdc:01-code-organization.mdc)
