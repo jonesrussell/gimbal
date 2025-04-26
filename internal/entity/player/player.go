@@ -79,15 +79,32 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 		"radius", config.Radius,
 	)
 
+	// Set initial angle based on mode
+	initialAngle := common.Angle(DefaultFacingAngle)
+	if config.Radius > 0 {
+		initialAngle = 0 // Start at top of circle when in orbital mode
+	}
+
 	// Create player with initial position
 	player := &Player{
 		position:    config.Position,
 		config:      config,
 		sprite:      sprite,
-		facingAngle: common.Angle(DefaultFacingAngle), // Face upward by default
+		facingAngle: initialAngle,
 		lastLog:     time.Now(),
 		logInterval: time.Second * LogIntervalSeconds,
 		logger:      logger,
+	}
+
+	// Set initial orbital position if radius is set
+	if config.Radius > 0 {
+		angleRad := float64(player.facingAngle) * DegreesToRadians
+		center := config.Position
+		radius := config.Radius
+		player.position = common.Point{
+			X: center.X + radius*math.Sin(angleRad),
+			Y: center.Y - radius*math.Cos(angleRad),
+		}
 	}
 
 	logger.Debug("Player initialization complete",
@@ -102,11 +119,25 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 
 // Update implements PlayerInterface
 func (p *Player) Update() {
-	// Log position periodically only if it has changed
+	// Calculate orbital position if radius is set
+	if p.config.Radius > 0 {
+		angleRad := float64(p.facingAngle) * DegreesToRadians
+		center := p.config.Position
+		radius := p.config.Radius
+
+		// Calculate position on circle
+		p.position = common.Point{
+			X: center.X + radius*math.Sin(angleRad),
+			Y: center.Y - radius*math.Cos(angleRad), // Subtract because Y increases downward in screen coordinates
+		}
+	}
+
+	// Log position periodically
 	if time.Since(p.lastLog) >= p.logInterval {
 		p.logger.Debug("Player state",
 			"position", p.position,
 			"facing_angle", float64(p.facingAngle),
+			"radius", p.config.Radius,
 		)
 		p.lastLog = time.Now()
 	}
@@ -159,8 +190,12 @@ func (p *Player) GetPosition() common.Point {
 }
 
 // SetPosition implements PlayerInterface
+// This is used for direct movement (left/right controls)
 func (p *Player) SetPosition(pos common.Point) {
-	p.position = pos
+	// Only update position if we're not in orbital mode
+	if p.config.Radius == 0 {
+		p.position = pos
+	}
 }
 
 // GetSpeed implements PlayerInterface
@@ -176,9 +211,20 @@ func (p *Player) GetAngle() common.Angle {
 // SetAngle implements PlayerInterface
 func (p *Player) SetAngle(angle common.Angle) {
 	p.facingAngle = angle.Normalize()
+	// If we have a radius, immediately update position for orbital movement
+	if p.config.Radius > 0 {
+		angleRad := float64(p.facingAngle) * DegreesToRadians
+		center := p.config.Position
+		radius := p.config.Radius
+		p.position = common.Point{
+			X: center.X + radius*math.Sin(angleRad),
+			Y: center.Y - radius*math.Cos(angleRad),
+		}
+	}
 	p.logger.Debug("Player angle set",
 		"angle", float64(angle),
 		"normalized_angle", float64(p.facingAngle),
+		"position", p.position,
 	)
 }
 
