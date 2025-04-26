@@ -7,7 +7,7 @@ import (
 
 const (
 	// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
-	MovementSpeedDegreesPerFrame = 2
+	MovementSpeedDegreesPerFrame = 5
 )
 
 // Interface defines the input handler interface
@@ -65,10 +65,10 @@ func (h *Handler) IsQuitPressed() bool {
 // GetMovementInput returns the movement angle based on input
 func (h *Handler) GetMovementInput() common.Angle {
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		return -common.DefaultAngleStep
+		return -common.Angle(MovementSpeedDegreesPerFrame)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		return common.DefaultAngleStep
+		return common.Angle(MovementSpeedDegreesPerFrame)
 	}
 	return 0
 }

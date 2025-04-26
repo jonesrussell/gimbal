@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/entity/orbital"
 	"github.com/jonesrussell/gimbal/internal/entity/player"
 	ebitensprite "github.com/jonesrussell/gimbal/internal/entity/player/ebiten"
 	"github.com/jonesrussell/gimbal/internal/entity/stars"
@@ -184,18 +186,38 @@ func (g *GimlarGame) Update() error {
 	// Simplified movement logic
 	inputAngle := g.inputHandler.GetMovementInput()
 	if inputAngle != 0 {
-		// Update orbital angle while keeping facing angle at 0 (upward)
+		// Update orbital angle
 		currentAngle := g.player.GetAngle()
 		newAngle := currentAngle + inputAngle
 		g.player.SetAngle(newAngle)
-		g.player.SetFacingAngle(common.Angle(0)) // Ensure player keeps facing upward
 
-		// Log movement
+		// Calculate facing angle based on position relative to center
+		playerPos := g.player.GetPosition()
+		centerX := float64(g.config.ScreenSize.Width) / common.CenterDivisor
+		centerY := float64(g.config.ScreenSize.Height) / common.CenterDivisor
+
+		// Calculate angle from player to center
+		dx := centerX - playerPos.X
+		dy := centerY - playerPos.Y
+		// atan2 gives angle in radians, convert to degrees
+		baseAngle := math.Atan2(dy, dx) * orbital.RadiansToDegrees
+		// Normalize to 0-360 range
+		if baseAngle < 0 {
+			baseAngle += 360
+		}
+		// Add 90 degrees to align sprite (sprite's 0° faces up, atan2's 0° faces right)
+		facingAngle := common.Angle(baseAngle) + 90
+
+		g.player.SetFacingAngle(facingAngle)
+
+		// Log movement for debugging
 		g.logger.Debug("Player moved",
-			"position", g.player.GetPosition(),
+			"position", playerPos,
 			"orbital_angle", float64(newAngle),
-			"facing_angle", 0.0,
+			"facing_angle", float64(facingAngle),
+			"base_angle", baseAngle,
 			"input_angle", inputAngle,
+			"center", common.Point{X: centerX, Y: centerY},
 		)
 	}
 
