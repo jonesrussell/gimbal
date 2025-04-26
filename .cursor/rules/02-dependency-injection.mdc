@@ -1,0 +1,31 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Dependency Injection and Interface Guidelines
+
+## Dependency Injection
+- Use `fx.In` and `fx.Out` structs for dependency injection
+- Follow the dependency inversion principle
+- Keep dependencies explicit and avoid hidden dependencies
+
+## Interface Design
+- Define interfaces in the consuming package, not in the implementation package
+- Keep interfaces focused and cohesive
+- Follow interface segregation principle
+
+## Common Type Aliases
+Always use the following type aliases from the common package:
+- `common.Logger` instead of `logger.Interface`
+- `common.Storage` instead of `storage.Interface`
+- `common.Config` instead of `config.Config`
+
+## Constructor Pattern
+- Define `New*` constructors only in `module.go` files
+- Use dependency injection for all external dependencies
+- Return interfaces rather than concrete types when appropriate
+
+See also:
+- [Code Organization](mdc:01-code-organization.mdc)
+- [Error Handling Guidelines](mdc:03-error-handling.mdc)

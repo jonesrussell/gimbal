@@ -1,0 +1,35 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Code Organization and Structure Guidelines
+
+This guide outlines the core principles for organizing and structuring Go code in this project.
+
+## File Organization
+- All files must be modular and adhere to the single responsibility principle
+- Package structure should reflect domain boundaries
+- Related functionality should be grouped together
+
+## Function and Package Complexity
+- Function complexity limits:
+  - Maximum cyclomatic complexity per function: 30
+  - Average complexity per package: 10
+  - Maximum function length: 100 lines or 50 statements
+
+## Naming Conventions
+- Use consistent naming across the codebase
+- Avoid type stuttering in names
+- Follow Go standard naming conventions
+- Use descriptive, clear names that indicate purpose
+
+## Module Structure
+- All `New*` constructors must be defined only in `module.go` files
+- Keep package-level state to a minimum
+- Organize imports with standard library first, followed by third-party packages
+
+See also:
+- [Dependency Injection Rules](mdc:02-dependency-injection.mdc)
+- [Error Handling Guidelines](mdc:03-error-handling.mdc)
+- [Testing Standards](mdc:04-testing.mdc)

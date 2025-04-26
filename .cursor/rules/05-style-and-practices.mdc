@@ -1,0 +1,57 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Style and Best Practices
+
+## General Style Guidelines
+- Use `any` instead of `interface{}` where possible
+- Follow `stylecheck` initialism rules
+- Maintain consistent code formatting
+- Document all exported symbols
+
+## Code Constants and Magic Numbers
+- Avoid magic numbers in code
+- Use named constants with clear documentation
+- Group related constants together
+- Use iota where appropriate for related constants
+
+## Resource Management
+- Always close HTTP response bodies
+- Use defer for cleanup operations
+- Ensure all resources are properly managed
+- Handle context cancellation appropriately
+
+## Switch Statements and Maps
+- Include exhaustive checks in switch statements
+- Handle all possible cases explicitly
+- Use map lookup with comma-ok idiom
+- Provide default cases where appropriate
+
+## Documentation Standards
+- End all comments with periods
+- Document complex patterns with examples
+- Avoid TODO/FIXME without actionable plans
+- Use clear and concise documentation
+
+## Dependencies
+- Use up-to-date canonical import paths
+- Avoid deprecated libraries
+- Use recommended alternatives for outdated packages
+- Keep dependencies minimal and necessary
+
+## Linting Configuration
+- Exclude patterns:
+  - `(noinspection|TODO)` for `godot`
+  - `//noinspection` for `gocritic`
+- Custom rules enforcement:
+  - Use `common.Logger` alias
+  - Use `common.Storage` alias
+  - Use `common.Config` alias
+- Apply revive rules including `use-any`
+- Maximum same issues: 50
+
+See also:
+- [Code Organization](mdc:01-code-organization.mdc)
+- [Error Handling Guidelines](mdc:03-error-handling.mdc)
