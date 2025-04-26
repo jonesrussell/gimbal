@@ -137,14 +137,14 @@ func TestPlayer_Position(t *testing.T) {
 
 	// Test initial position (should be at top of circle, 0 degrees)
 	pos := p.GetPosition()
-	assert.InEpsilon(t, 100.0, pos.X, 1e-6) // center.X + radius * sin(0) = 100 + 50 * 0
-	assert.InEpsilon(t, 50.0, pos.Y, 1e-6)  // center.Y - radius * cos(0) = 100 - 50 * 1
+	assert.InEpsilon(t, 100.0, pos.X, 1e-6) // Position X at angle 0: center.X = 100
+	assert.InEpsilon(t, 50.0, pos.Y, 1e-6)  // Position Y at angle 0: center.Y - radius = 50
 
 	// Test position after setting angle to 90 degrees (right)
 	p.SetAngle(90)
 	pos = p.GetPosition()
-	assert.InEpsilon(t, 150.0, pos.X, 1e-6) // center.X + radius * sin(90) = 100 + 50 * 1
-	assert.InEpsilon(t, 100.0, pos.Y, 1e-6) // center.Y - radius * cos(90) = 100 - 50 * 0
+	assert.InEpsilon(t, 150.0, pos.X, 1e-6) // Position X at angle 90°: center.X + radius = 150
+	assert.InEpsilon(t, 100.0, pos.Y, 1e-6) // Position Y at angle 90°: center.Y = 100
 }
 
 func TestPlayer_Update(t *testing.T) {

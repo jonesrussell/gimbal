@@ -26,7 +26,7 @@ func (m *TestSprite) Bounds() image.Rectangle {
 }
 
 // Draw implements the Drawable interface
-func (m *TestSprite) Draw(screen any, op any) {
+func (m *TestSprite) Draw(screen, op any) {
 	// No-op for testing
 }
 

@@ -146,7 +146,7 @@ func New(config *common.GameConfig, logger common.Logger) (*GimlarGame, error) {
 }
 
 // Layout implements ebiten.Game interface
-func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (int, int) {
+func (g *GimlarGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return g.config.ScreenSize.Width, g.config.ScreenSize.Height
 }
 
@@ -293,7 +293,6 @@ func (g *GimlarGame) Run() error {
 	ebiten.SetFullscreen(false)
 	ebiten.SetVsyncEnabled(true)
 	ebiten.SetTPS(DefaultTPS)
-	ebiten.SetMaxTPS(DefaultTPS)
 
 	g.logger.Debug("Starting game loop")
 
