@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Player Movement and Facing Mechanics
+
+## Core Files
+- [internal/game/game.go](mdc:internal/game/game.go): Main game logic including player movement and facing angle calculations
+- [internal/entity/player/player.go](mdc:internal/entity/player/player.go): Player entity implementation
+
+## Movement Mechanics
+The player moves in an orbital path around the center of the screen. Key points:
+
+1. The orbital position is calculated using angles:
+   - 0° is at the top of the circle
+   - 90° is at the right
+   - 180° is at the bottom
+   - 270° is at the left
+
+2. Initial setup in [internal/game/game.go](mdc:internal/game/game.go):
+   - Player starts at the bottom of the orbit (180°)
+   - Screen center is calculated as `screenWidth/2` and `screenHeight/2`
+   - Orbit radius is `screenHeight/3`
+
+## Facing Angle Mechanics
+The player sprite must always face the center of the orbit. The facing angle calculation requires special handling:
+
+1. Base angle calculation:
+   ```go
+   dx := centerX - playerPos.X
+   dy := centerY - playerPos.Y
+   baseAngle := math.Atan2(dy, dx) * RadiansToDegrees
+   ```
+
+2. Important adjustments:
+   - Add 90° to the base angle because the sprite's 0° faces up while atan2's 0° faces right
+   - Normalize negative angles by adding 360° if baseAngle < 0
+
+3. Final facing angle:
+   ```go
+   facingAngle := baseAngle + 90
+   player.SetFacingAngle(common.Angle(facingAngle))
+   ```
+
+## Key Constants
+- `RadiusDivisor = 3`: Controls the size of the orbital path
+- `SpeedNormalizationFactor = 60`: Ensures consistent movement speed
+- `FullCircleDegrees = 360`: Used for angle normalization
+
+## Debug Information
+The game includes debug logging for movement:
+- Player position
+- Orbital angle
+- Facing angle
+- Base angle (before adjustment)
+- Input angle
+- Delta time
+- Center position

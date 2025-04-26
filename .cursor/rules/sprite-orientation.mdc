@@ -1,0 +1,47 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Sprite Orientation and Coordinate Systems
+
+## Coordinate System
+The game uses a screen coordinate system where:
+- Origin (0,0) is at the top-left corner
+- X increases to the right
+- Y increases downward
+
+## Angle Conventions
+Different angle systems are used in the game:
+
+1. Sprite's Natural Orientation:
+   - 0° faces upward
+   - 90° faces right
+   - 180° faces down
+   - 270° faces left
+
+2. Math.atan2 Convention:
+   - 0° points right (along positive X axis)
+   - 90° points down (along positive Y axis)
+   - 180° points left
+   - 270° points up
+
+## Sprite Drawing
+In [internal/entity/player/player.go](mdc:internal/entity/player/player.go), sprite drawing involves:
+1. Scaling to match configured size
+2. Moving to sprite center (for rotation origin)
+3. Applying rotation
+4. Moving to final position
+
+## Important Adjustments
+When calculating angles for sprite orientation:
+1. Use `atan2(dy, dx)` to get base angle
+2. Convert from radians to degrees: `* RadiansToDegrees`
+3. Add 90° to align sprite's natural orientation with desired direction
+4. Normalize to 0-360° range if needed
+
+## Debug Visualization
+The game's debug mode shows:
+- Current facing angle
+- Position coordinates
+These help verify correct sprite orientation
