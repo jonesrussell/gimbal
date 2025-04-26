@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -106,14 +105,18 @@ func New(config *common.GameConfig, logger common.Logger) (*GimlarGame, error) {
 	)
 
 	// Create player entity
+	screenCenterX := float64(config.ScreenSize.Width) / common.CenterDivisor
+	screenCenterY := float64(config.ScreenSize.Height) / common.CenterDivisor
+	orbitRadius := float64(config.ScreenSize.Height) / RadiusDivisor
+
 	playerConfig := &common.EntityConfig{
 		Position: common.Point{
-			X: float64(config.ScreenSize.Width) / common.CenterDivisor,      // Center X (320)
-			Y: float64(config.ScreenSize.Height - config.PlayerSize.Height), // Bottom Y (480 - 32)
+			X: screenCenterX, // Center X
+			Y: screenCenterY, // Center Y
 		},
 		Size:   common.Size{Width: config.PlayerSize.Width, Height: config.PlayerSize.Height},
 		Speed:  config.Speed,
-		Radius: 0, // We don't need radius for direct positioning
+		Radius: orbitRadius,
 	}
 
 	// Create player sprite
@@ -123,14 +126,19 @@ func New(config *common.GameConfig, logger common.Logger) (*GimlarGame, error) {
 		return nil, fmt.Errorf("failed to create player: %w", err)
 	}
 
-	// Set initial angle to face upward
-	player.SetFacingAngle(common.Angle(FacingUpwardAngle)) // Face upward
+	// Set initial angle to start at bottom of circle (180 degrees)
+	initialAngle := common.Angle(180)
+	// Set facing angle to 0 degrees (facing upward)
+	player.SetAngle(initialAngle)          // Set orbital position first
+	player.SetFacingAngle(common.Angle(0)) // Then set facing angle to 0 (up)
 
 	logger.Debug("Player created",
 		"position", player.GetPosition(),
+		"center", playerConfig.Position,
+		"radius", playerConfig.Radius,
 		"facing_angle", player.GetFacingAngle(),
-		"screen_height", config.ScreenSize.Height,
-		"player_height", config.PlayerSize.Height,
+		"orbital_angle", player.GetAngle(),
+		"screen_size", config.ScreenSize,
 	)
 
 	return &GimlarGame{
@@ -175,32 +183,19 @@ func (g *GimlarGame) Update() error {
 
 	// Simplified movement logic
 	inputAngle := g.inputHandler.GetMovementInput()
-	direction := -1.0
-	if !math.Signbit(float64(inputAngle)) {
-		direction = 1.0
-	}
-
 	if inputAngle != 0 {
-		pos := g.player.GetPosition()
-		speed := g.player.GetSpeed()
-		newX := pos.X + direction*speed*SpeedNormalizationFactor
+		// Update orbital angle while keeping facing angle at 0 (upward)
+		currentAngle := g.player.GetAngle()
+		newAngle := currentAngle + inputAngle
+		g.player.SetAngle(newAngle)
+		g.player.SetFacingAngle(common.Angle(0)) // Ensure player keeps facing upward
 
-		// Clamping X-coordinate
-		playerWidth := float64(g.config.PlayerSize.Width)
-		minX := playerWidth / HalfDivisor
-		maxX := float64(g.config.ScreenSize.Width) - playerWidth/HalfDivisor
-		newX = math.Max(minX, math.Min(maxX, newX))
-
-		g.player.SetPosition(common.Point{
-			X: newX,
-			Y: pos.Y,
-		})
-
-		// Only log significant movement
+		// Log movement
 		g.logger.Debug("Player moved",
 			"position", g.player.GetPosition(),
+			"orbital_angle", float64(newAngle),
+			"facing_angle", 0.0,
 			"input_angle", inputAngle,
-			"direction", direction,
 		)
 	}
 
