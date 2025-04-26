@@ -13,6 +13,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         libxcursor-dev \
         libxi-dev \
         libgl1-mesa-dev \
+        libgl1-mesa-glx \
+        mesa-utils \
         xorg-dev \
         libxtst-dev \
         libpng++-dev \
@@ -26,7 +28,29 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         vim \
         make \
         build-essential \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+        libxkbfile-dev \
+        libsecret-1-dev \
+        libxss1 \
+        libglu1-mesa \
+        libnss3 \
+        libatk1.0-0 \
+        libatk-bridge2.0-0 \
+        libgdk-pixbuf2.0-0 \
+        libgtk-3-0 \
+        libgbm-dev \
+        x11-apps \
+        dbus-x11 \
+        libxcb1-dev \
+        libx11-xcb-dev \
+        libxcb-keysyms1-dev \
+        libxcb-util0-dev \
+        libxcb-icccm4-dev \
+        libxcb-render-util0-dev \
+        libxcb-xkb-dev \
+        libxkbcommon-dev \
+        libxkbcommon-x11-dev \
+        vulkan-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set up Xvfb for testing
 RUN echo '#!/bin/bash\n\
@@ -40,12 +64,17 @@ if [ "$1" = "test" ]; then\n\
     shift\n\
     exec "$@"\n\
 else\n\
+    # Copy X11 authentication if available\n\
+    if [ -f /tmp/.Xauthority ]; then\n\
+        cp /tmp/.Xauthority /home/vscode/.Xauthority\n\
+        chown vscode:vscode /home/vscode/.Xauthority\n\
+    fi\n\
     exec "$@"\n\
 fi' > /usr/local/bin/entrypoint.sh \
     && chmod +x /usr/local/bin/entrypoint.sh
 
 # Set display for X11 forwarding
-ENV DISPLAY=host.docker.internal:0.0
+ENV DISPLAY=${DISPLAY:-:0}
 ENV XAUTHORITY=/tmp/.Xauthority
 
 # Switch back to vscode user
