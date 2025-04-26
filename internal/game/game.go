@@ -235,15 +235,18 @@ func (g *GimlarGame) updateGameState() error {
 		if baseAngle < 0 {
 			baseAngle += FullCircleDegrees
 		}
+		// Add 90 degrees to align sprite (sprite's 0° faces up, atan2's 0° faces right)
+		facingAngle := baseAngle + 90
 
 		// Set the facing angle to point towards the center
-		g.player.SetFacingAngle(common.Angle(baseAngle))
+		g.player.SetFacingAngle(common.Angle(facingAngle))
 
 		// Log movement for debugging
 		g.logger.Debug("Player moved",
 			"position", playerPos,
 			"orbital_angle", float64(newAngle),
-			"facing_angle", float64(baseAngle),
+			"facing_angle", float64(facingAngle),
+			"base_angle", baseAngle,
 			"input_angle", scaledInput,
 			"delta_time", g.deltaTime,
 			"center", common.Point{X: centerX, Y: centerY},
