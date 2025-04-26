@@ -5,15 +5,16 @@
 	},
 	"mounts": [
 		"type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly",
-		"type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix"
+		"type=bind,source=/mnt/wslg/.X11-unix,target=/tmp/.X11-unix"
 	],
 	"runArgs": [
-		"--env=DISPLAY=${localEnv:DISPLAY}",
-		"--env=XAUTHORITY=${localEnv:XAUTHORITY}",
-		"--env=QT_X11_NO_MITSHM=1",
-		"--env=NO_AT_BRIDGE=1",
-		"--ipc=host",
-		"--net=host"
+		"--env=DISPLAY=:0",
+		"--env=WAYLAND_DISPLAY=${localEnv:WAYLAND_DISPLAY}",
+		"--env=XDG_RUNTIME_DIR=${localEnv:XDG_RUNTIME_DIR}",
+		"--env=PULSE_SERVER=${localEnv:PULSE_SERVER}",
+		"--env=LD_LIBRARY_PATH=/usr/lib/wsl/lib",
+		"--env=LIBGL_ALWAYS_INDIRECT=0",
+		"--ipc=host"
 	],
 	"features": {
 		"ghcr.io/eitsupi/devcontainer-features/go-task:1": {
