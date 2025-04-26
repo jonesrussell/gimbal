@@ -100,3 +100,9 @@ func (m *Manager) GetPosition() common.Point {
 func (m *Manager) GetStars() []*Star {
 	return m.stars
 }
+
+// Cleanup performs any necessary cleanup
+func (m *Manager) Cleanup() {
+	// Clear stars slice
+	m.stars = nil
+}

@@ -18,6 +18,9 @@ const (
 	// Logging constants
 	LogIntervalSeconds   = 5
 	PositionLogThreshold = 0.1 // Log position changes greater than this threshold
+
+	// Animation constants
+	DefaultFrameDelay = 6 // Update animation every 6 frames
 )
 
 // Drawable interface defines the methods required for drawing
@@ -50,6 +53,10 @@ type Player struct {
 	logInterval time.Duration
 	logger      common.Logger
 	bounds      common.Size
+	// Animation state
+	currentFrame int
+	frameCount   int
+	frameDelay   int
 }
 
 // Ensure Player implements PlayerInterface at compile time
@@ -76,6 +83,7 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 		logInterval: time.Second * LogIntervalSeconds,
 		logger:      logger,
 		bounds:      config.Size,
+		frameDelay:  DefaultFrameDelay,
 	}
 
 	// Initialize position
@@ -113,12 +121,27 @@ func validateConfig(config *common.EntityConfig, sprite Drawable, logger common.
 
 // Update implements PlayerInterface
 func (p *Player) Update() {
+	// Update animation state
+	p.frameCount++
+	if p.frameCount >= p.frameDelay {
+		p.frameCount = 0
+		p.currentFrame++
+		// Reset frame if we have sprite-based animation
+		if animator, ok := p.sprite.(interface{ GetFrameCount() int }); ok {
+			frameCount := animator.GetFrameCount()
+			if frameCount > 0 {
+				p.currentFrame %= frameCount
+			}
+		}
+	}
+
 	// Log state periodically
 	if time.Since(p.lastLog) >= p.logInterval {
 		p.logger.Debug("Player state",
 			"position", p.position.Point,
 			"orbital_angle", float64(p.position.Orbital),
 			"facing_angle", float64(p.position.Facing),
+			"current_frame", p.currentFrame,
 		)
 		p.lastLog = time.Now()
 	}
@@ -132,6 +155,12 @@ func (p *Player) Draw(screen, op any) {
 
 	drawOp := createDrawOptions(op)
 	applyTransformations(p, drawOp)
+
+	// Update sprite frame if we have animation support
+	if animator, ok := p.sprite.(interface{ SetFrame(int) }); ok {
+		animator.SetFrame(p.currentFrame)
+	}
+
 	p.sprite.Draw(screen, drawOp)
 }
 
@@ -213,4 +242,12 @@ func (p *Player) Config() *common.EntityConfig {
 // Sprite returns the player's sprite
 func (p *Player) Sprite() Drawable {
 	return p.sprite
+}
+
+// Cleanup performs any necessary cleanup
+func (p *Player) Cleanup() {
+	// Cleanup sprite if it supports it
+	if cleaner, ok := p.sprite.(interface{ Cleanup() }); ok {
+		cleaner.Cleanup()
+	}
 }

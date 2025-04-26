@@ -78,3 +78,24 @@ func (h *TestHandler) IsQuitPressed() bool {
 func (h *TestHandler) IsPausePressed() bool {
 	return h.IsKeyPressed(ebiten.KeySpace)
 }
+
+// GetLastEvent returns the last input event that occurred
+func (h *TestHandler) GetLastEvent() input.InputEvent {
+	// For testing purposes, we'll return None since we're only testing keyboard input
+	return input.InputEventNone
+}
+
+// GetTouchState returns the current touch state
+func (h *TestHandler) GetTouchState() *input.TouchState {
+	return nil
+}
+
+// GetMousePosition returns the current mouse position
+func (h *TestHandler) GetMousePosition() common.Point {
+	return common.Point{}
+}
+
+// IsMouseButtonPressed checks if a mouse button is pressed
+func (h *TestHandler) IsMouseButtonPressed(button ebiten.MouseButton) bool {
+	return false
+}
