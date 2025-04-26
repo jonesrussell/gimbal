@@ -43,14 +43,6 @@ func (e *Sprite) Draw(screen, op any) {
 			drawOp = &ebiten.DrawImageOptions{}
 		}
 
-		// Calculate scale to maintain 32x32 size
-		bounds := e.img.Bounds()
-		scaleX := float64(TargetSize) / float64(bounds.Dx())
-		scaleY := float64(TargetSize) / float64(bounds.Dy())
-
-		// Apply scale transformation first
-		drawOp.GeoM.Scale(scaleX, scaleY)
-
 		// Increase brightness for better visibility
 		drawOp.ColorScale.Scale(
 			BrightnessScale,
