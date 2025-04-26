@@ -18,6 +18,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         libpng++-dev \
         libasound2-dev \
         xvfb \
+        xauth \
+        x11-xserver-utils \
         bash \
         curl \
         git \
@@ -29,6 +31,10 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # Set up Xvfb for testing
 RUN echo '#!/bin/bash\n\
 if [ "$1" = "test" ]; then\n\
+    # Set up fake X server with authentication\n\
+    export XAUTHORITY=/tmp/.Xauthority\n\
+    touch $XAUTHORITY\n\
+    xauth generate :99 . trusted\n\
     Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &\n\
     export DISPLAY=:99\n\
     shift\n\
@@ -40,6 +46,7 @@ fi' > /usr/local/bin/entrypoint.sh \
 
 # Set display for X11 forwarding
 ENV DISPLAY=host.docker.internal:0.0
+ENV XAUTHORITY=/tmp/.Xauthority
 
 # Switch back to vscode user
 USER vscode
