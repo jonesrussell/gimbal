@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -31,10 +32,15 @@ const (
 	HalfDivisor              = 2
 
 	// Angle constants
-	RightToUpwardOffset = 90  // Degrees to add to align sprite (sprite's 0° faces up, atan2's 0° faces right)
+	// InitialFacingAngle is the starting angle for the player sprite
+	InitialFacingAngle = 0 // Start facing upward
+	// FullCircleDegrees represents a full circle in degrees
+	FullCircleDegrees = 360
+	// RadiansToDegrees is the multiplier to convert radians to degrees
+	RadiansToDegrees = 180 / math.Pi
+	// RightToUpwardOffset is the angle offset to convert from right-facing 0° to upward-facing 0°
+	RightToUpwardOffset = 90
 	InitialOrbitalAngle = 180 // Start at bottom of circle
-	InitialFacingAngle  = 0   // Start facing upward
-	FullCircleDegrees   = 360
 )
 
 // Error definitions
@@ -49,11 +55,20 @@ var (
 //go:embed assets/*
 var assets embed.FS
 
+// StarManager defines the interface for star management
+type StarManager interface {
+	Update()
+	Draw(screen any)
+	GetPosition() common.Point
+	GetStars() []*stars.Star
+	Cleanup()
+}
+
 // GimlarGame represents the main game state
 type GimlarGame struct {
 	config       *common.GameConfig
 	player       player.PlayerInterface
-	stars        *stars.Manager
+	stars        StarManager
 	inputHandler input.Interface
 	logger       common.Logger
 	isPaused     bool
@@ -153,10 +168,6 @@ func initializePlayer(config *common.GameConfig, logger common.Logger) (player.P
 		return nil, fmt.Errorf("failed to create player: %w", err)
 	}
 
-	// Set initial angles
-	player.SetAngle(common.Angle(InitialOrbitalAngle))
-	player.SetFacingAngle(common.Angle(InitialFacingAngle))
-
 	logger.Debug("Player created",
 		"position", player.GetPosition(),
 		"center", playerConfig.Position,
@@ -231,13 +242,34 @@ func (g *GimlarGame) updateGameState() error {
 		)
 	}
 
-	// Calculate facing angle to be tangent to the orbit
-	// When at orbital angle A, facing angle should be A + 90 to be tangent
-	orbitalAngle := g.player.GetAngle()
-	facingAngle := float64(orbitalAngle) + RightToUpwardOffset
-	if facingAngle >= FullCircleDegrees {
+	// Calculate facing angle to always point towards the center
+	pos := g.player.GetPosition()
+	centerX := float64(g.config.ScreenSize.Width) / 2
+	centerY := float64(g.config.ScreenSize.Height) / 2
+
+	// Calculate angle from player to center using atan2
+	// Note: We use centerY - pos.Y because our Y axis increases downward
+	dx := centerX - pos.X
+	dy := centerY - pos.Y
+
+	// Handle case where player is at center point
+	if dx == 0 && dy == 0 {
+		// Keep current facing angle if at center
+		return nil
+	}
+
+	baseAngle := math.Atan2(dy, dx) * RadiansToDegrees
+
+	// Convert to game's angle system:
+	// 1. Add 90° because sprite's 0° faces up while atan2's 0° faces right
+	// 2. Normalize to [0, 360) range
+	facingAngle := baseAngle + RightToUpwardOffset
+	if facingAngle < 0 {
+		facingAngle += FullCircleDegrees
+	} else if facingAngle >= FullCircleDegrees {
 		facingAngle -= FullCircleDegrees
 	}
+
 	g.player.SetFacingAngle(common.Angle(facingAngle))
 
 	// Update entities
@@ -397,4 +429,61 @@ func (g *GimlarGame) SetInputHandler(handler input.Interface) {
 // IsPaused returns whether the game is paused
 func (g *GimlarGame) IsPaused() bool {
 	return g.isPaused
+}
+
+// NewWithDependencies creates a new game instance with injected dependencies (for testing)
+func NewWithDependencies(
+	config *common.GameConfig,
+	logger common.Logger,
+	player player.PlayerInterface,
+	stars StarManager,
+	inputHandler input.Interface,
+) (*GimlarGame, error) {
+	if config == nil {
+		return nil, ErrNilConfig
+	}
+	if logger == nil {
+		return nil, ErrNilLogger
+	}
+	if player == nil {
+		return nil, errors.New("player cannot be nil")
+	}
+	if stars == nil {
+		return nil, errors.New("stars cannot be nil")
+	}
+	if inputHandler == nil {
+		return nil, errors.New("input handler cannot be nil")
+	}
+
+	return &GimlarGame{
+		config:       config,
+		player:       player,
+		stars:        stars,
+		inputHandler: inputHandler,
+		logger:       logger,
+		isPaused:     false,
+		frameCount:   0,
+		logInterval:  LogInterval,
+		deltaTime:    1.0 / float64(DefaultTPS),
+	}, nil
+}
+
+// GetScreenSize returns the game's screen size
+func (g *GimlarGame) GetScreenSize() common.Size {
+	return g.config.ScreenSize
+}
+
+// GetPlayerSize returns the player's size
+func (g *GimlarGame) GetPlayerSize() common.Size {
+	return g.config.PlayerSize
+}
+
+// GetSpeed returns the game's speed
+func (g *GimlarGame) GetSpeed() float64 {
+	return g.config.Speed
+}
+
+// GetDebug returns whether debug mode is enabled
+func (g *GimlarGame) GetDebug() bool {
+	return g.config.Debug
 }

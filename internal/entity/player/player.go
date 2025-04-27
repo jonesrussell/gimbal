@@ -13,7 +13,7 @@ import (
 const (
 	// Movement constants
 	HalfDivisor        = 2
-	DefaultFacingAngle = 270
+	DefaultFacingAngle = 0 // Face upward by default (was 270)
 
 	// Logging constants
 	LogIntervalSeconds   = 5
@@ -21,6 +21,9 @@ const (
 
 	// Animation constants
 	DefaultFrameDelay = 6 // Update animation every 6 frames
+
+	// Initial position constants
+	InitialOrbitalAngle = 180 // Start at bottom of circle (was 0)
 )
 
 // Drawable interface defines the methods required for drawing
@@ -86,8 +89,11 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 		frameDelay:  DefaultFrameDelay,
 	}
 
-	// Initialize position
-	player.position = orbCalc.NewPosition(0, 0) // Start at top, facing up
+	// Initialize position with default angles
+	player.position = orbCalc.NewPosition(
+		common.Angle(InitialOrbitalAngle), // Start at bottom of circle
+		common.Angle(DefaultFacingAngle),  // Face right by default
+	)
 
 	player.logger.Debug("Player initialization complete",
 		"position", player.position.Point,

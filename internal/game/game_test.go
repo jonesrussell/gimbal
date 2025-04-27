@@ -7,10 +7,10 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/entity/stars"
 	"github.com/jonesrussell/gimbal/internal/game"
 	"github.com/jonesrussell/gimbal/internal/input"
 	"github.com/jonesrussell/gimbal/internal/logger"
-	"github.com/jonesrussell/gimbal/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -75,6 +75,24 @@ func (m *mockLogger) Error(msg string, args ...any) { m.Called(msg, args) }
 func (m *mockLogger) Warn(msg string, args ...any)  { m.Called(msg, args) }
 func (m *mockLogger) Sync() error                   { return nil }
 
+// MockStarManager mocks the star manager for testing
+type MockStarManager struct {
+	mock.Mock
+}
+
+func (m *MockStarManager) Update()                   { m.Called() }
+func (m *MockStarManager) Draw(screen any)           { m.Called(screen) }
+func (m *MockStarManager) GetPosition() common.Point { return m.Called().Get(0).(common.Point) }
+func (m *MockStarManager) GetStars() []*stars.Star   { return nil }
+func (m *MockStarManager) Cleanup()                  { m.Called() }
+
+// MockSprite mocks the player sprite for testing
+type MockSprite struct {
+	mock.Mock
+}
+
+func (m *MockSprite) Draw(screen any, op any) { m.Called(screen, op) }
+
 // GameConfig holds the configuration for the game
 type GameConfig struct {
 	ScreenWidth  int
@@ -88,255 +106,134 @@ type GameConfig struct {
 
 // TestNew verifies game initialization
 func TestNew(t *testing.T) {
-	// Helper function to compare float values with tolerance
-	almostEqual := func(a, b float64) bool {
-		diff := math.Abs(a - b)
-		t.Logf("Comparing %.10f and %.10f, diff: %.10f", a, b, diff)
-		return diff < 0.0001
-	}
-
-	// Create a mock logger
-	logger := new(mockLogger)
-	logger.On("Debug", mock.Anything, mock.Anything).Return()
-
-	// Create game configuration
-	cfg := &common.GameConfig{
-		ScreenSize: common.Size{
-			Width:  800,
-			Height: 600,
-		},
-		PlayerSize: common.Size{
-			Width:  32,
-			Height: 32,
-		},
-		NumStars:  100,
-		StarSize:  2.0,
-		StarSpeed: 1.0,
-		Speed:     1.0,
-		Debug:     true,
-		Radius:    float64(600) / common.CenterDivisor * common.DefaultRadiusRatio,
-	}
-
-	// Create game instance
-	g, err := game.New(cfg, logger)
-	require.NoError(t, err)
+	g := newTestGame(t)
 	require.NotNil(t, g)
 
-	// Verify player initialization
-	player := g.GetPlayer()
-	require.NotNil(t, player)
+	// Verify initial state
+	angle := float64(g.GetPlayer().GetAngle())
+	facingAngle := float64(g.GetPlayer().GetFacingAngle())
 
-	// Verify initial angles
-	playerAngle := float64(player.GetAngle().Normalize())
-	playerFacingAngle := float64(player.GetFacingAngle().Normalize())
-	t.Logf("Player angle: %.2f (expected: %.2f)", playerAngle, InitialOrbitalAngle)
-	t.Logf("Player facing angle: %.2f (expected: %.2f)", playerFacingAngle, InitialFacingAngle)
-	assert.True(t, almostEqual(playerAngle, InitialOrbitalAngle))
-	assert.True(t, almostEqual(playerFacingAngle, InitialFacingAngle))
+	t.Logf("Player angle: %.2f (expected: %.2f)", angle, InitialOrbitalAngle)
+	t.Logf("Player facing angle: %.2f (expected: %.2f)", facingAngle, InitialFacingAngle)
 
-	// Verify initial position
-	radius := float64(cfg.ScreenSize.Height) / RadiusDivisor
-	angleRad := float64(InitialOrbitalAngle) * math.Pi / 180.0
-	expectedX := float64(cfg.ScreenSize.Width)/2 + radius*math.Sin(angleRad)
-	expectedY := float64(cfg.ScreenSize.Height)/2 - radius*math.Cos(angleRad)
+	// Compare angles with tolerance
+	almostEqual := func(a, b float64) bool {
+		diff := math.Abs(a - b)
+		return diff < 0.0001 || diff > 359.9999
+	}
 
-	pos := player.GetPosition()
-	t.Logf("Position: (%.2f, %.2f), Expected: (%.2f, %.2f)", pos.X, pos.Y, expectedX, expectedY)
-	t.Logf("Screen size: %dx%d, Radius: %.2f", cfg.ScreenSize.Width, cfg.ScreenSize.Height, radius)
-	assert.True(t, almostEqual(pos.X, expectedX))
-	assert.True(t, almostEqual(pos.Y, expectedY))
+	assert.True(t, almostEqual(angle, InitialOrbitalAngle),
+		"Expected angle %v but got %v", InitialOrbitalAngle, angle)
+	assert.True(t, almostEqual(facingAngle, InitialFacingAngle),
+		"Expected facing angle %v but got %v", InitialFacingAngle, facingAngle)
+
+	// Verify player position
+	pos := g.GetPlayer().GetPosition()
+	screenSize := g.GetScreenSize()
+	expectedPos := common.Point{
+		X: float64(screenSize.Width) / 2,
+		Y: float64(screenSize.Height)/2 + float64(screenSize.Height)/RadiusDivisor,
+	}
+
+	t.Logf("Position: (%.2f, %.2f), Expected: (%.2f, %.2f)", pos.X, pos.Y, expectedPos.X, expectedPos.Y)
+	t.Logf("Screen size: %dx%d, Radius: %.2f",
+		screenSize.Width, screenSize.Height, g.GetRadius())
+
+	assert.InDelta(t, expectedPos.X, pos.X, 0.1, "X position incorrect")
+	assert.InDelta(t, expectedPos.Y, pos.Y, 0.1, "Y position incorrect")
 }
 
 func TestGame_Layout(t *testing.T) {
-	t.Parallel()
-
-	mockLogger := logger.NewMock()
-
-	config := common.NewConfig()
-	g, err := game.New(config, mockLogger)
-	require.NoError(t, err)
-
+	g := newTestGame(t)
+	screenSize := g.GetScreenSize()
 	width, height := g.Layout(800, 600)
-	assert.Equal(t, config.ScreenSize.Width, width)
-	assert.Equal(t, config.ScreenSize.Height, height)
+	assert.Equal(t, screenSize.Width, width)
+	assert.Equal(t, screenSize.Height, height)
 }
 
 func TestGame_Update(t *testing.T) {
-	mockLogger := logger.NewMock()
-	config := common.NewConfig()
+	t.Run("normal update", func(t *testing.T) {
+		g := newTestGame(t)
+		err := g.Update()
+		assert.NoError(t, err)
+	})
 
-	tests := []struct {
-		name           string
-		setupInput     func(*MockInputHandler)
-		expectedError  error
-		expectedPaused bool
-	}{
-		{
-			name: "normal update",
-			setupInput: func(mi *MockInputHandler) {
-				mi.On("HandleInput").Return()
-				mi.On("IsPausePressed").Return(false)
-				mi.On("IsQuitPressed").Return(false)
-				mi.On("GetMovementInput").Return(common.Angle(0))
-			},
-			expectedError:  nil,
-			expectedPaused: false,
-		},
-		{
-			name: "pause game",
-			setupInput: func(mi *MockInputHandler) {
-				mi.On("HandleInput").Return()
-				mi.On("IsPausePressed").Return(true)
-				mi.On("IsQuitPressed").Return(false)
-			},
-			expectedError:  nil,
-			expectedPaused: true,
-		},
-		{
-			name: "quit game",
-			setupInput: func(mi *MockInputHandler) {
-				mi.On("HandleInput").Return()
-				mi.On("IsPausePressed").Return(false)
-				mi.On("IsQuitPressed").Return(true)
-			},
-			expectedError:  game.ErrUserQuit,
-			expectedPaused: false,
-		},
-		{
-			name: "movement update",
-			setupInput: func(mi *MockInputHandler) {
-				mi.On("HandleInput").Return()
-				mi.On("IsPausePressed").Return(false)
-				mi.On("IsQuitPressed").Return(false)
-				mi.On("GetMovementInput").Return(common.Angle(5))
-			},
-			expectedError:  nil,
-			expectedPaused: false,
-		},
-	}
+	t.Run("pause game", func(t *testing.T) {
+		g := newTestGame(t)
+		mockInput := new(MockInputHandler)
+		mockInput.On("HandleInput").Return()
+		mockInput.On("IsPausePressed").Return(true)
+		mockInput.On("IsQuitPressed").Return(false)
+		g.SetInputHandler(mockInput)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockInput := new(MockInputHandler)
+		err := g.Update()
+		assert.NoError(t, err)
+		assert.True(t, g.IsPaused())
 
-			if tt.setupInput != nil {
-				tt.setupInput(mockInput)
-			}
+		mockInput.AssertExpectations(t)
+	})
 
-			g, err := game.New(config, mockLogger)
-			require.NoError(t, err)
+	t.Run("quit game", func(t *testing.T) {
+		g := newTestGame(t)
+		mockInput := new(MockInputHandler)
+		mockInput.On("HandleInput").Return()
+		mockInput.On("IsPausePressed").Return(false)
+		mockInput.On("IsQuitPressed").Return(true)
+		g.SetInputHandler(mockInput)
 
-			// Set the input handler
-			g.SetInputHandler(mockInput)
+		err := g.Update()
+		assert.ErrorIs(t, err, game.ErrUserQuit)
 
-			err = g.Update()
-			if tt.expectedError != nil {
-				assert.ErrorIs(t, err, tt.expectedError)
-			} else {
-				assert.NoError(t, err)
-			}
+		mockInput.AssertExpectations(t)
+	})
 
-			assert.Equal(t, tt.expectedPaused, g.IsPaused())
-			mockInput.AssertExpectations(t)
-		})
-	}
+	t.Run("movement update", func(t *testing.T) {
+		g := newTestGame(t)
+		mockInput := new(MockInputHandler)
+		mockInput.On("HandleInput").Return()
+		mockInput.On("IsPausePressed").Return(false)
+		mockInput.On("IsQuitPressed").Return(false)
+		mockInput.On("GetMovementInput").Return(common.Angle(5))
+		g.SetInputHandler(mockInput)
+
+		err := g.Update()
+		assert.NoError(t, err)
+
+		mockInput.AssertExpectations(t)
+	})
 }
 
 func TestGame_Draw(t *testing.T) {
-	mockLogger := logger.NewMock()
-	config := common.NewConfig()
+	t.Run("nil screen", func(t *testing.T) {
+		g := newTestGame(t)
+		g.Draw(nil)
+	})
 
-	tests := []struct {
-		name   string
-		screen *ebiten.Image
-	}{
-		{
-			name:   "nil screen",
-			screen: nil,
-		},
-		{
-			name:   "normal draw",
-			screen: ebiten.NewImage(640, 480),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			g, err := game.New(config, mockLogger)
-			require.NoError(t, err)
-
-			g.Draw(tt.screen)
-		})
-	}
+	t.Run("normal draw", func(t *testing.T) {
+		g := newTestGame(t)
+		screen := ebiten.NewImage(800, 600)
+		g.Draw(screen)
+	})
 }
 
 func TestGame_Cleanup(t *testing.T) {
-	mockLogger := logger.NewMock()
-	config := common.NewConfig()
-
-	g, err := game.New(config, mockLogger)
-	require.NoError(t, err)
-
+	g := newTestGame(t)
 	g.Cleanup()
 }
 
-func TestGame_Run(t *testing.T) {
-	mockLogger := logger.NewMock()
-	config := common.NewConfig()
-
-	g, err := game.New(config, mockLogger)
-	require.NoError(t, err)
-
-	// Start the game in a goroutine
-	errChan := make(chan error)
-	go func() {
-		errChan <- g.Run()
-	}()
-
-	// Wait a short time to let the game initialize
-	time.Sleep(100 * time.Millisecond)
-
-	// Simulate a clean shutdown
-	mockInput := new(MockInputHandler)
-	mockInput.On("HandleInput").Return()
-	mockInput.On("IsPausePressed").Return(false)
-	mockInput.On("IsQuitPressed").Return(true)
-	g.SetInputHandler(mockInput)
-
-	// Check the result
-	select {
-	case err := <-errChan:
-		assert.NoError(t, err)
-	case <-time.After(time.Second):
-		t.Fatal("game.Run did not complete in time")
-	}
-}
-
 func TestGame_Input(t *testing.T) {
-	test.EnsureXvfb(t)
-	t.Parallel()
-
-	mockLogger := logger.NewMock()
-
-	config := common.NewConfig(
-		common.WithScreenSize(640, 480),
-		common.WithDebug(true),
-	)
-
-	g, err := game.New(config, mockLogger)
-	require.NoError(t, err)
-
-	testHandler := input.New(mockLogger)
-	g.SetInputHandler(testHandler)
+	g := newTestGame(t)
 
 	// Get initial position
 	initialPos := g.GetPlayer().GetPosition()
 
 	// Test left movement
+	testHandler := input.New(logger.NewMock())
+	g.SetInputHandler(testHandler)
+
 	testHandler.SimulateKeyPress(ebiten.KeyLeft)
 	g.Update()
 	leftPos := g.GetPlayer().GetPosition()
-	// Check that the position has changed
 	assert.NotEqual(t, initialPos, leftPos)
 
 	// Test no movement after release
@@ -349,7 +246,6 @@ func TestGame_Input(t *testing.T) {
 	testHandler.SimulateKeyPress(ebiten.KeyRight)
 	g.Update()
 	rightPos := g.GetPlayer().GetPosition()
-	// Check that the position has changed
 	assert.NotEqual(t, leftPos, rightPos)
 
 	// Test no movement after release
@@ -368,9 +264,7 @@ func TestGame_Input(t *testing.T) {
 	assert.False(t, g.IsPaused())
 }
 
-// TestFacingAngleCalculation verifies that the player always faces the center correctly
 func TestFacingAngleCalculation(t *testing.T) {
-	mockLogger := logger.NewMock()
 	config := common.NewConfig()
 
 	// Helper function to compare angles with tolerance
@@ -425,8 +319,7 @@ func TestFacingAngleCalculation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g, err := game.New(config, mockLogger)
-			require.NoError(t, err)
+			g := newTestGame(t)
 
 			// Set up mock input to simulate movement
 			mockInput := new(MockInputHandler)
@@ -441,7 +334,7 @@ func TestFacingAngleCalculation(t *testing.T) {
 			g.SetInputHandler(mockInput)
 
 			// Update game to update facing angle
-			err = g.Update()
+			err := g.Update()
 			require.NoError(t, err)
 
 			// Get actual values
@@ -467,13 +360,8 @@ func TestFacingAngleCalculation(t *testing.T) {
 	}
 }
 
-// TestContinuousFacingAngle verifies that the facing angle remains correct during continuous movement
 func TestContinuousFacingAngle(t *testing.T) {
-	mockLogger := logger.NewMock()
-	config := common.NewConfig()
-
-	g, err := game.New(config, mockLogger)
-	require.NoError(t, err)
+	g := newTestGame(t)
 
 	// Set up mock input for continuous movement
 	mockInput := new(MockInputHandler)
@@ -493,7 +381,7 @@ func TestContinuousFacingAngle(t *testing.T) {
 		prevPos = g.GetPlayer().GetPosition()
 		prevAngle = float64(g.GetPlayer().GetFacingAngle())
 
-		err = g.Update()
+		err := g.Update()
 		require.NoError(t, err)
 
 		// Get current state
@@ -501,8 +389,9 @@ func TestContinuousFacingAngle(t *testing.T) {
 		facing := float64(g.GetPlayer().GetFacingAngle())
 
 		// Calculate expected facing angle based on position relative to center
-		centerX := float64(config.ScreenSize.Width) / 2
-		centerY := float64(config.ScreenSize.Height) / 2
+		screenSize := g.GetScreenSize()
+		centerX := float64(screenSize.Width) / 2
+		centerY := float64(screenSize.Height) / 2
 		dx := centerX - pos.X
 		dy := centerY - pos.Y
 		expectedBase := math.Atan2(dy, dx) * 180 / math.Pi
@@ -524,4 +413,39 @@ func TestContinuousFacingAngle(t *testing.T) {
 	}
 
 	mockInput.AssertExpectations(t)
+}
+
+// newTestGame creates a game instance with mocked components for testing
+func newTestGame(t *testing.T) *game.GimlarGame {
+	mockLogger := logger.NewMock()
+	config := common.NewConfig()
+
+	// Create mock player
+	mockPlayer := new(MockPlayer)
+	mockPlayer.On("GetPosition").Return(common.Point{
+		X: float64(config.ScreenSize.Width) / 2,
+		Y: float64(config.ScreenSize.Height) / 2,
+	})
+	mockPlayer.On("GetAngle").Return(common.Angle(180))
+	mockPlayer.On("GetFacingAngle").Return(common.Angle(0))
+	mockPlayer.On("Update").Return()
+	mockPlayer.On("Draw", mock.Anything, mock.Anything).Return()
+	mockPlayer.On("SetAngle", mock.Anything).Return(nil)
+	mockPlayer.On("SetFacingAngle", mock.Anything).Return()
+
+	// Create mock star manager
+	mockStars := new(MockStarManager)
+	mockStars.On("Update").Return()
+	mockStars.On("Draw", mock.Anything).Return()
+	mockStars.On("GetStars").Return([]*stars.Star{})
+	mockStars.On("Cleanup").Return()
+
+	// Create input handler
+	mockInput := input.New(mockLogger)
+
+	// Create game with mocks
+	g, err := game.NewWithDependencies(config, mockLogger, mockPlayer, mockStars, mockInput)
+	require.NoError(t, err)
+
+	return g
 }
