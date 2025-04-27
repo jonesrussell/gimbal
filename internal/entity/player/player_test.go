@@ -135,16 +135,16 @@ func TestPlayer_Position(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, p)
 
-	// Test initial position (should be at top of circle, 0 degrees)
+	// Test initial position (should be at bottom of circle, 180 degrees)
 	pos := p.GetPosition()
-	assert.InEpsilon(t, 100.0, pos.X, 1e-6) // Position X at angle 0: center.X = 100
-	assert.InEpsilon(t, 50.0, pos.Y, 1e-6)  // Position Y at angle 0: center.Y - radius = 50
+	assert.InEpsilon(t, 100.0, pos.X, 1e-6) // Position X at angle 180: center.X = 100
+	assert.InEpsilon(t, 150.0, pos.Y, 1e-6) // Position Y at angle 180: center.Y + radius = 150
 
-	// Test position after setting angle to 90 degrees (right)
-	p.SetAngle(90)
+	// Test position after setting angle to 270 degrees (left side)
+	p.SetAngle(270)
 	pos = p.GetPosition()
-	assert.InEpsilon(t, 150.0, pos.X, 1e-6) // Position X at angle 90°: center.X + radius = 150
-	assert.InEpsilon(t, 100.0, pos.Y, 1e-6) // Position Y at angle 90°: center.Y = 100
+	assert.InEpsilon(t, 50.0, pos.X, 1e-6)  // Position X at angle 270°: center.X - radius = 50
+	assert.InEpsilon(t, 100.0, pos.Y, 1e-6) // Position Y at angle 270°: center.Y = 100
 }
 
 func TestPlayer_Update(t *testing.T) {
