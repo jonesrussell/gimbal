@@ -91,7 +91,7 @@ type MockSprite struct {
 	mock.Mock
 }
 
-func (m *MockSprite) Draw(screen any, op any) { m.Called(screen, op) }
+func (m *MockSprite) Draw(screen, op any) { m.Called(screen, op) }
 
 // GameConfig holds the configuration for the game
 type GameConfig struct {
@@ -156,7 +156,7 @@ func TestGame_Update(t *testing.T) {
 	t.Run("normal update", func(t *testing.T) {
 		g := newTestGame(t)
 		err := g.Update()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("pause game", func(t *testing.T) {
@@ -168,7 +168,7 @@ func TestGame_Update(t *testing.T) {
 		g.SetInputHandler(mockInput)
 
 		err := g.Update()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, g.IsPaused())
 
 		mockInput.AssertExpectations(t)
@@ -183,7 +183,7 @@ func TestGame_Update(t *testing.T) {
 		g.SetInputHandler(mockInput)
 
 		err := g.Update()
-		assert.ErrorIs(t, err, game.ErrUserQuit)
+		require.ErrorIs(t, err, game.ErrUserQuit)
 
 		mockInput.AssertExpectations(t)
 	})
@@ -198,7 +198,7 @@ func TestGame_Update(t *testing.T) {
 		g.SetInputHandler(mockInput)
 
 		err := g.Update()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		mockInput.AssertExpectations(t)
 	})
@@ -271,7 +271,7 @@ func TestGame_Input(t *testing.T) {
 
 	// Run update to simulate movement
 	err = game.Update()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify that the player's angle was updated
 	mockPlayer.AssertCalled(t, "SetAngle", mock.AnythingOfType("common.Angle"))

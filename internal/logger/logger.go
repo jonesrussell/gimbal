@@ -10,20 +10,22 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// syncWriter wraps an io.Writer to ignore sync errors for stdout/stderr
+// syncWriter wraps an io.Writer to make it safe for concurrent use
 type syncWriter struct {
 	io.Writer
+	mu sync.Mutex
 }
 
-func (w *syncWriter) Sync() error {
-	// Ignore sync errors for stdout/stderr
-	return nil
+func (w *syncWriter) Write(p []byte) (n int, err error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.Writer.Write(p)
 }
 
-// Logger wraps a zap.Logger to implement common.Logger
+// Logger wraps zap.Logger with additional functionality
 type Logger struct {
 	*zap.Logger
-	lastLogs map[string]interface{}
+	lastLogs map[string]any
 	mu       sync.RWMutex
 }
 
@@ -35,31 +37,33 @@ func New() (*Logger, error) {
 		LevelKey:       "level",
 		NameKey:        "logger",
 		CallerKey:      "caller",
+		FunctionKey:    zapcore.OmitKey,
 		MessageKey:     "msg",
 		StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
+		EncodeLevel:    zapcore.LowercaseColorLevelEncoder,
 		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.StringDurationEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	// Create core with console output using our custom writer
+	// Create core with console output
 	core := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(encoderConfig),
-		zapcore.AddSync(&syncWriter{os.Stdout}),
+		zapcore.AddSync(&syncWriter{Writer: os.Stdout}),
 		zapcore.DebugLevel,
 	)
 
-	// Build the logger
+	// Create logger with development options
 	zapLogger := zap.New(core,
 		zap.Development(),
+		zap.AddCaller(),
 		zap.AddStacktrace(zapcore.ErrorLevel),
 	)
 
 	logger := &Logger{
 		Logger:   zapLogger,
-		lastLogs: make(map[string]interface{}),
+		lastLogs: make(map[string]any),
 	}
 
 	// Log initial message
@@ -131,28 +135,26 @@ func (l *Logger) shouldLog(msg string, fields ...any) bool {
 	return true
 }
 
-// equalValues compares two sets of field values for equality
-func equalValues(a, b interface{}) bool {
-	// Handle nil cases
-	if a == nil && b == nil {
-		return true
-	}
+// equalValues compares two values for equality
+func equalValues(a, b any) bool {
 	if a == nil || b == nil {
-		return false
+		return a == b
 	}
 
-	// Convert to reflect.Value for type-safe comparison
 	va := reflect.ValueOf(a)
 	vb := reflect.ValueOf(b)
 
-	// If types don't match, they're not equal
 	if va.Type() != vb.Type() {
 		return false
 	}
 
-	// Handle different types appropriately
 	switch va.Kind() {
-	case reflect.Slice:
+	case reflect.Invalid, reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16,
+		reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16,
+		reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64,
+		reflect.Complex64, reflect.Complex128, reflect.String, reflect.UnsafePointer:
+		return va.Interface() == vb.Interface()
+	case reflect.Slice, reflect.Array:
 		if va.Len() != vb.Len() {
 			return false
 		}
@@ -179,8 +181,10 @@ func equalValues(a, b interface{}) bool {
 			}
 		}
 		return true
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Pointer:
+		return va.Interface() == vb.Interface()
 	default:
-		return reflect.DeepEqual(a, b)
+		return false
 	}
 }
 

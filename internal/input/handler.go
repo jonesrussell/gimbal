@@ -196,7 +196,27 @@ func (h *Handler) IsQuitPressed() bool {
 
 // GetTouchState returns the current touch state
 func (h *Handler) GetTouchState() *TouchState {
-	return h.touchState
+	var touchIDs []ebiten.TouchID
+	touchIDs = ebiten.AppendTouchIDs(touchIDs)
+
+	if len(touchIDs) == 0 {
+		return nil
+	}
+
+	// Get the first touch point
+	x, y := ebiten.TouchPosition(touchIDs[0])
+	return &TouchState{
+		ID: touchIDs[0],
+		StartPos: common.Point{
+			X: float64(x),
+			Y: float64(y),
+		},
+		LastPos: common.Point{
+			X: float64(x),
+			Y: float64(y),
+		},
+		Duration: 0,
+	}
 }
 
 // GetMousePosition returns the current mouse position

@@ -37,7 +37,7 @@ func TestHandler_GetMovementInput(t *testing.T) {
 
 	// Test movement input
 	angle := handler.GetMovementInput()
-	assert.Equal(t, common.Angle(0), angle, "Expected zero movement when no input")
+	assert.InDelta(t, float64(common.Angle(0)), float64(angle), 0.0001, "Expected zero movement when no input")
 }
 
 func TestHandler_IsPausePressed(t *testing.T) {

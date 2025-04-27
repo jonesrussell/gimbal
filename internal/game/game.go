@@ -25,22 +25,23 @@ const (
 	DebugTextLineHeight = 20
 
 	// Game configuration constants
-	RadiusDivisor            = 3
 	DefaultTPS               = 60
 	LogInterval              = DefaultTPS * 5 // Log every 5 seconds
 	SpeedNormalizationFactor = 60
-	HalfDivisor              = 2
+	HalfDivisor              = 2.0
+
+	// Constants for initial angles
+	InitialOrbitalAngle = 180.0 // Start at bottom of circle
+	InitialFacingAngle  = 0.0   // Face upward
+	RadiusDivisor       = 3.0   // Divisor for calculating orbit radius
 
 	// Angle constants
-	// InitialFacingAngle is the starting angle for the player sprite
-	InitialFacingAngle = 0 // Start facing upward
 	// FullCircleDegrees represents a full circle in degrees
 	FullCircleDegrees = 360
 	// RadiansToDegrees is the multiplier to convert radians to degrees
 	RadiansToDegrees = 180 / math.Pi
 	// RightToUpwardOffset is the angle offset to convert from right-facing 0° to upward-facing 0°
 	RightToUpwardOffset = 90
-	InitialOrbitalAngle = 180 // Start at bottom of circle
 )
 
 // Error definitions
@@ -133,13 +134,13 @@ func initializePlayer(config *common.GameConfig, logger common.Logger) (player.P
 	// Load the player sprite
 	imageData, err := assets.ReadFile("assets/player.png")
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrLoadingSprite, err)
+		return nil, fmt.Errorf("%w: %w", ErrLoadingSprite, err)
 	}
 	logger.Debug("Player image loaded", "size", len(imageData))
 
 	img, _, err := image.Decode(bytes.NewReader(imageData))
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to decode image: %v", ErrLoadingSprite, err)
+		return nil, fmt.Errorf("%w: failed to decode image: %w", ErrLoadingSprite, err)
 	}
 	logger.Debug("Player image decoded",
 		"bounds", img.Bounds(),
@@ -244,8 +245,8 @@ func (g *GimlarGame) updateGameState() error {
 
 	// Calculate facing angle to always point towards the center
 	pos := g.player.GetPosition()
-	centerX := float64(g.config.ScreenSize.Width) / 2
-	centerY := float64(g.config.ScreenSize.Height) / 2
+	centerX := float64(g.config.ScreenSize.Width) / HalfDivisor
+	centerY := float64(g.config.ScreenSize.Height) / HalfDivisor
 
 	// Calculate angle from player to center using atan2
 	// Note: We use centerY - pos.Y because our Y axis increases downward
