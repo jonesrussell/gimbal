@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
@@ -56,19 +55,21 @@ type Interface interface {
 
 // Handler handles input for the game
 type Handler struct {
-	logger     common.Logger
-	touchState *TouchState
-	lastEvent  InputEvent
-	mousePos   common.Point
+	logger        common.Logger
+	touchState    *TouchState
+	lastEvent     InputEvent
+	mousePos      common.Point
+	simulatedKeys map[ebiten.Key]bool // Track simulated key presses
 }
 
 // New creates a new input handler
 func New(logger common.Logger) *Handler {
 	return &Handler{
-		logger:     logger,
-		touchState: nil,
-		lastEvent:  InputEventNone,
-		mousePos:   common.Point{},
+		logger:        logger,
+		touchState:    nil,
+		lastEvent:     InputEventNone,
+		mousePos:      common.Point{},
+		simulatedKeys: make(map[ebiten.Key]bool),
 	}
 }
 
@@ -88,10 +89,10 @@ func (h *Handler) HandleInput() {
 	// Log input state for debugging
 	if h.logger != nil {
 		h.logger.Debug("Input state",
-			"left", ebiten.IsKeyPressed(ebiten.KeyLeft),
-			"right", ebiten.IsKeyPressed(ebiten.KeyRight),
-			"space", ebiten.IsKeyPressed(ebiten.KeySpace),
-			"escape", ebiten.IsKeyPressed(ebiten.KeyEscape),
+			"left", h.IsKeyPressed(ebiten.KeyLeft),
+			"right", h.IsKeyPressed(ebiten.KeyRight),
+			"space", h.IsKeyPressed(ebiten.KeySpace),
+			"escape", h.IsKeyPressed(ebiten.KeyEscape),
 			"touch", h.touchState != nil,
 			"mouse_pos", h.mousePos,
 			"last_event", h.lastEvent,
@@ -100,11 +101,11 @@ func (h *Handler) HandleInput() {
 }
 
 func (h *Handler) handleKeyboardInput() {
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyRight) {
+	if h.IsKeyPressed(ebiten.KeyLeft) || h.IsKeyPressed(ebiten.KeyRight) {
 		h.lastEvent = InputEventMove
-	} else if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+	} else if h.IsKeyPressed(ebiten.KeySpace) {
 		h.lastEvent = InputEventPause
-	} else if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+	} else if h.IsKeyPressed(ebiten.KeyEscape) {
 		h.lastEvent = InputEventQuit
 	}
 }
@@ -154,15 +155,19 @@ func (h *Handler) handleMouseInput() {
 
 // IsKeyPressed checks if a key is pressed
 func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
+	// Check simulated keys first
+	if pressed, ok := h.simulatedKeys[key]; ok {
+		return pressed
+	}
 	return ebiten.IsKeyPressed(key)
 }
 
 // GetMovementInput returns the movement angle based on input
 func (h *Handler) GetMovementInput() common.Angle {
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
+	if h.IsKeyPressed(ebiten.KeyLeft) {
 		return -common.Angle(MovementSpeedDegreesPerFrame)
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyRight) {
+	if h.IsKeyPressed(ebiten.KeyRight) {
 		return common.Angle(MovementSpeedDegreesPerFrame)
 	}
 
@@ -181,12 +186,12 @@ func (h *Handler) GetMovementInput() common.Angle {
 
 // IsPausePressed checks if the pause key is pressed
 func (h *Handler) IsPausePressed() bool {
-	return inpututil.IsKeyJustPressed(ebiten.KeySpace)
+	return h.IsKeyPressed(ebiten.KeySpace)
 }
 
 // IsQuitPressed checks if the quit key is pressed
 func (h *Handler) IsQuitPressed() bool {
-	return inpututil.IsKeyJustPressed(ebiten.KeyEscape)
+	return h.IsKeyPressed(ebiten.KeyEscape)
 }
 
 // GetTouchState returns the current touch state
@@ -209,8 +214,14 @@ func (h *Handler) GetLastEvent() InputEvent {
 	return h.lastEvent
 }
 
-// SimulateKeyPress is a no-op for the real input handler
-func (h *Handler) SimulateKeyPress(key ebiten.Key) {}
+// SimulateKeyPress simulates a key press for testing
+func (h *Handler) SimulateKeyPress(key ebiten.Key) {
+	h.simulatedKeys[key] = true
+	h.handleKeyboardInput() // Update lastEvent based on simulated key
+}
 
-// SimulateKeyRelease is a no-op for the real input handler
-func (h *Handler) SimulateKeyRelease(key ebiten.Key) {}
+// SimulateKeyRelease simulates a key release for testing
+func (h *Handler) SimulateKeyRelease(key ebiten.Key) {
+	delete(h.simulatedKeys, key)
+	h.handleKeyboardInput() // Update lastEvent based on remaining keys
+}
