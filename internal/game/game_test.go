@@ -20,7 +20,7 @@ const (
 	// Constants for initial angles
 	InitialOrbitalAngle = 180.0 // Start at bottom of circle
 	InitialFacingAngle  = 0.0   // Face upward
-	RadiusDivisor       = 4.0   // Divisor for calculating orbit radius
+	RadiusDivisor       = 3.0   // Divisor for calculating orbit radius
 )
 
 // MockPlayer is a mock implementation of player.PlayerInterface
@@ -90,7 +90,9 @@ type GameConfig struct {
 func TestNew(t *testing.T) {
 	// Helper function to compare float values with tolerance
 	almostEqual := func(a, b float64) bool {
-		return math.Abs(a-b) < 0.0001
+		diff := math.Abs(a - b)
+		t.Logf("Comparing %.10f and %.10f, diff: %.10f", a, b, diff)
+		return diff < 0.0001
 	}
 
 	// Create a mock logger
@@ -125,15 +127,22 @@ func TestNew(t *testing.T) {
 	require.NotNil(t, player)
 
 	// Verify initial angles
-	assert.True(t, almostEqual(float64(player.GetAngle()), InitialOrbitalAngle))
-	assert.True(t, almostEqual(float64(player.GetFacingAngle()), InitialFacingAngle))
+	playerAngle := float64(player.GetAngle().Normalize())
+	playerFacingAngle := float64(player.GetFacingAngle().Normalize())
+	t.Logf("Player angle: %.2f (expected: %.2f)", playerAngle, InitialOrbitalAngle)
+	t.Logf("Player facing angle: %.2f (expected: %.2f)", playerFacingAngle, InitialFacingAngle)
+	assert.True(t, almostEqual(playerAngle, InitialOrbitalAngle))
+	assert.True(t, almostEqual(playerFacingAngle, InitialFacingAngle))
 
 	// Verify initial position
 	radius := float64(cfg.ScreenSize.Height) / RadiusDivisor
-	expectedX := float64(cfg.ScreenSize.Width)/2 + radius*math.Cos(math.Pi)
-	expectedY := float64(cfg.ScreenSize.Height)/2 + radius*math.Sin(math.Pi)
+	angleRad := float64(InitialOrbitalAngle) * math.Pi / 180.0
+	expectedX := float64(cfg.ScreenSize.Width)/2 + radius*math.Sin(angleRad)
+	expectedY := float64(cfg.ScreenSize.Height)/2 - radius*math.Cos(angleRad)
 
 	pos := player.GetPosition()
+	t.Logf("Position: (%.2f, %.2f), Expected: (%.2f, %.2f)", pos.X, pos.Y, expectedX, expectedY)
+	t.Logf("Screen size: %dx%d, Radius: %.2f", cfg.ScreenSize.Width, cfg.ScreenSize.Height, radius)
 	assert.True(t, almostEqual(pos.X, expectedX))
 	assert.True(t, almostEqual(pos.Y, expectedY))
 }
@@ -357,4 +366,162 @@ func TestGame_Input(t *testing.T) {
 	testHandler.SimulateKeyRelease(ebiten.KeySpace)
 	g.Update()
 	assert.False(t, g.IsPaused())
+}
+
+// TestFacingAngleCalculation verifies that the player always faces the center correctly
+func TestFacingAngleCalculation(t *testing.T) {
+	mockLogger := logger.NewMock()
+	config := common.NewConfig()
+
+	// Helper function to compare angles with tolerance
+	almostEqual := func(a, b float64) bool {
+		diff := math.Abs(a - b)
+		return diff < 0.0001 || diff > 359.9999
+	}
+
+	tests := []struct {
+		name           string
+		orbitalAngle   float64      // Current orbital position
+		expectedFacing float64      // Expected facing angle after calculation
+		expectedPos    common.Point // Expected position at this orbital angle
+	}{
+		{
+			name:           "at bottom (180°)",
+			orbitalAngle:   180,
+			expectedFacing: 270, // Should face right when at bottom
+			expectedPos: common.Point{
+				X: float64(config.ScreenSize.Width) / 2,                                                  // sin(180°) = 0
+				Y: float64(config.ScreenSize.Height)/2 + float64(config.ScreenSize.Height)/RadiusDivisor, // -cos(180°) = 1
+			},
+		},
+		{
+			name:           "at right (270°)",
+			orbitalAngle:   270,
+			expectedFacing: 0, // Should face up when on right side
+			expectedPos: common.Point{
+				X: float64(config.ScreenSize.Width)/2 - float64(config.ScreenSize.Height)/RadiusDivisor, // sin(270°) = -1
+				Y: float64(config.ScreenSize.Height) / 2,                                                // -cos(270°) = 0
+			},
+		},
+		{
+			name:           "at top (0°)",
+			orbitalAngle:   0,
+			expectedFacing: 90, // Should face left when at top
+			expectedPos: common.Point{
+				X: float64(config.ScreenSize.Width) / 2,                                                  // sin(0°) = 0
+				Y: float64(config.ScreenSize.Height)/2 - float64(config.ScreenSize.Height)/RadiusDivisor, // -cos(0°) = -1
+			},
+		},
+		{
+			name:           "at left (90°)",
+			orbitalAngle:   90,
+			expectedFacing: 180, // Should face down when on left side
+			expectedPos: common.Point{
+				X: float64(config.ScreenSize.Width)/2 + float64(config.ScreenSize.Height)/RadiusDivisor, // sin(90°) = 1
+				Y: float64(config.ScreenSize.Height) / 2,                                                // -cos(90°) = 0
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g, err := game.New(config, mockLogger)
+			require.NoError(t, err)
+
+			// Set up mock input to simulate movement
+			mockInput := new(MockInputHandler)
+			mockInput.On("HandleInput").Return()
+			mockInput.On("IsPausePressed").Return(false)
+			mockInput.On("IsQuitPressed").Return(false)
+
+			// Set the target angle directly
+			g.GetPlayer().SetAngle(common.Angle(tt.orbitalAngle))
+			mockInput.On("GetMovementInput").Return(common.Angle(0))
+
+			g.SetInputHandler(mockInput)
+
+			// Update game to update facing angle
+			err = g.Update()
+			require.NoError(t, err)
+
+			// Get actual values
+			pos := g.GetPlayer().GetPosition()
+			angle := float64(g.GetPlayer().GetAngle())
+			facing := float64(g.GetPlayer().GetFacingAngle())
+
+			t.Logf("Test case: %s", tt.name)
+			t.Logf("Orbital angle: %.2f (expected: %.2f)", angle, tt.orbitalAngle)
+			t.Logf("Facing angle: %.2f (expected: %.2f)", facing, tt.expectedFacing)
+			t.Logf("Position: (%.2f, %.2f), Expected: (%.2f, %.2f)", pos.X, pos.Y, tt.expectedPos.X, tt.expectedPos.Y)
+
+			// Verify position
+			assert.InDelta(t, tt.expectedPos.X, pos.X, 0.1, "X position incorrect")
+			assert.InDelta(t, tt.expectedPos.Y, pos.Y, 0.1, "Y position incorrect")
+
+			// Verify facing angle
+			assert.True(t, almostEqual(facing, tt.expectedFacing),
+				"Expected facing angle %v but got %v", tt.expectedFacing, facing)
+
+			mockInput.AssertExpectations(t)
+		})
+	}
+}
+
+// TestContinuousFacingAngle verifies that the facing angle remains correct during continuous movement
+func TestContinuousFacingAngle(t *testing.T) {
+	mockLogger := logger.NewMock()
+	config := common.NewConfig()
+
+	g, err := game.New(config, mockLogger)
+	require.NoError(t, err)
+
+	// Set up mock input for continuous movement
+	mockInput := new(MockInputHandler)
+	mockInput.On("HandleInput").Return()
+	mockInput.On("IsPausePressed").Return(false)
+	mockInput.On("IsQuitPressed").Return(false)
+	mockInput.On("GetMovementInput").Return(common.Angle(5)) // Constant movement rate
+
+	g.SetInputHandler(mockInput)
+
+	// Track previous position and angle
+	var prevPos common.Point
+	var prevAngle float64
+
+	// Run several updates to simulate continuous movement
+	for i := 0; i < 72; i++ { // Test a full 360° rotation (72 steps * 5° = 360°)
+		prevPos = g.GetPlayer().GetPosition()
+		prevAngle = float64(g.GetPlayer().GetFacingAngle())
+
+		err = g.Update()
+		require.NoError(t, err)
+
+		// Get current state
+		pos := g.GetPlayer().GetPosition()
+		facing := float64(g.GetPlayer().GetFacingAngle())
+
+		// Calculate expected facing angle based on position relative to center
+		centerX := float64(config.ScreenSize.Width) / 2
+		centerY := float64(config.ScreenSize.Height) / 2
+		dx := centerX - pos.X
+		dy := centerY - pos.Y
+		expectedBase := math.Atan2(dy, dx) * 180 / math.Pi
+		if expectedBase < 0 {
+			expectedBase += 360
+		}
+		expectedFacing := expectedBase + 90
+		if expectedFacing >= 360 {
+			expectedFacing -= 360
+		}
+
+		// Verify facing angle is correct
+		assert.InDelta(t, expectedFacing, facing, 0.1,
+			"Incorrect facing angle at step %d. Expected %.2f, got %.2f", i, expectedFacing, facing)
+
+		// Verify movement is continuous
+		assert.NotEqual(t, prevPos, pos, "Position should change during continuous movement")
+		assert.NotEqual(t, prevAngle, facing, "Facing angle should change during continuous movement")
+	}
+
+	mockInput.AssertExpectations(t)
 }

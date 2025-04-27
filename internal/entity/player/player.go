@@ -87,7 +87,7 @@ func New(config *common.EntityConfig, sprite Drawable, logger common.Logger) (*P
 	}
 
 	// Initialize position
-	player.position = orbCalc.NewPosition(180, 0) // Start at bottom, facing up
+	player.position = orbCalc.NewPosition(0, 0) // Start at top, facing up
 
 	player.logger.Debug("Player initialization complete",
 		"position", player.position.Point,

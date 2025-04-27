@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/entity/orbital"
 	"github.com/jonesrussell/gimbal/internal/entity/player"
 	ebitensprite "github.com/jonesrussell/gimbal/internal/entity/player/ebiten"
 	"github.com/jonesrussell/gimbal/internal/entity/stars"
@@ -219,39 +217,28 @@ func (g *GimlarGame) updateGameState() error {
 		// Update orbital angle
 		currentAngle := g.player.GetAngle()
 		newAngle := currentAngle + common.Angle(scaledInput)
-		g.player.SetAngle(newAngle)
-
-		// Calculate facing angle to always face the center
-		playerPos := g.player.GetPosition()
-		centerX := float64(g.config.ScreenSize.Width) / common.CenterDivisor
-		centerY := float64(g.config.ScreenSize.Height) / common.CenterDivisor
-
-		// Calculate angle from player to center (not center to player)
-		dx := centerX - playerPos.X
-		dy := centerY - playerPos.Y
-		// atan2 gives angle in radians, convert to degrees
-		baseAngle := math.Atan2(dy, dx) * orbital.RadiansToDegrees
-		// Normalize to 0-360 range
-		if baseAngle < 0 {
-			baseAngle += FullCircleDegrees
+		if err := g.player.SetAngle(newAngle); err != nil {
+			return fmt.Errorf("failed to set angle: %w", err)
 		}
-		// Add 90 degrees to align sprite (sprite's 0° faces up, atan2's 0° faces right)
-		facingAngle := baseAngle + 90
-
-		// Set the facing angle to point towards the center
-		g.player.SetFacingAngle(common.Angle(facingAngle))
 
 		// Log movement for debugging
 		g.logger.Debug("Player moved",
-			"position", playerPos,
+			"position", g.player.GetPosition(),
 			"orbital_angle", float64(newAngle),
-			"facing_angle", float64(facingAngle),
-			"base_angle", baseAngle,
+			"facing_angle", g.player.GetFacingAngle(),
 			"input_angle", scaledInput,
 			"delta_time", g.deltaTime,
-			"center", common.Point{X: centerX, Y: centerY},
 		)
 	}
+
+	// Calculate facing angle to be tangent to the orbit
+	// When at orbital angle A, facing angle should be A + 90 to be tangent
+	orbitalAngle := g.player.GetAngle()
+	facingAngle := float64(orbitalAngle) + RightToUpwardOffset
+	if facingAngle >= FullCircleDegrees {
+		facingAngle -= FullCircleDegrees
+	}
+	g.player.SetFacingAngle(common.Angle(facingAngle))
 
 	// Update entities
 	g.player.Update()
