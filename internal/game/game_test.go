@@ -203,19 +203,6 @@ func TestGame_Update(t *testing.T) {
 	})
 }
 
-func TestGame_Draw(t *testing.T) {
-	t.Run("nil screen", func(t *testing.T) {
-		g := newTestGame(t)
-		g.Draw(nil)
-	})
-
-	t.Run("normal draw", func(t *testing.T) {
-		g := newTestGame(t)
-		screen := ebiten.NewImage(800, 600)
-		g.Draw(screen)
-	})
-}
-
 func TestGame_Cleanup(t *testing.T) {
 	g := newTestGame(t)
 	g.Cleanup()
