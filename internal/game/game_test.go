@@ -420,14 +420,22 @@ func newTestGame(t *testing.T) *game.GimlarGame {
 	mockLogger := logger.NewMock()
 	config := common.NewConfig()
 
+	// Calculate initial position
+	screenCenterX := float64(config.ScreenSize.Width) / 2
+	screenCenterY := float64(config.ScreenSize.Height) / 2
+	orbitRadius := float64(config.ScreenSize.Height) / game.RadiusDivisor
+
+	// Initial position is at the bottom of the orbit (180 degrees)
+	initialPos := common.Point{
+		X: screenCenterX,
+		Y: screenCenterY + orbitRadius,
+	}
+
 	// Create mock player
 	mockPlayer := new(MockPlayer)
-	mockPlayer.On("GetPosition").Return(common.Point{
-		X: float64(config.ScreenSize.Width) / 2,
-		Y: float64(config.ScreenSize.Height) / 2,
-	})
-	mockPlayer.On("GetAngle").Return(common.Angle(180))
-	mockPlayer.On("GetFacingAngle").Return(common.Angle(0))
+	mockPlayer.On("GetPosition").Return(initialPos)
+	mockPlayer.On("GetAngle").Return(common.Angle(game.InitialOrbitalAngle))
+	mockPlayer.On("GetFacingAngle").Return(common.Angle(game.InitialFacingAngle))
 	mockPlayer.On("Update").Return()
 	mockPlayer.On("Draw", mock.Anything, mock.Anything).Return()
 	mockPlayer.On("SetAngle", mock.Anything).Return(nil)
@@ -440,11 +448,8 @@ func newTestGame(t *testing.T) *game.GimlarGame {
 	mockStars.On("GetStars").Return([]*stars.Star{})
 	mockStars.On("Cleanup").Return()
 
-	// Create input handler
-	mockInput := input.New(mockLogger)
-
 	// Create game with mocks
-	g, err := game.NewWithDependencies(config, mockLogger, mockPlayer, mockStars, mockInput)
+	g, err := game.NewWithDependencies(config, mockLogger, mockPlayer, mockStars, input.New(mockLogger))
 	require.NoError(t, err)
 
 	return g
