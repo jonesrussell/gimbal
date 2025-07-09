@@ -5,6 +5,7 @@ go 1.24
 require (
 	github.com/hajimehoshi/ebiten/v2 v2.8.6
 	github.com/yohamta/donburi v1.15.7
+	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 )
 
@@ -41,7 +42,6 @@ require (
 	github.com/ebitengine/purego v0.8.2 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
-	go.uber.org/mock v0.5.2 // indirect
 	golang.org/x/image v0.25.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
