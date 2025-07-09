@@ -4,70 +4,32 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 const (
-	// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
-	MovementSpeedDegreesPerFrame = 5
+// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
+// This is now defined in common.PlayerMovementSpeed
 
-	// Touch input constants
-	MinTouchDuration = 10 // frames
-	TouchThreshold   = 10 // pixels
+// Touch input constants are now defined in common.Constants
 )
-
-// InputEvent represents a game input event
-type InputEvent int
-
-const (
-	InputEventNone InputEvent = iota
-	InputEventMove
-	InputEventPause
-	InputEventQuit
-	InputEventTouch
-	InputEventMouseMove
-)
-
-// TouchState tracks touch input state
-type TouchState struct {
-	ID       ebiten.TouchID
-	StartPos common.Point
-	LastPos  common.Point
-	Duration int
-}
-
-// Interface defines the input handler interface
-type Interface interface {
-	HandleInput()
-	IsKeyPressed(key ebiten.Key) bool
-	GetMovementInput() common.Angle
-	IsQuitPressed() bool
-	IsPausePressed() bool
-	// New input methods
-	GetTouchState() *TouchState
-	GetMousePosition() common.Point
-	IsMouseButtonPressed(button ebiten.MouseButton) bool
-	GetLastEvent() InputEvent
-	// Simulation methods for testing
-	SimulateKeyPress(key ebiten.Key)
-	SimulateKeyRelease(key ebiten.Key)
-}
 
 // Handler handles input for the game
 type Handler struct {
 	logger        common.Logger
-	touchState    *TouchState
-	lastEvent     InputEvent
+	touchState    *common.TouchState
+	lastEvent     common.InputEvent
 	mousePos      common.Point
 	simulatedKeys map[ebiten.Key]bool // Track simulated key presses
 }
 
 // New creates a new input handler
-func New(logger common.Logger) *Handler {
+func New(logger common.Logger) common.GameInputHandler {
 	return &Handler{
 		logger:        logger,
 		touchState:    nil,
-		lastEvent:     InputEventNone,
+		lastEvent:     common.InputEventNone,
 		mousePos:      common.Point{},
 		simulatedKeys: make(map[ebiten.Key]bool),
 	}
@@ -75,7 +37,7 @@ func New(logger common.Logger) *Handler {
 
 // HandleInput processes input events
 func (h *Handler) HandleInput() {
-	h.lastEvent = InputEventNone
+	h.lastEvent = common.InputEventNone
 
 	// Handle keyboard input
 	h.handleKeyboardInput()
@@ -86,38 +48,28 @@ func (h *Handler) HandleInput() {
 	// Handle mouse input
 	h.handleMouseInput()
 
-	// Log input state for debugging
-	if h.logger != nil {
-		h.logger.Debug("Input state",
-			"left", h.IsKeyPressed(ebiten.KeyLeft),
-			"right", h.IsKeyPressed(ebiten.KeyRight),
-			"space", h.IsKeyPressed(ebiten.KeySpace),
-			"escape", h.IsKeyPressed(ebiten.KeyEscape),
-			"touch", h.touchState != nil,
-			"mouse_pos", h.mousePos,
-			"last_event", h.lastEvent,
-		)
-	}
+	// Input state logging removed for cleaner output
 }
 
 func (h *Handler) handleKeyboardInput() {
 	if h.IsKeyPressed(ebiten.KeyLeft) || h.IsKeyPressed(ebiten.KeyRight) {
-		h.lastEvent = InputEventMove
+		h.lastEvent = common.InputEventMove
 	} else if h.IsKeyPressed(ebiten.KeySpace) {
-		h.lastEvent = InputEventPause
+		h.lastEvent = common.InputEventPause
 	} else if h.IsKeyPressed(ebiten.KeyEscape) {
-		h.lastEvent = InputEventQuit
+		h.lastEvent = common.InputEventQuit
 	}
 }
 
 func (h *Handler) handleTouchInput() {
 	// Handle touch input
-	touchIDs := ebiten.TouchIDs()
+	var touchIDs []ebiten.TouchID
+	touchIDs = ebiten.AppendTouchIDs(touchIDs)
 	if len(touchIDs) > 0 {
 		if h.touchState == nil {
 			// New touch
 			x, y := ebiten.TouchPosition(touchIDs[0])
-			h.touchState = &TouchState{
+			h.touchState = &common.TouchState{
 				ID: touchIDs[0],
 				StartPos: common.Point{
 					X: float64(x),
@@ -137,7 +89,7 @@ func (h *Handler) handleTouchInput() {
 				Y: float64(y),
 			}
 			h.touchState.Duration++
-			h.lastEvent = InputEventTouch
+			h.lastEvent = common.InputEventTouch
 		}
 	} else {
 		h.touchState = nil
@@ -149,7 +101,7 @@ func (h *Handler) handleMouseInput() {
 	newPos := common.Point{X: float64(x), Y: float64(y)}
 	if newPos != h.mousePos {
 		h.mousePos = newPos
-		h.lastEvent = InputEventMouseMove
+		h.lastEvent = common.InputEventMouseMove
 	}
 }
 
@@ -165,19 +117,19 @@ func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
 // GetMovementInput returns the movement angle based on input
 func (h *Handler) GetMovementInput() common.Angle {
 	if h.IsKeyPressed(ebiten.KeyLeft) {
-		return -common.Angle(MovementSpeedDegreesPerFrame)
+		return -common.Angle(common.PlayerMovementSpeed) // Clockwise (left)
 	}
 	if h.IsKeyPressed(ebiten.KeyRight) {
-		return common.Angle(MovementSpeedDegreesPerFrame)
+		return common.Angle(common.PlayerMovementSpeed) // Counterclockwise (right)
 	}
 
 	// Handle touch/mouse movement if needed
-	if h.touchState != nil && h.touchState.Duration > MinTouchDuration {
+	if h.touchState != nil && h.touchState.Duration > common.MinTouchDuration {
 		// Calculate movement based on touch position relative to screen center
 		// This is just an example - adjust the calculation based on your needs
 		dx := h.touchState.LastPos.X - h.touchState.StartPos.X
-		if math.Abs(dx) > TouchThreshold {
-			return common.Angle(math.Copysign(MovementSpeedDegreesPerFrame, dx))
+		if math.Abs(dx) > common.TouchThreshold {
+			return common.Angle(math.Copysign(float64(common.PlayerMovementSpeed), dx))
 		}
 	}
 
@@ -195,7 +147,7 @@ func (h *Handler) IsQuitPressed() bool {
 }
 
 // GetTouchState returns the current touch state
-func (h *Handler) GetTouchState() *TouchState {
+func (h *Handler) GetTouchState() *common.TouchState {
 	var touchIDs []ebiten.TouchID
 	touchIDs = ebiten.AppendTouchIDs(touchIDs)
 
@@ -205,7 +157,7 @@ func (h *Handler) GetTouchState() *TouchState {
 
 	// Get the first touch point
 	x, y := ebiten.TouchPosition(touchIDs[0])
-	return &TouchState{
+	return &common.TouchState{
 		ID: touchIDs[0],
 		StartPos: common.Point{
 			X: float64(x),
@@ -229,19 +181,17 @@ func (h *Handler) IsMouseButtonPressed(button ebiten.MouseButton) bool {
 	return ebiten.IsMouseButtonPressed(button)
 }
 
-// GetLastEvent returns the last input event that occurred
-func (h *Handler) GetLastEvent() InputEvent {
+// GetLastEvent returns the last input event
+func (h *Handler) GetLastEvent() common.InputEvent {
 	return h.lastEvent
 }
 
 // SimulateKeyPress simulates a key press for testing
 func (h *Handler) SimulateKeyPress(key ebiten.Key) {
 	h.simulatedKeys[key] = true
-	h.handleKeyboardInput() // Update lastEvent based on simulated key
 }
 
 // SimulateKeyRelease simulates a key release for testing
 func (h *Handler) SimulateKeyRelease(key ebiten.Key) {
-	delete(h.simulatedKeys, key)
-	h.handleKeyboardInput() // Update lastEvent based on remaining keys
+	h.simulatedKeys[key] = false
 }

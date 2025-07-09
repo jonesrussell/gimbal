@@ -1,0 +1,4 @@
+---
+globs: internal/ecs/**/*
+alwaysApply: false
+---
