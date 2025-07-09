@@ -1,0 +1,28 @@
+# Gimbal Project Structure
+
+This is a Gyruss-style game built with Go using ECS (Entity Component System) architecture with Ebiten for graphics.
+
+## Main Entry Points
+- [main.go](mdc:main.go) - Application entry point, initializes logger, config, and ECS game
+- [internal/ecs/game.go](mdc:internal/ecs/game.go) - Main ECS game implementation with Ebiten integration
+
+## Core Architecture
+- **ECS System**: Uses donburi ECS library for entity management
+- **Configuration**: [internal/common/config.go](mdc:internal/common/config.go) - Centralized game configuration with functional options pattern
+- **Systems**: [internal/ecs/systems.go](mdc:internal/ecs/systems.go) - ECS systems for player input, orbital movement, star movement, and rendering
+- **Components**: [internal/ecs/components.go](mdc:internal/ecs/components.go) - ECS component definitions
+- **Factory**: [internal/ecs/factory.go](mdc:internal/ecs/factory.go) - Entity creation helpers
+- **Events**: [internal/ecs/events.go](mdc:internal/ecs/events.go) - Event system for game state changes
+
+## Key Features
+- **Player Movement**: Orbital movement around screen center with angle-based controls
+- **Starfield**: Dynamic star system with radial movement and scaling
+- **Hot Reloading**: Development workflow with automatic rebuilds
+- **Multi-platform**: Builds for Linux, Windows, and WebAssembly
+
+## Development Tools
+- [Taskfile.yml](mdc:Taskfile.yml) - Build and development tasks
+- [.golangci.yml](mdc:.golangci.yml) - Linting configuration with relaxed settings for refactoring
+- [go.mod](mdc:go.mod) - Go module dependencies
+alwaysApply: true
+---
