@@ -6,6 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
+	"github.com/yohamta/donburi/ecs"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/input"
@@ -152,7 +153,7 @@ func (g *ECSGame) Update() error {
 	// Run ECS systems
 	PlayerInputSystem(g.world, inputAngle)
 	OrbitalMovementSystem(g.world)
-	StarMovementSystem(g.world, g.config.ScreenSize.Height)
+	StarMovementSystem(&ecs.ECS{World: g.world})
 
 	// Emit player movement event if player moved
 	if inputAngle != 0 {

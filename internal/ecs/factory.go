@@ -2,6 +2,8 @@ package ecs
 
 import (
 	"math"
+	"math/rand"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
@@ -70,16 +72,16 @@ func CreateStarField(w donburi.World, sprite *ebiten.Image, config *common.GameC
 	centerX := float64(config.ScreenSize.Width) / 2
 	centerY := float64(config.ScreenSize.Height) / 2
 
+	// Initialize random seed
+	rand.Seed(time.Now().UnixNano())
+
 	for i := 0; i < config.NumStars; i++ {
 		// Create truly random positions along a small orbital path
-		// Use a pseudo-random seed based on i to get different patterns
-		seed := int64(i * 12345) // Simple pseudo-random seed
-
-		// Random angle around the circle
-		angle := float64(seed%628) / 100.0 // 0 to 2π
+		// Random angle around the circle (0 to 2π)
+		angle := rand.Float64() * 2 * math.Pi
 
 		// Random radius within the spawn range (30-80 pixels from center)
-		spawnRadius := 30.0 + float64(seed%50)
+		spawnRadius := 30.0 + rand.Float64()*50.0
 
 		x := centerX + math.Cos(angle)*spawnRadius
 		y := centerY + math.Sin(angle)*spawnRadius
