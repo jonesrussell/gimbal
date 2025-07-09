@@ -1,7 +1,10 @@
 package ecs
 
 import (
+	"bytes"
+	"embed"
 	"fmt"
+	"image"
 	"image/color"
 	"sync"
 
@@ -10,8 +13,8 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
-// TODO: Move assets to a shared location accessible by ECS
-// For now, we'll create placeholder sprites
+//go:embed assets/sprites/*
+var assets embed.FS
 
 // ResourceType represents different types of resources
 type ResourceType int
@@ -46,10 +49,43 @@ func NewResourceManager(logger common.Logger) *ResourceManager {
 	}
 }
 
-// LoadSprite loads a sprite from a file path (placeholder for future implementation)
+// LoadSprite loads a sprite from the embedded assets
 func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) {
-	// TODO: Implement file loading when assets are moved to shared location
-	return nil, fmt.Errorf("file loading not implemented yet, use CreateSprite instead")
+	rm.mutex.Lock()
+	defer rm.mutex.Unlock()
+
+	// Check if already loaded
+	if resource, exists := rm.resources[name]; exists {
+		if sprite, ok := resource.Data.(*ebiten.Image); ok {
+			resource.RefCount++
+			rm.logger.Debug("Sprite reused", "name", name, "ref_count", resource.RefCount)
+			return sprite, nil
+		}
+	}
+
+	// Load from embedded assets
+	imageData, err := assets.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read sprite file %s: %w", path, err)
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(imageData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode sprite %s: %w", path, err)
+	}
+
+	sprite := ebiten.NewImageFromImage(img)
+
+	// Store in resource manager
+	rm.resources[name] = &Resource{
+		Type:     ResourceSprite,
+		Name:     name,
+		Data:     sprite,
+		RefCount: 1,
+	}
+
+	rm.logger.Debug("Sprite loaded", "name", name, "path", path, "bounds", img.Bounds())
+	return sprite, nil
 }
 
 // CreateSprite creates a simple colored sprite
@@ -114,10 +150,14 @@ func (rm *ResourceManager) ReleaseSprite(name string) {
 
 // LoadAllSprites loads all required sprites for the game
 func (rm *ResourceManager) LoadAllSprites() error {
-	// Create player sprite
-	_, err := rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
+	// Load player sprite from file
+	_, err := rm.LoadSprite("player", "assets/sprites/player.png")
 	if err != nil {
-		return fmt.Errorf("failed to create player sprite: %w", err)
+		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
+		_, err = rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
+		if err != nil {
+			return fmt.Errorf("failed to create player placeholder: %w", err)
+		}
 	}
 
 	// Create star sprite
