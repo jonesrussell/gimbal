@@ -1,55 +1,143 @@
-# TODO: Gimbal Refactor & Architecture Improvements
+# Refactoring TODO - SOLID Principles & Best Practices
 
-## High Priority (ASAP)
+## 🔴 **Priority 1: Critical Issues (Fix First)**
 
-- [x] **Consolidate Game Configs**
-    - Merge duplicate GameConfig structs (internal/common and internal/game) into a single source of truth.
-    - Update all usages to reference the unified config.
+### 1.1 Complete Constants Extraction
+**File**: `internal/common/constants.go`
+**Issue**: Missing constants from refactoring plan
+**Tasks**:
+- [ ] Add `MovementSpeedDegreesPerFrame = 5`
+- [ ] Add `MinTouchDuration = 10`
+- [ ] Add `TouchThreshold = 50`
+- [ ] Review codebase for any remaining magic numbers
 
-- [x] **Refactor Build & Run Scripts**
-    - Update Taskfile.yml and Makefile to use the new main.go location (root directory).
-    - Remove references to the old cmd/gimbal path.
+### 1.2 Create System Manager
+**File**: `internal/ecs/system_manager.go` (new file)
+**Issue**: Hardcoded system execution order, tight coupling
+**Tasks**:
+- [ ] Create `System` interface with `Update()` and `Name()` methods
+- [ ] Create `SystemManager` struct with systems slice
+- [ ] Implement `AddSystem()` method
+- [ ] Implement `UpdateAll()` method with error handling
+- [ ] Update main game loop to use SystemManager
+- [ ] Refactor existing systems to implement System interface
 
-- [x] **Abstract Entities**
-    - Refactor player and stars to use a common Entity interface.
-    - Prepare code for ECS migration (ensure all game objects implement basic interfaces: Update, Draw, GetPosition, etc.).
+## 🟡 **Priority 2: Moderate Issues**
 
-- [x] **Introduce ECS Skeleton**
-    - Add basic ECS scaffolding: EntityManager, Component registry, System runner.
-    - Migrate player and stars to ECS-style management.
+### 2.1 Extract Game State Management
+**File**: `internal/ecs/game_state.go` (new file)
+**Issue**: Mixed responsibilities in ECSGame
+**Tasks**:
+- [ ] Create `GameState` struct with isPaused, score, level fields
+- [ ] Create `GameStateManager` struct with state and events
+- [ ] Implement `TogglePause()` method with event emission
+- [ ] Add methods for score and level management
+- [ ] Integrate with existing ECSGame struct
 
-- [x] **Remove Dead Code & Duplicates**
-    - Clean up any unused files, duplicate types, or legacy code from the old structure.
+### 2.2 Create Error Strategy
+**File**: `internal/common/errors.go` (new file)
+**Issue**: Inconsistent error handling
+**Tasks**:
+- [ ] Create `GameError` struct with Code, Message, Cause fields
+- [ ] Implement `Error()` method for GameError
+- [ ] Define standard error constants (ErrAssetNotFound, ErrEntityInvalid, etc.)
+- [ ] Update existing error handling to use GameError
+- [ ] Add error codes for different failure scenarios
 
-## Medium Priority
+## 🟢 **Priority 3: Enhancements**
 
-- [x] **ECS Migration Complete**
-    - Successfully migrated from old entity system to Donburi ECS.
-    - Removed all old entity code and dependencies.
-    - Game now runs with ECS architecture.
+### 3.1 Create Component Registry
+**File**: `internal/ecs/component_registry.go` (new file)
+**Issue**: Components scattered across files
+**Tasks**:
+- [ ] Create `ComponentRegistry` struct with components map
+- [ ] Implement `Register()` method
+- [ ] Implement `Get()` method
+- [ ] Add component registration for all existing components
+- [ ] Update component creation to use registry
 
-- [x] **Event System**
-    - Implement a simple event/message bus for decoupled communication (e.g., player death, score updates).
+### 3.2 Add System Dependencies
+**File**: `internal/ecs/system_dependencies.go` (new file)
+**Issue**: No dependency management between systems
+**Tasks**:
+- [ ] Create `SystemDependency` struct with Name and Dependencies
+- [ ] Create `SystemGraph` struct with dependencies map
+- [ ] Implement `AddDependency()` method
+- [ ] Implement `GetExecutionOrder()` with topological sort
+- [ ] Define system dependencies (e.g., MovementSystem before RenderSystem)
+- [ ] Integrate with SystemManager
 
-- [x] **Scene/State Management**
-    - Abstract game states (menu, playing, game over) for better flow control and separation of concerns.
+### 3.3 Create Configuration Validation
+**File**: `internal/common/config_validator.go` (new file)
+**Issue**: No configuration validation
+**Tasks**:
+- [ ] Create `ConfigValidator` struct
+- [ ] Implement `Validate()` method for GameConfig
+- [ ] Add validation for screen size (must be positive)
+- [ ] Add validation for radius (must be positive)
+- [ ] Add validation for other config parameters
+- [ ] Integrate validation into game startup
 
-- [x] **Resource Management**
-    - Centralize asset loading (sprites, sounds) to avoid duplication and leaks.
-    - Move assets to shared location accessible by ECS.
-    - Implemented proper sprite loading from embedded assets with player.png.
+## 📊 **Implementation Checklist**
 
-- [ ] **Testing**
-    - Increase test coverage, especially for systems and components.
-    - Use dependency injection for easier testing.
+### Phase 1: Core Infrastructure
+- [ ] Complete constants extraction
+- [ ] Create System Manager
+- [ ] Update main game loop to use new infrastructure
 
-## Long-Term
+### Phase 2: State & Error Management
+- [ ] Implement Game State Management
+- [ ] Create Error Strategy
+- [ ] Update existing code to use new error handling
 
-- [ ] **Full ECS Migration**
-    - Move all game logic (enemies, bullets, power-ups, etc.) to ECS.
+### Phase 3: Advanced Features
+- [ ] Implement Component Registry
+- [ ] Add System Dependencies
+- [ ] Create Configuration Validation
 
-- [ ] **Performance Profiling & Optimization**
-    - Profile the game and optimize bottlenecks as new features are added.
+## 🧪 **Testing Requirements**
 
-- [ ] **Documentation**
-    - Update README and add architecture docs as the codebase evolves. 
+### Unit Tests
+- [ ] Test System Manager with mock systems
+- [ ] Test Game State Manager state transitions
+- [ ] Test Error Strategy with various error scenarios
+- [ ] Test Component Registry registration and retrieval
+- [ ] Test System Dependencies topological sort
+- [ ] Test Configuration Validation with valid/invalid configs
+
+### Integration Tests
+- [ ] Test System Manager with real systems
+- [ ] Test Game State integration with existing systems
+- [ ] Test error propagation through system chain
+- [ ] Test component lifecycle with registry
+
+### Regression Tests
+- [ ] Verify existing gameplay functionality works
+- [ ] Verify rendering still works correctly
+- [ ] Verify input handling still works
+- [ ] Verify star field movement still works
+
+## 📈 **Success Criteria**
+
+- [ ] All magic numbers replaced with named constants
+- [ ] System execution order is configurable and explicit
+- [ ] Game state is centralized and manageable
+- [ ] Error handling is consistent and informative
+- [ ] Components are centrally registered and managed
+- [ ] System dependencies are explicit and validated
+- [ ] Configuration is validated at startup
+- [ ] All existing functionality preserved
+- [ ] Code is more maintainable and testable
+- [ ] Performance is not degraded
+
+## 🔍 **Code Review Checklist**
+
+Before marking any task complete:
+- [ ] Code follows Go best practices
+- [ ] Error handling is appropriate
+- [ ] Tests are written and passing
+- [ ] Documentation is updated
+- [ ] No new magic numbers introduced
+- [ ] No tight coupling created
+- [ ] Single responsibility principle followed
+- [ ] Open/closed principle maintained 
