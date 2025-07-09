@@ -97,3 +97,15 @@ tasks:
       - go mod tidy
       - go clean -modcache
       - go mod download
+
+  mocks:
+    desc: Generate mocks using mockgen
+    cmds:
+      - mkdir -p test/mocks
+      - mockgen -source=internal/common/interfaces.go -destination=test/mocks/mock_input.go -package=mocks
+      - echo "Mocks generated successfully in test/mocks/"
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./... -v

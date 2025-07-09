@@ -8,14 +8,15 @@ import (
 
 // GameState represents the current state of the game
 type GameState struct {
-	IsPaused   bool
-	Score      int
-	Level      int
-	StartTime  time.Time
-	LastUpdate time.Time
-	FrameCount int64
-	IsGameOver bool
-	IsVictory  bool
+	IsPaused    bool
+	IsGameOver  bool
+	IsVictory   bool
+	Score       int
+	Level       int
+	StartTime   time.Time
+	LastUpdate  time.Time
+	FrameCount  int64
+	PlayerSpeed float64
 }
 
 // NewGameState creates a new game state
