@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs"
+	"github.com/jonesrussell/gimbal/internal/input"
 	"github.com/jonesrussell/gimbal/internal/logger"
 )
 
@@ -67,8 +68,12 @@ func run() error {
 		"debug", config.Debug,
 	)
 
-	// Initialize ECS game
-	g, err := ecs.NewECSGame(config, log)
+	// Create input handler
+	inputHandler := input.New(log)
+	log.Info("Input handler created")
+
+	// Initialize ECS game with dependency injection
+	g, err := ecs.NewECSGame(config, log, inputHandler)
 	if err != nil {
 		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to initialize ECS game", err)
 	}

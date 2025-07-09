@@ -45,6 +45,43 @@ type InputHandler interface {
 	IsKeyPressed(key ebiten.Key) bool
 }
 
+// GameInputHandler represents the main input interface for the game
+// This interface should be implemented by input adapters and used by the ECS system
+type GameInputHandler interface {
+	HandleInput()
+	IsKeyPressed(key ebiten.Key) bool
+	GetMovementInput() Angle
+	IsQuitPressed() bool
+	IsPausePressed() bool
+	GetTouchState() *TouchState
+	GetMousePosition() Point
+	IsMouseButtonPressed(button ebiten.MouseButton) bool
+	GetLastEvent() InputEvent
+	// Simulation methods for testing
+	SimulateKeyPress(key ebiten.Key)
+	SimulateKeyRelease(key ebiten.Key)
+}
+
+// TouchState tracks touch input state
+type TouchState struct {
+	ID       ebiten.TouchID
+	StartPos Point
+	LastPos  Point
+	Duration int
+}
+
+// InputEvent represents a game input event
+type InputEvent int
+
+const (
+	InputEventNone InputEvent = iota
+	InputEventMove
+	InputEventPause
+	InputEventQuit
+	InputEventTouch
+	InputEventMouseMove
+)
+
 // PhysicsSystem represents a system that handles physics calculations
 type PhysicsSystem interface {
 	CalculatePosition(angle Angle, radius float64) Point

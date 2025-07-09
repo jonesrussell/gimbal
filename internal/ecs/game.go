@@ -9,7 +9,6 @@ import (
 	"github.com/yohamta/donburi/ecs"
 
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/input"
 )
 
 // We'll load assets from the game package for now
@@ -19,7 +18,7 @@ import (
 type ECSGame struct {
 	world        donburi.World
 	config       *common.GameConfig
-	inputHandler input.Interface
+	inputHandler common.GameInputHandler
 	logger       common.Logger
 
 	// Event system
@@ -40,12 +39,15 @@ type ECSGame struct {
 }
 
 // NewECSGame creates a new ECS-based game instance
-func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, error) {
+func NewECSGame(config *common.GameConfig, logger common.Logger, inputHandler common.GameInputHandler) (*ECSGame, error) {
 	if config == nil {
 		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "config cannot be nil")
 	}
 	if logger == nil {
 		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "logger cannot be nil")
+	}
+	if inputHandler == nil {
+		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "inputHandler cannot be nil")
 	}
 
 	logger.Debug("Creating new ECS game instance",
@@ -56,10 +58,6 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 
 	// Create ECS world
 	world := donburi.NewWorld()
-
-	// Create input handler
-	inputHandler := input.New(logger)
-	logger.Debug("Input handler created")
 
 	// Create event system
 	eventSystem := NewEventSystem(world)
@@ -257,7 +255,7 @@ func (g *ECSGame) IsPaused() bool {
 }
 
 // SetInputHandler sets the input handler (for testing)
-func (g *ECSGame) SetInputHandler(handler input.Interface) {
+func (g *ECSGame) SetInputHandler(handler common.GameInputHandler) {
 	g.inputHandler = handler
 }
 
