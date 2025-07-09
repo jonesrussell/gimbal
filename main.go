@@ -1,16 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/jonesrussell/gimbal/internal/app"
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/ecs"
-	"github.com/jonesrussell/gimbal/internal/input"
-	"github.com/jonesrussell/gimbal/internal/logger"
 )
 
 // ExitCode represents the program's exit status
@@ -31,21 +30,28 @@ func run() error {
 		os.Setenv("LOG_LEVEL", "DEBUG")
 	}
 
-	// Create logger
-	log, err := logger.New()
-	if err != nil {
-		return common.NewGameErrorWithCause(common.ErrorCodeConfigInvalid, "failed to create logger", err)
+	// Create and initialize application container
+	container := app.NewContainer()
+
+	// Initialize all dependencies
+	if err := container.Initialize(context.Background()); err != nil {
+		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to initialize application container", err)
 	}
 
-	// Ensure logger is flushed on exit
+	// Get dependencies from container
+	logger := container.GetLogger()
+	config := container.GetConfig()
+	game := container.GetGame()
+
+	// Ensure graceful shutdown
 	defer func() {
-		if syncErr := log.Sync(); syncErr != nil {
-			fmt.Fprintf(os.Stderr, "Failed to sync logger: %v\n", syncErr)
+		if err := container.Shutdown(context.Background()); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to shutdown container: %v\n", err)
 		}
 	}()
 
 	// Log system information
-	log.Info("Starting game",
+	logger.Info("Starting game",
 		"goos", runtime.GOOS,
 		"goarch", runtime.GOARCH,
 		"num_cpu", runtime.NumCPU(),
@@ -53,39 +59,12 @@ func run() error {
 		"log_level", os.Getenv("LOG_LEVEL"),
 	)
 
-	// Create game configuration with options
-	config := common.NewConfig(
-		common.WithDebug(true), // Force debug mode
-		common.WithSpeed(common.DefaultSpeed),
-		common.WithStarSettings(common.DefaultStarSize, common.DefaultStarSpeed),
-		common.WithAngleStep(common.DefaultAngleStep),
-	)
-
-	log.Info("Game configuration created",
-		"screen_size", config.ScreenSize,
-		"player_size", config.PlayerSize,
-		"num_stars", config.NumStars,
-		"debug", config.Debug,
-	)
-
-	// Create input handler
-	inputHandler := input.New(log)
-	log.Info("Input handler created")
-
-	// Initialize ECS game with dependency injection
-	g, err := ecs.NewECSGame(config, log, inputHandler)
-	if err != nil {
-		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to initialize ECS game", err)
-	}
-
-	log.Info("ECS game initialized successfully")
-
 	// Run game with Ebiten
 	ebiten.SetWindowSize(config.ScreenSize.Width, config.ScreenSize.Height)
 	ebiten.SetWindowTitle("Gimbal - ECS Version")
 	ebiten.SetTPS(60)
 
-	if runErr := ebiten.RunGame(g); runErr != nil {
+	if runErr := ebiten.RunGame(game); runErr != nil {
 		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "game error", runErr)
 	}
 

@@ -259,6 +259,11 @@ func (g *ECSGame) SetInputHandler(handler common.GameInputHandler) {
 	g.inputHandler = handler
 }
 
+// GetInputHandler returns the current input handler
+func (g *ECSGame) GetInputHandler() common.GameInputHandler {
+	return g.inputHandler
+}
+
 // setupEventSubscriptions sets up event handlers
 func (g *ECSGame) setupEventSubscriptions() {
 	// Subscribe to player movement events

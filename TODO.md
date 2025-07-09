@@ -26,11 +26,11 @@
 **File**: `internal/ecs/game.go` and `internal/common/interfaces.go`
 **Issue**: ECS layer directly depends on input layer (architectural violation)
 **Tasks**:
-- [ ] Move input interfaces to `internal/common/interfaces.go`
-- [ ] Update ECS game constructor to accept input handler via DI
-- [ ] Create input factory/provider in main.go
-- [ ] Remove direct input package imports from ECS
-- [ ] Update game initialization to use DI pattern
+- [x] Move input interfaces to `internal/common/interfaces.go`
+- [x] Update ECS game constructor to accept input handler via DI
+- [x] Create input factory/provider in main.go
+- [x] Remove direct input package imports from ECS
+- [x] Update game initialization to use DI pattern
 
 ## 🟡 **Priority 2: Moderate Issues**
 
@@ -58,11 +58,11 @@
 **File**: `internal/app/container.go` (new file)
 **Issue**: Manual dependency wiring in main.go
 **Tasks**:
-- [ ] Create `Container` struct for dependency management
-- [ ] Implement constructor methods for each dependency
-- [ ] Add proper initialization order
-- [ ] Implement graceful shutdown handling
-- [ ] Move dependency wiring from main.go to container
+- [x] Create `Container` struct for dependency management
+- [x] Implement constructor methods for each dependency
+- [x] Add proper initialization order
+- [x] Implement graceful shutdown handling
+- [x] Move dependency wiring from main.go to container
 
 ## 🟢 **Priority 3: Enhancements**
 
@@ -91,12 +91,12 @@
 **File**: `internal/common/config_validator.go` (new file)
 **Issue**: No configuration validation
 **Tasks**:
-- [ ] Create `ConfigValidator` struct
-- [ ] Implement `Validate()` method for GameConfig
-- [ ] Add validation for screen size (must be positive)
-- [ ] Add validation for radius (must be positive)
-- [ ] Add validation for other config parameters
-- [ ] Integrate validation into game startup
+- [x] Create `ConfigValidator` struct
+- [x] Implement `Validate()` method for GameConfig
+- [x] Add validation for screen size (must be positive)
+- [x] Add validation for radius (must be positive)
+- [x] Add validation for other config parameters
+- [x] Integrate validation into game startup
 
 ### 3.4 Consider Event-Driven Input Architecture
 **File**: `internal/events/input_events.go` (new file)
@@ -115,13 +115,13 @@
 - [x] Complete constants extraction
 - [x] Create System Manager
 - [x] Update main game loop to use new infrastructure
-- [ ] **Fix architectural violation with dependency injection**
+- [x] **Fix architectural violation with dependency injection**
 
 ### Phase 2: State & Error Management
 - [x] Implement Game State Management
 - [x] Create Error Strategy
 - [x] Update existing code to use new error handling
-- [ ] Create application container for DI
+- [x] Create application container for DI
 
 ### Phase 3: Advanced Features
 - [ ] Implement Component Registry
@@ -135,17 +135,17 @@
 - [ ] Test System Manager with mock systems
 - [ ] Test Game State Manager state transitions
 - [ ] Test Error Strategy with various error scenarios
-- [ ] **Test dependency injection with mock input handlers**
+- [x] **Test dependency injection with mock input handlers**
 - [ ] Test Component Registry registration and retrieval
 - [ ] Test System Dependencies topological sort
-- [ ] Test Configuration Validation with valid/invalid configs
+- [x] Test Configuration Validation with valid/invalid configs
 - [ ] Test event bus with multiple subscribers
 
 ### Integration Tests
 - [ ] Test System Manager with real systems
 - [ ] Test Game State integration with existing systems
 - [ ] Test error propagation through system chain
-- [ ] **Test DI container initialization and shutdown**
+- [x] **Test DI container initialization and shutdown**
 - [ ] Test component lifecycle with registry
 - [ ] Test event-driven input handling
 
@@ -161,12 +161,12 @@
 - [ ] System execution order is configurable and explicit
 - [ ] Game state is centralized and manageable
 - [ ] Error handling is consistent and informative
-- [ ] **ECS layer no longer directly depends on input layer**
-- [ ] **Input interfaces are properly abstracted**
-- [ ] **Dependency injection is implemented and tested**
+- [x] **ECS layer no longer directly depends on input layer**
+- [x] **Input interfaces are properly abstracted**
+- [x] **Dependency injection is implemented and tested**
 - [ ] Components are centrally registered and managed
 - [ ] System dependencies are explicit and validated
-- [ ] Configuration is validated at startup
+- [x] Configuration is validated at startup
 - [ ] All existing functionality preserved
 - [ ] Code is more maintainable and testable
 - [ ] Performance is not degraded
