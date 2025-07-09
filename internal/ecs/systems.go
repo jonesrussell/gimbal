@@ -74,6 +74,14 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 				bounds := (*sprite).Bounds()
 				scaleX := float64(size.Width) / float64(bounds.Dx())
 				scaleY := float64(size.Height) / float64(bounds.Dy())
+
+				// Apply additional scale if Scale component exists
+				if entry.HasComponent(Scale) {
+					scale := Scale.Get(entry)
+					scaleX *= *scale
+					scaleY *= *scale
+				}
+
 				op.GeoM.Scale(scaleX, scaleY)
 			}
 
@@ -123,24 +131,65 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 	})
 }
 
-// StarMovementSystem handles star-specific movement (falling down)
+// StarMovementSystem handles Gyruss-style diagonal starfield movement
 func StarMovementSystem(w donburi.World, screenHeight int) {
 	query.NewQuery(
 		filter.And(
 			filter.Contains(StarTag),
 			filter.Contains(Position),
 			filter.Contains(Speed),
+			filter.Contains(Scale),
 		),
 	).Each(w, func(entry *donburi.Entry) {
 		pos := Position.Get(entry)
 		speed := Speed.Get(entry)
+		scale := Scale.Get(entry)
 
-		// Move star downward
-		pos.Y += *speed
+		// Calculate center of screen
+		centerX := float64(640) / 2 // TODO: Get from config
+		centerY := float64(480) / 2
+
+		// Calculate direction from center to star (this is the diagonal line direction)
+		dx := pos.X - centerX
+		dy := pos.Y - centerY
+		distance := math.Sqrt(dx*dx + dy*dy)
+
+		// Only normalize if we have a valid direction (not at center)
+		if distance > 1 {
+			dx /= distance
+			dy /= distance
+		} else {
+			// If star is at center, give it a random direction
+			angle := float64(entry.Entity().Id()) * 2 * math.Pi / 100
+			dx = math.Cos(angle)
+			dy = math.Sin(angle)
+		}
+
+		// Move star in straight diagonal line from center
+		pos.X += dx * *speed
+		pos.Y += dy * *speed
+
+		// Update scale based on distance from center (stars grow as they move away)
+		newDistance := math.Sqrt((pos.X-centerX)*(pos.X-centerX) + (pos.Y-centerY)*(pos.Y-centerY))
+		*scale = 0.5 + (newDistance/400)*2.0 // Scale from 0.5 to 2.5 based on distance
 
 		// Reset star if it goes off screen
-		if pos.Y > float64(screenHeight) {
-			pos.Y = 0
+		if pos.X < -50 || pos.X > 690 || pos.Y < -50 || pos.Y > 530 {
+			// Reset to truly random position along small orbital path
+			entityID := entry.Entity().Id()
+			seed := int64(entityID * 54321) // Different seed for variety
+
+			// Random angle around the circle
+			angle := float64(seed%628) / 100.0 // 0 to 2π
+
+			// Random radius within the spawn range (30-80 pixels from center)
+			spawnRadius := 30.0 + float64(seed%50)
+
+			pos.X = centerX + math.Cos(angle)*spawnRadius
+			pos.Y = centerY + math.Sin(angle)*spawnRadius
+
+			// Reset to random small scale
+			*scale = 0.3 + float64(seed%6)*0.1
 		}
 	})
 }

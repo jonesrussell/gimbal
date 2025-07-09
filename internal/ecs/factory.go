@@ -1,6 +1,8 @@
 package ecs
 
 import (
+	"math"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 
@@ -39,9 +41,9 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConf
 	return entity
 }
 
-// CreateStar creates a star entity with falling movement
+// CreateStar creates a star entity with Gyruss-style movement
 func CreateStar(w donburi.World, sprite *ebiten.Image, config *common.GameConfig, x, y float64) donburi.Entity {
-	entity := w.Create(StarTag, Position, Sprite, Speed, Size)
+	entity := w.Create(StarTag, Position, Sprite, Speed, Size, Scale)
 	entry := w.Entry(entity)
 
 	// Set position
@@ -54,17 +56,33 @@ func CreateStar(w donburi.World, sprite *ebiten.Image, config *common.GameConfig
 	// Set size
 	Size.SetValue(entry, common.Size{Width: int(config.StarSize), Height: int(config.StarSize)})
 
+	// Set random initial scale (0.3 to 0.8)
+	initialScale := 0.3 + float64(entry.Entity().Id()%6)*0.1
+	Scale.SetValue(entry, initialScale)
+
 	return entity
 }
 
-// CreateStarField creates multiple stars for the background
+// CreateStarField creates multiple stars for the background in Gyruss-style pattern
 func CreateStarField(w donburi.World, sprite *ebiten.Image, config *common.GameConfig) []donburi.Entity {
 	entities := make([]donburi.Entity, config.NumStars)
 
+	centerX := float64(config.ScreenSize.Width) / 2
+	centerY := float64(config.ScreenSize.Height) / 2
+
 	for i := 0; i < config.NumStars; i++ {
-		// Random position across the screen width
-		x := float64(i) * float64(config.ScreenSize.Width) / float64(config.NumStars)
-		y := float64(i%10) * 50 // Staggered vertical positions
+		// Create truly random positions along a small orbital path
+		// Use a pseudo-random seed based on i to get different patterns
+		seed := int64(i * 12345) // Simple pseudo-random seed
+
+		// Random angle around the circle
+		angle := float64(seed%628) / 100.0 // 0 to 2π
+
+		// Random radius within the spawn range (30-80 pixels from center)
+		spawnRadius := 30.0 + float64(seed%50)
+
+		x := centerX + math.Cos(angle)*spawnRadius
+		y := centerY + math.Sin(angle)*spawnRadius
 
 		entities[i] = CreateStar(w, sprite, config, x, y)
 	}
