@@ -21,7 +21,6 @@ type ECSGame struct {
 	config       *common.GameConfig
 	inputHandler input.Interface
 	logger       common.Logger
-	isPaused     bool
 
 	// Event system
 	eventSystem *EventSystem
@@ -32,6 +31,9 @@ type ECSGame struct {
 	// System management
 	systemManager *SystemManager
 
+	// Game state management
+	stateManager *GameStateManager
+
 	// Entity references
 	playerEntity donburi.Entity
 	starEntities []donburi.Entity
@@ -40,10 +42,10 @@ type ECSGame struct {
 // NewECSGame creates a new ECS-based game instance
 func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, error) {
 	if config == nil {
-		return nil, fmt.Errorf("config cannot be nil")
+		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "config cannot be nil")
 	}
 	if logger == nil {
-		return nil, fmt.Errorf("logger cannot be nil")
+		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "logger cannot be nil")
 	}
 
 	logger.Debug("Creating new ECS game instance",
@@ -71,26 +73,29 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 	systemManager := NewSystemManager()
 	logger.Debug("System manager created")
 
+	// Create game state manager
+	stateManager := NewGameStateManager(eventSystem, logger)
+
 	// Create game instance
 	game := &ECSGame{
 		world:           world,
 		config:          config,
 		inputHandler:    inputHandler,
 		logger:          logger,
-		isPaused:        false,
 		eventSystem:     eventSystem,
 		resourceManager: resourceManager,
 		systemManager:   systemManager,
+		stateManager:    stateManager,
 	}
 
 	// Load assets
 	if err := game.loadAssets(); err != nil {
-		return nil, fmt.Errorf("failed to load assets: %w", err)
+		return nil, common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to load assets", err)
 	}
 
 	// Create entities
 	if err := game.createEntities(); err != nil {
-		return nil, fmt.Errorf("failed to create entities: %w", err)
+		return nil, common.NewGameErrorWithCause(common.ErrorCodeEntityCreationFailed, "failed to create entities", err)
 	}
 
 	// Set up event subscriptions
@@ -106,7 +111,7 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 func (g *ECSGame) loadAssets() error {
 	// Load all sprites through resource manager
 	if err := g.resourceManager.LoadAllSprites(); err != nil {
-		return fmt.Errorf("failed to load sprites: %w", err)
+		return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to load sprites", err)
 	}
 
 	g.logger.Debug("Assets loaded successfully", "resource_count", g.resourceManager.GetResourceCount())
@@ -118,12 +123,12 @@ func (g *ECSGame) createEntities() error {
 	// Get sprites from resource manager
 	playerSprite, ok := g.resourceManager.GetSprite(SpritePlayer)
 	if !ok {
-		return fmt.Errorf("player sprite not found")
+		return common.NewGameError(common.ErrorCodeSpriteNotFound, "player sprite not found")
 	}
 
 	starSprite, ok := g.resourceManager.GetSprite(SpriteStar)
 	if !ok {
-		return fmt.Errorf("star sprite not found")
+		return common.NewGameError(common.ErrorCodeSpriteNotFound, "star sprite not found")
 	}
 
 	// Create player
@@ -150,7 +155,7 @@ func (g *ECSGame) createEntities() error {
 
 // Update updates the game state
 func (g *ECSGame) Update() error {
-	if g.isPaused {
+	if g.stateManager.IsPaused() {
 		return nil
 	}
 
@@ -159,13 +164,7 @@ func (g *ECSGame) Update() error {
 
 	// Check for pause
 	if g.inputHandler.IsPausePressed() {
-		g.isPaused = !g.isPaused
-		if g.isPaused {
-			g.eventSystem.EmitGamePaused()
-		} else {
-			g.eventSystem.EmitGameResumed()
-		}
-		g.logger.Debug("Game paused", "is_paused", g.isPaused)
+		g.stateManager.TogglePause()
 		return nil
 	}
 
@@ -254,7 +253,7 @@ func (g *ECSGame) Cleanup() {
 
 // IsPaused returns the pause state
 func (g *ECSGame) IsPaused() bool {
-	return g.isPaused
+	return g.stateManager.IsPaused()
 }
 
 // SetInputHandler sets the input handler (for testing)

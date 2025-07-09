@@ -77,7 +77,7 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 	imageData, err := assets.Assets.ReadFile(path)
 	if err != nil {
 		rm.logger.Error("Failed to read sprite file from embed", "name", name, "path", path, "error", err)
-		return nil, fmt.Errorf("failed to read sprite file %s: %w", path, err)
+		return nil, common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to read sprite file", err)
 	}
 
 	rm.logger.Debug("Sprite file read successfully", "name", name, "size", len(imageData), "path", path)
@@ -86,7 +86,7 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 	img, err := png.Decode(bytes.NewReader(imageData))
 	if err != nil {
 		rm.logger.Error("Failed to decode PNG sprite", "name", name, "path", path, "error", err)
-		return nil, fmt.Errorf("failed to decode sprite %s: %w", path, err)
+		return nil, common.NewGameErrorWithCause(common.ErrorCodeAssetInvalid, "failed to decode sprite", err)
 	}
 
 	rm.logger.Debug("Sprite decoded successfully", "name", name, "bounds", img.Bounds())
@@ -175,25 +175,25 @@ func (rm *ResourceManager) LoadAllSprites() error {
 		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
 		_, err = rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
 		if err != nil {
-			return fmt.Errorf("failed to create player placeholder: %w", err)
+			return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create player placeholder", err)
 		}
 	}
 
 	// Create star sprite
 	_, err = rm.CreateSprite("star", common.StarSpriteSize, common.StarSpriteSize, color.White)
 	if err != nil {
-		return fmt.Errorf("failed to create star sprite: %w", err)
+		return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create star sprite", err)
 	}
 
 	// Create UI sprites
 	_, err = rm.CreateSprite("button", common.ButtonSpriteWidth, common.ButtonSpriteHeight, color.RGBA{common.ButtonColorR, common.ButtonColorG, common.ButtonColorB, common.ButtonColorA})
 	if err != nil {
-		return fmt.Errorf("failed to create button sprite: %w", err)
+		return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create button sprite", err)
 	}
 
 	_, err = rm.CreateSprite("background", 1, 1, color.Black)
 	if err != nil {
-		return fmt.Errorf("failed to create background sprite: %w", err)
+		return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create background sprite", err)
 	}
 
 	rm.logger.Info("All sprites loaded successfully")
