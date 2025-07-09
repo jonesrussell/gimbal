@@ -21,11 +21,11 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConf
 	Position.SetValue(entry, center)
 	Sprite.SetValue(entry, sprite)
 
-	// Set up orbital movement
+	// Set up orbital movement - start at bottom (180 degrees)
 	orbitalData := OrbitalData{
 		Center:       center,
 		Radius:       config.Radius,
-		OrbitalAngle: 0,
+		OrbitalAngle: 180,
 		FacingAngle:  0,
 	}
 	Orbital.SetValue(entry, orbitalData)
