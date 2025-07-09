@@ -77,13 +77,38 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 				op.GeoM.Scale(scaleX, scaleY)
 			}
 
-			// Apply rotation if angle component exists
-			if entry.HasComponent(Angle) {
+			// Apply rotation if orbital component exists (use facing angle)
+			if entry.HasComponent(Orbital) {
+				orb := Orbital.Get(entry)
+				// Get scaled sprite center for rotation
+				var centerX, centerY float64
+				if entry.HasComponent(Size) {
+					size := Size.Get(entry)
+					centerX = float64(size.Width) / 2
+					centerY = float64(size.Height) / 2
+				} else {
+					bounds := (*sprite).Bounds()
+					centerX = float64(bounds.Dx()) / 2
+					centerY = float64(bounds.Dy()) / 2
+				}
+
+				op.GeoM.Translate(-centerX, -centerY)
+				op.GeoM.Rotate(float64(orb.FacingAngle) * math.Pi / 180)
+				op.GeoM.Translate(centerX, centerY)
+			} else if entry.HasComponent(Angle) {
+				// Fallback to angle component for non-orbital entities
 				angle := Angle.Get(entry)
-				// Get sprite center for rotation
-				bounds := (*sprite).Bounds()
-				centerX := float64(bounds.Dx()) / 2
-				centerY := float64(bounds.Dy()) / 2
+				// Get scaled sprite center for rotation
+				var centerX, centerY float64
+				if entry.HasComponent(Size) {
+					size := Size.Get(entry)
+					centerX = float64(size.Width) / 2
+					centerY = float64(size.Height) / 2
+				} else {
+					bounds := (*sprite).Bounds()
+					centerX = float64(bounds.Dx()) / 2
+					centerY = float64(bounds.Dy()) / 2
+				}
 
 				op.GeoM.Translate(-centerX, -centerY)
 				op.GeoM.Rotate(float64(*angle) * math.Pi / 180)
@@ -139,6 +164,24 @@ func PlayerInputSystem(w donburi.World, inputAngle common.Angle) {
 			} else if orb.OrbitalAngle >= 360 {
 				orb.OrbitalAngle -= 360
 			}
+		}
+	})
+}
+
+// FacingAngleSystem calculates the facing angle for orbital entities
+func FacingAngleSystem(w donburi.World) {
+	query.NewQuery(
+		filter.And(
+			filter.Contains(Orbital),
+		),
+	).Each(w, func(entry *donburi.Entry) {
+		orb := Orbital.Get(entry)
+
+		// Calculate facing angle: orbital angle + 180 degrees to face toward center (like Gyruss)
+		orb.FacingAngle = orb.OrbitalAngle + 180
+		// Normalize to [0, 360)
+		if orb.FacingAngle >= 360 {
+			orb.FacingAngle -= 360
 		}
 	})
 }

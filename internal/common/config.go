@@ -9,7 +9,7 @@ const (
 	DefaultStarSize     = 5.0
 	DefaultStarSpeed    = 2.0
 	DefaultAngleStep    = 0.05
-	DefaultRadiusRatio  = 0.75
+	DefaultRadiusRatio  = 0.8
 	// CenterDivisor is used to calculate the center point by dividing dimensions
 	CenterDivisor = 2
 )
@@ -34,7 +34,12 @@ type GameOption func(*GameConfig)
 func WithScreenSize(width, height int) GameOption {
 	return func(c *GameConfig) {
 		c.ScreenSize = Size{Width: width, Height: height}
-		c.Radius = float64(height/CenterDivisor) * DefaultRadiusRatio
+		// Use the smaller dimension to ensure orbit fits within screen
+		smallerDim := width
+		if height < width {
+			smallerDim = height
+		}
+		c.Radius = float64(smallerDim/CenterDivisor) * DefaultRadiusRatio
 	}
 }
 
@@ -92,7 +97,7 @@ func DefaultConfig() *GameConfig {
 			Width:  DefaultPlayerSize,
 			Height: DefaultPlayerSize,
 		},
-		Radius:    float64(DefaultScreenHeight/CenterDivisor) * DefaultRadiusRatio,
+		Radius:    float64(DefaultScreenHeight/CenterDivisor) * DefaultRadiusRatio, // Use height since it's smaller
 		NumStars:  DefaultNumStars,
 		Debug:     false,
 		Speed:     DefaultSpeed,
