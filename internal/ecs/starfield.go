@@ -103,14 +103,15 @@ func NewStarFieldHelper(config *StarFieldConfig, screenBounds common.Size) *Star
 
 // GenerateRandomPosition generates a random position along the spawn orbital path
 func (h *StarFieldHelper) GenerateRandomPosition() common.Point {
-	// Use the configured seed for consistent randomness
-	rand.Seed(h.config.Seed)
+	// Create a local random generator with the configured seed
+	//nolint:gosec // deterministic behavior and performance (not security-critical)
+	r := rand.New(rand.NewSource(h.config.Seed))
 
 	// Random angle around the circle (0 to 2π)
-	angle := rand.Float64() * 2 * math.Pi
+	angle := r.Float64() * 2 * math.Pi
 
 	// Random radius within the spawn range
-	spawnRadius := h.config.SpawnRadiusMin + rand.Float64()*(h.config.SpawnRadiusMax-h.config.SpawnRadiusMin)
+	spawnRadius := h.config.SpawnRadiusMin + r.Float64()*(h.config.SpawnRadiusMax-h.config.SpawnRadiusMin)
 
 	return common.Point{
 		X: h.center.X + math.Cos(angle)*spawnRadius,
@@ -120,7 +121,9 @@ func (h *StarFieldHelper) GenerateRandomPosition() common.Point {
 
 // GenerateRandomScale generates a random scale within the configured range
 func (h *StarFieldHelper) GenerateRandomScale() float64 {
-	return h.config.MinScale + rand.Float64()*(h.config.MaxScale-h.config.MinScale)
+	//nolint:gosec // deterministic behavior and performance (not security-critical)
+	r := rand.New(rand.NewSource(h.config.Seed))
+	return h.config.MinScale + r.Float64()*(h.config.MaxScale-h.config.MinScale)
 }
 
 // CalculateScale calculates the scale based on distance from center

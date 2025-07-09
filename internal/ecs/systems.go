@@ -134,7 +134,7 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 }
 
 // StarMovementSystem handles star movement in Gyruss-style pattern
-func StarMovementSystem(ecs *ecs.ECS, config *common.GameConfig) {
+func StarMovementSystem(ecsInstance *ecs.ECS, config *common.GameConfig) {
 	// Create star field helper with configuration from game config
 	starConfig := &StarFieldConfig{
 		SpawnRadiusMin: config.StarSpawnRadiusMin,
@@ -148,7 +148,7 @@ func StarMovementSystem(ecs *ecs.ECS, config *common.GameConfig) {
 	}
 	starHelper := NewStarFieldHelper(starConfig, config.ScreenSize)
 
-	StarTag.Each(ecs.World, func(entry *donburi.Entry) {
+	StarTag.Each(ecsInstance.World, func(entry *donburi.Entry) {
 		pos := Position.Get(entry)
 		scale := Scale.Get(entry)
 
