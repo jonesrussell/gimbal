@@ -1,8 +1,6 @@
 package ecs
 
 import (
-	"fmt"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/ecs"
@@ -47,7 +45,7 @@ func NewRenderSystemWrapper(screen *ebiten.Image) *RenderSystemWrapper {
 
 func (rsw *RenderSystemWrapper) Update(world donburi.World, args ...interface{}) error {
 	if rsw.screen == nil {
-		return fmt.Errorf("screen is nil")
+		return common.NewGameError(common.ErrorCodeRenderingFailed, "screen is nil")
 	}
 	RenderSystem(world, rsw.screen)
 	return nil
@@ -72,10 +70,10 @@ func NewStarMovementSystemWrapper(ecsInstance *ecs.ECS, config *common.GameConfi
 
 func (smsw *StarMovementSystemWrapper) Update(world donburi.World, args ...interface{}) error {
 	if smsw.ecsInstance == nil {
-		return fmt.Errorf("ecs instance is nil")
+		return common.NewGameError(common.ErrorCodeSystemFailed, "ecs instance is nil")
 	}
 	if smsw.config == nil {
-		return fmt.Errorf("config is nil")
+		return common.NewGameError(common.ErrorCodeConfigMissing, "config is nil")
 	}
 	StarMovementSystem(smsw.ecsInstance, smsw.config)
 	return nil

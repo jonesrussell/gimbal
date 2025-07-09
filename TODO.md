@@ -28,21 +28,21 @@
 **File**: `internal/ecs/game_state.go` (new file)
 **Issue**: Mixed responsibilities in ECSGame
 **Tasks**:
-- [ ] Create `GameState` struct with isPaused, score, level fields
-- [ ] Create `GameStateManager` struct with state and events
-- [ ] Implement `TogglePause()` method with event emission
-- [ ] Add methods for score and level management
-- [ ] Integrate with existing ECSGame struct
+- [x] Create `GameState` struct with isPaused, score, level fields
+- [x] Create `GameStateManager` struct with state and events
+- [x] Implement `TogglePause()` method with event emission
+- [x] Add methods for score and level management
+- [x] Integrate with existing ECSGame struct
 
 ### 2.2 Create Error Strategy
 **File**: `internal/common/errors.go` (new file)
 **Issue**: Inconsistent error handling
 **Tasks**:
-- [ ] Create `GameError` struct with Code, Message, Cause fields
-- [ ] Implement `Error()` method for GameError
-- [ ] Define standard error constants (ErrAssetNotFound, ErrEntityInvalid, etc.)
-- [ ] Update existing error handling to use GameError
-- [ ] Add error codes for different failure scenarios
+- [x] Create `GameError` struct with Code, Message, Cause fields
+- [x] Implement `Error()` method for GameError
+- [x] Define standard error constants (ErrAssetNotFound, ErrEntityInvalid, etc.)
+- [x] Update existing error handling to use GameError
+- [x] Add error codes for different failure scenarios
 
 ## 🟢 **Priority 3: Enhancements**
 
@@ -86,9 +86,9 @@
 - [x] Update main game loop to use new infrastructure
 
 ### Phase 2: State & Error Management
-- [ ] Implement Game State Management
-- [ ] Create Error Strategy
-- [ ] Update existing code to use new error handling
+- [x] Implement Game State Management
+- [x] Create Error Strategy
+- [x] Update existing code to use new error handling
 
 ### Phase 3: Advanced Features
 - [ ] Implement Component Registry

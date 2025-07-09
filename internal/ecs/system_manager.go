@@ -1,9 +1,9 @@
 package ecs
 
 import (
-	"fmt"
-
 	"github.com/yohamta/donburi"
+
+	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 // System interface defines the contract for all systems
@@ -33,7 +33,7 @@ func (sm *SystemManager) AddSystem(system System) {
 func (sm *SystemManager) UpdateAll(world donburi.World, args ...interface{}) error {
 	for _, system := range sm.systems {
 		if err := system.Update(world, args...); err != nil {
-			return fmt.Errorf("system %s failed: %w", system.Name(), err)
+			return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "system "+system.Name()+" failed", err)
 		}
 	}
 	return nil

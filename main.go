@@ -33,7 +33,7 @@ func run() error {
 	// Create logger
 	log, err := logger.New()
 	if err != nil {
-		return fmt.Errorf("failed to create logger: %w", err)
+		return common.NewGameErrorWithCause(common.ErrorCodeConfigInvalid, "failed to create logger", err)
 	}
 
 	// Ensure logger is flushed on exit
@@ -70,7 +70,7 @@ func run() error {
 	// Initialize ECS game
 	g, err := ecs.NewECSGame(config, log)
 	if err != nil {
-		return fmt.Errorf("failed to initialize ECS game: %w", err)
+		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to initialize ECS game", err)
 	}
 
 	log.Info("ECS game initialized successfully")
@@ -81,7 +81,7 @@ func run() error {
 	ebiten.SetTPS(60)
 
 	if runErr := ebiten.RunGame(g); runErr != nil {
-		return fmt.Errorf("game error: %w", runErr)
+		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "game error", runErr)
 	}
 
 	return nil
