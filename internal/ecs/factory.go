@@ -25,8 +25,8 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConf
 	orbitalData := OrbitalData{
 		Center:       center,
 		Radius:       config.Radius,
-		OrbitalAngle: 180,
-		FacingAngle:  0,
+		OrbitalAngle: common.HalfCircleDegrees, // 180 degrees
+		FacingAngle:  0,                        // Will be calculated by PlayerInputSystem
 	}
 	Orbital.SetValue(entry, orbitalData)
 

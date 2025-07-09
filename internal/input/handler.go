@@ -10,7 +10,7 @@ import (
 
 const (
 	// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
-	MovementSpeedDegreesPerFrame = 5
+	// This is now defined in common.PlayerMovementSpeed
 
 	// Touch input constants
 	MinTouchDuration = 10 // frames
@@ -166,10 +166,10 @@ func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
 // GetMovementInput returns the movement angle based on input
 func (h *Handler) GetMovementInput() common.Angle {
 	if h.IsKeyPressed(ebiten.KeyLeft) {
-		return -common.Angle(MovementSpeedDegreesPerFrame) // Clockwise (left)
+		return -common.Angle(common.PlayerMovementSpeed) // Clockwise (left)
 	}
 	if h.IsKeyPressed(ebiten.KeyRight) {
-		return common.Angle(MovementSpeedDegreesPerFrame) // Counterclockwise (right)
+		return common.Angle(common.PlayerMovementSpeed) // Counterclockwise (right)
 	}
 
 	// Handle touch/mouse movement if needed
@@ -178,7 +178,7 @@ func (h *Handler) GetMovementInput() common.Angle {
 		// This is just an example - adjust the calculation based on your needs
 		dx := h.touchState.LastPos.X - h.touchState.StartPos.X
 		if math.Abs(dx) > TouchThreshold {
-			return common.Angle(math.Copysign(MovementSpeedDegreesPerFrame, dx))
+			return common.Angle(math.Copysign(float64(common.PlayerMovementSpeed), dx))
 		}
 	}
 
