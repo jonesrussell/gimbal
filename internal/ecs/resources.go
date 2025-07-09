@@ -2,19 +2,16 @@ package ecs
 
 import (
 	"bytes"
-	"embed"
 	"fmt"
-	"image"
 	"image/color"
+	"image/png"
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/common"
 )
-
-//go:embed assets/sprites/*
-var assets embed.FS
 
 // ResourceType represents different types of resources
 type ResourceType int
@@ -64,15 +61,35 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 	}
 
 	// Load from embedded assets
-	imageData, err := assets.ReadFile(path)
+	rm.logger.Debug("Attempting to load sprite from embed", "name", name, "path", path)
+
+	// List all embedded files for debugging
+	files, listErr := assets.Assets.ReadDir("sprites")
+	if listErr != nil {
+		rm.logger.Error("Failed to list embedded files", "error", listErr)
+	} else {
+		rm.logger.Debug("Embedded files found", "files", files)
+		for _, f := range files {
+			rm.logger.Debug("Embedded file", "name", f.Name(), "is_dir", f.IsDir())
+		}
+	}
+
+	imageData, err := assets.Assets.ReadFile(path)
 	if err != nil {
+		rm.logger.Error("Failed to read sprite file from embed", "name", name, "path", path, "error", err)
 		return nil, fmt.Errorf("failed to read sprite file %s: %w", path, err)
 	}
 
-	img, _, err := image.Decode(bytes.NewReader(imageData))
+	rm.logger.Debug("Sprite file read successfully", "name", name, "size", len(imageData), "path", path)
+
+	// Use PNG decoder specifically for PNG files
+	img, err := png.Decode(bytes.NewReader(imageData))
 	if err != nil {
+		rm.logger.Error("Failed to decode PNG sprite", "name", name, "path", path, "error", err)
 		return nil, fmt.Errorf("failed to decode sprite %s: %w", path, err)
 	}
+
+	rm.logger.Debug("Sprite decoded successfully", "name", name, "bounds", img.Bounds())
 
 	sprite := ebiten.NewImageFromImage(img)
 
@@ -151,7 +168,7 @@ func (rm *ResourceManager) ReleaseSprite(name string) {
 // LoadAllSprites loads all required sprites for the game
 func (rm *ResourceManager) LoadAllSprites() error {
 	// Load player sprite from file
-	_, err := rm.LoadSprite("player", "assets/sprites/player.png")
+	_, err := rm.LoadSprite("player", "sprites/player.png")
 	if err != nil {
 		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
 		_, err = rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
