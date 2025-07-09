@@ -56,21 +56,12 @@ func OrbitalMovementSystem(w donburi.World) {
 	})
 }
 
-// RenderEntity handles rendering a single entity
-func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
-	pos := Position.Get(entry)
-	sprite := Sprite.Get(entry)
-
-	if sprite == nil {
-		return
-	}
-
-	op := &ebiten.DrawImageOptions{}
-
+// applySpriteTransform applies scaling and rotation to the DrawImageOptions for an entity
+func applySpriteTransform(entry *donburi.Entry, sprite *ebiten.Image, op *ebiten.DrawImageOptions) {
 	// Apply scaling if size component exists
 	if entry.HasComponent(Size) {
 		size := Size.Get(entry)
-		bounds := (*sprite).Bounds()
+		bounds := sprite.Bounds()
 		scaleX := float64(size.Width) / float64(bounds.Dx())
 		scaleY := float64(size.Height) / float64(bounds.Dy())
 
@@ -94,7 +85,7 @@ func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
 			centerX = float64(size.Width) / 2
 			centerY = float64(size.Height) / 2
 		} else {
-			bounds := (*sprite).Bounds()
+			bounds := sprite.Bounds()
 			centerX = float64(bounds.Dx()) / 2
 			centerY = float64(bounds.Dy()) / 2
 		}
@@ -112,7 +103,7 @@ func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
 			centerX = float64(size.Width) / 2
 			centerY = float64(size.Height) / 2
 		} else {
-			bounds := (*sprite).Bounds()
+			bounds := sprite.Bounds()
 			centerX = float64(bounds.Dx()) / 2
 			centerY = float64(bounds.Dy()) / 2
 		}
@@ -121,10 +112,21 @@ func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
 		op.GeoM.Rotate(float64(*angle) * common.DegreesToRadians)
 		op.GeoM.Translate(centerX, centerY)
 	}
+}
 
+// RenderEntity handles rendering a single entity
+func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
+	pos := Position.Get(entry)
+	sprite := Sprite.Get(entry)
+
+	if sprite == nil {
+		return
+	}
+
+	op := &ebiten.DrawImageOptions{}
+	applySpriteTransform(entry, *sprite, op)
 	// Apply position translation
 	op.GeoM.Translate(pos.X, pos.Y)
-
 	screen.DrawImage(*sprite, op)
 }
 
@@ -182,11 +184,4 @@ func PlayerInputSystem(w donburi.World, inputAngle common.Angle) {
 		// Update facing angle
 		movement.UpdateFacingAngle(orb)
 	})
-}
-
-// FacingAngleSystem calculates the facing angle for orbital entities
-// NOTE: This is now handled in PlayerInputSystem for better performance
-func FacingAngleSystem(w donburi.World) {
-	// Deprecated: Facing angle calculation moved to PlayerInputSystem
-	// This function is kept for backward compatibility but does nothing
 }
