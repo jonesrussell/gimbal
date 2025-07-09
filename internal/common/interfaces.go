@@ -14,7 +14,7 @@ type Logger interface {
 // Entity represents any game object that can be updated and drawn
 type Entity interface {
 	Update()
-	Draw(screen *ebiten.Image)
+	Draw(screen any)
 	GetPosition() Point
 }
 

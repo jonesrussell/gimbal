@@ -5,8 +5,10 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/hajimehoshi/ebiten/v2"
+
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/game"
+	"github.com/jonesrussell/gimbal/internal/ecs"
 	"github.com/jonesrussell/gimbal/internal/logger"
 )
 
@@ -65,16 +67,24 @@ func run() error {
 		"debug", config.Debug,
 	)
 
-	// Initialize game
-	g, err := game.New(config, log)
+	// Initialize ECS game
+	g, err := ecs.NewECSGame(config, log)
 	if err != nil {
-		return fmt.Errorf("failed to initialize game: %w", err)
+		return fmt.Errorf("failed to initialize ECS game: %w", err)
 	}
 
-	log.Info("Game initialized successfully")
+	log.Info("ECS game initialized successfully")
 
-	// Run game
-	return g.Run()
+	// Run game with Ebiten
+	ebiten.SetWindowSize(config.ScreenSize.Width, config.ScreenSize.Height)
+	ebiten.SetWindowTitle("Gimbal - ECS Version")
+	ebiten.SetTPS(60)
+
+	if err := ebiten.RunGame(g); err != nil {
+		return fmt.Errorf("game error: %w", err)
+	}
+
+	return nil
 }
 
 func main() {
