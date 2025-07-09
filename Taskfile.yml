@@ -84,21 +84,6 @@ tasks:
       - task: clean:build
       - rm -rf game.wasm site.zip
 
-  test:setup:
-    desc: Install test dependencies
-    cmds:
-      - |
-        if ! command -v xvfb-run >/dev/null 2>&1; then
-          echo "Installing Xvfb..."
-          sudo apt-get update && sudo apt-get install -y xvfb
-        fi
-
-  test:
-    desc: Run tests with Xvfb
-    deps: [test:setup]
-    cmds:
-      - xvfb-run -s "-screen 0 640x480x24" go test -v ./...
-
   lint:
     desc: "Lint the Go code"
     cmds:
@@ -112,15 +97,3 @@ tasks:
       - go mod tidy
       - go clean -modcache
       - go mod download
-
-  test:cover:
-    desc: "Run tests with coverage using Xvfb"
-    deps: [test:setup]
-    cmds:
-      - mkdir -p coverage
-      - xvfb-run -s "-screen 0 640x480x24" go test -coverprofile=coverage/coverage.out ./...
-      - go tool cover -html=coverage/coverage.out -o coverage/coverage.html
-      - go tool cover -func=coverage/coverage.out
-    generates:
-      - coverage/coverage.out
-      - coverage/coverage.html
