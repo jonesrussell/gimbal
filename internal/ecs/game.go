@@ -22,6 +22,9 @@ type ECSGame struct {
 	logger       common.Logger
 	isPaused     bool
 
+	// Event system
+	eventSystem *EventSystem
+
 	// Entity references
 	playerEntity donburi.Entity
 	starEntities []donburi.Entity
@@ -53,6 +56,10 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 	inputHandler := input.New(logger)
 	logger.Debug("Input handler created")
 
+	// Create event system
+	eventSystem := NewEventSystem(world)
+	logger.Debug("Event system created")
+
 	// Create game instance
 	game := &ECSGame{
 		world:        world,
@@ -60,6 +67,7 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 		inputHandler: inputHandler,
 		logger:       logger,
 		isPaused:     false,
+		eventSystem:  eventSystem,
 	}
 
 	// Load assets
@@ -71,6 +79,9 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 	if err := game.createEntities(); err != nil {
 		return nil, fmt.Errorf("failed to create entities: %w", err)
 	}
+
+	// Set up event subscriptions
+	game.setupEventSubscriptions()
 
 	return game, nil
 }
@@ -116,6 +127,11 @@ func (g *ECSGame) Update() error {
 	// Check for pause
 	if g.inputHandler.IsPausePressed() {
 		g.isPaused = !g.isPaused
+		if g.isPaused {
+			g.eventSystem.EmitGamePaused()
+		} else {
+			g.eventSystem.EmitGameResumed()
+		}
 		g.logger.Debug("Game paused", "is_paused", g.isPaused)
 		return nil
 	}
@@ -127,6 +143,19 @@ func (g *ECSGame) Update() error {
 	PlayerInputSystem(g.world, inputAngle)
 	OrbitalMovementSystem(g.world)
 	StarMovementSystem(g.world, g.config.ScreenSize.Height)
+
+	// Emit player movement event if player moved
+	if inputAngle != 0 {
+		playerEntry := g.world.Entry(g.playerEntity)
+		if playerEntry.Valid() {
+			pos := Position.Get(playerEntry)
+			orb := Orbital.Get(playerEntry)
+			g.eventSystem.EmitPlayerMoved(*pos, orb.OrbitalAngle)
+		}
+	}
+
+	// Process all events
+	g.eventSystem.ProcessEvents()
 
 	return nil
 }
@@ -179,4 +208,27 @@ func (g *ECSGame) IsPaused() bool {
 // SetInputHandler sets the input handler (for testing)
 func (g *ECSGame) SetInputHandler(handler input.Interface) {
 	g.inputHandler = handler
+}
+
+// setupEventSubscriptions sets up event handlers
+func (g *ECSGame) setupEventSubscriptions() {
+	// Subscribe to player movement events
+	g.eventSystem.SubscribeToPlayerMoved(func(w donburi.World, event PlayerMovedEvent) {
+		g.logger.Debug("Player moved",
+			"position", event.Position,
+			"angle", event.Angle)
+	})
+
+	// Subscribe to game state events
+	g.eventSystem.SubscribeToGameState(func(w donburi.World, event GameStateEvent) {
+		g.logger.Debug("Game state changed", "is_paused", event.IsPaused)
+	})
+
+	// Subscribe to score changes
+	g.eventSystem.SubscribeToScoreChanged(func(w donburi.World, event ScoreChangedEvent) {
+		g.logger.Debug("Score changed",
+			"old_score", event.OldScore,
+			"new_score", event.NewScore,
+			"delta", event.Delta)
+	})
 }

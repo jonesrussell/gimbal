@@ -28,10 +28,10 @@
     - Removed all old entity code and dependencies.
     - Game now runs with ECS architecture.
 
-- [ ] **Event System**
+- [x] **Event System**
     - Implement a simple event/message bus for decoupled communication (e.g., player death, score updates).
 
-- [ ] **Scene/State Management**
+- [x] **Scene/State Management**
     - Abstract game states (menu, playing, game over) for better flow control and separation of concerns.
 
 - [ ] **Resource Management**
