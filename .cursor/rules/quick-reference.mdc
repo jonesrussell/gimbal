@@ -1,0 +1,35 @@
+# Gimbal Quick Reference
+
+## Key Files
+- **Entry Point**: [main.go](mdc:main.go) - Initialize logger, config, and ECS game
+- **Game Logic**: [internal/ecs/game.go](mdc:internal/ecs/game.go) - Main ECS game with Ebiten integration
+- **Configuration**: [internal/common/config.go](mdc:internal/common/config.go) - Game settings with functional options
+- **Systems**: [internal/ecs/systems.go](mdc:internal/ecs/systems.go) - ECS systems for game mechanics
+- **Components**: [internal/ecs/components.go](mdc:internal/ecs/components.go) - ECS component definitions
+- **Starfield**: [internal/ecs/starfield.go](mdc:internal/ecs/starfield.go) - Star movement and management
+- **Build**: [Taskfile.yml](mdc:Taskfile.yml) - Development and build commands
+
+## Common Patterns
+- **ECS**: Use donburi library with components, systems, and entities
+- **Configuration**: Functional options pattern for flexible setup
+- **Movement**: Orbital movement around screen center with angle-based controls
+- **Stars**: Radial movement outward with scaling based on distance
+- **Events**: Cross-system communication for state changes
+- **Logging**: Structured logging with key-value pairs
+
+## Development Commands
+- `task run` - Run with hot reloading
+- `task build` - Build all platforms
+- `task lint` - Run linting tools
+- `task serve` - Web development server
+
+## Architecture Notes
+- Gyruss-style game with orbital movement
+- ECS architecture for maintainability
+- Multi-platform (Linux, Windows, WebAssembly)
+- Debug mode for development
+- Event-driven system design
+description:
+globs:
+alwaysApply: false
+---

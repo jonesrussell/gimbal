@@ -1,0 +1,38 @@
+# Go Coding Standards for Gimbal
+
+## Code Style and Linting
+- Use `golangci-lint` with configuration from [.golangci.yml](mdc:.golangci.yml)
+- Current linting is relaxed for refactoring phase (funlen: 100 lines, gocyclo: 35 complexity)
+- Use `go fmt` and `gofumpt` for formatting
+- Follow Go 1.24+ standards
+
+## Error Handling
+- Always wrap errors with context using `fmt.Errorf("failed to %s: %w", action, err)`
+- Use structured logging with key-value pairs: `logger.Error("failed to load assets", "error", err)`
+- Return errors from functions that can fail, don't panic
+
+## Configuration Pattern
+- Use functional options pattern for configuration as shown in [internal/common/config.go](mdc:internal/common/config.go)
+- Define constants for magic numbers in configuration files
+- Use `GameOption` functions for flexible configuration
+
+## ECS Architecture
+- Keep systems focused on single responsibilities
+- Use donburi ECS library patterns consistently
+- Separate entity creation logic into factory functions
+- Use events for cross-system communication
+
+## Naming Conventions
+- Use descriptive names for functions and variables
+- Prefix exported functions with package name when appropriate
+- Use camelCase for variables and functions
+- Use PascalCase for exported types and functions
+
+## Documentation
+- Add comments for exported functions and types
+- Use clear, concise descriptions
+- Include examples for complex functions
+description:
+globs:
+alwaysApply: false
+---

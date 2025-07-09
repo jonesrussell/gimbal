@@ -1,0 +1,54 @@
+# Refactoring Guidelines for Gimbal
+
+## SOLID Principles
+- **Single Responsibility**: Each system/component should have one reason to change
+- **Open/Closed**: Open for extension, closed for modification
+- **Liskov Substitution**: Derived types should be substitutable for base types
+- **Interface Segregation**: Keep interfaces focused and minimal
+- **Dependency Inversion**: Depend on abstractions, not concretions
+
+## DRY (Don't Repeat Yourself)
+- Extract common logic into helper functions
+- Use configuration for magic numbers and constants
+- Create reusable components and systems
+- Avoid duplicating rotation/transformation logic
+
+## Separation of Concerns
+- Keep game logic separate from rendering logic
+- Separate input handling from game state updates
+- Use events for cross-system communication
+- Keep configuration separate from business logic
+
+## Code Organization
+- Group related functionality into packages
+- Use factory patterns for entity creation
+- Extract complex logic into helper structs
+- Keep systems focused and stateless when possible
+
+## Configuration Management
+- Use functional options pattern for flexible configuration
+- Define constants for magic numbers
+- Make configuration testable and mockable
+- Support runtime configuration changes
+
+## Error Handling
+- Use structured error wrapping with context
+- Return errors from functions that can fail
+- Log errors with appropriate detail levels
+- Handle errors at appropriate levels
+
+## Performance Considerations
+- Use efficient entity queries
+- Batch operations when possible
+- Avoid allocations in hot paths
+- Profile and optimize bottlenecks
+
+## Testing Strategy
+- Write unit tests for helper functions
+- Test configuration options
+- Mock external dependencies
+- Test error conditions and edge cases
+description:
+globs:
+alwaysApply: false
+---

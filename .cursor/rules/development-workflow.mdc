@@ -1,0 +1,45 @@
+# Development Workflow for Gimbal
+
+## Build and Run Commands
+Use [Taskfile.yml](mdc:Taskfile.yml) for all development tasks:
+
+- `task run` - Run the game in debug mode with hot reloading
+- `task build` - Build all targets (Linux, Windows, Web)
+- `task build:web` - Build WebAssembly version
+- `task serve` - Start local server for web development
+- `task lint` - Run all linting tools
+- `task mod` - Tidy and download Go modules
+
+## Development Environment
+- Use Go 1.24+ as specified in [go.mod](mdc:go.mod)
+- Enable debug logging with `LOG_LEVEL=debug`
+- Use hot reloading for development instead of manual builds
+- VSCode settings configured for Go development with golangci-lint
+
+## Linting and Code Quality
+- Configuration in [.golangci.yml](mdc:.golangci.yml) with relaxed settings for refactoring
+- Current limits: 100 lines per function, 35 cyclomatic complexity
+- Use `golangci-lint run --fast` for quick checks
+- Format code with `go fmt` and `gofumpt`
+
+## Multi-Platform Development
+- Build targets: Linux, Windows, WebAssembly
+- Use conditional compilation for platform-specific code
+- Test WebAssembly builds with `task serve`
+- Use `butler` for itch.io deployment
+
+## Debugging
+- Enable debug mode in configuration for additional logging
+- Use structured logging with key-value pairs
+- Debug info displayed on screen when debug mode is enabled
+- Check console output for detailed error messages
+
+## Asset Management
+- Assets stored in [assets/](mdc:assets/) directory
+- Use resource manager for sprite loading and caching
+- Support for embedded assets and external files
+- Validate asset loading on startup
+description:
+globs:
+alwaysApply: false
+---

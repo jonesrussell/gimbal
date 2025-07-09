@@ -1,0 +1,42 @@
+# ECS Patterns for Gimbal
+
+## Donburi ECS Library Usage
+- Use donburi ECS library as shown in [internal/ecs/game.go](mdc:internal/ecs/game.go)
+- Define components in [internal/ecs/components.go](mdc:internal/ecs/components.go)
+- Create systems in [internal/ecs/systems.go](mdc:internal/ecs/systems.go)
+
+## Component Design
+- Keep components simple and focused on data storage
+- Use pointer receivers for component methods when needed
+- Define component tags for querying: `var Position = donburi.NewComponentTag[PositionData]()`
+
+## System Implementation
+- Systems should have single responsibilities
+- Use `donburi.NewQuery()` for entity queries
+- Process entities in batches for performance
+- Keep systems stateless when possible
+
+## Entity Creation
+- Use factory functions in [internal/ecs/factory.go](mdc:internal/ecs/factory.go)
+- Create entities with required components in one operation
+- Validate entity creation and return errors for failures
+
+## Event System
+- Use events for cross-system communication as in [internal/ecs/events.go](mdc:internal/ecs/events.go)
+- Emit events for significant state changes
+- Subscribe to events in systems that need to react
+- Keep event data minimal and focused
+
+## Resource Management
+- Use [internal/ecs/resources.go](mdc:internal/ecs/resources.go) for asset management
+- Load resources once and share across entities
+- Implement proper cleanup in resource manager
+
+## Scene Management
+- Use [internal/ecs/scenes.go](mdc:internal/ecs/scenes.go) for scene transitions
+- Separate game states into different scenes
+- Clean up entities when switching scenes
+description:
+globs:
+alwaysApply: false
+---
