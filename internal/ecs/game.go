@@ -25,13 +25,12 @@ type ECSGame struct {
 	// Event system
 	eventSystem *EventSystem
 
+	// Resource management
+	resourceManager *ResourceManager
+
 	// Entity references
 	playerEntity donburi.Entity
 	starEntities []donburi.Entity
-
-	// Assets
-	playerSprite *ebiten.Image
-	starSprite   *ebiten.Image
 }
 
 // NewECSGame creates a new ECS-based game instance
@@ -60,14 +59,19 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 	eventSystem := NewEventSystem(world)
 	logger.Debug("Event system created")
 
+	// Create resource manager
+	resourceManager := NewResourceManager(logger)
+	logger.Debug("Resource manager created")
+
 	// Create game instance
 	game := &ECSGame{
-		world:        world,
-		config:       config,
-		inputHandler: inputHandler,
-		logger:       logger,
-		isPaused:     false,
-		eventSystem:  eventSystem,
+		world:           world,
+		config:          config,
+		inputHandler:    inputHandler,
+		logger:          logger,
+		isPaused:        false,
+		eventSystem:     eventSystem,
+		resourceManager: resourceManager,
 	}
 
 	// Load assets
@@ -88,28 +92,34 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 
 // loadAssets loads and prepares game assets
 func (g *ECSGame) loadAssets() error {
-	// For now, create a simple placeholder sprite
-	// TODO: Load actual assets from a shared location
-	g.playerSprite = ebiten.NewImage(32, 32)
-	g.playerSprite.Fill(color.RGBA{0, 255, 0, 255}) // Green square
-	g.logger.Debug("Player sprite created (placeholder)")
+	// Load all sprites through resource manager
+	if err := g.resourceManager.LoadAllSprites(); err != nil {
+		return fmt.Errorf("failed to load sprites: %w", err)
+	}
 
-	// Create a simple star sprite (white square for now)
-	g.starSprite = ebiten.NewImage(10, 10)
-	g.starSprite.Fill(color.White)
-	g.logger.Debug("Star sprite created")
-
+	g.logger.Debug("Assets loaded successfully", "resource_count", g.resourceManager.GetResourceCount())
 	return nil
 }
 
 // createEntities creates all game entities
 func (g *ECSGame) createEntities() error {
+	// Get sprites from resource manager
+	playerSprite, ok := g.resourceManager.GetSprite(SpritePlayer)
+	if !ok {
+		return fmt.Errorf("player sprite not found")
+	}
+
+	starSprite, ok := g.resourceManager.GetSprite(SpriteStar)
+	if !ok {
+		return fmt.Errorf("star sprite not found")
+	}
+
 	// Create player
-	g.playerEntity = CreatePlayer(g.world, g.playerSprite, g.config)
+	g.playerEntity = CreatePlayer(g.world, playerSprite, g.config)
 	g.logger.Debug("Player entity created", "entity_id", g.playerEntity)
 
 	// Create star field
-	g.starEntities = CreateStarField(g.world, g.starSprite, g.config)
+	g.starEntities = CreateStarField(g.world, starSprite, g.config)
 	g.logger.Debug("Star entities created", "count", len(g.starEntities))
 
 	return nil
@@ -182,10 +192,13 @@ func (g *ECSGame) drawDebugInfo(screen *ebiten.Image) {
 		pos := Position.Get(playerEntry)
 		orb := Orbital.Get(playerEntry)
 
-		// Draw debug text (simplified for now)
-		// In a real implementation, you'd use a proper text rendering system
-		_ = fmt.Sprintf("Player: Pos(%.1f, %.1f) Angle: %.1f°",
-			pos.X, pos.Y, orb.OrbitalAngle)
+		// Log debug info
+		g.logger.Debug("Debug Info",
+			"player_pos", fmt.Sprintf("(%.1f, %.1f)", pos.X, pos.Y),
+			"player_angle", fmt.Sprintf("%.1f°", orb.OrbitalAngle),
+			"resource_count", g.resourceManager.GetResourceCount(),
+			"entity_count", g.world.Len(),
+		)
 	}
 }
 
@@ -197,6 +210,12 @@ func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 // Cleanup cleans up resources
 func (g *ECSGame) Cleanup() {
 	g.logger.Debug("Cleaning up ECS game")
+
+	// Clean up resources
+	if g.resourceManager != nil {
+		g.resourceManager.Cleanup()
+	}
+
 	// Donburi handles entity cleanup automatically
 }
 
