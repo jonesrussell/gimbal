@@ -9,12 +9,10 @@ import (
 )
 
 const (
-	// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
-	// This is now defined in common.PlayerMovementSpeed
+// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
+// This is now defined in common.PlayerMovementSpeed
 
-	// Touch input constants
-	MinTouchDuration = 10 // frames
-	TouchThreshold   = 10 // pixels
+// Touch input constants are now defined in common.Constants
 )
 
 // InputEvent represents a game input event
@@ -87,18 +85,7 @@ func (h *Handler) HandleInput() {
 	// Handle mouse input
 	h.handleMouseInput()
 
-	// Log input state for debugging
-	if h.logger != nil {
-		h.logger.Debug("Input state",
-			"left", h.IsKeyPressed(ebiten.KeyLeft),
-			"right", h.IsKeyPressed(ebiten.KeyRight),
-			"space", h.IsKeyPressed(ebiten.KeySpace),
-			"escape", h.IsKeyPressed(ebiten.KeyEscape),
-			"touch", h.touchState != nil,
-			"mouse_pos", h.mousePos,
-			"last_event", h.lastEvent,
-		)
-	}
+	// Input state logging removed for cleaner output
 }
 
 func (h *Handler) handleKeyboardInput() {
@@ -174,11 +161,11 @@ func (h *Handler) GetMovementInput() common.Angle {
 	}
 
 	// Handle touch/mouse movement if needed
-	if h.touchState != nil && h.touchState.Duration > MinTouchDuration {
+	if h.touchState != nil && h.touchState.Duration > common.MinTouchDuration {
 		// Calculate movement based on touch position relative to screen center
 		// This is just an example - adjust the calculation based on your needs
 		dx := h.touchState.LastPos.X - h.touchState.StartPos.X
-		if math.Abs(dx) > TouchThreshold {
+		if math.Abs(dx) > common.TouchThreshold {
 			return common.Angle(math.Copysign(float64(common.PlayerMovementSpeed), dx))
 		}
 	}

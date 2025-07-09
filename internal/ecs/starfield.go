@@ -119,6 +119,24 @@ func (h *StarFieldHelper) GenerateRandomPosition() common.Point {
 	}
 }
 
+// GenerateRandomPositionWithOffset generates a random position with a seed offset
+func (h *StarFieldHelper) GenerateRandomPositionWithOffset(offset int64) common.Point {
+	// Create a local random generator with the configured seed plus offset
+	//nolint:gosec // deterministic behavior and performance (not security-critical)
+	r := rand.New(rand.NewSource(h.config.Seed + offset))
+
+	// Random angle around the circle (0 to 2π)
+	angle := r.Float64() * 2 * math.Pi
+
+	// Random radius within the spawn range
+	spawnRadius := h.config.SpawnRadiusMin + r.Float64()*(h.config.SpawnRadiusMax-h.config.SpawnRadiusMin)
+
+	return common.Point{
+		X: h.center.X + math.Cos(angle)*spawnRadius,
+		Y: h.center.Y + math.Sin(angle)*spawnRadius,
+	}
+}
+
 // GenerateRandomScale generates a random scale within the configured range
 func (h *StarFieldHelper) GenerateRandomScale() float64 {
 	//nolint:gosec // deterministic behavior and performance (not security-critical)
@@ -166,12 +184,17 @@ func (h *StarFieldHelper) ResetStar(pos *common.Point, scale *float64) {
 
 // UpdateStar updates a star's position and scale based on movement
 func (h *StarFieldHelper) UpdateStar(pos *common.Point, scale *float64) {
+	h.UpdateStarWithSpeed(pos, scale, h.config.Speed)
+}
+
+// UpdateStarWithSpeed updates a star's position and scale based on movement with custom speed
+func (h *StarFieldHelper) UpdateStarWithSpeed(pos *common.Point, scale *float64, speed float64) {
 	// Calculate movement direction
 	dx, dy := h.CalculateMovementDirection(*pos)
 
 	// Move star outward from center
-	pos.X += dx * h.config.Speed
-	pos.Y += dy * h.config.Speed
+	pos.X += dx * speed
+	pos.Y += dy * speed
 
 	// Calculate distance from center for scaling
 	distance := math.Sqrt((pos.X-h.center.X)*(pos.X-h.center.X) + (pos.Y-h.center.Y)*(pos.Y-h.center.Y))

@@ -6,21 +6,21 @@
 **File**: `internal/common/constants.go`
 **Issue**: Missing constants from refactoring plan
 **Tasks**:
-- [ ] Add `MovementSpeedDegreesPerFrame = 5`
-- [ ] Add `MinTouchDuration = 10`
-- [ ] Add `TouchThreshold = 50`
-- [ ] Review codebase for any remaining magic numbers
+- [x] Add `MovementSpeedDegreesPerFrame = 5`
+- [x] Add `MinTouchDuration = 10`
+- [x] Add `TouchThreshold = 50`
+- [x] Review codebase for any remaining magic numbers
 
 ### 1.2 Create System Manager
 **File**: `internal/ecs/system_manager.go` (new file)
 **Issue**: Hardcoded system execution order, tight coupling
 **Tasks**:
-- [ ] Create `System` interface with `Update()` and `Name()` methods
-- [ ] Create `SystemManager` struct with systems slice
-- [ ] Implement `AddSystem()` method
-- [ ] Implement `UpdateAll()` method with error handling
-- [ ] Update main game loop to use SystemManager
-- [ ] Refactor existing systems to implement System interface
+- [x] Create `System` interface with `Update()` and `Name()` methods
+- [x] Create `SystemManager` struct with systems slice
+- [x] Implement `AddSystem()` method
+- [x] Implement `UpdateAll()` method with error handling
+- [x] Update main game loop to use SystemManager
+- [x] Refactor existing systems to implement System interface
 
 ## 🟡 **Priority 2: Moderate Issues**
 
@@ -81,9 +81,9 @@
 ## 📊 **Implementation Checklist**
 
 ### Phase 1: Core Infrastructure
-- [ ] Complete constants extraction
-- [ ] Create System Manager
-- [ ] Update main game loop to use new infrastructure
+- [x] Complete constants extraction
+- [x] Create System Manager
+- [x] Update main game loop to use new infrastructure
 
 ### Phase 2: State & Error Management
 - [ ] Implement Game State Management
