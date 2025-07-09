@@ -37,6 +37,7 @@
 - [x] **Resource Management**
     - Centralize asset loading (sprites, sounds) to avoid duplication and leaks.
     - Move assets to shared location accessible by ECS.
+    - Implemented proper sprite loading from embedded assets with player.png.
 
 - [ ] **Testing**
     - Increase test coverage, especially for systems and components.

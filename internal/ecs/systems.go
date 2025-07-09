@@ -67,7 +67,15 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 
 		if sprite != nil {
 			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(pos.X, pos.Y)
+
+			// Apply scaling if size component exists
+			if entry.HasComponent(Size) {
+				size := Size.Get(entry)
+				bounds := (*sprite).Bounds()
+				scaleX := float64(size.Width) / float64(bounds.Dx())
+				scaleY := float64(size.Height) / float64(bounds.Dy())
+				op.GeoM.Scale(scaleX, scaleY)
+			}
 
 			// Apply rotation if angle component exists
 			if entry.HasComponent(Angle) {
@@ -81,6 +89,9 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 				op.GeoM.Rotate(float64(*angle) * math.Pi / 180)
 				op.GeoM.Translate(centerX, centerY)
 			}
+
+			// Apply position translation
+			op.GeoM.Translate(pos.X, pos.Y)
 
 			screen.DrawImage(*sprite, op)
 		}
