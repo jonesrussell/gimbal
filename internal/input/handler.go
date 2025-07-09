@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
@@ -165,10 +166,10 @@ func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
 // GetMovementInput returns the movement angle based on input
 func (h *Handler) GetMovementInput() common.Angle {
 	if h.IsKeyPressed(ebiten.KeyLeft) {
-		return -common.Angle(MovementSpeedDegreesPerFrame)
+		return -common.Angle(MovementSpeedDegreesPerFrame) // Clockwise (left)
 	}
 	if h.IsKeyPressed(ebiten.KeyRight) {
-		return common.Angle(MovementSpeedDegreesPerFrame)
+		return common.Angle(MovementSpeedDegreesPerFrame) // Counterclockwise (right)
 	}
 
 	// Handle touch/mouse movement if needed
