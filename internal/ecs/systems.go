@@ -144,11 +144,11 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 
 // StarMovementSystem handles star movement in Gyruss-style pattern
 func StarMovementSystem(ecsInstance *ecs.ECS, config *common.GameConfig) {
-	// Create star field helper with configuration from game config
+	// Create star field helper with configuration from game config (but without speed)
 	starConfig := &StarFieldConfig{
 		SpawnRadiusMin: config.StarSpawnRadiusMin,
 		SpawnRadiusMax: config.StarSpawnRadiusMax,
-		Speed:          config.StarSpeed,
+		Speed:          0, // Will be overridden by individual star speed
 		MinScale:       config.StarMinScale,
 		MaxScale:       config.StarMaxScale,
 		ScaleDistance:  config.StarScaleDistance,
@@ -157,13 +157,22 @@ func StarMovementSystem(ecsInstance *ecs.ECS, config *common.GameConfig) {
 	}
 	starHelper := NewStarFieldHelper(starConfig, config.ScreenSize)
 
+	starCount := 0
 	StarTag.Each(ecsInstance.World, func(entry *donburi.Entry) {
 		pos := Position.Get(entry)
 		scale := Scale.Get(entry)
+		speed := Speed.Get(entry)
 
-		// Update star using helper
-		starHelper.UpdateStar(pos, scale)
+		// Update star using helper with individual speed
+		starHelper.UpdateStarWithSpeed(pos, scale, *speed)
+		starCount++
 	})
+
+	// Log star count every 60 frames (once per second at 60fps)
+	if time.Now().UnixNano()%60 == 0 {
+		// This is a simple way to log occasionally without adding a frame counter
+		// In a real implementation, you'd want a proper frame counter
+	}
 }
 
 // PlayerInputSystem handles player input

@@ -81,8 +81,8 @@ func CreateStarField(w donburi.World, sprite *ebiten.Image, config *common.GameC
 	starHelper := NewStarFieldHelper(starConfig, config.ScreenSize)
 
 	for i := 0; i < config.NumStars; i++ {
-		// Generate random position using helper
-		pos := starHelper.GenerateRandomPosition()
+		// Generate random position using helper with offset
+		pos := starHelper.GenerateRandomPositionWithOffset(int64(i))
 
 		// Create star at the generated position
 		entities[i] = CreateStar(w, sprite, config, pos.X, pos.Y)

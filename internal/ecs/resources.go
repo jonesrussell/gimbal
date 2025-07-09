@@ -180,13 +180,13 @@ func (rm *ResourceManager) LoadAllSprites() error {
 	}
 
 	// Create star sprite
-	_, err = rm.CreateSprite("star", 10, 10, color.White)
+	_, err = rm.CreateSprite("star", common.StarSpriteSize, common.StarSpriteSize, color.White)
 	if err != nil {
 		return fmt.Errorf("failed to create star sprite: %w", err)
 	}
 
 	// Create UI sprites
-	_, err = rm.CreateSprite("button", 100, 30, color.RGBA{100, 100, 100, 255})
+	_, err = rm.CreateSprite("button", common.ButtonSpriteWidth, common.ButtonSpriteHeight, color.RGBA{common.ButtonColorR, common.ButtonColorG, common.ButtonColorB, common.ButtonColorA})
 	if err != nil {
 		return fmt.Errorf("failed to create button sprite: %w", err)
 	}

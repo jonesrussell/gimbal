@@ -29,6 +29,9 @@ type ECSGame struct {
 	// Resource management
 	resourceManager *ResourceManager
 
+	// System management
+	systemManager *SystemManager
+
 	// Entity references
 	playerEntity donburi.Entity
 	starEntities []donburi.Entity
@@ -64,6 +67,10 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 	resourceManager := NewResourceManager(logger)
 	logger.Debug("Resource manager created")
 
+	// Create system manager
+	systemManager := NewSystemManager()
+	logger.Debug("System manager created")
+
 	// Create game instance
 	game := &ECSGame{
 		world:           world,
@@ -73,6 +80,7 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 		isPaused:        false,
 		eventSystem:     eventSystem,
 		resourceManager: resourceManager,
+		systemManager:   systemManager,
 	}
 
 	// Load assets
@@ -87,6 +95,9 @@ func NewECSGame(config *common.GameConfig, logger common.Logger) (*ECSGame, erro
 
 	// Set up event subscriptions
 	game.setupEventSubscriptions()
+
+	// Set up systems
+	game.setupSystems()
 
 	return game, nil
 }
@@ -123,6 +134,17 @@ func (g *ECSGame) createEntities() error {
 	g.starEntities = CreateStarField(g.world, starSprite, g.config)
 	g.logger.Debug("Star entities created", "count", len(g.starEntities))
 
+	// Log star positions for debugging
+	for i, entity := range g.starEntities {
+		if i < 5 { // Only log first 5 stars
+			entry := g.world.Entry(entity)
+			if entry.Valid() {
+				pos := Position.Get(entry)
+				g.logger.Debug("Star position", "star_id", i, "pos", pos)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -150,10 +172,17 @@ func (g *ECSGame) Update() error {
 	// Get input angle for player movement
 	inputAngle := g.inputHandler.GetMovementInput()
 
-	// Run ECS systems
-	PlayerInputSystem(g.world, inputAngle)
-	OrbitalMovementSystem(g.world)
-	StarMovementSystem(&ecs.ECS{World: g.world}, g.config)
+	// Run player input system (needs input angle)
+	playerInputWrapper := NewPlayerInputSystemWrapper(inputAngle)
+	if err := playerInputWrapper.Update(g.world); err != nil {
+		g.logger.Error("Player input system failed", "error", err)
+	}
+
+	// Run other ECS systems through system manager
+	if err := g.systemManager.UpdateAll(g.world); err != nil {
+		g.logger.Error("System update failed", "error", err)
+		return err
+	}
 
 	// Emit player movement event if player moved
 	if inputAngle != 0 {
@@ -176,8 +205,11 @@ func (g *ECSGame) Draw(screen *ebiten.Image) {
 	// Clear screen
 	screen.Fill(color.Black)
 
-	// Run render system
-	RenderSystem(g.world, screen)
+	// Run render system through wrapper
+	renderWrapper := NewRenderSystemWrapper(screen)
+	if err := renderWrapper.Update(g.world); err != nil {
+		g.logger.Error("Render system failed", "error", err)
+	}
 
 	// Draw debug info if enabled
 	if g.config.Debug {
@@ -251,4 +283,14 @@ func (g *ECSGame) setupEventSubscriptions() {
 			"new_score", event.NewScore,
 			"delta", event.Delta)
 	})
+}
+
+// setupSystems sets up the system manager with all required systems
+func (g *ECSGame) setupSystems() {
+	// Add update systems in execution order
+	g.systemManager.AddSystem(&MovementSystemWrapper{})
+	g.systemManager.AddSystem(&OrbitalMovementSystemWrapper{})
+	g.systemManager.AddSystem(NewStarMovementSystemWrapper(&ecs.ECS{World: g.world}, g.config))
+
+	g.logger.Debug("Systems set up", "system_count", g.systemManager.GetSystemCount(), "systems", g.systemManager.GetSystemNames())
 }
