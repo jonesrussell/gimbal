@@ -38,6 +38,9 @@ var (
 
 	// Angle component stores rotation angle
 	Angle = donburi.NewComponentType[common.Angle]()
+
+	// Scale component stores scaling factor
+	Scale = donburi.NewComponentType[float64]()
 )
 
 // MovementData represents movement information
