@@ -22,28 +22,28 @@ tasks:
           exit 1
         fi
       - echo "Hosting game on http://localhost:4242"
-      - cd cmd/gimbal/ && wasmserve -http=":4242" -allow-origin='*' -tags .
+      - wasmserve -http=":4242" -allow-origin='*' -tags .
 
   build:linux:
     desc: Build Linux target
     cmds:
       - rm -rf build/linux
       - mkdir -p build/linux/{{.PROJECTNAME}}
-      - go build -tags build -o build/linux/{{.PROJECTNAME}}/{{.PROJECTNAME}} ./cmd/gimbal
+      - go build -tags build -o build/linux/{{.PROJECTNAME}}/{{.PROJECTNAME}} .
 
   build:win32:
     desc: Build Win32 target
     cmds:
       - rm -rf build/win32
       - mkdir -p build/win32/{{.PROJECTNAME}}
-      - GOOS=windows go build -tags build -o build/win32/{{.PROJECTNAME}}/{{.PROJECTNAME}}.exe ./cmd/gimbal
+      - GOOS=windows go build -tags build -o build/win32/{{.PROJECTNAME}}/{{.PROJECTNAME}}.exe .
 
   build:web:
     desc: Build WebAssembly target
     cmds:
       - rm -rf build/web
       - mkdir -p build/web
-      - GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm ./cmd/gimbal
+      - GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm .
       - cp -r html/* build/web
       - |
         if [ ! -f {{.WASM_EXEC_PATH}} ]; then
@@ -71,7 +71,7 @@ tasks:
   run:
     desc: Run the application
     cmds:
-      - LOG_LEVEL=debug go run ./cmd/gimbal
+      - LOG_LEVEL=debug go run .
 
   clean:build:
     desc: Clean build directory

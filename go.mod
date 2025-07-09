@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/hajimehoshi/ebiten/v2 v2.8.6
+	github.com/yohamta/donburi v1.15.7
 	go.uber.org/zap v1.27.0
 )
 
