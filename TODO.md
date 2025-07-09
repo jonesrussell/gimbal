@@ -34,7 +34,7 @@
 - [x] **Scene/State Management**
     - Abstract game states (menu, playing, game over) for better flow control and separation of concerns.
 
-- [ ] **Resource Management**
+- [x] **Resource Management**
     - Centralize asset loading (sprites, sounds) to avoid duplication and leaks.
     - Move assets to shared location accessible by ECS.
 
