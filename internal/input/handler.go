@@ -113,7 +113,8 @@ func (h *Handler) handleKeyboardInput() {
 
 func (h *Handler) handleTouchInput() {
 	// Handle touch input
-	touchIDs := ebiten.TouchIDs()
+	var touchIDs []ebiten.TouchID
+	touchIDs = ebiten.AppendTouchIDs(touchIDs)
 	if len(touchIDs) > 0 {
 		if h.touchState == nil {
 			// New touch

@@ -80,8 +80,8 @@ func run() error {
 	ebiten.SetWindowTitle("Gimbal - ECS Version")
 	ebiten.SetTPS(60)
 
-	if err := ebiten.RunGame(g); err != nil {
-		return fmt.Errorf("game error: %w", err)
+	if runErr := ebiten.RunGame(g); runErr != nil {
+		return fmt.Errorf("game error: %w", runErr)
 	}
 
 	return nil

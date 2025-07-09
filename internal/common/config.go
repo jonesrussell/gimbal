@@ -96,7 +96,9 @@ func WithStarSettings(size, speed float64) GameOption {
 }
 
 // WithStarFieldSettings sets comprehensive star field parameters
-func WithStarFieldSettings(spawnRadiusMin, spawnRadiusMax, minScale, maxScale, scaleDistance, resetMargin float64) GameOption {
+func WithStarFieldSettings(
+	spawnRadiusMin, spawnRadiusMax, minScale, maxScale, scaleDistance, resetMargin float64,
+) GameOption {
 	return func(c *GameConfig) {
 		c.StarSpawnRadiusMin = spawnRadiusMin
 		c.StarSpawnRadiusMax = spawnRadiusMax

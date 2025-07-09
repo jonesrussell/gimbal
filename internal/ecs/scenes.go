@@ -86,8 +86,8 @@ func (sm *SceneManager) SwitchScene(sceneType SceneType) {
 }
 
 // GetCurrentScene returns the current scene
-func (g *SceneManager) GetCurrentScene() Scene {
-	return g.currentScene
+func (sm *SceneManager) GetCurrentScene() Scene {
+	return sm.currentScene
 }
 
 // GetWorld returns the ECS world

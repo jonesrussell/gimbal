@@ -106,7 +106,9 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 }
 
 // CreateSprite creates a simple colored sprite
-func (rm *ResourceManager) CreateSprite(name string, width, height int, color color.Color) (*ebiten.Image, error) {
+func (rm *ResourceManager) CreateSprite(
+	name string, width, height int, spriteColor color.Color,
+) (*ebiten.Image, error) {
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 
@@ -121,7 +123,7 @@ func (rm *ResourceManager) CreateSprite(name string, width, height int, color co
 
 	// Create new sprite
 	sprite := ebiten.NewImage(width, height)
-	sprite.Fill(color)
+	sprite.Fill(spriteColor)
 
 	// Store in resource manager
 	rm.resources[name] = &Resource{
