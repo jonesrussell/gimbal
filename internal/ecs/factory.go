@@ -1,8 +1,6 @@
 package ecs
 
 import (
-	"math"
-	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -69,24 +67,25 @@ func CreateStar(w donburi.World, sprite *ebiten.Image, config *common.GameConfig
 func CreateStarField(w donburi.World, sprite *ebiten.Image, config *common.GameConfig) []donburi.Entity {
 	entities := make([]donburi.Entity, config.NumStars)
 
-	centerX := float64(config.ScreenSize.Width) / 2
-	centerY := float64(config.ScreenSize.Height) / 2
-
-	// Initialize random seed
-	rand.Seed(time.Now().UnixNano())
+	// Create star field helper with configuration from game config
+	starConfig := &StarFieldConfig{
+		SpawnRadiusMin: config.StarSpawnRadiusMin,
+		SpawnRadiusMax: config.StarSpawnRadiusMax,
+		Speed:          config.StarSpeed,
+		MinScale:       config.StarMinScale,
+		MaxScale:       config.StarMaxScale,
+		ScaleDistance:  config.StarScaleDistance,
+		ResetMargin:    config.StarResetMargin,
+		Seed:           time.Now().UnixNano(),
+	}
+	starHelper := NewStarFieldHelper(starConfig, config.ScreenSize)
 
 	for i := 0; i < config.NumStars; i++ {
-		// Create truly random positions along a small orbital path
-		// Random angle around the circle (0 to 2π)
-		angle := rand.Float64() * 2 * math.Pi
+		// Generate random position using helper
+		pos := starHelper.GenerateRandomPosition()
 
-		// Random radius within the spawn range (30-80 pixels from center)
-		spawnRadius := 30.0 + rand.Float64()*50.0
-
-		x := centerX + math.Cos(angle)*spawnRadius
-		y := centerY + math.Sin(angle)*spawnRadius
-
-		entities[i] = CreateStar(w, sprite, config, x, y)
+		// Create star at the generated position
+		entities[i] = CreateStar(w, sprite, config, pos.X, pos.Y)
 	}
 
 	return entities
