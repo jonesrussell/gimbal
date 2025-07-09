@@ -48,7 +48,7 @@ func OrbitalMovementSystem(w donburi.World) {
 		orb := Orbital.Get(entry)
 
 		// Calculate position based on orbital angle
-		angleRad := float64(orb.OrbitalAngle) * math.Pi / 180
+		angleRad := float64(orb.OrbitalAngle) * common.DegreesToRadians
 		pos.X = orb.Center.X + orb.Radius*math.Sin(angleRad)
 		pos.Y = orb.Center.Y - orb.Radius*math.Cos(angleRad) // Subtract because Y increases downward
 	})
@@ -93,7 +93,7 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 				}
 
 				op.GeoM.Translate(-centerX, -centerY)
-				op.GeoM.Rotate(float64(orb.FacingAngle) * math.Pi / 180)
+				op.GeoM.Rotate(float64(orb.FacingAngle) * common.DegreesToRadians)
 				op.GeoM.Translate(centerX, centerY)
 			} else if entry.HasComponent(Angle) {
 				// Fallback to angle component for non-orbital entities
@@ -111,7 +111,7 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 				}
 
 				op.GeoM.Translate(-centerX, -centerY)
-				op.GeoM.Rotate(float64(*angle) * math.Pi / 180)
+				op.GeoM.Rotate(float64(*angle) * common.DegreesToRadians)
 				op.GeoM.Translate(centerX, centerY)
 			}
 
@@ -147,6 +147,8 @@ func StarMovementSystem(w donburi.World, screenHeight int) {
 
 // PlayerInputSystem handles player input
 func PlayerInputSystem(w donburi.World, inputAngle common.Angle) {
+	movement := &PlayerMovement{}
+
 	query.NewQuery(
 		filter.And(
 			filter.Contains(PlayerTag),
@@ -155,33 +157,17 @@ func PlayerInputSystem(w donburi.World, inputAngle common.Angle) {
 	).Each(w, func(entry *donburi.Entry) {
 		orb := Orbital.Get(entry)
 
-		// Update orbital angle based on input
-		if inputAngle != 0 {
-			orb.OrbitalAngle += inputAngle
-			// Normalize angle to [0, 360)
-			if orb.OrbitalAngle < 0 {
-				orb.OrbitalAngle += 360
-			} else if orb.OrbitalAngle >= 360 {
-				orb.OrbitalAngle -= 360
-			}
-		}
+		// Update orbital angle
+		movement.UpdateOrbitalAngle(orb, inputAngle)
+
+		// Update facing angle
+		movement.UpdateFacingAngle(orb)
 	})
 }
 
 // FacingAngleSystem calculates the facing angle for orbital entities
+// NOTE: This is now handled in PlayerInputSystem for better performance
 func FacingAngleSystem(w donburi.World) {
-	query.NewQuery(
-		filter.And(
-			filter.Contains(Orbital),
-		),
-	).Each(w, func(entry *donburi.Entry) {
-		orb := Orbital.Get(entry)
-
-		// Calculate facing angle: orbital angle + 180 degrees to face toward center (like Gyruss)
-		orb.FacingAngle = orb.OrbitalAngle + 180
-		// Normalize to [0, 360)
-		if orb.FacingAngle >= 360 {
-			orb.FacingAngle -= 360
-		}
-	})
+	// Deprecated: Facing angle calculation moved to PlayerInputSystem
+	// This function is kept for backward compatibility but does nothing
 }
