@@ -12,6 +12,14 @@ const (
 	DefaultRadiusRatio  = 0.8
 	// CenterDivisor is used to calculate the center point by dividing dimensions
 	CenterDivisor = 2
+
+	// Star field defaults
+	DefaultStarSpawnRadiusMin = 30.0
+	DefaultStarSpawnRadiusMax = 80.0
+	DefaultStarMinScale       = 0.3
+	DefaultStarMaxScale       = 1.0
+	DefaultStarScaleDistance  = 200.0
+	DefaultStarResetMargin    = 50.0
 )
 
 // GameConfig holds all configurable parameters for the game
@@ -25,6 +33,14 @@ type GameConfig struct {
 	StarSize   float64
 	StarSpeed  float64
 	AngleStep  float64
+
+	// Star field configuration
+	StarSpawnRadiusMin float64
+	StarSpawnRadiusMax float64
+	StarMinScale       float64
+	StarMaxScale       float64
+	StarScaleDistance  float64
+	StarResetMargin    float64
 }
 
 // GameOption is a function that modifies a GameConfig
@@ -79,6 +95,18 @@ func WithStarSettings(size, speed float64) GameOption {
 	}
 }
 
+// WithStarFieldSettings sets comprehensive star field parameters
+func WithStarFieldSettings(spawnRadiusMin, spawnRadiusMax, minScale, maxScale, scaleDistance, resetMargin float64) GameOption {
+	return func(c *GameConfig) {
+		c.StarSpawnRadiusMin = spawnRadiusMin
+		c.StarSpawnRadiusMax = spawnRadiusMax
+		c.StarMinScale = minScale
+		c.StarMaxScale = maxScale
+		c.StarScaleDistance = scaleDistance
+		c.StarResetMargin = resetMargin
+	}
+}
+
 // WithAngleStep sets the angle step for player rotation
 func WithAngleStep(step float64) GameOption {
 	return func(c *GameConfig) {
@@ -104,6 +132,14 @@ func DefaultConfig() *GameConfig {
 		StarSize:  DefaultStarSize,
 		StarSpeed: DefaultStarSpeed,
 		AngleStep: DefaultAngleStep,
+
+		// Star field defaults
+		StarSpawnRadiusMin: DefaultStarSpawnRadiusMin,
+		StarSpawnRadiusMax: DefaultStarSpawnRadiusMax,
+		StarMinScale:       DefaultStarMinScale,
+		StarMaxScale:       DefaultStarMaxScale,
+		StarScaleDistance:  DefaultStarScaleDistance,
+		StarResetMargin:    DefaultStarResetMargin,
 	}
 }
 

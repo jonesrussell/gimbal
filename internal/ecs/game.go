@@ -153,7 +153,7 @@ func (g *ECSGame) Update() error {
 	// Run ECS systems
 	PlayerInputSystem(g.world, inputAngle)
 	OrbitalMovementSystem(g.world)
-	StarMovementSystem(&ecs.ECS{World: g.world})
+	StarMovementSystem(&ecs.ECS{World: g.world}, g.config)
 
 	// Emit player movement event if player moved
 	if inputAngle != 0 {

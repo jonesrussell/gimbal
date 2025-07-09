@@ -2,7 +2,6 @@ package ecs
 
 import (
 	"math"
-	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -135,51 +134,26 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 }
 
 // StarMovementSystem handles star movement in Gyruss-style pattern
-func StarMovementSystem(ecs *ecs.ECS) {
-	centerX := float64(640) / 2 // TODO: Get from config
-	centerY := float64(480) / 2
-
-	// Initialize random seed once
-	rand.Seed(time.Now().UnixNano())
+func StarMovementSystem(ecs *ecs.ECS, config *common.GameConfig) {
+	// Create star field helper with configuration from game config
+	starConfig := &StarFieldConfig{
+		SpawnRadiusMin: config.StarSpawnRadiusMin,
+		SpawnRadiusMax: config.StarSpawnRadiusMax,
+		Speed:          config.StarSpeed,
+		MinScale:       config.StarMinScale,
+		MaxScale:       config.StarMaxScale,
+		ScaleDistance:  config.StarScaleDistance,
+		ResetMargin:    config.StarResetMargin,
+		Seed:           time.Now().UnixNano(),
+	}
+	starHelper := NewStarFieldHelper(starConfig, config.ScreenSize)
 
 	StarTag.Each(ecs.World, func(entry *donburi.Entry) {
 		pos := Position.Get(entry)
-		speed := Speed.Get(entry)
 		scale := Scale.Get(entry)
 
-		// Calculate direction from center to star
-		dx := pos.X - centerX
-		dy := pos.Y - centerY
-		distance := math.Sqrt(dx*dx + dy*dy)
-
-		// Normalize direction vector
-		if distance > 0 {
-			dx /= distance
-			dy /= distance
-		}
-
-		// Move star outward from center
-		pos.X += dx * *speed
-		pos.Y += dy * *speed
-
-		// Scale star based on distance from center (farther = bigger)
-		*scale = 0.3 + (distance/200.0)*0.7 // Scale from 0.3 to 1.0
-
-		// Reset star if it goes off screen
-		if pos.X < -50 || pos.X > 690 || pos.Y < -50 || pos.Y > 530 {
-			// Reset to truly random position along small orbital path
-			// Random angle around the circle (0 to 2π)
-			angle := rand.Float64() * 2 * math.Pi
-
-			// Random radius within the spawn range (30-80 pixels from center)
-			spawnRadius := 30.0 + rand.Float64()*50.0
-
-			pos.X = centerX + math.Cos(angle)*spawnRadius
-			pos.Y = centerY + math.Sin(angle)*spawnRadius
-
-			// Reset to random small scale
-			*scale = 0.3 + rand.Float64()*0.5
-		}
+		// Update star using helper
+		starHelper.UpdateStar(pos, scale)
 	})
 }
 
