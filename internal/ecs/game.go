@@ -6,6 +6,8 @@ import (
 	"github.com/yohamta/donburi/ecs"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
 )
 
 // We'll load assets from the game package for now
@@ -31,7 +33,7 @@ type ECSGame struct {
 	stateManager *GameStateManager
 
 	// Scene management
-	sceneManager *SceneManager
+	sceneManager *scenes.SceneManager
 
 	// Combat systems
 	enemySystem     *EnemySystem
@@ -118,7 +120,7 @@ func (g *ECSGame) initializeSystems() error {
 	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
 
 	// Create scene manager
-	g.sceneManager = NewSceneManager(g.world, g.config, g.logger, g.inputHandler)
+	g.sceneManager = scenes.NewSceneManager(g.world, g.config, g.logger, g.inputHandler)
 
 	// Create combat systems
 	g.enemySystem = NewEnemySystem(g.world, g.config)
@@ -153,11 +155,11 @@ func (g *ECSGame) createEntities() error {
 	}
 
 	// Create player
-	g.playerEntity = CreatePlayer(g.world, playerSprite, g.config)
+	g.playerEntity = core.CreatePlayer(g.world, playerSprite, g.config)
 	g.logger.Debug("Player entity created", "entity_id", g.playerEntity)
 
 	// Create star field
-	g.starEntities = CreateStarField(g.world, starSprite, g.config)
+	g.starEntities = core.CreateStarField(g.world, starSprite, g.config)
 	g.logger.Debug("Star entities created", "count", len(g.starEntities))
 
 	// Log star positions for debugging
@@ -165,7 +167,7 @@ func (g *ECSGame) createEntities() error {
 		if i < 5 { // Only log first 5 stars
 			entry := g.world.Entry(entity)
 			if entry.Valid() {
-				pos := Position.Get(entry)
+				pos := core.Position.Get(entry)
 				g.logger.Debug("Star position", "star_id", i, "pos", pos)
 			}
 		}
@@ -189,10 +191,10 @@ func (g *ECSGame) Update() error {
 	currentScene := g.sceneManager.GetCurrentScene()
 
 	switch currentScene.GetType() {
-	case SceneStudioIntro, SceneTitleScreen, SceneMenu:
+	case scenes.SceneStudioIntro, scenes.SceneTitleScreen, scenes.SceneMenu:
 		// Handle input for these scenes
 		g.handleMenuInput()
-	case ScenePlaying:
+	case scenes.ScenePlaying:
 		// Handle gameplay
 		if g.stateManager.IsPaused() {
 			return nil
@@ -201,7 +203,7 @@ func (g *ECSGame) Update() error {
 		// Check for pause
 		if g.inputHandler.IsPausePressed() {
 			g.stateManager.TogglePause()
-			g.sceneManager.SwitchScene(ScenePaused)
+			g.sceneManager.SwitchScene(scenes.ScenePaused)
 			return nil
 		}
 
@@ -209,7 +211,7 @@ func (g *ECSGame) Update() error {
 		inputAngle := g.inputHandler.GetMovementInput()
 
 		// Run player input system (needs input angle)
-		playerInputWrapper := NewPlayerInputSystemWrapper(inputAngle)
+		playerInputWrapper := core.NewPlayerInputSystemWrapper(inputAngle)
 		if err := playerInputWrapper.Update(g.world); err != nil {
 			g.logger.Error("Player input system failed", "error", err)
 		}
@@ -232,8 +234,8 @@ func (g *ECSGame) Update() error {
 		if inputAngle != 0 {
 			playerEntry := g.world.Entry(g.playerEntity)
 			if playerEntry.Valid() {
-				pos := Position.Get(playerEntry)
-				orb := Orbital.Get(playerEntry)
+				pos := core.Position.Get(playerEntry)
+				orb := core.Orbital.Get(playerEntry)
 				g.eventSystem.EmitPlayerMoved(*pos, orb.OrbitalAngle)
 			}
 		}
@@ -241,7 +243,7 @@ func (g *ECSGame) Update() error {
 		// Process all events
 		g.eventSystem.ProcessEvents()
 
-	case ScenePaused:
+	case scenes.ScenePaused:
 		// Handle pause menu input
 		g.handlePauseInput()
 	}
@@ -313,13 +315,9 @@ func (g *ECSGame) setupEventSubscriptions() {
 // setupSystems sets up the system manager with all required systems
 func (g *ECSGame) setupSystems() {
 	// Add update systems in execution order
-	g.systemManager.AddSystem(&MovementSystemWrapper{})
-	g.systemManager.AddSystem(&OrbitalMovementSystemWrapper{})
-	g.systemManager.AddSystem(NewStarMovementSystemWrapper(&ecs.ECS{World: g.world}, g.config))
-
-	g.logger.Debug("Systems set up",
-		"system_count", g.systemManager.GetSystemCount(),
-		"systems", g.systemManager.GetSystemNames())
+	g.systemManager.AddSystem(&core.MovementSystemWrapper{})
+	g.systemManager.AddSystem(&core.OrbitalMovementSystemWrapper{})
+	g.systemManager.AddSystem(core.NewStarMovementSystemWrapper(&ecs.ECS{World: g.world}, g.config))
 }
 
 // handleWeaponFiring handles weapon firing based on input
@@ -330,8 +328,8 @@ func (g *ECSGame) handleWeaponFiring() {
 		return
 	}
 
-	pos := Position.Get(playerEntry)
-	orb := Orbital.Get(playerEntry)
+	pos := core.Position.Get(playerEntry)
+	orb := core.Orbital.Get(playerEntry)
 
 	// Check for fire input (Space key)
 	if g.inputHandler.IsKeyPressed(ebiten.KeySpace) {
@@ -349,15 +347,15 @@ func (g *ECSGame) handleMenuInput() {
 	currentScene := g.sceneManager.GetCurrentScene()
 
 	switch currentScene.GetType() {
-	case SceneTitleScreen:
+	case scenes.SceneTitleScreen:
 		// Any key to continue to main menu
 		if g.inputHandler.GetLastEvent() != common.InputEventNone {
-			g.sceneManager.SwitchScene(SceneMenu)
+			g.sceneManager.SwitchScene(scenes.SceneMenu)
 		}
-	case SceneMenu:
+	case scenes.SceneMenu:
 		// Handle menu navigation
-		if currentScene.GetType() == SceneMenu {
-			if menuScene, ok := currentScene.(*MenuScene); ok {
+		if currentScene.GetType() == scenes.SceneMenu {
+			if menuScene, ok := currentScene.(*scenes.MenuScene); ok {
 				// Menu input is handled within the scene itself
 				_ = menuScene // Use the variable to avoid unused variable warning
 			}
@@ -369,6 +367,6 @@ func (g *ECSGame) handleMenuInput() {
 func (g *ECSGame) handlePauseInput() {
 	// Check for resume (ESC or any key)
 	if g.inputHandler.IsQuitPressed() || g.inputHandler.GetLastEvent() != common.InputEventNone {
-		g.sceneManager.SwitchScene(ScenePlaying)
+		g.sceneManager.SwitchScene(scenes.ScenePlaying)
 	}
 }

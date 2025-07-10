@@ -1,7 +1,6 @@
-package ecs
+package core
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/ecs"
 
@@ -30,29 +29,6 @@ func (omsw *OrbitalMovementSystemWrapper) Update(world donburi.World, args ...in
 
 func (omsw *OrbitalMovementSystemWrapper) Name() string {
 	return "OrbitalMovementSystem"
-}
-
-// RenderSystemWrapper wraps the RenderSystem to implement System interface
-type RenderSystemWrapper struct {
-	screen *ebiten.Image
-}
-
-func NewRenderSystemWrapper(screen *ebiten.Image) *RenderSystemWrapper {
-	return &RenderSystemWrapper{
-		screen: screen,
-	}
-}
-
-func (rsw *RenderSystemWrapper) Update(world donburi.World, args ...interface{}) error {
-	if rsw.screen == nil {
-		return common.NewGameError(common.ErrorCodeRenderingFailed, "screen is nil")
-	}
-	RenderSystem(world, rsw.screen)
-	return nil
-}
-
-func (rsw *RenderSystemWrapper) Name() string {
-	return "RenderSystem"
 }
 
 // StarMovementSystemWrapper wraps the StarMovementSystem to implement System interface
