@@ -1,11 +1,13 @@
-package ecs
+package ecs_test
 
 import (
 	"testing"
+
+	"github.com/jonesrussell/gimbal/internal/ecs"
 )
 
 func TestComponentRegistry_New(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	if registry == nil {
 		t.Fatal("NewComponentRegistry should not return nil")
@@ -21,10 +23,10 @@ func TestComponentRegistry_New(t *testing.T) {
 }
 
 func TestComponentRegistry_RegisterComponent(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Test successful registration
-	err := registry.RegisterComponent("test", Position)
+	err := registry.RegisterComponent("test", ecs.Position)
 	if err != nil {
 		t.Errorf("Failed to register component: %v", err)
 	}
@@ -38,13 +40,13 @@ func TestComponentRegistry_RegisterComponent(t *testing.T) {
 	}
 
 	// Test duplicate registration
-	err = registry.RegisterComponent("test", Sprite)
+	err = registry.RegisterComponent("test", ecs.Sprite)
 	if err == nil {
 		t.Error("Should return error for duplicate registration")
 	}
 
 	// Test empty name
-	err = registry.RegisterComponent("", Position)
+	err = registry.RegisterComponent("", ecs.Position)
 	if err == nil {
 		t.Error("Should return error for empty name")
 	}
@@ -57,10 +59,10 @@ func TestComponentRegistry_RegisterComponent(t *testing.T) {
 }
 
 func TestComponentRegistry_RegisterTag(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Test successful registration
-	err := registry.RegisterTag("test", PlayerTag)
+	err := registry.RegisterTag("test", ecs.PlayerTag)
 	if err != nil {
 		t.Errorf("Failed to register tag: %v", err)
 	}
@@ -74,13 +76,13 @@ func TestComponentRegistry_RegisterTag(t *testing.T) {
 	}
 
 	// Test duplicate registration
-	err = registry.RegisterTag("test", StarTag)
+	err = registry.RegisterTag("test", ecs.StarTag)
 	if err == nil {
 		t.Error("Should return error for duplicate registration")
 	}
 
 	// Test empty name
-	err = registry.RegisterTag("", PlayerTag)
+	err = registry.RegisterTag("", ecs.PlayerTag)
 	if err == nil {
 		t.Error("Should return error for empty name")
 	}
@@ -93,7 +95,7 @@ func TestComponentRegistry_RegisterTag(t *testing.T) {
 }
 
 func TestComponentRegistry_GetComponent(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Test getting non-existent component
 	_, err := registry.GetComponent("nonexistent")
@@ -102,19 +104,22 @@ func TestComponentRegistry_GetComponent(t *testing.T) {
 	}
 
 	// Test getting existing component
-	registry.RegisterComponent("test", Position)
+	regErr := registry.RegisterComponent("test", ecs.Position)
+	if regErr != nil {
+		t.Fatalf("Failed to register component: %v", regErr)
+	}
 	component, err := registry.GetComponent("test")
 	if err != nil {
 		t.Errorf("Failed to get component: %v", err)
 	}
 
-	if component != Position {
+	if component != ecs.Position {
 		t.Error("Should return the correct component")
 	}
 }
 
 func TestComponentRegistry_GetTag(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Test getting non-existent tag
 	_, err := registry.GetTag("nonexistent")
@@ -123,19 +128,22 @@ func TestComponentRegistry_GetTag(t *testing.T) {
 	}
 
 	// Test getting existing tag
-	registry.RegisterTag("test", PlayerTag)
+	regErr := registry.RegisterTag("test", ecs.PlayerTag)
+	if regErr != nil {
+		t.Fatalf("Failed to register tag: %v", regErr)
+	}
 	tag, err := registry.GetTag("test")
 	if err != nil {
 		t.Errorf("Failed to get tag: %v", err)
 	}
 
-	if tag != PlayerTag {
+	if tag != ecs.PlayerTag {
 		t.Error("Should return the correct tag")
 	}
 }
 
 func TestComponentRegistry_GetComponentNames(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Test empty registry
 	names := registry.GetComponentNames()
@@ -144,8 +152,14 @@ func TestComponentRegistry_GetComponentNames(t *testing.T) {
 	}
 
 	// Test with components
-	registry.RegisterComponent("pos", Position)
-	registry.RegisterComponent("sprite", Sprite)
+	regErr := registry.RegisterComponent("pos", ecs.Position)
+	if regErr != nil {
+		t.Fatalf("Failed to register position component: %v", regErr)
+	}
+	regErr = registry.RegisterComponent("sprite", ecs.Sprite)
+	if regErr != nil {
+		t.Fatalf("Failed to register sprite component: %v", regErr)
+	}
 
 	names = registry.GetComponentNames()
 	if len(names) != 2 {
@@ -170,7 +184,7 @@ func TestComponentRegistry_GetComponentNames(t *testing.T) {
 }
 
 func TestComponentRegistry_GetTagNames(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Test empty registry
 	names := registry.GetTagNames()
@@ -179,8 +193,14 @@ func TestComponentRegistry_GetTagNames(t *testing.T) {
 	}
 
 	// Test with tags
-	registry.RegisterTag("player", PlayerTag)
-	registry.RegisterTag("star", StarTag)
+	regErr := registry.RegisterTag("player", ecs.PlayerTag)
+	if regErr != nil {
+		t.Fatalf("Failed to register player tag: %v", regErr)
+	}
+	regErr = registry.RegisterTag("star", ecs.StarTag)
+	if regErr != nil {
+		t.Fatalf("Failed to register star tag: %v", regErr)
+	}
 
 	names = registry.GetTagNames()
 	if len(names) != 2 {
@@ -205,11 +225,17 @@ func TestComponentRegistry_GetTagNames(t *testing.T) {
 }
 
 func TestComponentRegistry_Clear(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Add some components and tags
-	registry.RegisterComponent("pos", Position)
-	registry.RegisterTag("player", PlayerTag)
+	regErr := registry.RegisterComponent("pos", ecs.Position)
+	if regErr != nil {
+		t.Fatalf("Failed to register position component: %v", regErr)
+	}
+	regErr = registry.RegisterTag("player", ecs.PlayerTag)
+	if regErr != nil {
+		t.Fatalf("Failed to register player tag: %v", regErr)
+	}
 
 	// Verify they exist
 	if registry.GetComponentCount() != 1 {
@@ -239,7 +265,7 @@ func TestComponentRegistry_Clear(t *testing.T) {
 }
 
 func TestComponentRegistry_InitializeDefaultComponents(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Initialize default components
 	err := registry.InitializeDefaultComponents()
@@ -274,21 +300,27 @@ func TestComponentRegistry_InitializeDefaultComponents(t *testing.T) {
 }
 
 func TestComponentRegistry_ConcurrentAccess(t *testing.T) {
-	registry := NewComponentRegistry()
+	registry := ecs.NewComponentRegistry()
 
 	// Test concurrent registration
 	done := make(chan bool, 2)
 
 	go func() {
 		for i := 0; i < 100; i++ {
-			registry.RegisterComponent("comp"+string(rune(i)), Position)
+			regErr := registry.RegisterComponent("comp"+string(rune(i)), ecs.Position)
+			if regErr != nil {
+				t.Errorf("Failed to register component in goroutine: %v", regErr)
+			}
 		}
 		done <- true
 	}()
 
 	go func() {
 		for i := 0; i < 100; i++ {
-			registry.RegisterTag("tag"+string(rune(i)), PlayerTag)
+			regErr := registry.RegisterTag("tag"+string(rune(i)), ecs.PlayerTag)
+			if regErr != nil {
+				t.Errorf("Failed to register tag in goroutine: %v", regErr)
+			}
 		}
 		done <- true
 	}()

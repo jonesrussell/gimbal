@@ -186,7 +186,8 @@ func (rm *ResourceManager) LoadAllSprites() error {
 	}
 
 	// Create UI sprites
-	_, err = rm.CreateSprite("button", common.ButtonSpriteWidth, common.ButtonSpriteHeight, color.RGBA{common.ButtonColorR, common.ButtonColorG, common.ButtonColorB, common.ButtonColorA})
+	_, err = rm.CreateSprite("button", common.ButtonSpriteWidth, common.ButtonSpriteHeight,
+		color.RGBA{common.ButtonColorR, common.ButtonColorG, common.ButtonColorB, common.ButtonColorA})
 	if err != nil {
 		return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create button sprite", err)
 	}

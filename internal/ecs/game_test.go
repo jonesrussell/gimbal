@@ -1,4 +1,4 @@
-package ecs
+package ecs_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs"
 	"github.com/jonesrussell/gimbal/test/mocks"
 )
 
@@ -32,13 +33,13 @@ func TestECSGameWithMockInput(t *testing.T) {
 	mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
 
 	// Test that we can create the game with mock input
-	game, err := NewECSGame(config, mockLogger, mockInput)
+	game, err := ecs.NewECSGame(config, mockLogger, mockInput)
 	if err != nil {
 		t.Fatalf("Failed to create ECS game with mock input: %v", err)
 	}
 
 	// Test that the game uses the injected input handler
-	if game.inputHandler != mockInput {
+	if game.GetInputHandler() != mockInput {
 		t.Error("Game should use the injected input handler")
 	}
 
@@ -77,20 +78,20 @@ func TestECSGameConstructorValidation(t *testing.T) {
 	)
 
 	// Test with nil config
-	_, err := NewECSGame(nil, mockLogger, mocks.NewMockGameInputHandler(ctrl))
-	if err == nil {
+	_, nilConfigErr := ecs.NewECSGame(nil, mockLogger, mocks.NewMockGameInputHandler(ctrl))
+	if nilConfigErr == nil {
 		t.Error("Should return error when config is nil")
 	}
 
 	// Test with nil logger
-	_, err = NewECSGame(config, nil, mocks.NewMockGameInputHandler(ctrl))
-	if err == nil {
+	_, nilLoggerErr := ecs.NewECSGame(config, nil, mocks.NewMockGameInputHandler(ctrl))
+	if nilLoggerErr == nil {
 		t.Error("Should return error when logger is nil")
 	}
 
 	// Test with nil input handler
-	_, err = NewECSGame(config, mockLogger, nil)
-	if err == nil {
+	_, nilInputErr := ecs.NewECSGame(config, mockLogger, nil)
+	if nilInputErr == nil {
 		t.Error("Should return error when input handler is nil")
 	}
 }

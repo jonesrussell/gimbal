@@ -147,7 +147,10 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 }
 
 // checkCollision checks if two entities are colliding using AABB collision detection
-func (cs *CollisionSystem) checkCollision(pos1 common.Point, size1 common.Size, pos2 common.Point, size2 common.Size) bool {
+func (cs *CollisionSystem) checkCollision(
+	pos1 common.Point, size1 common.Size,
+	pos2 common.Point, size2 common.Size,
+) bool {
 	// Calculate bounding boxes
 	left1 := pos1.X
 	right1 := pos1.X + float64(size1.Width)
@@ -163,34 +166,53 @@ func (cs *CollisionSystem) checkCollision(pos1 common.Point, size1 common.Size, 
 	return left1 < right2 && right1 > left2 && top1 < bottom2 && bottom1 > top2
 }
 
-// handleProjectileEnemyCollision handles collision between projectile and enemy
-func (cs *CollisionSystem) handleProjectileEnemyCollision(projectileEntity, enemyEntity donburi.Entity, projectileEntry, enemyEntry *donburi.Entry) {
-	// Remove projectile
-	cs.world.Remove(projectileEntity)
-
-	// Reduce enemy health
+// handleProjectileEnemyCollision handles collision between a projectile and an enemy
+func (cs *CollisionSystem) handleProjectileEnemyCollision(
+	projectileEntity, enemyEntity donburi.Entity,
+	projectileEntry, enemyEntry *donburi.Entry,
+) {
+	// Get projectile and enemy data
+	projectilePos := Position.Get(projectileEntry)
+	projectileSize := Size.Get(projectileEntry)
+	enemyPos := Position.Get(enemyEntry)
+	enemySize := Size.Get(enemyEntry)
 	enemyHealth := Health.Get(enemyEntry)
-	*enemyHealth -= 1
 
-	// Check if enemy is destroyed
-	if *enemyHealth <= 0 {
-		// Remove enemy
-		cs.world.Remove(enemyEntity)
+	// Check collision
+	if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
+		// Reduce enemy health
+		newHealth := *enemyHealth - 1
+		Health.SetValue(enemyEntry, newHealth)
 
-		// TODO: Add explosion effect
-		// TODO: Add score points
-		// TODO: Emit enemy destroyed event
+		// Remove projectile
+		cs.world.Remove(projectileEntity)
+
+		// Remove enemy if health reaches 0
+		if newHealth <= 0 {
+			cs.world.Remove(enemyEntity)
+		}
 	}
 }
 
-// handlePlayerEnemyCollision handles collision between player and enemy
-func (cs *CollisionSystem) handlePlayerEnemyCollision(playerEntity, enemyEntity donburi.Entity, playerEntry, enemyEntry *donburi.Entry) {
-	// Remove enemy
-	cs.world.Remove(enemyEntity)
+// handlePlayerEnemyCollision handles collision between the player and an enemy
+func (cs *CollisionSystem) handlePlayerEnemyCollision(
+	playerEntity, enemyEntity donburi.Entity,
+	playerEntry, enemyEntry *donburi.Entry,
+) {
+	// Get player and enemy data
+	playerPos := Position.Get(playerEntry)
+	playerSize := Size.Get(playerEntry)
+	enemyPos := Position.Get(enemyEntry)
+	enemySize := Size.Get(enemyEntry)
 
-	// TODO: Reduce player health/lives
-	// TODO: Add player damage effect
-	// TODO: Emit player damaged event
+	// Check collision
+	if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
+		// Remove enemy
+		cs.world.Remove(enemyEntity)
+
+		// TODO: Handle player damage/lives
+		// For now, just remove the enemy
+	}
 }
 
 // GetCollisionDistance calculates the distance between two entities

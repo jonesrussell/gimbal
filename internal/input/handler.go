@@ -8,13 +8,6 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
-const (
-// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
-// This is now defined in common.PlayerMovementSpeed
-
-// Touch input constants are now defined in common.Constants
-)
-
 // Handler handles input for the game
 type Handler struct {
 	logger        common.Logger

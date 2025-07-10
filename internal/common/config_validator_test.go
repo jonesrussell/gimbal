@@ -1,16 +1,18 @@
-package common
+package common_test
 
 import (
 	"testing"
+
+	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 func TestConfigValidator_ValidConfig(t *testing.T) {
-	validator := NewConfigValidator()
-	config := NewConfig(
-		WithScreenSize(640, 480),
-		WithPlayerSize(32, 32),
-		WithNumStars(100),
-		WithDebug(true),
+	validator := common.NewConfigValidator()
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(32, 32),
+		common.WithNumStars(100),
+		common.WithDebug(true),
 	)
 
 	result := validator.Validate(config)
@@ -20,7 +22,7 @@ func TestConfigValidator_ValidConfig(t *testing.T) {
 }
 
 func TestConfigValidator_NilConfig(t *testing.T) {
-	validator := NewConfigValidator()
+	validator := common.NewConfigValidator()
 	result := validator.Validate(nil)
 
 	if result.IsValid {
@@ -37,45 +39,45 @@ func TestConfigValidator_NilConfig(t *testing.T) {
 }
 
 func TestConfigValidator_InvalidScreenSize(t *testing.T) {
-	validator := NewConfigValidator()
+	validator := common.NewConfigValidator()
 
 	// Test negative width
-	config := NewConfig(WithScreenSize(-100, 480))
+	config := common.NewConfig(common.WithScreenSize(-100, 480))
 	result := validator.Validate(config)
 	if result.IsValid {
 		t.Error("Negative screen width should fail validation")
 	}
 
 	// Test negative height
-	config = NewConfig(WithScreenSize(640, -100))
+	config = common.NewConfig(common.WithScreenSize(640, -100))
 	result = validator.Validate(config)
 	if result.IsValid {
 		t.Error("Negative screen height should fail validation")
 	}
 
 	// Test too small width
-	config = NewConfig(WithScreenSize(100, 480))
+	config = common.NewConfig(common.WithScreenSize(100, 480))
 	result = validator.Validate(config)
 	if result.IsValid {
 		t.Error("Too small screen width should fail validation")
 	}
 
 	// Test too small height
-	config = NewConfig(WithScreenSize(640, 100))
+	config = common.NewConfig(common.WithScreenSize(640, 100))
 	result = validator.Validate(config)
 	if result.IsValid {
 		t.Error("Too small screen height should fail validation")
 	}
 
 	// Test too large width
-	config = NewConfig(WithScreenSize(3000, 480))
+	config = common.NewConfig(common.WithScreenSize(3000, 480))
 	result = validator.Validate(config)
 	if result.IsValid {
 		t.Error("Too large screen width should fail validation")
 	}
 
 	// Test too large height
-	config = NewConfig(WithScreenSize(640, 3000))
+	config = common.NewConfig(common.WithScreenSize(640, 3000))
 	result = validator.Validate(config)
 	if result.IsValid {
 		t.Error("Too large screen height should fail validation")
@@ -83,12 +85,12 @@ func TestConfigValidator_InvalidScreenSize(t *testing.T) {
 }
 
 func TestConfigValidator_InvalidPlayerSize(t *testing.T) {
-	validator := NewConfigValidator()
+	validator := common.NewConfigValidator()
 
 	// Test negative width
-	config := NewConfig(
-		WithScreenSize(640, 480),
-		WithPlayerSize(-10, 32),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(-10, 32),
 	)
 	result := validator.Validate(config)
 	if result.IsValid {
@@ -96,9 +98,9 @@ func TestConfigValidator_InvalidPlayerSize(t *testing.T) {
 	}
 
 	// Test negative height
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithPlayerSize(32, -10),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(32, -10),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -106,9 +108,9 @@ func TestConfigValidator_InvalidPlayerSize(t *testing.T) {
 	}
 
 	// Test player too large for screen
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithPlayerSize(200, 200), // More than 1/4 of screen
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(200, 200), // More than 1/4 of screen
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -117,12 +119,12 @@ func TestConfigValidator_InvalidPlayerSize(t *testing.T) {
 }
 
 func TestConfigValidator_InvalidRadius(t *testing.T) {
-	validator := NewConfigValidator()
+	validator := common.NewConfigValidator()
 
 	// Test negative radius
-	config := NewConfig(
-		WithScreenSize(640, 480),
-		WithPlayerSize(32, 32),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(32, 32),
 	)
 	config.Radius = -10
 	result := validator.Validate(config)
@@ -131,9 +133,9 @@ func TestConfigValidator_InvalidRadius(t *testing.T) {
 	}
 
 	// Test radius too large for screen
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithPlayerSize(32, 32),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(32, 32),
 	)
 	config.Radius = 500 // Too large for 640x480 screen
 	result = validator.Validate(config)
@@ -142,9 +144,9 @@ func TestConfigValidator_InvalidRadius(t *testing.T) {
 	}
 
 	// Test radius too small for player
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithPlayerSize(32, 32),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(32, 32),
 	)
 	config.Radius = 5 // Too small for 32x32 player
 	result = validator.Validate(config)
@@ -154,12 +156,12 @@ func TestConfigValidator_InvalidRadius(t *testing.T) {
 }
 
 func TestConfigValidator_InvalidStarConfig(t *testing.T) {
-	validator := NewConfigValidator()
+	validator := common.NewConfigValidator()
 
 	// Test negative number of stars
-	config := NewConfig(
-		WithScreenSize(640, 480),
-		WithNumStars(-10),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithNumStars(-10),
 	)
 	result := validator.Validate(config)
 	if result.IsValid {
@@ -167,9 +169,9 @@ func TestConfigValidator_InvalidStarConfig(t *testing.T) {
 	}
 
 	// Test too many stars
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithNumStars(2000),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithNumStars(2000),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -177,9 +179,9 @@ func TestConfigValidator_InvalidStarConfig(t *testing.T) {
 	}
 
 	// Test negative star size
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithStarSettings(-5, 2.0),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithStarSettings(-5, 2.0),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -187,9 +189,9 @@ func TestConfigValidator_InvalidStarConfig(t *testing.T) {
 	}
 
 	// Test too large star size
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithStarSettings(30, 2.0),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithStarSettings(30, 2.0),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -197,9 +199,9 @@ func TestConfigValidator_InvalidStarConfig(t *testing.T) {
 	}
 
 	// Test negative star speed
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithStarSettings(5, -2.0),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithStarSettings(5, -2.0),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -207,9 +209,9 @@ func TestConfigValidator_InvalidStarConfig(t *testing.T) {
 	}
 
 	// Test too large star speed
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithStarSettings(5, 15.0),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithStarSettings(5, 15.0),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -218,12 +220,12 @@ func TestConfigValidator_InvalidStarConfig(t *testing.T) {
 }
 
 func TestConfigValidator_InvalidSpeedValues(t *testing.T) {
-	validator := NewConfigValidator()
+	validator := common.NewConfigValidator()
 
 	// Test negative speed
-	config := NewConfig(
-		WithScreenSize(640, 480),
-		WithSpeed(-0.1),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithSpeed(-0.1),
 	)
 	result := validator.Validate(config)
 	if result.IsValid {
@@ -231,9 +233,9 @@ func TestConfigValidator_InvalidSpeedValues(t *testing.T) {
 	}
 
 	// Test zero speed
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithSpeed(0),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithSpeed(0),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -241,9 +243,9 @@ func TestConfigValidator_InvalidSpeedValues(t *testing.T) {
 	}
 
 	// Test too large speed
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithSpeed(2.0),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithSpeed(2.0),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -252,12 +254,12 @@ func TestConfigValidator_InvalidSpeedValues(t *testing.T) {
 }
 
 func TestConfigValidator_InvalidAngleStep(t *testing.T) {
-	validator := NewConfigValidator()
+	validator := common.NewConfigValidator()
 
 	// Test negative angle step
-	config := NewConfig(
-		WithScreenSize(640, 480),
-		WithAngleStep(-0.1),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithAngleStep(-0.1),
 	)
 	result := validator.Validate(config)
 	if result.IsValid {
@@ -265,9 +267,9 @@ func TestConfigValidator_InvalidAngleStep(t *testing.T) {
 	}
 
 	// Test zero angle step
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithAngleStep(0),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithAngleStep(0),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -275,9 +277,9 @@ func TestConfigValidator_InvalidAngleStep(t *testing.T) {
 	}
 
 	// Test too large angle step
-	config = NewConfig(
-		WithScreenSize(640, 480),
-		WithAngleStep(2.0),
+	config = common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithAngleStep(2.0),
 	)
 	result = validator.Validate(config)
 	if result.IsValid {
@@ -287,24 +289,24 @@ func TestConfigValidator_InvalidAngleStep(t *testing.T) {
 
 func TestValidateConfig_ConvenienceFunction(t *testing.T) {
 	// Test valid config
-	config := NewConfig(
-		WithScreenSize(640, 480),
-		WithPlayerSize(32, 32),
-		WithNumStars(100),
+	config := common.NewConfig(
+		common.WithScreenSize(640, 480),
+		common.WithPlayerSize(32, 32),
+		common.WithNumStars(100),
 	)
 
-	err := ValidateConfig(config)
+	err := common.ValidateConfig(config)
 	if err != nil {
 		t.Errorf("Valid config should not return error: %v", err)
 	}
 
 	// Test invalid config
-	config = NewConfig(
-		WithScreenSize(-100, 480), // Invalid
-		WithPlayerSize(32, 32),
+	config = common.NewConfig(
+		common.WithScreenSize(-100, 480), // Invalid
+		common.WithPlayerSize(32, 32),
 	)
 
-	err = ValidateConfig(config)
+	err = common.ValidateConfig(config)
 	if err == nil {
 		t.Error("Invalid config should return error")
 	}
@@ -316,7 +318,7 @@ func TestValidateConfig_ConvenienceFunction(t *testing.T) {
 }
 
 func TestValidationResult_ErrorFormatting(t *testing.T) {
-	result := NewValidationResult()
+	result := common.NewValidationResult()
 
 	// Add some errors
 	result.AddError("field1", "error message 1")
@@ -334,7 +336,7 @@ func TestValidationResult_ErrorFormatting(t *testing.T) {
 	}
 
 	// Test valid result
-	validResult := NewValidationResult()
+	validResult := common.NewValidationResult()
 	validErrorMsg := validResult.Error()
 	if validErrorMsg != "" {
 		t.Error("Valid result should return empty error message")
