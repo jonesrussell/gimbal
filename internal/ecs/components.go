@@ -14,6 +14,12 @@ var (
 
 	// StarTag marks an entity as a star
 	StarTag = donburi.NewTag()
+
+	// EnemyTag marks an entity as an enemy
+	EnemyTag = donburi.NewTag()
+
+	// ProjectileTag marks an entity as a projectile
+	ProjectileTag = donburi.NewTag()
 )
 
 // Components
@@ -41,6 +47,9 @@ var (
 
 	// Scale component stores scaling factor
 	Scale = donburi.NewComponentType[float64]()
+
+	// Health component stores entity health
+	Health = donburi.NewComponentType[int]()
 )
 
 // MovementData represents movement information

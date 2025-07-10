@@ -2,7 +2,6 @@ package ecs
 
 import (
 	"fmt"
-	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
@@ -32,6 +31,14 @@ type ECSGame struct {
 
 	// Game state management
 	stateManager *GameStateManager
+
+	// Scene management
+	sceneManager *SceneManager
+
+	// Combat systems
+	enemySystem     *EnemySystem
+	weaponSystem    *WeaponSystem
+	collisionSystem *CollisionSystem
 
 	// Entity references
 	playerEntity donburi.Entity
@@ -74,6 +81,14 @@ func NewECSGame(config *common.GameConfig, logger common.Logger, inputHandler co
 	// Create game state manager
 	stateManager := NewGameStateManager(eventSystem, logger)
 
+	// Create scene manager
+	sceneManager := NewSceneManager(world, config, logger)
+
+	// Create combat systems
+	enemySystem := NewEnemySystem(world, config)
+	weaponSystem := NewWeaponSystem(world, config)
+	collisionSystem := NewCollisionSystem(world, config)
+
 	// Create game instance
 	game := &ECSGame{
 		world:           world,
@@ -84,6 +99,10 @@ func NewECSGame(config *common.GameConfig, logger common.Logger, inputHandler co
 		resourceManager: resourceManager,
 		systemManager:   systemManager,
 		stateManager:    stateManager,
+		sceneManager:    sceneManager,
+		enemySystem:     enemySystem,
+		weaponSystem:    weaponSystem,
+		collisionSystem: collisionSystem,
 	}
 
 	// Load assets
@@ -153,65 +172,83 @@ func (g *ECSGame) createEntities() error {
 
 // Update updates the game state
 func (g *ECSGame) Update() error {
-	if g.stateManager.IsPaused() {
-		return nil
-	}
-
 	// Handle input
 	g.inputHandler.HandleInput()
 
-	// Check for pause
-	if g.inputHandler.IsPausePressed() {
-		g.stateManager.TogglePause()
-		return nil
-	}
-
-	// Get input angle for player movement
-	inputAngle := g.inputHandler.GetMovementInput()
-
-	// Run player input system (needs input angle)
-	playerInputWrapper := NewPlayerInputSystemWrapper(inputAngle)
-	if err := playerInputWrapper.Update(g.world); err != nil {
-		g.logger.Error("Player input system failed", "error", err)
-	}
-
-	// Run other ECS systems through system manager
-	if err := g.systemManager.UpdateAll(g.world); err != nil {
-		g.logger.Error("System update failed", "error", err)
+	// Update scene manager
+	if err := g.sceneManager.Update(); err != nil {
+		g.logger.Error("Scene update failed", "error", err)
 		return err
 	}
 
-	// Emit player movement event if player moved
-	if inputAngle != 0 {
-		playerEntry := g.world.Entry(g.playerEntity)
-		if playerEntry.Valid() {
-			pos := Position.Get(playerEntry)
-			orb := Orbital.Get(playerEntry)
-			g.eventSystem.EmitPlayerMoved(*pos, orb.OrbitalAngle)
-		}
-	}
+	// Check current scene
+	currentScene := g.sceneManager.GetCurrentScene()
 
-	// Process all events
-	g.eventSystem.ProcessEvents()
+	switch currentScene.GetType() {
+	case SceneStudioIntro, SceneTitleScreen, SceneMenu:
+		// Handle input for these scenes
+		g.handleMenuInput()
+	case ScenePlaying:
+		// Handle gameplay
+		if g.stateManager.IsPaused() {
+			return nil
+		}
+
+		// Check for pause
+		if g.inputHandler.IsPausePressed() {
+			g.stateManager.TogglePause()
+			g.sceneManager.SwitchScene(ScenePaused)
+			return nil
+		}
+
+		// Get input angle for player movement
+		inputAngle := g.inputHandler.GetMovementInput()
+
+		// Run player input system (needs input angle)
+		playerInputWrapper := NewPlayerInputSystemWrapper(inputAngle)
+		if err := playerInputWrapper.Update(g.world); err != nil {
+			g.logger.Error("Player input system failed", "error", err)
+		}
+
+		// Handle weapon firing
+		g.handleWeaponFiring()
+
+		// Update combat systems
+		g.enemySystem.Update(1.0) // Assuming 60fps, so deltaTime = 1.0
+		g.weaponSystem.Update(1.0)
+		g.collisionSystem.Update()
+
+		// Run other ECS systems through system manager
+		if err := g.systemManager.UpdateAll(g.world); err != nil {
+			g.logger.Error("System update failed", "error", err)
+			return err
+		}
+
+		// Emit player movement event if player moved
+		if inputAngle != 0 {
+			playerEntry := g.world.Entry(g.playerEntity)
+			if playerEntry.Valid() {
+				pos := Position.Get(playerEntry)
+				orb := Orbital.Get(playerEntry)
+				g.eventSystem.EmitPlayerMoved(*pos, orb.OrbitalAngle)
+			}
+		}
+
+		// Process all events
+		g.eventSystem.ProcessEvents()
+
+	case ScenePaused:
+		// Handle pause menu input
+		g.handlePauseInput()
+	}
 
 	return nil
 }
 
 // Draw renders the game
 func (g *ECSGame) Draw(screen *ebiten.Image) {
-	// Clear screen
-	screen.Fill(color.Black)
-
-	// Run render system through wrapper
-	renderWrapper := NewRenderSystemWrapper(screen)
-	if err := renderWrapper.Update(g.world); err != nil {
-		g.logger.Error("Render system failed", "error", err)
-	}
-
-	// Draw debug info if enabled
-	if g.config.Debug {
-		g.drawDebugInfo(screen)
-	}
+	// Use scene manager to draw the current scene
+	g.sceneManager.Draw(screen)
 }
 
 // drawDebugInfo renders debug information
@@ -295,4 +332,72 @@ func (g *ECSGame) setupSystems() {
 	g.systemManager.AddSystem(NewStarMovementSystemWrapper(&ecs.ECS{World: g.world}, g.config))
 
 	g.logger.Debug("Systems set up", "system_count", g.systemManager.GetSystemCount(), "systems", g.systemManager.GetSystemNames())
+}
+
+// handleWeaponFiring handles weapon firing based on input
+func (g *ECSGame) handleWeaponFiring() {
+	// Get player position and angle
+	playerEntry := g.world.Entry(g.playerEntity)
+	if !playerEntry.Valid() {
+		return
+	}
+
+	pos := Position.Get(playerEntry)
+	orb := Orbital.Get(playerEntry)
+
+	// Check for fire input (Space key)
+	if g.inputHandler.IsKeyPressed(ebiten.KeySpace) {
+		g.weaponSystem.FireWeapon(WeaponTypePrimary, *pos, orb.FacingAngle)
+	}
+
+	// Check for secondary weapon (Shift key)
+	if g.inputHandler.IsKeyPressed(ebiten.KeyShift) {
+		g.weaponSystem.FireWeapon(WeaponTypeSecondary, *pos, orb.FacingAngle)
+	}
+}
+
+// handleMenuInput handles input for menu scenes
+func (g *ECSGame) handleMenuInput() {
+	currentScene := g.sceneManager.GetCurrentScene()
+
+	switch currentScene.GetType() {
+	case SceneTitleScreen:
+		// Any key to continue to main menu
+		if g.inputHandler.GetLastEvent() != common.InputEventNone {
+			g.sceneManager.SwitchScene(SceneMenu)
+		}
+	case SceneMenu:
+		// Handle menu navigation
+		menuScene := currentScene.(*MenuScene)
+
+		// Navigation
+		if g.inputHandler.IsKeyPressed(ebiten.KeyUp) {
+			menuScene.selection = (menuScene.selection - 1 + len(menuScene.options)) % len(menuScene.options)
+		}
+		if g.inputHandler.IsKeyPressed(ebiten.KeyDown) {
+			menuScene.selection = (menuScene.selection + 1) % len(menuScene.options)
+		}
+
+		// Selection
+		if g.inputHandler.IsKeyPressed(ebiten.KeyEnter) || g.inputHandler.IsKeyPressed(ebiten.KeySpace) {
+			switch menuScene.selection {
+			case 0: // Start Game
+				g.sceneManager.SwitchScene(ScenePlaying)
+			case 1: // Options
+				// TODO: Implement options menu
+			case 2: // Credits
+				// TODO: Implement credits screen
+			case 3: // Quit
+				// TODO: Implement quit functionality
+			}
+		}
+	}
+}
+
+// handlePauseInput handles input for pause menu
+func (g *ECSGame) handlePauseInput() {
+	// Check for resume (ESC or any key)
+	if g.inputHandler.IsQuitPressed() || g.inputHandler.GetLastEvent() != common.InputEventNone {
+		g.sceneManager.SwitchScene(ScenePlaying)
+	}
 }
