@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"os"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
@@ -59,6 +61,8 @@ const (
 	ScenePaused
 	SceneGameOver
 	SceneVictory
+	SceneOptions
+	SceneCredits
 )
 
 // Scene represents a game scene with its own update and draw logic
@@ -97,6 +101,8 @@ func NewSceneManager(world donburi.World, config *common.GameConfig, logger comm
 	sm.scenes[ScenePlaying] = NewPlayingScene(sm)
 	sm.scenes[ScenePaused] = NewPausedScene(sm)
 	sm.scenes[SceneGameOver] = NewGameOverScene(sm)
+	sm.scenes[SceneOptions] = NewOptionsScene(sm)
+	sm.scenes[SceneCredits] = NewCreditsScene(sm)
 
 	// Set initial scene
 	sm.currentScene = sm.scenes[SceneStudioIntro]
@@ -442,7 +448,6 @@ type MenuScene struct {
 	options   []string
 }
 
-// NewMenuScene creates a new menu scene
 func NewMenuScene(manager *SceneManager) *MenuScene {
 	return &MenuScene{
 		manager:   manager,
@@ -452,36 +457,93 @@ func NewMenuScene(manager *SceneManager) *MenuScene {
 }
 
 func (s *MenuScene) Update() error {
-	// Handle menu navigation
-	// This will be handled by input system
+	input := s.manager.inputHandler
+
+	// Keyboard navigation
+	if input.IsKeyPressed(ebiten.KeyUp) {
+		s.selection = (s.selection - 1 + len(s.options)) % len(s.options)
+	}
+	if input.IsKeyPressed(ebiten.KeyDown) {
+		s.selection = (s.selection + 1) % len(s.options)
+	}
+
+	// Mouse hover
+	x, y := ebiten.CursorPosition()
+	menuY := float64(s.manager.config.ScreenSize.Height) / 2
+	for i := range s.options {
+		itemY := menuY + float64(i*40)
+		bounds := text.BoundString(defaultFontFace, s.options[i])
+		w := bounds.Max.X - bounds.Min.X
+		h := bounds.Max.Y - bounds.Min.Y
+		itemRect := struct{ x0, y0, x1, y1 int }{
+			int(float64(s.manager.config.ScreenSize.Width)/2) - w/2 - 40, // extra for chevron
+			int(itemY) - h/2 - 8,
+			int(float64(s.manager.config.ScreenSize.Width)/2) + w/2 + 40,
+			int(itemY) + h/2 + 8,
+		}
+		if x >= itemRect.x0 && x <= itemRect.x1 && y >= itemRect.y0 && y <= itemRect.y1 {
+			s.selection = i
+			if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+				s.activateSelection()
+			}
+		}
+	}
+
+	// Keyboard select
+	if input.IsKeyPressed(ebiten.KeyEnter) || input.IsKeyPressed(ebiten.KeySpace) {
+		s.activateSelection()
+	}
 	return nil
 }
 
-func (s *MenuScene) Draw(screen *ebiten.Image) {
-	// Draw menu background
-	screen.Fill(color.Black)
+func (s *MenuScene) activateSelection() {
+	switch s.selection {
+	case 0: // Start Game
+		s.manager.SwitchScene(ScenePlaying)
+	case 1: // Options
+		s.manager.SwitchScene(SceneOptions)
+	case 2: // Credits
+		s.manager.SwitchScene(SceneCredits)
+	case 3: // Quit
+		os.Exit(0)
+	}
+}
 
-	// Draw game title
+func (s *MenuScene) Draw(screen *ebiten.Image) {
+	screen.Fill(color.Black)
 	drawCenteredText(screen, "GIMBAL",
 		float64(s.manager.config.ScreenSize.Width)/2,
-		100,
-		1.0)
+		100, 1.0)
 
-	// Draw menu options
 	menuY := float64(s.manager.config.ScreenSize.Height) / 2
 	for i, option := range s.options {
 		y := menuY + float64(i*40)
 		alpha := 1.0
+		bgAlpha := 0.0
 		if i == s.selection {
-			alpha = 1.0 // Highlight selected option
-		} else {
-			alpha = 0.7 // Dim unselected options
+			alpha = 1.0
+			bgAlpha = 0.5
+			// Animated chevron
+			pulse := 0.7 + 0.3*float64((time.Now().UnixNano()/1e7)%20)/20.0
+			chevron := ">"
+			chevronCol := color.RGBA{0, 255, 255, uint8(255 * pulse)}
+			text.Draw(screen, chevron, defaultFontFace,
+				int(float64(s.manager.config.ScreenSize.Width)/2)-120, int(y)+8, chevronCol)
 		}
-
+		// Neon blue background highlight
+		if bgAlpha > 0 {
+			bounds := text.BoundString(defaultFontFace, option)
+			w := bounds.Max.X - bounds.Min.X
+			h := bounds.Max.Y - bounds.Min.Y
+			rectCol := color.RGBA{0, 255, 255, uint8(128 * bgAlpha)}
+			rect := ebiten.NewImage(w+60, h+16)
+			rect.Fill(rectCol)
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(s.manager.config.ScreenSize.Width)/2-float64(w+60)/2, y-float64(h+16)/2)
+			screen.DrawImage(rect, op)
+		}
 		drawCenteredText(screen, option,
-			float64(s.manager.config.ScreenSize.Width)/2,
-			y,
-			alpha)
+			float64(s.manager.config.ScreenSize.Width)/2, y, alpha)
 	}
 }
 
@@ -496,3 +558,40 @@ func (s *MenuScene) Exit() {
 func (s *MenuScene) GetType() SceneType {
 	return SceneMenu
 }
+
+// Placeholder scenes for Options and Credits
+type OptionsScene struct{ manager *SceneManager }
+
+func NewOptionsScene(manager *SceneManager) *OptionsScene { return &OptionsScene{manager: manager} }
+func (s *OptionsScene) Update() error {
+	if s.manager.inputHandler.GetLastEvent() != common.InputEventNone {
+		s.manager.SwitchScene(SceneMenu)
+	}
+	return nil
+}
+
+func (s *OptionsScene) Draw(screen *ebiten.Image) {
+	screen.Fill(color.Black)
+	drawCenteredText(screen, "OPTIONS\nComing Soon!", float64(s.manager.config.ScreenSize.Width)/2, float64(s.manager.config.ScreenSize.Height)/2, 1.0)
+}
+func (s *OptionsScene) Enter()             { s.manager.logger.Debug("Entering options scene") }
+func (s *OptionsScene) Exit()              { s.manager.logger.Debug("Exiting options scene") }
+func (s *OptionsScene) GetType() SceneType { return SceneOptions }
+
+type CreditsScene struct{ manager *SceneManager }
+
+func NewCreditsScene(manager *SceneManager) *CreditsScene { return &CreditsScene{manager: manager} }
+func (s *CreditsScene) Update() error {
+	if s.manager.inputHandler.GetLastEvent() != common.InputEventNone {
+		s.manager.SwitchScene(SceneMenu)
+	}
+	return nil
+}
+
+func (s *CreditsScene) Draw(screen *ebiten.Image) {
+	screen.Fill(color.Black)
+	drawCenteredText(screen, "CREDITS\nGimbal Studios\n2025", float64(s.manager.config.ScreenSize.Width)/2, float64(s.manager.config.ScreenSize.Height)/2, 1.0)
+}
+func (s *CreditsScene) Enter()             { s.manager.logger.Debug("Entering credits scene") }
+func (s *CreditsScene) Exit()              { s.manager.logger.Debug("Exiting credits scene") }
+func (s *CreditsScene) GetType() SceneType { return SceneCredits }
