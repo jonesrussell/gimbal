@@ -50,9 +50,9 @@ func NewEnemySystem(world donburi.World, config *common.GameConfig) *EnemySystem
 		world:          world,
 		config:         config,
 		spawnTimer:     0,
-		spawnInterval:  60, // Spawn every 60 frames (1 second at 60fps)
+		spawnInterval:  DefaultEnemySpawnIntervalFrames, // Spawn every 60 frames (1 second at 60fps)
 		currentWave:    1,
-		enemiesInWave:  5,
+		enemiesInWave:  DefaultEnemyWaveCount,
 		enemiesSpawned: 0,
 		waveComplete:   false,
 		level:          1,
@@ -139,7 +139,7 @@ func (es *EnemySystem) calculateSpawnPosition(pattern int) common.Point {
 		//nolint:gosec // Game logic doesn't need cryptographic randomness
 		angle := rand.Float64() * 2 * math.Pi
 		//nolint:gosec // Game logic doesn't need cryptographic randomness
-		radius := 50.0 + rand.Float64()*100.0
+		radius := EnemySpawnRadiusMin + rand.Float64()*(EnemySpawnRadiusMax-EnemySpawnRadiusMin)
 		return common.Point{
 			X: center.X + radius*math.Cos(angle),
 			Y: center.Y + radius*math.Sin(angle),
@@ -228,17 +228,17 @@ func (es *EnemySystem) createEnemySprite(entry *donburi.Entry, enemyType int) {
 
 	switch enemyType {
 	case EnemyTypeSwarmDrone:
-		size = common.Size{Width: 16, Height: 16}
-		enemyColor = color.RGBA{255, 0, 0, 255} // Red
+		size = common.Size{Width: EnemySwarmDroneSize, Height: EnemySwarmDroneSize} // constants.EnemySwarmDroneSize
+		enemyColor = color.RGBA{255, 0, 0, 255}                                     // Red
 	case EnemyTypeHeavyCruiser:
-		size = common.Size{Width: 32, Height: 32}
-		enemyColor = color.RGBA{255, 100, 0, 255} // Orange
+		size = common.Size{Width: EnemyHeavyCruiserSize, Height: EnemyHeavyCruiserSize} // constants.EnemyHeavyCruiserSize
+		enemyColor = color.RGBA{255, 100, 0, 255}                                       // Orange
 	case EnemyTypeBoss:
-		size = common.Size{Width: 64, Height: 64}
-		enemyColor = color.RGBA{128, 0, 128, 255} // Purple
+		size = common.Size{Width: EnemyBossSize, Height: EnemyBossSize} // constants.EnemyBossSize
+		enemyColor = color.RGBA{128, 0, 128, 255}                       // Purple
 	case EnemyTypeAsteroid:
-		size = common.Size{Width: 24, Height: 24}
-		enemyColor = color.RGBA{128, 128, 128, 255} // Gray
+		size = common.Size{Width: EnemyAsteroidSize, Height: EnemyAsteroidSize} // constants.EnemyAsteroidSize
+		enemyColor = color.RGBA{128, 128, 128, 255}                             // Gray
 	default:
 		size = common.Size{Width: 16, Height: 16}
 		enemyColor = color.RGBA{255, 0, 0, 255} // Red
@@ -275,7 +275,7 @@ func (es *EnemySystem) movementTowardsCenter(entry *donburi.Entry, speed, maxSpe
 // setupSwarmDrone configures a swarm drone enemy
 func (es *EnemySystem) setupSwarmDrone(entry *donburi.Entry) {
 	// Small, fast, weak enemy
-	core.Size.SetValue(entry, common.Size{Width: 16, Height: 16})
+	core.Size.SetValue(entry, common.Size{Width: EnemySwarmDroneSize, Height: EnemySwarmDroneSize}) // constants.EnemySwarmDroneSize
 	core.Speed.SetValue(entry, 2.0*es.difficulty)
 	core.Health.SetValue(entry, 1)
 	// Movement towards center
@@ -285,7 +285,7 @@ func (es *EnemySystem) setupSwarmDrone(entry *donburi.Entry) {
 // setupHeavyCruiser configures a heavy cruiser enemy
 func (es *EnemySystem) setupHeavyCruiser(entry *donburi.Entry) {
 	// Large, slow, strong enemy
-	core.Size.SetValue(entry, common.Size{Width: 32, Height: 32})
+	core.Size.SetValue(entry, common.Size{Width: EnemyHeavyCruiserSize, Height: EnemyHeavyCruiserSize}) // constants.EnemyHeavyCruiserSize
 	core.Speed.SetValue(entry, 1.0*es.difficulty)
 	core.Health.SetValue(entry, 3)
 	// Movement towards center
@@ -295,7 +295,7 @@ func (es *EnemySystem) setupHeavyCruiser(entry *donburi.Entry) {
 // setupBoss configures a boss enemy
 func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
 	// Very large, powerful boss enemy
-	core.Size.SetValue(entry, common.Size{Width: 64, Height: 64})
+	core.Size.SetValue(entry, common.Size{Width: EnemyBossSize, Height: EnemyBossSize}) // constants.EnemyBossSize
 	core.Speed.SetValue(entry, 0.5*es.difficulty)
 	core.Health.SetValue(entry, 10)
 
@@ -308,7 +308,7 @@ func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
 	// Start at a random angle
 	//nolint:gosec // Game logic doesn't need cryptographic randomness
 	angle := rand.Float64() * 2 * math.Pi
-	radius := 100.0
+	radius := EnemyBossRadius // constants.EnemyBossRadius
 
 	pos := common.Point{
 		X: center.X + radius*math.Cos(angle),
@@ -326,7 +326,7 @@ func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
 // setupAsteroid configures an asteroid enemy
 func (es *EnemySystem) setupAsteroid(entry *donburi.Entry) {
 	// Medium-sized environmental hazard
-	core.Size.SetValue(entry, common.Size{Width: 24, Height: 24})
+	core.Size.SetValue(entry, common.Size{Width: EnemyAsteroidSize, Height: EnemyAsteroidSize}) // constants.EnemyAsteroidSize
 	core.Speed.SetValue(entry, 1.5*es.difficulty)
 	core.Health.SetValue(entry, 2)
 
@@ -370,7 +370,7 @@ func (es *EnemySystem) updateEnemies() {
 
 // isOffScreen checks if a position is off screen
 func (es *EnemySystem) isOffScreen(pos common.Point) bool {
-	margin := 50.0
+	margin := EnemyWaveMargin // constants.EnemyWaveMargin
 	return pos.X < -margin ||
 		pos.X > float64(es.config.ScreenSize.Width)+margin ||
 		pos.Y < -margin ||

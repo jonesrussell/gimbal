@@ -45,10 +45,10 @@ func NewWeaponSystem(world donburi.World, config *common.GameConfig) *WeaponSyst
 		world:           world,
 		config:          config,
 		fireTimer:       0,
-		fireInterval:    10, // Fire every 10 frames (6 shots per second at 60fps)
+		fireInterval:    DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
 		lastFireTime:    time.Now(),
-		projectileSpeed: 5.0,
-		projectileSize:  common.Size{Width: 4, Height: 4},
+		projectileSpeed: DefaultProjectileSpeed,
+		projectileSize:  common.Size{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
 	}
 }
 
@@ -80,7 +80,7 @@ func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, 
 
 	// Set position (slightly in front of player)
 	angleRad := float64(direction) * common.DegreesToRadians
-	offset := 20.0 // Distance from player center
+	offset := ProjectileOffset // Distance from player center
 	pos := common.Point{
 		X: startPos.X + offset*math.Cos(angleRad),
 		Y: startPos.Y - offset*math.Sin(angleRad), // Subtract because Y increases downward
@@ -158,7 +158,7 @@ func (ws *WeaponSystem) updateProjectiles() {
 
 // isOffScreen checks if a position is off screen
 func (ws *WeaponSystem) isOffScreen(pos common.Point) bool {
-	margin := 50.0
+	margin := ProjectileMargin
 	return pos.X < -margin ||
 		pos.X > float64(ws.config.ScreenSize.Width)+margin ||
 		pos.Y < -margin ||
