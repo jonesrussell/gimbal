@@ -3,15 +3,50 @@ package ecs
 import (
 	"fmt"
 	"image/color"
+	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 
+	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/common"
 )
+
+var defaultFontFace font.Face
+
+func init() {
+	fontBytes, err := assets.Assets.ReadFile("fonts/PressStart2P.ttf")
+	if err != nil {
+		log.Fatalf("failed to read font: %v", err)
+	}
+	fontTTF, err := opentype.Parse(fontBytes)
+	if err != nil {
+		log.Fatalf("failed to parse font: %v", err)
+	}
+	defaultFontFace, err = opentype.NewFace(fontTTF, &opentype.FaceOptions{
+		Size:    16,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Fatalf("failed to create font face: %v", err)
+	}
+}
+
+// drawCenteredText draws text centered on screen (helper method for scenes)
+func drawCenteredText(screen *ebiten.Image, textStr string, x, y, alpha float64) {
+	bounds := text.BoundString(defaultFontFace, textStr)
+	w := bounds.Max.X - bounds.Min.X
+	h := bounds.Max.Y - bounds.Min.Y
+	col := color.RGBA{255, 255, 255, uint8(255 * alpha)}
+	text.Draw(screen, textStr, defaultFontFace, int(x)-w/2, int(y)+h/2, col)
+}
 
 // SceneType represents different game scenes
 type SceneType int
@@ -42,15 +77,17 @@ type SceneManager struct {
 	world        donburi.World
 	config       *common.GameConfig
 	logger       common.Logger
+	inputHandler common.GameInputHandler
 }
 
 // NewSceneManager creates a new scene manager
-func NewSceneManager(world donburi.World, config *common.GameConfig, logger common.Logger) *SceneManager {
+func NewSceneManager(world donburi.World, config *common.GameConfig, logger common.Logger, inputHandler common.GameInputHandler) *SceneManager {
 	sm := &SceneManager{
-		scenes: make(map[SceneType]Scene),
-		world:  world,
-		config: config,
-		logger: logger,
+		scenes:       make(map[SceneType]Scene),
+		world:        world,
+		config:       config,
+		logger:       logger,
+		inputHandler: inputHandler,
 	}
 
 	// Initialize scenes
@@ -111,6 +148,11 @@ func (sm *SceneManager) GetConfig() *common.GameConfig {
 // GetLogger returns the logger
 func (sm *SceneManager) GetLogger() common.Logger {
 	return sm.logger
+}
+
+// GetInputHandler returns the input handler
+func (sm *SceneManager) GetInputHandler() common.GameInputHandler {
+	return sm.inputHandler
 }
 
 // PlayingScene represents the main gameplay scene
@@ -258,7 +300,9 @@ func (s *GameOverScene) GetType() SceneType {
 type StudioIntroScene struct {
 	manager   *SceneManager
 	startTime time.Time
-	duration  float64
+	minTime   float64
+	maxTime   float64
+	finished  bool
 }
 
 // NewStudioIntroScene creates a new studio intro scene
@@ -266,13 +310,29 @@ func NewStudioIntroScene(manager *SceneManager) *StudioIntroScene {
 	return &StudioIntroScene{
 		manager:   manager,
 		startTime: time.Now(),
-		duration:  3.0, // 3 seconds
+		minTime:   2.0, // Minimum 2 seconds
+		maxTime:   4.0, // Maximum 4 seconds
+		finished:  false,
 	}
 }
 
 func (s *StudioIntroScene) Update() error {
-	// Auto-transition after duration
-	if time.Since(s.startTime).Seconds() >= s.duration {
+	elapsed := time.Since(s.startTime).Seconds()
+	if s.finished {
+		return nil
+	}
+	// Allow skip after minTime with any key or mouse
+	if elapsed >= s.minTime {
+		input := s.manager.GetInputHandler()
+		if input != nil && (input.GetLastEvent() != common.InputEventNone) {
+			s.finished = true
+			s.manager.SwitchScene(SceneTitleScreen)
+			return nil
+		}
+	}
+	// Auto-advance after maxTime
+	if elapsed >= s.maxTime {
+		s.finished = true
 		s.manager.SwitchScene(SceneTitleScreen)
 	}
 	return nil
@@ -284,7 +344,7 @@ func (s *StudioIntroScene) Draw(screen *ebiten.Image) {
 
 	// Calculate fade-in effect
 	elapsed := time.Since(s.startTime).Seconds()
-	fadeProgress := elapsed / s.duration
+	fadeProgress := elapsed / s.maxTime
 	if fadeProgress > 1.0 {
 		fadeProgress = 1.0
 	}
@@ -373,20 +433,6 @@ func (s *TitleScreenScene) Exit() {
 
 func (s *TitleScreenScene) GetType() SceneType {
 	return SceneTitleScreen
-}
-
-// drawCenteredText draws text centered on screen (helper method for scenes)
-func drawCenteredText(screen *ebiten.Image, text string, x, y, alpha float64) {
-	// Create a simple "text" representation (colored rectangle)
-	textWidth := len(text) * 8 // Approximate character width
-	textHeight := 16
-
-	img := ebiten.NewImage(textWidth, textHeight)
-	img.Fill(color.RGBA{255, 255, 255, uint8(255 * alpha)})
-
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(x-float64(textWidth)/2, y-float64(textHeight)/2)
-	screen.DrawImage(img, op)
 }
 
 // MenuScene represents the main menu scene

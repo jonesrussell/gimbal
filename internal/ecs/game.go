@@ -82,7 +82,7 @@ func NewECSGame(config *common.GameConfig, logger common.Logger, inputHandler co
 	stateManager := NewGameStateManager(eventSystem, logger)
 
 	// Create scene manager
-	sceneManager := NewSceneManager(world, config, logger)
+	sceneManager := NewSceneManager(world, config, logger, inputHandler)
 
 	// Create combat systems
 	enemySystem := NewEnemySystem(world, config)
