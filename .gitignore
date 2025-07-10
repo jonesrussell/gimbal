@@ -3,4 +3,5 @@ build/
 coverage/
 gimbal
 test/mocks/
-tmp/main
+tmp/
+*.log
