@@ -211,10 +211,7 @@ func (g *ECSGame) Update() error {
 		inputAngle := g.inputHandler.GetMovementInput()
 
 		// Run player input system (needs input angle)
-		playerInputWrapper := core.NewPlayerInputSystemWrapper(inputAngle)
-		if err := playerInputWrapper.Update(g.world); err != nil {
-			g.logger.Error("Player input system failed", "error", err)
-		}
+		core.PlayerInputSystem(g.world, inputAngle)
 
 		// Handle weapon firing
 		g.handleWeaponFiring()
@@ -224,11 +221,10 @@ func (g *ECSGame) Update() error {
 		g.weaponSystem.Update(1.0)
 		g.collisionSystem.Update()
 
-		// Run other ECS systems through system manager
-		if err := g.systemManager.UpdateAll(g.world); err != nil {
-			g.logger.Error("System update failed", "error", err)
-			return err
-		}
+		// Run ECS systems directly
+		core.MovementSystem(g.world)
+		core.OrbitalMovementSystem(g.world)
+		core.StarMovementSystem(&ecs.ECS{World: g.world}, g.config)
 
 		// Emit player movement event if player moved
 		if inputAngle != 0 {
@@ -314,10 +310,8 @@ func (g *ECSGame) setupEventSubscriptions() {
 
 // setupSystems sets up the system manager with all required systems
 func (g *ECSGame) setupSystems() {
-	// Add update systems in execution order
-	g.systemManager.AddSystem(&core.MovementSystemWrapper{})
-	g.systemManager.AddSystem(&core.OrbitalMovementSystemWrapper{})
-	g.systemManager.AddSystem(core.NewStarMovementSystemWrapper(&ecs.ECS{World: g.world}, g.config))
+	// Systems are now called directly in the Update loop
+	// No need for system manager with wrappers
 }
 
 // handleWeaponFiring handles weapon firing based on input
