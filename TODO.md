@@ -85,10 +85,10 @@
   - [ ] Keep `GameStateManager` focused on core game state only
 
 ### **📝 Code Quality Improvements (Low Priority)**
-- [ ] **Improve Naming Consistency** - Establish conventions
-  - [ ] Standardize naming: `EnemySystem` vs `enemySystem`
-  - [ ] Consistent use of abbreviations vs full names
-  - [ ] Update all systems to follow conventions
+- [x] **Improve Naming Consistency** - Establish conventions
+  - [x] Standardize naming: `EnemySystem` vs `enemySystem`
+  - [x] Consistent use of abbreviations vs full names
+  - [x] Update all systems to follow conventions
 
 - [ ] **Add Missing Documentation** - Public API documentation
   - [ ] Document all public interfaces and methods

@@ -1,3 +1,33 @@
----
+# Go Coding Standards
+
+## Code Style
+- Follow `gofmt` formatting standards
+- Use `golangci-lint` for static analysis
+- Keep functions focused and under 30 lines when possible
+- Use descriptive variable and function names
+
+## Error Handling
+- Return errors for recoverable conditions
+- Use `common.NewGameError` and `common.NewGameErrorWithCause` for game-specific errors
+- Log errors with appropriate context using structured logging
+- Handle errors at the appropriate level
+
+## Naming Conventions
+- Use PascalCase for exported names, camelCase for unexported
+- Use descriptive names that explain purpose over brevity
+- Use consistent receiver names across similar types
+- Avoid naming conflicts between different system types
+
+## Documentation
+- Add comments for exported functions and types
+- Use clear, concise comments that explain "why" not "what"
+- Document complex algorithms and business logic
+- Keep documentation up to date with code changes
+
+## Testing
+- Write tests for new functionality
+- Use descriptive test names that explain the scenario
+- Test error conditions and edge cases
+- Maintain good test coverage for critical systems
 alwaysApply: true
 ---

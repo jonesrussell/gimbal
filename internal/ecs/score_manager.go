@@ -21,33 +21,33 @@ func NewScoreManager(eventSystem *EventSystem, logger common.Logger) *ScoreManag
 }
 
 // GetScore returns the current score
-func (sm *ScoreManager) GetScore() int {
-	return sm.score
+func (scoreMgr *ScoreManager) GetScore() int {
+	return scoreMgr.score
 }
 
 // AddScore adds points to the score
-func (sm *ScoreManager) AddScore(points int) {
-	oldScore := sm.score
-	sm.score += points
-	sm.eventSystem.EmitScoreChanged(oldScore, sm.score)
-	sm.logger.Debug("Score updated", "old_score", oldScore, "new_score", sm.score, "points", points)
+func (scoreMgr *ScoreManager) AddScore(points int) {
+	oldScore := scoreMgr.score
+	scoreMgr.score += points
+	scoreMgr.eventSystem.EmitScoreChanged(oldScore, scoreMgr.score)
+	scoreMgr.logger.Debug("Score updated", "old_score", oldScore, "new_score", scoreMgr.score, "points", points)
 }
 
 // SetScore sets the score to a specific value
-func (sm *ScoreManager) SetScore(score int) {
+func (scoreMgr *ScoreManager) SetScore(score int) {
 	if score < 0 {
 		score = 0
 	}
-	oldScore := sm.score
-	sm.score = score
-	sm.eventSystem.EmitScoreChanged(oldScore, sm.score)
-	sm.logger.Debug("Score set", "old_score", oldScore, "new_score", sm.score)
+	oldScore := scoreMgr.score
+	scoreMgr.score = score
+	scoreMgr.eventSystem.EmitScoreChanged(oldScore, scoreMgr.score)
+	scoreMgr.logger.Debug("Score set", "old_score", oldScore, "new_score", scoreMgr.score)
 }
 
 // Reset resets the score to 0
-func (sm *ScoreManager) Reset() {
-	oldScore := sm.score
-	sm.score = 0
-	sm.eventSystem.EmitScoreChanged(oldScore, sm.score)
-	sm.logger.Debug("Score reset", "old_score", oldScore, "new_score", sm.score)
+func (scoreMgr *ScoreManager) Reset() {
+	oldScore := scoreMgr.score
+	scoreMgr.score = 0
+	scoreMgr.eventSystem.EmitScoreChanged(oldScore, scoreMgr.score)
+	scoreMgr.logger.Debug("Score reset", "old_score", oldScore, "new_score", scoreMgr.score)
 }

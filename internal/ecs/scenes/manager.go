@@ -44,7 +44,7 @@ func NewSceneManager(
 	logger common.Logger,
 	inputHandler common.GameInputHandler,
 ) *SceneManager {
-	sm := &SceneManager{
+	sceneMgr := &SceneManager{
 		scenes:       make(map[SceneType]Scene),
 		world:        world,
 		config:       config,
@@ -54,49 +54,49 @@ func NewSceneManager(
 
 	// Initialize scenes (to be set up in main or via factory)
 	// Example scene registration (add this where scenes are registered):
-	sm.scenes[SceneCredits] = NewSimpleTextScene(sm, "CREDITS\nGimbal Studios\n2025", SceneCredits)
-	sm.scenes[SceneOptions] = NewSimpleTextScene(sm, "OPTIONS\nComing Soon!", SceneOptions)
-	return sm
+	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(sceneMgr, "CREDITS\nGimbal Studios\n2025", SceneCredits)
+	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions)
+	return sceneMgr
 }
 
-func (sm *SceneManager) Update() error {
-	return sm.currentScene.Update()
+func (sceneMgr *SceneManager) Update() error {
+	return sceneMgr.currentScene.Update()
 }
 
-func (sm *SceneManager) Draw(screen *ebiten.Image) {
-	sm.currentScene.Draw(screen)
+func (sceneMgr *SceneManager) Draw(screen *ebiten.Image) {
+	sceneMgr.currentScene.Draw(screen)
 }
 
-func (sm *SceneManager) SwitchScene(sceneType SceneType) {
-	if scene, exists := sm.scenes[sceneType]; exists {
-		sm.logger.Debug("Switching scene",
-			"from", sm.currentScene.GetType(),
+func (sceneMgr *SceneManager) SwitchScene(sceneType SceneType) {
+	if scene, exists := sceneMgr.scenes[sceneType]; exists {
+		sceneMgr.logger.Debug("Switching scene",
+			"from", sceneMgr.currentScene.GetType(),
 			"to", sceneType)
 
-		sm.currentScene.Exit()
-		sm.currentScene = scene
-		sm.currentScene.Enter()
+		sceneMgr.currentScene.Exit()
+		sceneMgr.currentScene = scene
+		sceneMgr.currentScene.Enter()
 	} else {
-		sm.logger.Error("Scene not found", "scene_type", sceneType)
+		sceneMgr.logger.Error("Scene not found", "scene_type", sceneType)
 	}
 }
 
-func (sm *SceneManager) GetCurrentScene() Scene {
-	return sm.currentScene
+func (sceneMgr *SceneManager) GetCurrentScene() Scene {
+	return sceneMgr.currentScene
 }
 
-func (sm *SceneManager) GetWorld() donburi.World {
-	return sm.world
+func (sceneMgr *SceneManager) GetWorld() donburi.World {
+	return sceneMgr.world
 }
 
-func (sm *SceneManager) GetConfig() *common.GameConfig {
-	return sm.config
+func (sceneMgr *SceneManager) GetConfig() *common.GameConfig {
+	return sceneMgr.config
 }
 
-func (sm *SceneManager) GetLogger() common.Logger {
-	return sm.logger
+func (sceneMgr *SceneManager) GetLogger() common.Logger {
+	return sceneMgr.logger
 }
 
-func (sm *SceneManager) GetInputHandler() common.GameInputHandler {
-	return sm.inputHandler
+func (sceneMgr *SceneManager) GetInputHandler() common.GameInputHandler {
+	return sceneMgr.inputHandler
 }
