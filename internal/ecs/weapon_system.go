@@ -75,7 +75,15 @@ func (ws *WeaponSystem) FireWeapon(weaponType int, playerPos common.Point, playe
 
 // createProjectile creates a new projectile
 func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, direction common.Angle) {
-	entity := ws.world.Create(core.ProjectileTag, core.Position, core.Sprite, core.Movement, core.Size, core.Speed, core.Angle)
+	entity := ws.world.Create(
+		core.ProjectileTag,
+		core.Position,
+		core.Sprite,
+		core.Movement,
+		core.Size,
+		core.Speed,
+		core.Angle,
+	)
 	entry := ws.world.Entry(entity)
 
 	// Set position (slightly in front of player)
