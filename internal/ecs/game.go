@@ -187,64 +187,90 @@ func (g *ECSGame) Update() error {
 		return err
 	}
 
-	// Check current scene
+	// Update based on current scene
+	return g.updateCurrentScene()
+}
+
+// updateCurrentScene handles scene-specific updates
+func (g *ECSGame) updateCurrentScene() error {
 	currentScene := g.sceneManager.GetCurrentScene()
 
 	switch currentScene.GetType() {
 	case scenes.SceneStudioIntro, scenes.SceneTitleScreen, scenes.SceneMenu:
-		// Handle input for these scenes
 		g.handleMenuInput()
 	case scenes.ScenePlaying:
-		// Handle gameplay
-		if g.stateManager.IsPaused() {
-			return nil
-		}
-
-		// Check for pause
-		if g.inputHandler.IsPausePressed() {
-			g.stateManager.TogglePause()
-			g.sceneManager.SwitchScene(scenes.ScenePaused)
-			return nil
-		}
-
-		// Get input angle for player movement
-		inputAngle := g.inputHandler.GetMovementInput()
-
-		// Run player input system (needs input angle)
-		core.PlayerInputSystem(g.world, inputAngle)
-
-		// Handle weapon firing
-		g.handleWeaponFiring()
-
-		// Update combat systems
-		g.enemySystem.Update(1.0) // Assuming 60fps, so deltaTime = 1.0
-		g.weaponSystem.Update(1.0)
-		g.collisionSystem.Update()
-
-		// Run ECS systems directly
-		core.MovementSystem(g.world)
-		core.OrbitalMovementSystem(g.world)
-		core.StarMovementSystem(&ecs.ECS{World: g.world}, g.config)
-
-		// Emit player movement event if player moved
-		if inputAngle != 0 {
-			playerEntry := g.world.Entry(g.playerEntity)
-			if playerEntry.Valid() {
-				pos := core.Position.Get(playerEntry)
-				orb := core.Orbital.Get(playerEntry)
-				g.eventSystem.EmitPlayerMoved(*pos, orb.OrbitalAngle)
-			}
-		}
-
-		// Process all events
-		g.eventSystem.ProcessEvents()
-
+		return g.updatePlayingScene()
 	case scenes.ScenePaused:
-		// Handle pause menu input
 		g.handlePauseInput()
 	}
 
 	return nil
+}
+
+// updatePlayingScene handles gameplay updates
+func (g *ECSGame) updatePlayingScene() error {
+	// Check if paused
+	if g.stateManager.IsPaused() {
+		return nil
+	}
+
+	// Check for pause input
+	if g.inputHandler.IsPausePressed() {
+		g.stateManager.TogglePause()
+		g.sceneManager.SwitchScene(scenes.ScenePaused)
+		return nil
+	}
+
+	// Update player input and movement
+	inputAngle := g.updatePlayerInput()
+
+	// Update combat systems
+	g.updateCombatSystems()
+
+	// Update ECS systems
+	g.updateECSSystems()
+
+	// Handle player movement events
+	g.handlePlayerMovementEvents(inputAngle)
+
+	// Process all events
+	g.eventSystem.ProcessEvents()
+
+	return nil
+}
+
+// updatePlayerInput handles player input and movement
+func (g *ECSGame) updatePlayerInput() common.Angle {
+	inputAngle := g.inputHandler.GetMovementInput()
+	core.PlayerInputSystem(g.world, inputAngle)
+	return inputAngle
+}
+
+// updateCombatSystems updates all combat-related systems
+func (g *ECSGame) updateCombatSystems() {
+	g.handleWeaponFiring()
+	g.enemySystem.Update(1.0) // Assuming 60fps, so deltaTime = 1.0
+	g.weaponSystem.Update(1.0)
+	g.collisionSystem.Update()
+}
+
+// updateECSSystems runs all ECS systems
+func (g *ECSGame) updateECSSystems() {
+	core.MovementSystem(g.world)
+	core.OrbitalMovementSystem(g.world)
+	core.StarMovementSystem(&ecs.ECS{World: g.world}, g.config)
+}
+
+// handlePlayerMovementEvents emits events when player moves
+func (g *ECSGame) handlePlayerMovementEvents(inputAngle common.Angle) {
+	if inputAngle != 0 {
+		playerEntry := g.world.Entry(g.playerEntity)
+		if playerEntry.Valid() {
+			pos := core.Position.Get(playerEntry)
+			orb := core.Orbital.Get(playerEntry)
+			g.eventSystem.EmitPlayerMoved(*pos, orb.OrbitalAngle)
+		}
+	}
 }
 
 // Draw renders the game
