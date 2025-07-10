@@ -168,11 +168,7 @@ func StarMovementSystem(ecsInstance *ecs.ECS, config *common.GameConfig) {
 		starCount++
 	})
 
-	// Log star count every 60 frames (once per second at 60fps)
-	if time.Now().UnixNano()%60 == 0 {
-		// This is a simple way to log occasionally without adding a frame counter
-		// In a real implementation, you'd want a proper frame counter
-	}
+	// Removed empty logging branch - not needed for functionality
 }
 
 // PlayerInputSystem handles player input

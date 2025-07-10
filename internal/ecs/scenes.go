@@ -9,7 +9,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
@@ -20,7 +20,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
-var defaultFontFace font.Face
+var defaultFontFace text.Face
 
 func init() {
 	fontBytes, err := assets.Assets.ReadFile("fonts/PressStart2P.ttf")
@@ -31,23 +31,36 @@ func init() {
 	if err != nil {
 		log.Fatalf("failed to parse font: %v", err)
 	}
-	defaultFontFace, err = opentype.NewFace(fontTTF, &opentype.FaceOptions{
+
+	// Create font face for opentype
+	opentypeFace, err := opentype.NewFace(fontTTF, &opentype.FaceOptions{
 		Size:    16,
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
 	if err != nil {
-		log.Fatalf("failed to create font face: %v", err)
+		log.Fatalf("failed to create opentype face: %v", err)
 	}
+
+	// Create text/v2 face from opentype face
+	defaultFontFace = text.NewGoXFace(opentypeFace)
 }
 
 // drawCenteredText draws text centered on screen (helper method for scenes)
 func drawCenteredText(screen *ebiten.Image, textStr string, x, y, alpha float64) {
-	bounds := text.BoundString(defaultFontFace, textStr)
-	w := bounds.Max.X - bounds.Min.X
-	h := bounds.Max.Y - bounds.Min.Y
-	col := color.RGBA{255, 255, 255, uint8(255 * alpha)}
-	text.Draw(screen, textStr, defaultFontFace, int(x)-w/2, int(y)+h/2, col)
+	// Measure text using text/v2 API
+	width, height := text.Measure(textStr, defaultFontFace, 0)
+
+	// Create draw options
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(float64(int(x)-int(width)/2), float64(int(y)+int(height)/2))
+	op.ColorScale.SetR(1)
+	op.ColorScale.SetG(1)
+	op.ColorScale.SetB(1)
+	op.ColorScale.SetA(float32(alpha))
+
+	// Draw text
+	text.Draw(screen, textStr, defaultFontFace, op)
 }
 
 // SceneType represents different game scenes
@@ -85,7 +98,12 @@ type SceneManager struct {
 }
 
 // NewSceneManager creates a new scene manager
-func NewSceneManager(world donburi.World, config *common.GameConfig, logger common.Logger, inputHandler common.GameInputHandler) *SceneManager {
+func NewSceneManager(
+	world donburi.World,
+	config *common.GameConfig,
+	logger common.Logger,
+	inputHandler common.GameInputHandler,
+) *SceneManager {
 	sm := &SceneManager{
 		scenes:       make(map[SceneType]Scene),
 		world:        world,
@@ -472,9 +490,9 @@ func (s *MenuScene) Update() error {
 	menuY := float64(s.manager.config.ScreenSize.Height) / 2
 	for i := range s.options {
 		itemY := menuY + float64(i*40)
-		bounds := text.BoundString(defaultFontFace, s.options[i])
-		w := bounds.Max.X - bounds.Min.X
-		h := bounds.Max.Y - bounds.Min.Y
+		width, height := text.Measure(s.options[i], defaultFontFace, 0)
+		w := int(width)
+		h := int(height)
 		itemRect := struct{ x0, y0, x1, y1 int }{
 			int(float64(s.manager.config.ScreenSize.Width)/2) - w/2 - 40, // extra for chevron
 			int(itemY) - h/2 - 8,
@@ -526,15 +544,19 @@ func (s *MenuScene) Draw(screen *ebiten.Image) {
 			// Animated chevron
 			pulse := 0.7 + 0.3*float64((time.Now().UnixNano()/1e7)%20)/20.0
 			chevron := ">"
-			chevronCol := color.RGBA{0, 255, 255, uint8(255 * pulse)}
-			text.Draw(screen, chevron, defaultFontFace,
-				int(float64(s.manager.config.ScreenSize.Width)/2)-120, int(y)+8, chevronCol)
+			chevronOp := &text.DrawOptions{}
+			chevronOp.GeoM.Translate(float64(int(float64(s.manager.config.ScreenSize.Width)/2)-120), float64(int(y)+8))
+			chevronOp.ColorScale.SetR(0)
+			chevronOp.ColorScale.SetG(1)
+			chevronOp.ColorScale.SetB(1)
+			chevronOp.ColorScale.SetA(float32(pulse))
+			text.Draw(screen, chevron, defaultFontFace, chevronOp)
 		}
 		// Neon blue background highlight
 		if bgAlpha > 0 {
-			bounds := text.BoundString(defaultFontFace, option)
-			w := bounds.Max.X - bounds.Min.X
-			h := bounds.Max.Y - bounds.Min.Y
+			width, height := text.Measure(option, defaultFontFace, 0)
+			w := int(width)
+			h := int(height)
 			rectCol := color.RGBA{0, 255, 255, uint8(128 * bgAlpha)}
 			rect := ebiten.NewImage(w+60, h+16)
 			rect.Fill(rectCol)
@@ -572,7 +594,13 @@ func (s *OptionsScene) Update() error {
 
 func (s *OptionsScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
-	drawCenteredText(screen, "OPTIONS\nComing Soon!", float64(s.manager.config.ScreenSize.Width)/2, float64(s.manager.config.ScreenSize.Height)/2, 1.0)
+	drawCenteredText(
+		screen,
+		"OPTIONS\nComing Soon!",
+		float64(s.manager.config.ScreenSize.Width)/2,
+		float64(s.manager.config.ScreenSize.Height)/2,
+		1.0,
+	)
 }
 func (s *OptionsScene) Enter()             { s.manager.logger.Debug("Entering options scene") }
 func (s *OptionsScene) Exit()              { s.manager.logger.Debug("Exiting options scene") }
@@ -590,7 +618,13 @@ func (s *CreditsScene) Update() error {
 
 func (s *CreditsScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
-	drawCenteredText(screen, "CREDITS\nGimbal Studios\n2025", float64(s.manager.config.ScreenSize.Width)/2, float64(s.manager.config.ScreenSize.Height)/2, 1.0)
+	drawCenteredText(
+		screen,
+		"CREDITS\nGimbal Studios\n2025",
+		float64(s.manager.config.ScreenSize.Width)/2,
+		float64(s.manager.config.ScreenSize.Height)/2,
+		1.0,
+	)
 }
 func (s *CreditsScene) Enter()             { s.manager.logger.Debug("Entering credits scene") }
 func (s *CreditsScene) Exit()              { s.manager.logger.Debug("Exiting credits scene") }

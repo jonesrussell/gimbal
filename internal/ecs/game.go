@@ -1,8 +1,6 @@
 package ecs
 
 import (
-	"fmt"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/ecs"
@@ -46,7 +44,11 @@ type ECSGame struct {
 }
 
 // NewECSGame creates a new ECS-based game instance
-func NewECSGame(config *common.GameConfig, logger common.Logger, inputHandler common.GameInputHandler) (*ECSGame, error) {
+func NewECSGame(
+	config *common.GameConfig,
+	logger common.Logger,
+	inputHandler common.GameInputHandler,
+) (*ECSGame, error) {
 	if config == nil {
 		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "config cannot be nil")
 	}
@@ -66,43 +68,17 @@ func NewECSGame(config *common.GameConfig, logger common.Logger, inputHandler co
 	// Create ECS world
 	world := donburi.NewWorld()
 
-	// Create event system
-	eventSystem := NewEventSystem(world)
-	logger.Debug("Event system created")
-
-	// Create resource manager
-	resourceManager := NewResourceManager(logger)
-	logger.Debug("Resource manager created")
-
-	// Create system manager
-	systemManager := NewSystemManager()
-	logger.Debug("System manager created")
-
-	// Create game state manager
-	stateManager := NewGameStateManager(eventSystem, logger)
-
-	// Create scene manager
-	sceneManager := NewSceneManager(world, config, logger, inputHandler)
-
-	// Create combat systems
-	enemySystem := NewEnemySystem(world, config)
-	weaponSystem := NewWeaponSystem(world, config)
-	collisionSystem := NewCollisionSystem(world, config)
-
 	// Create game instance
 	game := &ECSGame{
-		world:           world,
-		config:          config,
-		inputHandler:    inputHandler,
-		logger:          logger,
-		eventSystem:     eventSystem,
-		resourceManager: resourceManager,
-		systemManager:   systemManager,
-		stateManager:    stateManager,
-		sceneManager:    sceneManager,
-		enemySystem:     enemySystem,
-		weaponSystem:    weaponSystem,
-		collisionSystem: collisionSystem,
+		world:        world,
+		config:       config,
+		inputHandler: inputHandler,
+		logger:       logger,
+	}
+
+	// Initialize systems and managers
+	if err := game.initializeSystems(); err != nil {
+		return nil, err
 	}
 
 	// Load assets
@@ -122,6 +98,34 @@ func NewECSGame(config *common.GameConfig, logger common.Logger, inputHandler co
 	game.setupSystems()
 
 	return game, nil
+}
+
+// initializeSystems creates all the systems and managers
+func (g *ECSGame) initializeSystems() error {
+	// Create event system
+	g.eventSystem = NewEventSystem(g.world)
+	g.logger.Debug("Event system created")
+
+	// Create resource manager
+	g.resourceManager = NewResourceManager(g.logger)
+	g.logger.Debug("Resource manager created")
+
+	// Create system manager
+	g.systemManager = NewSystemManager()
+	g.logger.Debug("System manager created")
+
+	// Create game state manager
+	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
+
+	// Create scene manager
+	g.sceneManager = NewSceneManager(g.world, g.config, g.logger, g.inputHandler)
+
+	// Create combat systems
+	g.enemySystem = NewEnemySystem(g.world, g.config)
+	g.weaponSystem = NewWeaponSystem(g.world, g.config)
+	g.collisionSystem = NewCollisionSystem(g.world, g.config)
+
+	return nil
 }
 
 // loadAssets loads and prepares game assets
@@ -251,24 +255,6 @@ func (g *ECSGame) Draw(screen *ebiten.Image) {
 	g.sceneManager.Draw(screen)
 }
 
-// drawDebugInfo renders debug information
-func (g *ECSGame) drawDebugInfo(screen *ebiten.Image) {
-	// Get player info for debug display
-	playerEntry := g.world.Entry(g.playerEntity)
-	if playerEntry.Valid() {
-		pos := Position.Get(playerEntry)
-		orb := Orbital.Get(playerEntry)
-
-		// Log debug info
-		g.logger.Debug("Debug Info",
-			"player_pos", fmt.Sprintf("(%.1f, %.1f)", pos.X, pos.Y),
-			"player_angle", fmt.Sprintf("%.1f°", orb.OrbitalAngle),
-			"resource_count", g.resourceManager.GetResourceCount(),
-			"entity_count", g.world.Len(),
-		)
-	}
-}
-
 // Layout implements ebiten.Game interface
 func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return g.config.ScreenSize.Width, g.config.ScreenSize.Height
@@ -331,7 +317,9 @@ func (g *ECSGame) setupSystems() {
 	g.systemManager.AddSystem(&OrbitalMovementSystemWrapper{})
 	g.systemManager.AddSystem(NewStarMovementSystemWrapper(&ecs.ECS{World: g.world}, g.config))
 
-	g.logger.Debug("Systems set up", "system_count", g.systemManager.GetSystemCount(), "systems", g.systemManager.GetSystemNames())
+	g.logger.Debug("Systems set up",
+		"system_count", g.systemManager.GetSystemCount(),
+		"systems", g.systemManager.GetSystemNames())
 }
 
 // handleWeaponFiring handles weapon firing based on input
@@ -368,27 +356,10 @@ func (g *ECSGame) handleMenuInput() {
 		}
 	case SceneMenu:
 		// Handle menu navigation
-		menuScene := currentScene.(*MenuScene)
-
-		// Navigation
-		if g.inputHandler.IsKeyPressed(ebiten.KeyUp) {
-			menuScene.selection = (menuScene.selection - 1 + len(menuScene.options)) % len(menuScene.options)
-		}
-		if g.inputHandler.IsKeyPressed(ebiten.KeyDown) {
-			menuScene.selection = (menuScene.selection + 1) % len(menuScene.options)
-		}
-
-		// Selection
-		if g.inputHandler.IsKeyPressed(ebiten.KeyEnter) || g.inputHandler.IsKeyPressed(ebiten.KeySpace) {
-			switch menuScene.selection {
-			case 0: // Start Game
-				g.sceneManager.SwitchScene(ScenePlaying)
-			case 1: // Options
-				// TODO: Implement options menu
-			case 2: // Credits
-				// TODO: Implement credits screen
-			case 3: // Quit
-				// TODO: Implement quit functionality
+		if currentScene.GetType() == SceneMenu {
+			if menuScene, ok := currentScene.(*MenuScene); ok {
+				// Menu input is handled within the scene itself
+				_ = menuScene // Use the variable to avoid unused variable warning
 			}
 		}
 	}

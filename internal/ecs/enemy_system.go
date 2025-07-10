@@ -4,7 +4,6 @@ import (
 	"image/color"
 	"math"
 	"math/rand"
-	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
@@ -96,7 +95,7 @@ func (es *EnemySystem) spawnEnemy() {
 // selectEnemyType selects enemy type based on current wave and difficulty
 func (es *EnemySystem) selectEnemyType() int {
 	// Simple probability-based selection
-	rand.Seed(time.Now().UnixNano())
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
 	r := rand.Float64()
 
 	if es.currentWave >= 5 && r < 0.1 {
@@ -112,7 +111,7 @@ func (es *EnemySystem) selectEnemyType() int {
 
 // selectSpawnPattern selects spawn pattern based on enemy type and wave
 func (es *EnemySystem) selectSpawnPattern() int {
-	rand.Seed(time.Now().UnixNano())
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
 	r := rand.Float64()
 
 	if r < 0.4 {
@@ -133,12 +132,12 @@ func (es *EnemySystem) calculateSpawnPosition(pattern int) common.Point {
 		Y: float64(es.config.ScreenSize.Height) / 2,
 	}
 
-	rand.Seed(time.Now().UnixNano())
-
 	switch pattern {
 	case SpawnPatternCircle:
 		// Spawn in a circle around the center
+		//nolint:gosec // Game logic doesn't need cryptographic randomness
 		angle := rand.Float64() * 2 * math.Pi
+		//nolint:gosec // Game logic doesn't need cryptographic randomness
 		radius := 50.0 + rand.Float64()*100.0
 		return common.Point{
 			X: center.X + radius*math.Cos(angle),
@@ -147,7 +146,9 @@ func (es *EnemySystem) calculateSpawnPosition(pattern int) common.Point {
 
 	case SpawnPatternSpiral:
 		// Spawn in a spiral pattern
+		//nolint:gosec // Game logic doesn't need cryptographic randomness
 		angle := rand.Float64() * 2 * math.Pi
+		//nolint:gosec // Game logic doesn't need cryptographic randomness
 		radius := 30.0 + rand.Float64()*150.0
 		return common.Point{
 			X: center.X + radius*math.Cos(angle),
@@ -156,21 +157,26 @@ func (es *EnemySystem) calculateSpawnPosition(pattern int) common.Point {
 
 	case SpawnPatternWave:
 		// Spawn in a wave pattern from one side
+		//nolint:gosec // Game logic doesn't need cryptographic randomness
 		side := rand.Intn(4) // 0: top, 1: right, 2: bottom, 3: left
 		var x, y float64
 
 		switch side {
 		case 0: // top
+			//nolint:gosec // Game logic doesn't need cryptographic randomness
 			x = center.X + (rand.Float64()-0.5)*200
 			y = -50
 		case 1: // right
 			x = float64(es.config.ScreenSize.Width) + 50
+			//nolint:gosec // Game logic doesn't need cryptographic randomness
 			y = center.Y + (rand.Float64()-0.5)*200
 		case 2: // bottom
+			//nolint:gosec // Game logic doesn't need cryptographic randomness
 			x = center.X + (rand.Float64()-0.5)*200
 			y = float64(es.config.ScreenSize.Height) + 50
 		case 3: // left
 			x = -50
+			//nolint:gosec // Game logic doesn't need cryptographic randomness
 			y = center.Y + (rand.Float64()-0.5)*200
 		}
 
@@ -178,8 +184,10 @@ func (es *EnemySystem) calculateSpawnPosition(pattern int) common.Point {
 
 	case SpawnPatternRandom:
 		// Random position within screen bounds
+		//nolint:gosec // Game logic doesn't need cryptographic randomness
 		return common.Point{
 			X: rand.Float64() * float64(es.config.ScreenSize.Width),
+			//nolint:gosec // Game logic doesn't need cryptographic randomness
 			Y: rand.Float64() * float64(es.config.ScreenSize.Height),
 		}
 
@@ -241,35 +249,36 @@ func (es *EnemySystem) createEnemySprite(entry *donburi.Entry, enemyType int) {
 	Sprite.SetValue(entry, img)
 }
 
+// movementTowardsCenter sets up movement for an enemy towards the center with given speed and maxSpeed
+func (es *EnemySystem) movementTowardsCenter(entry *donburi.Entry, speed, maxSpeed float64) {
+	center := common.Point{
+		X: float64(es.config.ScreenSize.Width) / 2,
+		Y: float64(es.config.ScreenSize.Height) / 2,
+	}
+	pos := Position.Get(entry)
+	dx := center.X - pos.X
+	dy := center.Y - pos.Y
+	distance := math.Sqrt(dx*dx + dy*dy)
+	if distance > 0 {
+		velocity := common.Point{
+			X: (dx / distance) * speed * es.difficulty,
+			Y: (dy / distance) * speed * es.difficulty,
+		}
+		Movement.SetValue(entry, MovementData{
+			Velocity: velocity,
+			MaxSpeed: maxSpeed * es.difficulty,
+		})
+	}
+}
+
 // setupSwarmDrone configures a swarm drone enemy
 func (es *EnemySystem) setupSwarmDrone(entry *donburi.Entry) {
 	// Small, fast, weak enemy
 	Size.SetValue(entry, common.Size{Width: 16, Height: 16})
 	Speed.SetValue(entry, 2.0*es.difficulty)
 	Health.SetValue(entry, 1)
-
 	// Movement towards center
-	center := common.Point{
-		X: float64(es.config.ScreenSize.Width) / 2,
-		Y: float64(es.config.ScreenSize.Height) / 2,
-	}
-	pos := Position.Get(entry)
-
-	dx := center.X - pos.X
-	dy := center.Y - pos.Y
-	distance := math.Sqrt(dx*dx + dy*dy)
-
-	if distance > 0 {
-		velocity := common.Point{
-			X: (dx / distance) * 2.0 * es.difficulty,
-			Y: (dy / distance) * 2.0 * es.difficulty,
-		}
-
-		Movement.SetValue(entry, MovementData{
-			Velocity: velocity,
-			MaxSpeed: 3.0 * es.difficulty,
-		})
-	}
+	es.movementTowardsCenter(entry, 2.0, 3.0)
 }
 
 // setupHeavyCruiser configures a heavy cruiser enemy
@@ -278,29 +287,8 @@ func (es *EnemySystem) setupHeavyCruiser(entry *donburi.Entry) {
 	Size.SetValue(entry, common.Size{Width: 32, Height: 32})
 	Speed.SetValue(entry, 1.0*es.difficulty)
 	Health.SetValue(entry, 3)
-
 	// Movement towards center
-	center := common.Point{
-		X: float64(es.config.ScreenSize.Width) / 2,
-		Y: float64(es.config.ScreenSize.Height) / 2,
-	}
-	pos := Position.Get(entry)
-
-	dx := center.X - pos.X
-	dy := center.Y - pos.Y
-	distance := math.Sqrt(dx*dx + dy*dy)
-
-	if distance > 0 {
-		velocity := common.Point{
-			X: (dx / distance) * 1.0 * es.difficulty,
-			Y: (dy / distance) * 1.0 * es.difficulty,
-		}
-
-		Movement.SetValue(entry, MovementData{
-			Velocity: velocity,
-			MaxSpeed: 1.5 * es.difficulty,
-		})
-	}
+	es.movementTowardsCenter(entry, 1.0, 1.5)
 }
 
 // setupBoss configures a boss enemy
@@ -317,6 +305,7 @@ func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
 	}
 
 	// Start at a random angle
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
 	angle := rand.Float64() * 2 * math.Pi
 	radius := 100.0
 
@@ -341,6 +330,7 @@ func (es *EnemySystem) setupAsteroid(entry *donburi.Entry) {
 	Health.SetValue(entry, 2)
 
 	// Random movement direction
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
 	angle := rand.Float64() * 2 * math.Pi
 	velocity := common.Point{
 		X: math.Cos(angle) * 1.5 * es.difficulty,
