@@ -8,7 +8,6 @@
 - [x] Clean architecture principles implementation
 - [x] Mock generation with mockgen
 - [x] Configuration validation system
-- [x] Component registry for ECS management
 - [x] **Code Quality & Linting** - All linter issues resolved (0 issues remaining)
 
 ### **Game Systems**
@@ -37,9 +36,71 @@
   - [x] Animated chevron and neon blue highlights
   - [x] Smooth transitions between scenes
 - [x] **Text Rendering** - Migrated to modern `text/v2` API with proper font rendering
-- [x] **Placeholder Scenes** - Options and Credits scenes (return to menu)
+- [x] **Placeholder Scenes** - Options and Credits scenes now use a generic SimpleTextScene abstraction (DRY, best practice)
 
-## 🎯 **Current Sprint: Gameplay Polish & Features**
+## 🎯 **Current Sprint: ECS Code Quality & Refactoring**
+
+### **🚨 Critical ECS Issues (High Priority)**
+- [ ] **Remove Unused ComponentRegistry** - Delete 191 lines of over-engineered code
+  - [ ] Remove `component_registry.go` and `component_registry_test.go`
+  - [ ] Update any references to use Donburi's built-in component management
+  - [ ] Verify no functionality is lost
+
+- [ ] **Consolidate Duplicate Components** - Fix DRY violation
+  - [ ] Remove duplicate component definitions in `components.go` and `core/components.go`
+  - [ ] Keep only `core/components.go` as the single source of truth
+  - [ ] Update all imports and references
+
+- [ ] **Extract Magic Numbers** - Improve maintainability
+  - [ ] Create `internal/ecs/constants.go` for game constants
+  - [ ] Replace hardcoded values in `enemy_system.go` (spawn intervals, radii, margins)
+  - [ ] Replace hardcoded values in `resources.go` (sprite sizes, colors)
+  - [ ] Replace hardcoded values in other systems
+
+- [ ] **Remove System Wrapper Pattern** - Simplify architecture
+  - [ ] Remove `core/system_wrappers.go` (81 lines of unnecessary boilerplate)
+  - [ ] Use systems directly or implement simpler interface
+  - [ ] Update `game.go` to use systems without wrappers
+
+### **🔧 Architectural Improvements (Medium Priority)**
+- [ ] **Standardize Error Handling** - Consistent approach across all systems
+  - [ ] Choose one error handling pattern (return errors vs log and continue)
+  - [ ] Update all systems to follow the chosen pattern
+  - [ ] Add proper error context and wrapping
+
+- [ ] **Refactor Long Functions** - Improve readability
+  - [ ] Break down `game.go:Update()` (80+ lines)
+  - [ ] Break down `enemy_system.go:calculateSpawnPosition()` (60+ lines)
+  - [ ] Break down `enemy_system.go:createEnemy()` (50+ lines)
+  - [ ] Aim for functions under 30 lines
+
+- [ ] **Simplify Resource Management** - Remove unnecessary complexity
+  - [ ] Remove reference counting from `ResourceManager`
+  - [ ] Simplify to basic caching without `RefCount` tracking
+  - [ ] Remove `ReleaseSprite` method if not needed
+
+- [ ] **Split GameStateManager** - Single Responsibility Principle
+  - [ ] Create separate `ScoreManager` for score tracking
+  - [ ] Create separate `LevelManager` for level progression
+  - [ ] Keep `GameStateManager` focused on core game state only
+
+### **📝 Code Quality Improvements (Low Priority)**
+- [ ] **Improve Naming Consistency** - Establish conventions
+  - [ ] Standardize naming: `EnemySystem` vs `enemySystem`
+  - [ ] Consistent use of abbreviations vs full names
+  - [ ] Update all systems to follow conventions
+
+- [ ] **Add Missing Documentation** - Public API documentation
+  - [ ] Document all public interfaces and methods
+  - [ ] Add examples for complex systems
+  - [ ] Update README with architecture overview
+
+- [ ] **Increase Test Coverage** - Better testing
+  - [ ] Add tests for refactored systems
+  - [ ] Add integration tests for ECS interactions
+  - [ ] Test error conditions and edge cases
+
+## 🎯 **Next Sprint: Gameplay Polish & Features**
 
 ### **Immediate Next Steps**
 - [ ] **Pause Menu Implementation**
@@ -217,11 +278,11 @@
 
 ## 🚀 **Next Immediate Tasks**
 
-1. **Pause Menu Implementation** - Add pause functionality with proper game state management
-2. **Scoring System** - Track and display player score during gameplay
-3. **Health System** - Implement player lives and damage mechanics
-4. **Game Over Screen** - Create proper game over flow with restart options
-5. **Level Progression** - Start implementing the exoplanetary level system
+1. **Remove ComponentRegistry** - Delete 191 lines of unused over-engineered code
+2. **Consolidate Duplicate Components** - Fix DRY violation between `components.go` files
+3. **Extract Magic Numbers** - Create constants file and replace hardcoded values
+4. **Remove System Wrappers** - Simplify architecture by removing unnecessary boilerplate
+5. **Standardize Error Handling** - Choose consistent approach across all systems
 
 ---
 
@@ -231,8 +292,10 @@
 - ✅ **Migrated to text/v2 API** - Updated from deprecated `ebiten/v2/text` to modern `text/v2`
 - ✅ **Fixed all linter issues** - Resolved 13 linter warnings (0 issues remaining)
 - ✅ **Improved code structure** - Refactored duplicate code and long functions
+- ✅ **Refactored duplicate scene code** - Credits and Options scenes now use a generic SimpleTextScene abstraction, following best practices ([see CodeAnt AI blog](https://www.codeant.ai/blogs/refactor-duplicate-code-examples))
 - ✅ **Enhanced error handling** - Added proper error checking throughout codebase
 - ✅ **Modern Go practices** - Removed deprecated APIs and unnecessary code
+- ✅ **ECS Code Review Completed** - Identified 400+ lines of over-engineered code to remove
 
 ### **UI System Milestone**
 - ✅ **Complete scene management** - Professional scene transitions and state management
@@ -243,5 +306,5 @@
 ---
 
 *Last Updated: 2025-01-27*
-*Current Focus: Gameplay Polish & Core Features*
-*Code Quality: ✅ Clean (0 linter issues)* 
+*Current Focus: ECS Code Quality & Refactoring*
+*Code Quality: 🔧 Needs Refactoring (400+ lines of over-engineered code identified)* 
