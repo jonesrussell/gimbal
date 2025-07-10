@@ -9,7 +9,7 @@ import (
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
-	coreecs "github.com/jonesrussell/gimbal/internal/ecs"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 type PlayingScene struct {
@@ -30,7 +30,7 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
 
 	// Run render system through wrapper
-	renderWrapper := coreecs.NewRenderSystemWrapper(screen)
+	renderWrapper := core.NewRenderSystemWrapper(screen)
 	if err := renderWrapper.Update(s.manager.world); err != nil {
 		s.manager.logger.Error("Render system failed", "error", err)
 	}
@@ -47,9 +47,9 @@ func (s *PlayingScene) drawDebugInfo(screen *ebiten.Image) {
 	players := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(coreecs.PlayerTag),
-			filter.Contains(coreecs.Position),
-			filter.Contains(coreecs.Orbital),
+			filter.Contains(core.PlayerTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Orbital),
 		),
 	).Each(s.manager.world, func(entry *donburi.Entry) {
 		players = append(players, entry.Entity())
@@ -58,8 +58,8 @@ func (s *PlayingScene) drawDebugInfo(screen *ebiten.Image) {
 	if len(players) > 0 {
 		playerEntry := s.manager.world.Entry(players[0])
 		if playerEntry.Valid() {
-			pos := coreecs.Position.Get(playerEntry)
-			orb := coreecs.Orbital.Get(playerEntry)
+			pos := core.Position.Get(playerEntry)
+			orb := core.Orbital.Get(playerEntry)
 
 			// Log debug info
 			s.manager.logger.Debug("Debug Info",
