@@ -1,4 +1,33 @@
----
+# Refactoring Guidelines
+
+## Code Quality Principles
+- **DRY (Don't Repeat Yourself)**: Eliminate duplicate code and consolidate similar functionality
+- **Single Responsibility**: Each function/class should have one clear purpose
+- **Separation of Concerns**: Keep different responsibilities in separate modules
+- **Clean Architecture**: Follow dependency inversion and clean boundaries
+
+## Function Refactoring
+- Break down functions longer than 30 lines into smaller, focused helpers
+- Extract complex logic into well-named helper functions
+- Use descriptive function names that indicate their single responsibility
+- Group related functionality into cohesive modules
+
+## System Architecture
+- Remove over-engineered patterns (like unused ComponentRegistry)
+- Simplify resource management (remove unnecessary reference counting)
+- Split large managers into focused, single-purpose components
+- Use consistent naming conventions across all systems
+
+## Magic Numbers & Constants
+- Extract hardcoded values to constants in `internal/ecs/constants.go`
+- Use descriptive constant names that explain their purpose
+- Group related constants together with clear comments
+
+## Naming Consistency
+- Use consistent receiver names across similar system types
+- Avoid naming conflicts between different system types
+- Use full descriptive names over abbreviations when clarity is needed
+- Establish and follow naming conventions throughout the codebase
 description: When developing, refactoring, etc, always keep these guidelines in mind
 alwaysApply: false
 ---
