@@ -11,6 +11,7 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // Enemy types
@@ -198,11 +199,11 @@ func (es *EnemySystem) calculateSpawnPosition(pattern int) common.Point {
 
 // createEnemy creates an enemy entity with appropriate components
 func (es *EnemySystem) createEnemy(enemyType int, spawnPos common.Point) {
-	entity := es.world.Create(EnemyTag, Position, Sprite, Movement, Size, Speed, Health)
+	entity := es.world.Create(core.EnemyTag, core.Position, core.Sprite, core.Movement, core.Size, core.Speed, core.Health)
 	entry := es.world.Entry(entity)
 
 	// Set position
-	Position.SetValue(entry, spawnPos)
+	core.Position.SetValue(entry, spawnPos)
 
 	// Create enemy sprite
 	es.createEnemySprite(entry, enemyType)
@@ -246,7 +247,7 @@ func (es *EnemySystem) createEnemySprite(entry *donburi.Entry, enemyType int) {
 	// Create sprite
 	img := ebiten.NewImage(size.Width, size.Height)
 	img.Fill(enemyColor)
-	Sprite.SetValue(entry, img)
+	core.Sprite.SetValue(entry, img)
 }
 
 // movementTowardsCenter sets up movement for an enemy towards the center with given speed and maxSpeed
@@ -255,7 +256,7 @@ func (es *EnemySystem) movementTowardsCenter(entry *donburi.Entry, speed, maxSpe
 		X: float64(es.config.ScreenSize.Width) / 2,
 		Y: float64(es.config.ScreenSize.Height) / 2,
 	}
-	pos := Position.Get(entry)
+	pos := core.Position.Get(entry)
 	dx := center.X - pos.X
 	dy := center.Y - pos.Y
 	distance := math.Sqrt(dx*dx + dy*dy)
@@ -264,7 +265,7 @@ func (es *EnemySystem) movementTowardsCenter(entry *donburi.Entry, speed, maxSpe
 			X: (dx / distance) * speed * es.difficulty,
 			Y: (dy / distance) * speed * es.difficulty,
 		}
-		Movement.SetValue(entry, MovementData{
+		core.Movement.SetValue(entry, core.MovementData{
 			Velocity: velocity,
 			MaxSpeed: maxSpeed * es.difficulty,
 		})
@@ -274,9 +275,9 @@ func (es *EnemySystem) movementTowardsCenter(entry *donburi.Entry, speed, maxSpe
 // setupSwarmDrone configures a swarm drone enemy
 func (es *EnemySystem) setupSwarmDrone(entry *donburi.Entry) {
 	// Small, fast, weak enemy
-	Size.SetValue(entry, common.Size{Width: 16, Height: 16})
-	Speed.SetValue(entry, 2.0*es.difficulty)
-	Health.SetValue(entry, 1)
+	core.Size.SetValue(entry, common.Size{Width: 16, Height: 16})
+	core.Speed.SetValue(entry, 2.0*es.difficulty)
+	core.Health.SetValue(entry, 1)
 	// Movement towards center
 	es.movementTowardsCenter(entry, 2.0, 3.0)
 }
@@ -284,9 +285,9 @@ func (es *EnemySystem) setupSwarmDrone(entry *donburi.Entry) {
 // setupHeavyCruiser configures a heavy cruiser enemy
 func (es *EnemySystem) setupHeavyCruiser(entry *donburi.Entry) {
 	// Large, slow, strong enemy
-	Size.SetValue(entry, common.Size{Width: 32, Height: 32})
-	Speed.SetValue(entry, 1.0*es.difficulty)
-	Health.SetValue(entry, 3)
+	core.Size.SetValue(entry, common.Size{Width: 32, Height: 32})
+	core.Speed.SetValue(entry, 1.0*es.difficulty)
+	core.Health.SetValue(entry, 3)
 	// Movement towards center
 	es.movementTowardsCenter(entry, 1.0, 1.5)
 }
@@ -294,9 +295,9 @@ func (es *EnemySystem) setupHeavyCruiser(entry *donburi.Entry) {
 // setupBoss configures a boss enemy
 func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
 	// Very large, powerful boss enemy
-	Size.SetValue(entry, common.Size{Width: 64, Height: 64})
-	Speed.SetValue(entry, 0.5*es.difficulty)
-	Health.SetValue(entry, 10)
+	core.Size.SetValue(entry, common.Size{Width: 64, Height: 64})
+	core.Speed.SetValue(entry, 0.5*es.difficulty)
+	core.Health.SetValue(entry, 10)
 
 	// Complex movement pattern (orbit around center)
 	center := common.Point{
@@ -313,10 +314,10 @@ func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
 		X: center.X + radius*math.Cos(angle),
 		Y: center.Y + radius*math.Sin(angle),
 	}
-	Position.SetValue(entry, pos)
+	core.Position.SetValue(entry, pos)
 
 	// Orbital movement
-	Movement.SetValue(entry, MovementData{
+	core.Movement.SetValue(entry, core.MovementData{
 		Velocity: common.Point{X: 0, Y: 0}, // Will be calculated in update
 		MaxSpeed: 1.0 * es.difficulty,
 	})
@@ -325,9 +326,9 @@ func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
 // setupAsteroid configures an asteroid enemy
 func (es *EnemySystem) setupAsteroid(entry *donburi.Entry) {
 	// Medium-sized environmental hazard
-	Size.SetValue(entry, common.Size{Width: 24, Height: 24})
-	Speed.SetValue(entry, 1.5*es.difficulty)
-	Health.SetValue(entry, 2)
+	core.Size.SetValue(entry, common.Size{Width: 24, Height: 24})
+	core.Speed.SetValue(entry, 1.5*es.difficulty)
+	core.Health.SetValue(entry, 2)
 
 	// Random movement direction
 	//nolint:gosec // Game logic doesn't need cryptographic randomness
@@ -337,7 +338,7 @@ func (es *EnemySystem) setupAsteroid(entry *donburi.Entry) {
 		Y: math.Sin(angle) * 1.5 * es.difficulty,
 	}
 
-	Movement.SetValue(entry, MovementData{
+	core.Movement.SetValue(entry, core.MovementData{
 		Velocity: velocity,
 		MaxSpeed: 2.0 * es.difficulty,
 	})
@@ -347,13 +348,13 @@ func (es *EnemySystem) setupAsteroid(entry *donburi.Entry) {
 func (es *EnemySystem) updateEnemies() {
 	query.NewQuery(
 		filter.And(
-			filter.Contains(EnemyTag),
-			filter.Contains(Position),
-			filter.Contains(Movement),
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Movement),
 		),
 	).Each(es.world, func(entry *donburi.Entry) {
-		pos := Position.Get(entry)
-		mov := Movement.Get(entry)
+		pos := core.Position.Get(entry)
+		mov := core.Movement.Get(entry)
 
 		// Update position based on velocity
 		pos.X += mov.Velocity.X

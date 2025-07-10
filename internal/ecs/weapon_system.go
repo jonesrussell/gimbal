@@ -11,6 +11,7 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // Weapon types
@@ -74,7 +75,7 @@ func (ws *WeaponSystem) FireWeapon(weaponType int, playerPos common.Point, playe
 
 // createProjectile creates a new projectile
 func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, direction common.Angle) {
-	entity := ws.world.Create(ProjectileTag, Position, Sprite, Movement, Size, Speed, Angle)
+	entity := ws.world.Create(core.ProjectileTag, core.Position, core.Sprite, core.Movement, core.Size, core.Speed, core.Angle)
 	entry := ws.world.Entry(entity)
 
 	// Set position (slightly in front of player)
@@ -84,16 +85,16 @@ func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, 
 		X: startPos.X + offset*math.Cos(angleRad),
 		Y: startPos.Y - offset*math.Sin(angleRad), // Subtract because Y increases downward
 	}
-	Position.SetValue(entry, pos)
+	core.Position.SetValue(entry, pos)
 
 	// Set size
-	Size.SetValue(entry, ws.projectileSize)
+	core.Size.SetValue(entry, ws.projectileSize)
 
 	// Set speed
-	Speed.SetValue(entry, ws.projectileSpeed)
+	core.Speed.SetValue(entry, ws.projectileSpeed)
 
 	// Set angle
-	Angle.SetValue(entry, direction)
+	core.Angle.SetValue(entry, direction)
 
 	// Calculate velocity based on direction
 	velocity := common.Point{
@@ -101,7 +102,7 @@ func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, 
 		Y: -ws.projectileSpeed * math.Sin(angleRad), // Negative because Y increases downward
 	}
 
-	Movement.SetValue(entry, MovementData{
+	core.Movement.SetValue(entry, core.MovementData{
 		Velocity: velocity,
 		MaxSpeed: ws.projectileSpeed,
 	})
@@ -128,20 +129,20 @@ func (ws *WeaponSystem) createProjectileSprite(entry *donburi.Entry, weaponType 
 	}
 
 	img.Fill(projectileColor)
-	Sprite.SetValue(entry, img)
+	core.Sprite.SetValue(entry, img)
 }
 
 // updateProjectiles updates all projectile entities
 func (ws *WeaponSystem) updateProjectiles() {
 	query.NewQuery(
 		filter.And(
-			filter.Contains(ProjectileTag),
-			filter.Contains(Position),
-			filter.Contains(Movement),
+			filter.Contains(core.ProjectileTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Movement),
 		),
 	).Each(ws.world, func(entry *donburi.Entry) {
-		pos := Position.Get(entry)
-		mov := Movement.Get(entry)
+		pos := core.Position.Get(entry)
+		mov := core.Movement.Get(entry)
 
 		// Update position based on velocity
 		pos.X += mov.Velocity.X

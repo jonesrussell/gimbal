@@ -8,6 +8,7 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // CollisionSystem manages collision detection and response
@@ -39,9 +40,9 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 	projectiles := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(ProjectileTag),
-			filter.Contains(Position),
-			filter.Contains(Size),
+			filter.Contains(core.ProjectileTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
 		),
 	).Each(cs.world, func(entry *donburi.Entry) {
 		projectiles = append(projectiles, entry.Entity())
@@ -51,10 +52,10 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 	enemies := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(EnemyTag),
-			filter.Contains(Position),
-			filter.Contains(Size),
-			filter.Contains(Health),
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
+			filter.Contains(core.Health),
 		),
 	).Each(cs.world, func(entry *donburi.Entry) {
 		enemies = append(enemies, entry.Entity())
@@ -67,8 +68,8 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 			continue
 		}
 
-		projectilePos := Position.Get(projectileEntry)
-		projectileSize := Size.Get(projectileEntry)
+		projectilePos := core.Position.Get(projectileEntry)
+		projectileSize := core.Size.Get(projectileEntry)
 
 		for _, enemyEntity := range enemies {
 			enemyEntry := cs.world.Entry(enemyEntity)
@@ -76,8 +77,8 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 				continue
 			}
 
-			enemyPos := Position.Get(enemyEntry)
-			enemySize := Size.Get(enemyEntry)
+			enemyPos := core.Position.Get(enemyEntry)
+			enemySize := core.Size.Get(enemyEntry)
 
 			// Check collision
 			if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
@@ -95,9 +96,9 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 	players := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(PlayerTag),
-			filter.Contains(Position),
-			filter.Contains(Size),
+			filter.Contains(core.PlayerTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
 		),
 	).Each(cs.world, func(entry *donburi.Entry) {
 		players = append(players, entry.Entity())
@@ -113,16 +114,16 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 		return
 	}
 
-	playerPos := Position.Get(playerEntry)
-	playerSize := Size.Get(playerEntry)
+	playerPos := core.Position.Get(playerEntry)
+	playerSize := core.Size.Get(playerEntry)
 
 	// Get all enemies
 	enemies := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(EnemyTag),
-			filter.Contains(Position),
-			filter.Contains(Size),
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
 		),
 	).Each(cs.world, func(entry *donburi.Entry) {
 		enemies = append(enemies, entry.Entity())
@@ -135,8 +136,8 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 			continue
 		}
 
-		enemyPos := Position.Get(enemyEntry)
-		enemySize := Size.Get(enemyEntry)
+		enemyPos := core.Position.Get(enemyEntry)
+		enemySize := core.Size.Get(enemyEntry)
 
 		// Check collision
 		if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
@@ -172,17 +173,17 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 	projectileEntry, enemyEntry *donburi.Entry,
 ) {
 	// Get projectile and enemy data
-	projectilePos := Position.Get(projectileEntry)
-	projectileSize := Size.Get(projectileEntry)
-	enemyPos := Position.Get(enemyEntry)
-	enemySize := Size.Get(enemyEntry)
-	enemyHealth := Health.Get(enemyEntry)
+	projectilePos := core.Position.Get(projectileEntry)
+	projectileSize := core.Size.Get(projectileEntry)
+	enemyPos := core.Position.Get(enemyEntry)
+	enemySize := core.Size.Get(enemyEntry)
+	enemyHealth := core.Health.Get(enemyEntry)
 
 	// Check collision
 	if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
 		// Reduce enemy health
 		newHealth := *enemyHealth - 1
-		Health.SetValue(enemyEntry, newHealth)
+		core.Health.SetValue(enemyEntry, newHealth)
 
 		// Remove projectile
 		cs.world.Remove(projectileEntity)
@@ -200,10 +201,10 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 	playerEntry, enemyEntry *donburi.Entry,
 ) {
 	// Get player and enemy data
-	playerPos := Position.Get(playerEntry)
-	playerSize := Size.Get(playerEntry)
-	enemyPos := Position.Get(enemyEntry)
-	enemySize := Size.Get(enemyEntry)
+	playerPos := core.Position.Get(playerEntry)
+	playerSize := core.Size.Get(playerEntry)
+	enemyPos := core.Position.Get(enemyEntry)
+	enemySize := core.Size.Get(enemyEntry)
 
 	// Check collision
 	if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
