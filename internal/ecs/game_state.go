@@ -11,8 +11,6 @@ type GameState struct {
 	IsPaused    bool
 	IsGameOver  bool
 	IsVictory   bool
-	Score       int
-	Level       int
 	StartTime   time.Time
 	LastUpdate  time.Time
 	FrameCount  int64
@@ -24,8 +22,6 @@ func NewGameState() *GameState {
 	now := time.Now()
 	return &GameState{
 		IsPaused:   false,
-		Score:      0,
-		Level:      1,
 		StartTime:  now,
 		LastUpdate: now,
 		FrameCount: 0,
@@ -86,50 +82,6 @@ func (gsm *GameStateManager) SetPaused(paused bool) {
 	}
 }
 
-// GetScore returns the current score
-func (gsm *GameStateManager) GetScore() int {
-	return gsm.state.Score
-}
-
-// AddScore adds points to the score
-func (gsm *GameStateManager) AddScore(points int) {
-	oldScore := gsm.state.Score
-	gsm.state.Score += points
-	gsm.eventSystem.EmitScoreChanged(oldScore, gsm.state.Score)
-	gsm.logger.Debug("Score updated", "old_score", oldScore, "new_score", gsm.state.Score, "points", points)
-}
-
-// SetScore sets the score to a specific value
-func (gsm *GameStateManager) SetScore(score int) {
-	if score < 0 {
-		score = 0
-	}
-	oldScore := gsm.state.Score
-	gsm.state.Score = score
-	gsm.eventSystem.EmitScoreChanged(oldScore, gsm.state.Score)
-	gsm.logger.Debug("Score set", "old_score", oldScore, "new_score", gsm.state.Score)
-}
-
-// GetLevel returns the current level
-func (gsm *GameStateManager) GetLevel() int {
-	return gsm.state.Level
-}
-
-// SetLevel sets the level to a specific value
-func (gsm *GameStateManager) SetLevel(level int) {
-	if level < 1 {
-		level = 1
-	}
-	oldLevel := gsm.state.Level
-	gsm.state.Level = level
-	gsm.logger.Debug("Level changed", "old_level", oldLevel, "new_level", gsm.state.Level)
-}
-
-// IncrementLevel increases the level by 1
-func (gsm *GameStateManager) IncrementLevel() {
-	gsm.SetLevel(gsm.state.Level + 1)
-}
-
 // GetGameTime returns the total time the game has been running
 func (gsm *GameStateManager) GetGameTime() time.Duration {
 	return time.Since(gsm.state.StartTime)
@@ -186,8 +138,6 @@ func (gsm *GameStateManager) Reset() {
 func (gsm *GameStateManager) GetStateInfo() map[string]interface{} {
 	return map[string]interface{}{
 		"is_paused":    gsm.state.IsPaused,
-		"score":        gsm.state.Score,
-		"level":        gsm.state.Level,
 		"game_time":    gsm.GetGameTime().String(),
 		"frame_count":  gsm.state.FrameCount,
 		"is_game_over": gsm.state.IsGameOver,
