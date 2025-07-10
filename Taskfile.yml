@@ -109,3 +109,18 @@ tasks:
     desc: Run tests
     cmds:
       - go test ./... -v
+
+  air:
+    desc: Run the app with Air hot reloading
+    cmds:
+      - |
+        if ! command -v air >/dev/null 2>&1; then
+          echo "Air could not be found. Install it with: go install github.com/cosmtrek/air@latest" >&2
+          exit 1
+        fi
+      - air
+
+  install:air:
+    desc: Install Air hot reload tool
+    cmds:
+      - go install github.com/cosmtrek/air@latest
