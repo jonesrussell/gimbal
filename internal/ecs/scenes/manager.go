@@ -53,6 +53,9 @@ func NewSceneManager(
 	}
 
 	// Initialize scenes (to be set up in main or via factory)
+	// Example scene registration (add this where scenes are registered):
+	sm.scenes[SceneCredits] = NewSimpleTextScene(sm, "CREDITS\nGimbal Studios\n2025", SceneCredits)
+	sm.scenes[SceneOptions] = NewSimpleTextScene(sm, "OPTIONS\nComing Soon!", SceneOptions)
 	return sm
 }
 
