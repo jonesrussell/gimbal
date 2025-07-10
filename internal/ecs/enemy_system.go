@@ -275,7 +275,10 @@ func (es *EnemySystem) movementTowardsCenter(entry *donburi.Entry, speed, maxSpe
 // setupSwarmDrone configures a swarm drone enemy
 func (es *EnemySystem) setupSwarmDrone(entry *donburi.Entry) {
 	// Small, fast, weak enemy
-	core.Size.SetValue(entry, common.Size{Width: EnemySwarmDroneSize, Height: EnemySwarmDroneSize}) // constants.EnemySwarmDroneSize
+	core.Size.SetValue(
+		entry,
+		common.Size{Width: EnemySwarmDroneSize, Height: EnemySwarmDroneSize},
+	)
 	core.Speed.SetValue(entry, 2.0*es.difficulty)
 	core.Health.SetValue(entry, 1)
 	// Movement towards center
@@ -285,7 +288,10 @@ func (es *EnemySystem) setupSwarmDrone(entry *donburi.Entry) {
 // setupHeavyCruiser configures a heavy cruiser enemy
 func (es *EnemySystem) setupHeavyCruiser(entry *donburi.Entry) {
 	// Large, slow, strong enemy
-	core.Size.SetValue(entry, common.Size{Width: EnemyHeavyCruiserSize, Height: EnemyHeavyCruiserSize}) // constants.EnemyHeavyCruiserSize
+	core.Size.SetValue(
+		entry,
+		common.Size{Width: EnemyHeavyCruiserSize, Height: EnemyHeavyCruiserSize},
+	)
 	core.Speed.SetValue(entry, 1.0*es.difficulty)
 	core.Health.SetValue(entry, 3)
 	// Movement towards center
@@ -326,7 +332,10 @@ func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
 // setupAsteroid configures an asteroid enemy
 func (es *EnemySystem) setupAsteroid(entry *donburi.Entry) {
 	// Medium-sized environmental hazard
-	core.Size.SetValue(entry, common.Size{Width: EnemyAsteroidSize, Height: EnemyAsteroidSize}) // constants.EnemyAsteroidSize
+	core.Size.SetValue(
+		entry,
+		common.Size{Width: EnemyAsteroidSize, Height: EnemyAsteroidSize},
+	) // constants.EnemyAsteroidSize
 	core.Speed.SetValue(entry, 1.5*es.difficulty)
 	core.Health.SetValue(entry, 2)
 
