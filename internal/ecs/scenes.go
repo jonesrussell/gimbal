@@ -3,7 +3,6 @@ package ecs
 import (
 	"fmt"
 	"image/color"
-	"log"
 	"os"
 	"time"
 
@@ -13,171 +12,9 @@ import (
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 
-	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/common"
 )
-
-var defaultFontFace text.Face
-
-func init() {
-	fontBytes, err := assets.Assets.ReadFile("fonts/PressStart2P.ttf")
-	if err != nil {
-		log.Fatalf("failed to read font: %v", err)
-	}
-	fontTTF, err := opentype.Parse(fontBytes)
-	if err != nil {
-		log.Fatalf("failed to parse font: %v", err)
-	}
-
-	// Create font face for opentype
-	opentypeFace, err := opentype.NewFace(fontTTF, &opentype.FaceOptions{
-		Size:    16,
-		DPI:     72,
-		Hinting: font.HintingFull,
-	})
-	if err != nil {
-		log.Fatalf("failed to create opentype face: %v", err)
-	}
-
-	// Create text/v2 face from opentype face
-	defaultFontFace = text.NewGoXFace(opentypeFace)
-}
-
-// drawCenteredText draws text centered on screen (helper method for scenes)
-func drawCenteredText(screen *ebiten.Image, textStr string, x, y, alpha float64) {
-	// Measure text using text/v2 API
-	width, height := text.Measure(textStr, defaultFontFace, 0)
-
-	// Create draw options
-	op := &text.DrawOptions{}
-	op.GeoM.Translate(float64(int(x)-int(width)/2), float64(int(y)+int(height)/2))
-	op.ColorScale.SetR(1)
-	op.ColorScale.SetG(1)
-	op.ColorScale.SetB(1)
-	op.ColorScale.SetA(float32(alpha))
-
-	// Draw text
-	text.Draw(screen, textStr, defaultFontFace, op)
-}
-
-// SceneType represents different game scenes
-type SceneType int
-
-const (
-	SceneStudioIntro SceneType = iota
-	SceneTitleScreen
-	SceneMenu
-	ScenePlaying
-	ScenePaused
-	SceneGameOver
-	SceneVictory
-	SceneOptions
-	SceneCredits
-)
-
-// Scene represents a game scene with its own update and draw logic
-type Scene interface {
-	Update() error
-	Draw(screen *ebiten.Image)
-	Enter()
-	Exit()
-	GetType() SceneType
-}
-
-// SceneManager manages different game scenes
-type SceneManager struct {
-	currentScene Scene
-	scenes       map[SceneType]Scene
-	world        donburi.World
-	config       *common.GameConfig
-	logger       common.Logger
-	inputHandler common.GameInputHandler
-}
-
-// NewSceneManager creates a new scene manager
-func NewSceneManager(
-	world donburi.World,
-	config *common.GameConfig,
-	logger common.Logger,
-	inputHandler common.GameInputHandler,
-) *SceneManager {
-	sm := &SceneManager{
-		scenes:       make(map[SceneType]Scene),
-		world:        world,
-		config:       config,
-		logger:       logger,
-		inputHandler: inputHandler,
-	}
-
-	// Initialize scenes
-	sm.scenes[SceneStudioIntro] = NewStudioIntroScene(sm)
-	sm.scenes[SceneTitleScreen] = NewTitleScreenScene(sm)
-	sm.scenes[SceneMenu] = NewMenuScene(sm)
-	sm.scenes[ScenePlaying] = NewPlayingScene(sm)
-	sm.scenes[ScenePaused] = NewPausedScene(sm)
-	sm.scenes[SceneGameOver] = NewGameOverScene(sm)
-	sm.scenes[SceneOptions] = NewOptionsScene(sm)
-	sm.scenes[SceneCredits] = NewCreditsScene(sm)
-
-	// Set initial scene
-	sm.currentScene = sm.scenes[SceneStudioIntro]
-	sm.currentScene.Enter()
-
-	return sm
-}
-
-// Update updates the current scene
-func (sm *SceneManager) Update() error {
-	return sm.currentScene.Update()
-}
-
-// Draw draws the current scene
-func (sm *SceneManager) Draw(screen *ebiten.Image) {
-	sm.currentScene.Draw(screen)
-}
-
-// SwitchScene switches to a different scene
-func (sm *SceneManager) SwitchScene(sceneType SceneType) {
-	if scene, exists := sm.scenes[sceneType]; exists {
-		sm.logger.Debug("Switching scene",
-			"from", sm.currentScene.GetType(),
-			"to", sceneType)
-
-		sm.currentScene.Exit()
-		sm.currentScene = scene
-		sm.currentScene.Enter()
-	} else {
-		sm.logger.Error("Scene not found", "scene_type", sceneType)
-	}
-}
-
-// GetCurrentScene returns the current scene
-func (sm *SceneManager) GetCurrentScene() Scene {
-	return sm.currentScene
-}
-
-// GetWorld returns the ECS world
-func (sm *SceneManager) GetWorld() donburi.World {
-	return sm.world
-}
-
-// GetConfig returns the game config
-func (sm *SceneManager) GetConfig() *common.GameConfig {
-	return sm.config
-}
-
-// GetLogger returns the logger
-func (sm *SceneManager) GetLogger() common.Logger {
-	return sm.logger
-}
-
-// GetInputHandler returns the input handler
-func (sm *SceneManager) GetInputHandler() common.GameInputHandler {
-	return sm.inputHandler
-}
 
 // PlayingScene represents the main gameplay scene
 type PlayingScene struct {
@@ -475,13 +312,11 @@ func NewMenuScene(manager *SceneManager) *MenuScene {
 }
 
 func (s *MenuScene) Update() error {
-	input := s.manager.inputHandler
-
-	// Keyboard navigation
-	if input.IsKeyPressed(ebiten.KeyUp) {
+	// Keyboard navigation - use JustPressed to prevent rapid scrolling
+	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
 		s.selection = (s.selection - 1 + len(s.options)) % len(s.options)
 	}
-	if input.IsKeyPressed(ebiten.KeyDown) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
 		s.selection = (s.selection + 1) % len(s.options)
 	}
 
@@ -507,8 +342,8 @@ func (s *MenuScene) Update() error {
 		}
 	}
 
-	// Keyboard select
-	if input.IsKeyPressed(ebiten.KeyEnter) || input.IsKeyPressed(ebiten.KeySpace) {
+	// Keyboard select - use JustPressed to prevent multiple activations
+	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		s.activateSelection()
 	}
 	return nil
@@ -557,11 +392,16 @@ func (s *MenuScene) Draw(screen *ebiten.Image) {
 			width, height := text.Measure(option, defaultFontFace, 0)
 			w := int(width)
 			h := int(height)
+			paddingX := 24 // horizontal padding
+			paddingY := 6  // vertical padding
 			rectCol := color.RGBA{0, 255, 255, uint8(128 * bgAlpha)}
-			rect := ebiten.NewImage(w+60, h+16)
+			rect := ebiten.NewImage(w+paddingX*2, h+paddingY*2)
 			rect.Fill(rectCol)
 			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(s.manager.config.ScreenSize.Width)/2-float64(w+60)/2, y-float64(h+16)/2)
+			op.GeoM.Translate(
+				float64(s.manager.config.ScreenSize.Width)/2-float64(w+paddingX*2)/2,
+				y-float64(h+paddingY*2)/2+2, // fine-tuned for pixel-perfect alignment
+			)
 			screen.DrawImage(rect, op)
 		}
 		drawCenteredText(screen, option,
