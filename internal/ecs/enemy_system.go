@@ -128,72 +128,114 @@ func (es *EnemySystem) selectSpawnPattern() int {
 
 // calculateSpawnPosition calculates spawn position based on pattern
 func (es *EnemySystem) calculateSpawnPosition(pattern int) common.Point {
-	center := common.Point{
-		X: float64(es.config.ScreenSize.Width) / 2,
-		Y: float64(es.config.ScreenSize.Height) / 2,
-	}
+	center := es.getScreenCenter()
 
 	switch pattern {
 	case SpawnPatternCircle:
-		// Spawn in a circle around the center
-		//nolint:gosec // Game logic doesn't need cryptographic randomness
-		angle := rand.Float64() * 2 * math.Pi
-		//nolint:gosec // Game logic doesn't need cryptographic randomness
-		radius := EnemySpawnRadiusMin + rand.Float64()*(EnemySpawnRadiusMax-EnemySpawnRadiusMin)
-		return common.Point{
-			X: center.X + radius*math.Cos(angle),
-			Y: center.Y + radius*math.Sin(angle),
-		}
-
+		return es.calculateCircleSpawnPosition(center)
 	case SpawnPatternSpiral:
-		// Spawn in a spiral pattern
-		//nolint:gosec // Game logic doesn't need cryptographic randomness
-		angle := rand.Float64() * 2 * math.Pi
-		//nolint:gosec // Game logic doesn't need cryptographic randomness
-		radius := 30.0 + rand.Float64()*150.0
-		return common.Point{
-			X: center.X + radius*math.Cos(angle),
-			Y: center.Y + radius*math.Sin(angle),
-		}
-
+		return es.calculateSpiralSpawnPosition(center)
 	case SpawnPatternWave:
-		// Spawn in a wave pattern from one side
-		//nolint:gosec // Game logic doesn't need cryptographic randomness
-		side := rand.Intn(4) // 0: top, 1: right, 2: bottom, 3: left
-		var x, y float64
-
-		switch side {
-		case 0: // top
-			//nolint:gosec // Game logic doesn't need cryptographic randomness
-			x = center.X + (rand.Float64()-0.5)*200
-			y = -50
-		case 1: // right
-			x = float64(es.config.ScreenSize.Width) + 50
-			//nolint:gosec // Game logic doesn't need cryptographic randomness
-			y = center.Y + (rand.Float64()-0.5)*200
-		case 2: // bottom
-			//nolint:gosec // Game logic doesn't need cryptographic randomness
-			x = center.X + (rand.Float64()-0.5)*200
-			y = float64(es.config.ScreenSize.Height) + 50
-		case 3: // left
-			x = -50
-			//nolint:gosec // Game logic doesn't need cryptographic randomness
-			y = center.Y + (rand.Float64()-0.5)*200
-		}
-
-		return common.Point{X: x, Y: y}
-
+		return es.calculateWaveSpawnPosition(center)
 	case SpawnPatternRandom:
-		// Random position within screen bounds
-		//nolint:gosec // Game logic doesn't need cryptographic randomness
-		return common.Point{
-			X: rand.Float64() * float64(es.config.ScreenSize.Width),
-			//nolint:gosec // Game logic doesn't need cryptographic randomness
-			Y: rand.Float64() * float64(es.config.ScreenSize.Height),
-		}
-
+		return es.calculateRandomSpawnPosition()
 	default:
 		return center
+	}
+}
+
+// getScreenCenter returns the center point of the screen
+func (es *EnemySystem) getScreenCenter() common.Point {
+	return common.Point{
+		X: float64(es.config.ScreenSize.Width) / 2,
+		Y: float64(es.config.ScreenSize.Height) / 2,
+	}
+}
+
+// calculateCircleSpawnPosition calculates spawn position in a circle pattern
+func (es *EnemySystem) calculateCircleSpawnPosition(center common.Point) common.Point {
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	angle := rand.Float64() * 2 * math.Pi
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	radius := EnemySpawnRadiusMin + rand.Float64()*(EnemySpawnRadiusMax-EnemySpawnRadiusMin)
+
+	return common.Point{
+		X: center.X + radius*math.Cos(angle),
+		Y: center.Y + radius*math.Sin(angle),
+	}
+}
+
+// calculateSpiralSpawnPosition calculates spawn position in a spiral pattern
+func (es *EnemySystem) calculateSpiralSpawnPosition(center common.Point) common.Point {
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	angle := rand.Float64() * 2 * math.Pi
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	radius := 30.0 + rand.Float64()*150.0
+
+	return common.Point{
+		X: center.X + radius*math.Cos(angle),
+		Y: center.Y + radius*math.Sin(angle),
+	}
+}
+
+// calculateWaveSpawnPosition calculates spawn position in a wave pattern
+func (es *EnemySystem) calculateWaveSpawnPosition(center common.Point) common.Point {
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	side := rand.Intn(4) // 0: top, 1: right, 2: bottom, 3: left
+
+	switch side {
+	case 0: // top
+		return es.calculateTopSpawnPosition(center)
+	case 1: // right
+		return es.calculateRightSpawnPosition(center)
+	case 2: // bottom
+		return es.calculateBottomSpawnPosition(center)
+	case 3: // left
+		return es.calculateLeftSpawnPosition(center)
+	default:
+		return center
+	}
+}
+
+// calculateTopSpawnPosition calculates spawn position from top
+func (es *EnemySystem) calculateTopSpawnPosition(center common.Point) common.Point {
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	x := center.X + (rand.Float64()-0.5)*200
+	y := -50.0
+	return common.Point{X: x, Y: y}
+}
+
+// calculateRightSpawnPosition calculates spawn position from right
+func (es *EnemySystem) calculateRightSpawnPosition(center common.Point) common.Point {
+	x := float64(es.config.ScreenSize.Width) + 50.0
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	y := center.Y + (rand.Float64()-0.5)*200
+	return common.Point{X: x, Y: y}
+}
+
+// calculateBottomSpawnPosition calculates spawn position from bottom
+func (es *EnemySystem) calculateBottomSpawnPosition(center common.Point) common.Point {
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	x := center.X + (rand.Float64()-0.5)*200
+	y := float64(es.config.ScreenSize.Height) + 50.0
+	return common.Point{X: x, Y: y}
+}
+
+// calculateLeftSpawnPosition calculates spawn position from left
+func (es *EnemySystem) calculateLeftSpawnPosition(center common.Point) common.Point {
+	x := -50.0
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	y := center.Y + (rand.Float64()-0.5)*200
+	return common.Point{X: x, Y: y}
+}
+
+// calculateRandomSpawnPosition calculates random spawn position within screen bounds
+func (es *EnemySystem) calculateRandomSpawnPosition() common.Point {
+	//nolint:gosec // Game logic doesn't need cryptographic randomness
+	return common.Point{
+		X: rand.Float64() * float64(es.config.ScreenSize.Width),
+		//nolint:gosec // Game logic doesn't need cryptographic randomness
+		Y: rand.Float64() * float64(es.config.ScreenSize.Height),
 	}
 }
 
@@ -252,14 +294,13 @@ func (es *EnemySystem) createEnemySprite(entry *donburi.Entry, enemyType int) {
 
 // movementTowardsCenter sets up movement for an enemy towards the center with given speed and maxSpeed
 func (es *EnemySystem) movementTowardsCenter(entry *donburi.Entry, speed, maxSpeed float64) {
-	center := common.Point{
-		X: float64(es.config.ScreenSize.Width) / 2,
-		Y: float64(es.config.ScreenSize.Height) / 2,
-	}
+	center := es.getScreenCenter()
 	pos := core.Position.Get(entry)
+
 	dx := center.X - pos.X
 	dy := center.Y - pos.Y
 	distance := math.Sqrt(dx*dx + dy*dy)
+
 	if distance > 0 {
 		velocity := common.Point{
 			X: (dx / distance) * speed * es.difficulty,
@@ -300,21 +341,28 @@ func (es *EnemySystem) setupHeavyCruiser(entry *donburi.Entry) {
 
 // setupBoss configures a boss enemy
 func (es *EnemySystem) setupBoss(entry *donburi.Entry) {
-	// Very large, powerful boss enemy
-	core.Size.SetValue(entry, common.Size{Width: EnemyBossSize, Height: EnemyBossSize}) // constants.EnemyBossSize
+	// Set basic boss properties
+	es.setupBossProperties(entry)
+
+	// Set up orbital movement pattern
+	es.setupBossOrbitalMovement(entry)
+}
+
+// setupBossProperties sets the basic properties for a boss enemy
+func (es *EnemySystem) setupBossProperties(entry *donburi.Entry) {
+	core.Size.SetValue(entry, common.Size{Width: EnemyBossSize, Height: EnemyBossSize})
 	core.Speed.SetValue(entry, 0.5*es.difficulty)
 	core.Health.SetValue(entry, 10)
+}
 
-	// Complex movement pattern (orbit around center)
-	center := common.Point{
-		X: float64(es.config.ScreenSize.Width) / 2,
-		Y: float64(es.config.ScreenSize.Height) / 2,
-	}
+// setupBossOrbitalMovement sets up orbital movement for boss enemies
+func (es *EnemySystem) setupBossOrbitalMovement(entry *donburi.Entry) {
+	center := es.getScreenCenter()
 
 	// Start at a random angle
 	//nolint:gosec // Game logic doesn't need cryptographic randomness
 	angle := rand.Float64() * 2 * math.Pi
-	radius := EnemyBossRadius // constants.EnemyBossRadius
+	radius := EnemyBossRadius
 
 	pos := common.Point{
 		X: center.X + radius*math.Cos(angle),
