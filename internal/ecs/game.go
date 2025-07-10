@@ -31,6 +31,8 @@ type ECSGame struct {
 
 	// Game state management
 	stateManager *GameStateManager
+	scoreManager *ScoreManager
+	levelManager *LevelManager
 
 	// Scene management
 	sceneManager *scenes.SceneManager
@@ -116,8 +118,10 @@ func (g *ECSGame) initializeSystems() error {
 	g.systemManager = NewSystemManager()
 	g.logger.Debug("System manager created")
 
-	// Create game state manager
+	// Create game state managers
 	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
+	g.scoreManager = NewScoreManager(g.eventSystem, g.logger)
+	g.levelManager = NewLevelManager(g.logger)
 
 	// Create scene manager
 	g.sceneManager = scenes.NewSceneManager(g.world, g.config, g.logger, g.inputHandler)
@@ -299,6 +303,16 @@ func (g *ECSGame) Cleanup() {
 // IsPaused returns the pause state
 func (g *ECSGame) IsPaused() bool {
 	return g.stateManager.IsPaused()
+}
+
+// GetScoreManager returns the score manager
+func (g *ECSGame) GetScoreManager() *ScoreManager {
+	return g.scoreManager
+}
+
+// GetLevelManager returns the level manager
+func (g *ECSGame) GetLevelManager() *LevelManager {
+	return g.levelManager
 }
 
 // SetInputHandler sets the input handler (for testing)
