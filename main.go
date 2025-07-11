@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"runtime"
 
@@ -10,6 +12,8 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/app"
 	"github.com/jonesrussell/gimbal/internal/common"
+
+	_ "net/http/pprof"
 )
 
 // ExitCode represents the program's exit status
@@ -28,6 +32,14 @@ func run() error {
 	// Set debug log level if not set
 	if os.Getenv("LOG_LEVEL") == "" {
 		os.Setenv("LOG_LEVEL", "DEBUG")
+	}
+
+	// Start pprof server in development mode
+	if os.Getenv("LOG_LEVEL") == "DEBUG" || os.Getenv("GIMBAL_DEV") == "1" {
+		go func() {
+			log.Println("pprof server running at http://localhost:6060/debug/pprof/")
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
 	}
 
 	// Create and initialize application container
