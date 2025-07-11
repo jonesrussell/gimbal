@@ -126,6 +126,11 @@ func (g *ECSGame) initializeSystems() error {
 	// Create scene manager
 	g.sceneManager = scenes.NewSceneManager(g.world, g.config, g.logger, g.inputHandler)
 
+	// Set resume callback to unpause game state
+	g.sceneManager.SetResumeCallback(func() {
+		g.stateManager.SetPaused(false)
+	})
+
 	// Set initial scene
 	if err := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); err != nil {
 		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to set initial scene", err)
