@@ -6,6 +6,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
+	systems "github.com/jonesrussell/gimbal/internal/ecs/systems"
 )
 
 // updateCurrentScene handles scene-specific updates
@@ -74,10 +75,20 @@ func (g *ECSGame) updateCombatSystems() {
 
 // updateECSSystems runs all ECS systems
 func (g *ECSGame) updateECSSystems() {
+	// Get font from resource manager
+	font := g.resourceManager.GetDefaultFont()
+	if font == nil {
+		g.logger.Error("Failed to get default font for score display")
+		return
+	}
+
+	// Run core systems
 	core.MovementSystem(g.world)
 	core.OrbitalMovementSystem(g.world)
 	core.StarMovementSystem(&ecs.ECS{World: g.world}, g.config)
-}
+
+	// Run score display system
+	systems.ScoreDisplaySystem(g.world, font, g.scoreManager)()
 
 // handlePlayerMovementEvents emits events when player moves
 func (g *ECSGame) handlePlayerMovementEvents(inputAngle common.Angle) {
