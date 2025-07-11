@@ -2,7 +2,8 @@
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [
         "--fast",
-        "--timeout=5m"
+        "--timeout=5m",
+        "--build-tags=dev"
     ],
     "go.lintOnSave": "package",
     "go.useLanguageServer": true,
@@ -13,7 +14,7 @@
             "unusedparams": true,
             "shadow": true
         },
-        "buildFlags": ["-tags=wireinject"],
+        "buildFlags": ["-tags=dev,wireinject"],
         "env": {
             "GOOS": "linux"
         }
@@ -28,6 +29,8 @@
     "go.inlayHints.functionTypeParameters": true,
     "go.inlayHints.rangeVariableTypes": true,
     "go.inlayHints.constantValues": true,
+    "go.buildTags": "dev",
+    "go.testTags": "dev",
     "[go]": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "golang.go",

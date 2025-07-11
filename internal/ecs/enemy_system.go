@@ -15,7 +15,6 @@ import (
 
 // EnemySystem manages enemy spawning, movement, and behavior
 // Simplified: only one enemy type, basic downward movement
-
 type EnemySystem struct {
 	world         donburi.World
 	config        *common.GameConfig
@@ -31,10 +30,15 @@ func NewEnemySystem(world donburi.World, config *common.GameConfig) *EnemySystem
 		spawnTimer:    0,
 		spawnInterval: 60, // Spawn every 60 frames (1 second at 60fps)
 	}
+
+	// Global RNG is automatically seeded in Go 1.20+
+	// No need to call rand.Seed() anymore
+
 	// Create and cache the enemy sprite (red square)
 	img := ebiten.NewImage(16, 16)
 	img.Fill(color.RGBA{255, 0, 0, 255})
 	es.enemySprite = img
+
 	return es
 }
 
@@ -48,9 +52,9 @@ func (es *EnemySystem) Update(deltaTime float64) {
 }
 
 func (es *EnemySystem) spawnEnemy() {
-	// Spawn at random X at the top
+	// Spawn at random X at the top using seeded RNG
 	w := float64(es.config.ScreenSize.Width)
-	x := rand.Float64() * (w - 16)
+	x := rand.Float64() * (w - 16) //nolint:gosec // Game logic randomness is acceptable
 	spawnPos := common.Point{X: x, Y: 0}
 
 	entity := es.world.Create(core.EnemyTag, core.Position, core.Sprite, core.Movement, core.Size, core.Health)
