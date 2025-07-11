@@ -2,6 +2,7 @@ package ecs
 
 import (
 	"image/color"
+	"math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -52,10 +53,10 @@ func (es *EnemySystem) Update(deltaTime float64) {
 }
 
 func (es *EnemySystem) spawnEnemy() {
-	// Spawn at random X at the top using seeded RNG
-	w := float64(es.config.ScreenSize.Width)
-	x := rand.Float64() * (w - 16) //nolint:gosec // Game logic randomness is acceptable
-	spawnPos := common.Point{X: x, Y: 0}
+	// Spawn at screen center (Gyruss-style)
+	centerX := float64(es.config.ScreenSize.Width) / 2
+	centerY := float64(es.config.ScreenSize.Height) / 2
+	spawnPos := common.Point{X: centerX, Y: centerY}
 
 	entity := es.world.Create(core.EnemyTag, core.Position, core.Sprite, core.Movement, core.Size, core.Health)
 	entry := es.world.Entry(entity)
@@ -63,10 +64,20 @@ func (es *EnemySystem) spawnEnemy() {
 	core.Sprite.SetValue(entry, es.enemySprite)
 	core.Size.SetValue(entry, common.Size{Width: 16, Height: 16})
 	core.Health.SetValue(entry, core.HealthData{Current: 1, Maximum: 1, InvincibilityDuration: 0})
-	// Move straight down
+
+	// Calculate random angle for outward movement
+	angle := rand.Float64() * 2 * math.Pi //nolint:gosec // Game logic randomness is acceptable
+	speed := 2.0
+
+	// Move outward from center toward player orbital ring
+	velocity := common.Point{
+		X: math.Cos(angle) * speed,
+		Y: math.Sin(angle) * speed,
+	}
+
 	core.Movement.SetValue(entry, core.MovementData{
-		Velocity: common.Point{X: 0, Y: 2},
-		MaxSpeed: 2,
+		Velocity: velocity,
+		MaxSpeed: speed,
 	})
 }
 
@@ -82,7 +93,14 @@ func (es *EnemySystem) updateEnemies() {
 		mov := core.Movement.Get(entry)
 		pos.X += mov.Velocity.X
 		pos.Y += mov.Velocity.Y
-		if pos.Y > float64(es.config.ScreenSize.Height)+16 {
+
+		// Remove enemies when they move too far from center (Gyruss-style)
+		centerX := float64(es.config.ScreenSize.Width) / 2
+		centerY := float64(es.config.ScreenSize.Height) / 2
+		distanceFromCenter := math.Sqrt((pos.X-centerX)*(pos.X-centerX) + (pos.Y-centerY)*(pos.Y-centerY))
+		maxDistance := math.Max(float64(es.config.ScreenSize.Width), float64(es.config.ScreenSize.Height)) * 0.8
+
+		if distanceFromCenter > maxDistance {
 			es.world.Remove(entry.Entity())
 		}
 	})

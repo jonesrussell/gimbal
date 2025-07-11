@@ -108,10 +108,25 @@ func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, 
 	// Set angle
 	core.Angle.SetValue(entry, direction)
 
-	// Simple upward movement
+	// Calculate direction toward screen center (Gyruss-style shooting)
+	centerX := float64(ws.config.ScreenSize.Width) / 2
+	centerY := float64(ws.config.ScreenSize.Height) / 2
+
+	// Direction vector from player to center
+	dirX := centerX - pos.X
+	dirY := centerY - pos.Y
+
+	// Normalize the direction vector
+	distance := math.Sqrt(dirX*dirX + dirY*dirY)
+	if distance > 0 {
+		dirX /= distance
+		dirY /= distance
+	}
+
+	// Apply speed to create velocity
 	velocity := common.Point{
-		X: 0,
-		Y: -ws.projectileSpeed, // Move upward (negative Y)
+		X: dirX * ws.projectileSpeed,
+		Y: dirY * ws.projectileSpeed,
 	}
 
 	core.Movement.SetValue(entry, core.MovementData{
