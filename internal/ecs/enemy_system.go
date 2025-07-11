@@ -71,7 +71,7 @@ func (es *EnemySystem) spawnEnemy() {
 	entry := es.world.Entry(entity)
 	core.Position.SetValue(entry, spawnPos)
 	core.Sprite.SetValue(entry, enemySprite)
-	core.Size.SetValue(entry, common.Size{Width: 16, Height: 16})
+	core.Size.SetValue(entry, common.Size{Width: 128, Height: 128})
 	core.Health.SetValue(entry, core.HealthData{Current: 1, Maximum: 1, InvincibilityDuration: 0})
 
 	// Calculate random angle for outward movement

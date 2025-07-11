@@ -125,6 +125,12 @@ func (s *PlayingScene) drawLivesDisplay(screen *ebiten.Image) {
 	}); ok {
 		current, maximum := hs.GetPlayerHealth()
 
+		// Debug logging for health values
+		s.manager.logger.Debug("Health system values",
+			"current_lives", current,
+			"maximum_lives", maximum,
+		)
+
 		// Get heart sprite from resource manager
 		heartSprite, exists := s.resourceMgr.GetSprite("heart")
 		if !exists {
@@ -175,13 +181,21 @@ func (s *PlayingScene) drawLivesSprites(screen, heartSprite *ebiten.Image, curre
 	// Measure the actual text width using text/v2
 	labelWidth, _ := v2text.Measure(label, s.font, 0)
 
-	heartSize := 16 // Desired heart sprite size in pixels
-	spacing := 4    // Space between hearts
+	heartSize := 96 // Desired heart sprite size in pixels (increased from 32)
+	spacing := 16   // Space between hearts (increased from 8)
 
 	// Get original sprite size
 	origW, origH := heartSprite.Bounds().Dx(), heartSprite.Bounds().Dy()
 	scaleX := float64(heartSize) / float64(origW)
 	scaleY := float64(heartSize) / float64(origH)
+
+	// Debug logging
+	s.manager.logger.Debug("Heart positioning",
+		"label_width", labelWidth,
+		"heart_size", heartSize,
+		"orig_sprite_size", fmt.Sprintf("%dx%d", origW, origH),
+		"scale", fmt.Sprintf("%.3fx%.3f", scaleX, scaleY),
+	)
 
 	// Draw heart sprites with proper spacing
 	heartX := 20 + labelWidth
@@ -191,6 +205,15 @@ func (s *PlayingScene) drawLivesSprites(screen, heartSprite *ebiten.Image, curre
 		y := float64(30 - heartSize/2) // Center vertically with text
 		heartOp.GeoM.Translate(x, y)
 		heartOp.GeoM.Scale(scaleX, scaleY)
+
+		// Debug logging for each heart
+		s.manager.logger.Debug("Drawing heart",
+			"heart_index", i,
+			"current_lives", current,
+			"max_lives", maximum,
+			"position", fmt.Sprintf("(%.1f, %.1f)", x, y),
+			"is_full", i < current,
+		)
 
 		if i < current {
 			// Full heart
