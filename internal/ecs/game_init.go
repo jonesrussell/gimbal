@@ -5,7 +5,10 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
 )
 
 // NewECSGame creates a new ECS-based game instance
@@ -72,11 +75,11 @@ func (g *ECSGame) initializeSystems() error {
 	g.logger.Debug("Event system created")
 
 	// Create health system
-	g.healthSystem = NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
+	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
 	g.logger.Debug("Health system created")
 
 	// Create resource manager
-	g.resourceManager = NewResourceManager(g.logger)
+	g.resourceManager = resources.NewResourceManager(g.logger)
 	g.logger.Debug("Resource manager created")
 
 	// Create game state managers
@@ -109,7 +112,7 @@ func (g *ECSGame) initializeSystems() error {
 	// Create combat systems
 	g.enemySystem = NewEnemySystem(g.world, g.config)
 	g.weaponSystem = NewWeaponSystem(g.world, g.config)
-	g.collisionSystem = NewCollisionSystem(g.world, g.config, g.healthSystem, g.eventSystem, g.logger)
+	g.collisionSystem = collision.NewCollisionSystem(g.world, g.config, g.healthSystem, g.eventSystem, g.logger)
 
 	return nil
 }
@@ -128,12 +131,12 @@ func (g *ECSGame) loadAssets() error {
 // createEntities creates all game entities
 func (g *ECSGame) createEntities() error {
 	// Get sprites from resource manager
-	playerSprite, ok := g.resourceManager.GetSprite(SpritePlayer)
+	playerSprite, ok := g.resourceManager.GetSprite(resources.SpritePlayer)
 	if !ok {
 		return common.NewGameError(common.ErrorCodeSpriteNotFound, "player sprite not found")
 	}
 
-	starSprite, ok := g.resourceManager.GetSprite(SpriteStar)
+	starSprite, ok := g.resourceManager.GetSprite(resources.SpriteStar)
 	if !ok {
 		return common.NewGameError(common.ErrorCodeSpriteNotFound, "star sprite not found")
 	}

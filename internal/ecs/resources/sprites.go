@@ -1,85 +1,16 @@
-package ecs
+package resources
 
 import (
 	"bytes"
 	"fmt"
 	"image/color"
 	"image/png"
-	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 
 	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/common"
 )
-
-// ResourceType represents different types of resources
-type ResourceType int
-
-const (
-	ResourceSprite ResourceType = iota
-	ResourceSound
-	ResourceFont
-	ResourceData
-)
-
-// Resource represents a loaded game resource
-type Resource struct {
-	Type ResourceType
-	Name string
-	Data interface{}
-}
-
-// ResourceManager manages all game resources
-type ResourceManager struct {
-	resources   map[string]*Resource
-	mutex       sync.RWMutex
-	logger      common.Logger
-	defaultFont text.Face
-}
-
-// NewResourceManager creates a new resource manager
-func NewResourceManager(logger common.Logger) *ResourceManager {
-	rm := &ResourceManager{
-		resources: make(map[string]*Resource),
-		logger:    logger,
-	}
-	if err := rm.loadDefaultFont(); err != nil {
-		logger.Error("failed to load default font", "error", err)
-	}
-	return rm
-}
-
-func (rm *ResourceManager) loadDefaultFont() error {
-	fontBytes, err := assets.Assets.ReadFile("fonts/PressStart2P.ttf")
-	if err != nil {
-		rm.logger.Error("failed to read font", "error", err)
-		return err
-	}
-	fontTTF, err := opentype.Parse(fontBytes)
-	if err != nil {
-		rm.logger.Error("failed to parse font", "error", err)
-		return err
-	}
-	otFace, err := opentype.NewFace(fontTTF, &opentype.FaceOptions{
-		Size:    16,
-		DPI:     72,
-		Hinting: font.HintingFull,
-	})
-	if err != nil {
-		rm.logger.Error("failed to create opentype face", "error", err)
-		return err
-	}
-	rm.defaultFont = text.NewGoXFace(otFace)
-	return nil
-}
-
-func (rm *ResourceManager) GetDefaultFont() text.Face {
-	return rm.defaultFont
-}
 
 // LoadSprite loads a sprite from the embedded assets
 func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) {
@@ -218,41 +149,3 @@ func (rm *ResourceManager) LoadAllSprites() error {
 	rm.logger.Info("All sprites loaded successfully")
 	return nil
 }
-
-// GetResourceCount returns the number of loaded resources
-func (rm *ResourceManager) GetResourceCount() int {
-	rm.mutex.RLock()
-	defer rm.mutex.RUnlock()
-	return len(rm.resources)
-}
-
-// GetResourceInfo returns information about loaded resources
-func (rm *ResourceManager) GetResourceInfo() map[string]interface{} {
-	rm.mutex.RLock()
-	defer rm.mutex.RUnlock()
-
-	info := make(map[string]interface{})
-	for name, resource := range rm.resources {
-		info[name] = map[string]interface{}{
-			"type": resource.Type,
-		}
-	}
-	return info
-}
-
-// Cleanup releases all resources
-func (rm *ResourceManager) Cleanup() {
-	rm.mutex.Lock()
-	defer rm.mutex.Unlock()
-
-	rm.logger.Info("Cleaning up resources", "count", len(rm.resources))
-	rm.resources = make(map[string]*Resource)
-}
-
-// Predefined sprite names for easy access
-const (
-	SpritePlayer     = "player"
-	SpriteStar       = "star"
-	SpriteButton     = "button"
-	SpriteBackground = "background"
-)
