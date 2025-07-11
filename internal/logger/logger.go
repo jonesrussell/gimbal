@@ -155,37 +155,49 @@ func equalValues(a, b any) bool {
 		reflect.Complex64, reflect.Complex128, reflect.String, reflect.UnsafePointer:
 		return va.Interface() == vb.Interface()
 	case reflect.Slice, reflect.Array:
-		if va.Len() != vb.Len() {
-			return false
-		}
-		for i := 0; i < va.Len(); i++ {
-			if !equalValues(va.Index(i).Interface(), vb.Index(i).Interface()) {
-				return false
-			}
-		}
-		return true
+		return equalSlicesOrArrays(va, vb)
 	case reflect.Map:
-		if va.Len() != vb.Len() {
-			return false
-		}
-		for _, k := range va.MapKeys() {
-			if !equalValues(va.MapIndex(k).Interface(), vb.MapIndex(k).Interface()) {
-				return false
-			}
-		}
-		return true
+		return equalMaps(va, vb)
 	case reflect.Struct:
-		for i := 0; i < va.NumField(); i++ {
-			if !equalValues(va.Field(i).Interface(), vb.Field(i).Interface()) {
-				return false
-			}
-		}
-		return true
+		return equalStructs(va, vb)
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Pointer:
 		return va.Interface() == vb.Interface()
 	default:
 		return false
 	}
+}
+
+func equalSlicesOrArrays(va, vb reflect.Value) bool {
+	if va.Len() != vb.Len() {
+		return false
+	}
+	for i := 0; i < va.Len(); i++ {
+		if !equalValues(va.Index(i).Interface(), vb.Index(i).Interface()) {
+			return false
+		}
+	}
+	return true
+}
+
+func equalMaps(va, vb reflect.Value) bool {
+	if va.Len() != vb.Len() {
+		return false
+	}
+	for _, k := range va.MapKeys() {
+		if !equalValues(va.MapIndex(k).Interface(), vb.MapIndex(k).Interface()) {
+			return false
+		}
+	}
+	return true
+}
+
+func equalStructs(va, vb reflect.Value) bool {
+	for i := 0; i < va.NumField(); i++ {
+		if !equalValues(va.Field(i).Interface(), vb.Field(i).Interface()) {
+			return false
+		}
+	}
+	return true
 }
 
 // toZapFields converts interface slice to zap.Field slice

@@ -153,7 +153,11 @@ func (rm *ResourceManager) LoadAllSprites() error {
 		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
 		_, err = rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
 		if err != nil {
-			return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create player placeholder", err)
+			return common.NewGameErrorWithCause(
+				common.ErrorCodeAssetLoadFailed,
+				"failed to create player placeholder",
+				err,
+			)
 		}
 	}
 

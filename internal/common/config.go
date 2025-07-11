@@ -43,6 +43,16 @@ type GameConfig struct {
 	StarResetMargin    float64
 }
 
+// StarFieldSettings groups star field configuration parameters
+type StarFieldSettings struct {
+	SpawnRadiusMin float64
+	SpawnRadiusMax float64
+	MinScale       float64
+	MaxScale       float64
+	ScaleDistance  float64
+	ResetMargin    float64
+}
+
 // GameOption is a function that modifies a GameConfig
 type GameOption func(*GameConfig)
 
@@ -96,16 +106,14 @@ func WithStarSettings(size, speed float64) GameOption {
 }
 
 // WithStarFieldSettings sets comprehensive star field parameters
-func WithStarFieldSettings(
-	spawnRadiusMin, spawnRadiusMax, minScale, maxScale, scaleDistance, resetMargin float64,
-) GameOption {
+func WithStarFieldSettings(settings StarFieldSettings) GameOption {
 	return func(c *GameConfig) {
-		c.StarSpawnRadiusMin = spawnRadiusMin
-		c.StarSpawnRadiusMax = spawnRadiusMax
-		c.StarMinScale = minScale
-		c.StarMaxScale = maxScale
-		c.StarScaleDistance = scaleDistance
-		c.StarResetMargin = resetMargin
+		c.StarSpawnRadiusMin = settings.SpawnRadiusMin
+		c.StarSpawnRadiusMax = settings.SpawnRadiusMax
+		c.StarMinScale = settings.MinScale
+		c.StarMaxScale = settings.MaxScale
+		c.StarScaleDistance = settings.ScaleDistance
+		c.StarResetMargin = settings.ResetMargin
 	}
 }
 
