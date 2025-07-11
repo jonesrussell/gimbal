@@ -5,17 +5,20 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 type TitleScreenScene struct {
 	manager   *SceneManager
 	startTime time.Time
+	font      text.Face
 }
 
-func NewTitleScreenScene(manager *SceneManager) *TitleScreenScene {
+func NewTitleScreenScene(manager *SceneManager, font text.Face) *TitleScreenScene {
 	return &TitleScreenScene{
 		manager:   manager,
 		startTime: time.Now(),
+		font:      font,
 	}
 }
 
@@ -26,21 +29,30 @@ func (s *TitleScreenScene) Update() error {
 
 func (s *TitleScreenScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
-	drawCenteredText(screen, "GIMBAL",
-		float64(s.manager.config.ScreenSize.Width)/2,
-		float64(s.manager.config.ScreenSize.Height)/2-50,
-		1.0)
-	drawCenteredText(screen, "Exoplanetary Gyruss-Inspired Shooter",
-		float64(s.manager.config.ScreenSize.Width)/2,
-		float64(s.manager.config.ScreenSize.Height)/2,
-		1.0)
+	drawCenteredTextWithOptions(screen, TextDrawOptions{
+		Text:  "GIMBAL",
+		X:     float64(s.manager.config.ScreenSize.Width) / 2,
+		Y:     float64(s.manager.config.ScreenSize.Height)/2 - 50,
+		Alpha: 1.0,
+		Font:  s.font,
+	})
+	drawCenteredTextWithOptions(screen, TextDrawOptions{
+		Text:  "Exoplanetary Gyruss-Inspired Shooter",
+		X:     float64(s.manager.config.ScreenSize.Width) / 2,
+		Y:     float64(s.manager.config.ScreenSize.Height) / 2,
+		Alpha: 1.0,
+		Font:  s.font,
+	})
 	elapsed := time.Since(s.startTime).Seconds()
 	blink := (elapsed * 2) < 1.0 // Blink every 0.5 seconds
 	if blink {
-		drawCenteredText(screen, "Press any key to continue",
-			float64(s.manager.config.ScreenSize.Width)/2,
-			float64(s.manager.config.ScreenSize.Height)/2+100,
-			1.0)
+		drawCenteredTextWithOptions(screen, TextDrawOptions{
+			Text:  "Press any key to continue",
+			X:     float64(s.manager.config.ScreenSize.Width) / 2,
+			Y:     float64(s.manager.config.ScreenSize.Height)/2 + 100,
+			Alpha: 1.0,
+			Font:  s.font,
+		})
 	}
 }
 

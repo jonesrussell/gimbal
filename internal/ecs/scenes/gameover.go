@@ -4,14 +4,19 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 type GameOverScene struct {
 	manager *SceneManager
+	font    text.Face
 }
 
-func NewGameOverScene(manager *SceneManager) *GameOverScene {
-	return &GameOverScene{manager: manager}
+func NewGameOverScene(manager *SceneManager, font text.Face) *GameOverScene {
+	return &GameOverScene{
+		manager: manager,
+		font:    font,
+	}
 }
 
 func (s *GameOverScene) Update() error {
@@ -29,10 +34,22 @@ func (s *GameOverScene) Draw(screen *ebiten.Image) {
 	// Draw game over text
 	centerX := float64(s.manager.config.ScreenSize.Width) / 2
 	centerY := float64(s.manager.config.ScreenSize.Height) / 2
-	drawCenteredText(screen, "GAME OVER", centerX, centerY-50, 1.0)
+	drawCenteredTextWithOptions(screen, TextDrawOptions{
+		Text:  "GAME OVER",
+		X:     centerX,
+		Y:     centerY - 50,
+		Alpha: 1.0,
+		Font:  s.font,
+	})
 
 	// Draw instruction text
-	drawCenteredText(screen, "Press SPACE or ESC to return to menu", centerX, centerY+50, 0.8)
+	drawCenteredTextWithOptions(screen, TextDrawOptions{
+		Text:  "Press SPACE or ESC to return to menu",
+		X:     centerX,
+		Y:     centerY + 50,
+		Alpha: 0.8,
+		Font:  s.font,
+	})
 }
 
 func (s *GameOverScene) Enter() {

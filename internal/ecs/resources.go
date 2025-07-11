@@ -47,7 +47,9 @@ func NewResourceManager(logger common.Logger) *ResourceManager {
 		resources: make(map[string]*Resource),
 		logger:    logger,
 	}
-	_ = rm.loadDefaultFont()
+	if err := rm.loadDefaultFont(); err != nil {
+		logger.Error("failed to load default font", "error", err)
+	}
 	return rm
 }
 
