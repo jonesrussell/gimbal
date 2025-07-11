@@ -126,6 +126,11 @@ func (g *ECSGame) initializeSystems() error {
 	// Create scene manager
 	g.sceneManager = scenes.NewSceneManager(g.world, g.config, g.logger, g.inputHandler)
 
+	// Set initial scene
+	if err := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); err != nil {
+		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to set initial scene", err)
+	}
+
 	// Create combat systems
 	g.enemySystem = NewEnemySystem(g.world, g.config)
 	g.weaponSystem = NewWeaponSystem(g.world, g.config)

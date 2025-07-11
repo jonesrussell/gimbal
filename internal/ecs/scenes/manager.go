@@ -52,28 +52,54 @@ func NewSceneManager(
 		inputHandler: inputHandler,
 	}
 
-	// Initialize scenes (to be set up in main or via factory)
-	// Example scene registration (add this where scenes are registered):
+	// Register all scenes
+	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr)
+	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr)
+	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr)
+	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr)
+	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr)
 	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(sceneMgr, "CREDITS\nGimbal Studios\n2025", SceneCredits)
 	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions)
+
 	return sceneMgr
 }
 
 func (sceneMgr *SceneManager) Update() error {
+	if sceneMgr.currentScene == nil {
+		return nil // No scene set yet, nothing to update
+	}
 	return sceneMgr.currentScene.Update()
 }
 
 func (sceneMgr *SceneManager) Draw(screen *ebiten.Image) {
+	if sceneMgr.currentScene == nil {
+		return // No scene set yet, nothing to draw
+	}
 	sceneMgr.currentScene.Draw(screen)
+}
+
+func (sceneMgr *SceneManager) SetInitialScene(sceneType SceneType) error {
+	if scene, exists := sceneMgr.scenes[sceneType]; exists {
+		sceneMgr.currentScene = scene
+		sceneMgr.currentScene.Enter()
+		sceneMgr.logger.Debug("Initial scene set", "scene_type", sceneType)
+		return nil
+	} else {
+		sceneMgr.logger.Error("Scene not found for initial scene", "scene_type", sceneType)
+		return common.NewGameError(common.ErrorCodeSceneNotFound, "initial scene not found")
+	}
 }
 
 func (sceneMgr *SceneManager) SwitchScene(sceneType SceneType) {
 	if scene, exists := sceneMgr.scenes[sceneType]; exists {
-		sceneMgr.logger.Debug("Switching scene",
-			"from", sceneMgr.currentScene.GetType(),
-			"to", sceneType)
-
-		sceneMgr.currentScene.Exit()
+		if sceneMgr.currentScene != nil {
+			sceneMgr.logger.Debug("Switching scene",
+				"from", sceneMgr.currentScene.GetType(),
+				"to", sceneType)
+			sceneMgr.currentScene.Exit()
+		} else {
+			sceneMgr.logger.Debug("Setting initial scene", "scene_type", sceneType)
+		}
 		sceneMgr.currentScene = scene
 		sceneMgr.currentScene.Enter()
 	} else {
