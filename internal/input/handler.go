@@ -140,6 +140,11 @@ func (h *Handler) IsQuitPressed() bool {
 	return inpututil.IsKeyJustPressed(ebiten.KeySpace)
 }
 
+// IsShootPressed checks if the shoot key is pressed
+func (h *Handler) IsShootPressed() bool {
+	return inpututil.IsKeyJustPressed(ebiten.KeySpace)
+}
+
 // GetTouchState returns the current touch state
 func (h *Handler) GetTouchState() *common.TouchState {
 	var touchIDs []ebiten.TouchID

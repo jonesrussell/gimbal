@@ -375,14 +375,9 @@ func (g *ECSGame) handleWeaponFiring() {
 	pos := core.Position.Get(playerEntry)
 	orb := core.Orbital.Get(playerEntry)
 
-	// Check for fire input (Space key)
-	if g.inputHandler.IsKeyPressed(ebiten.KeySpace) {
+	// Check for shoot input (Space key)
+	if g.inputHandler.IsShootPressed() {
 		g.weaponSystem.FireWeapon(WeaponTypePrimary, *pos, orb.FacingAngle)
-	}
-
-	// Check for secondary weapon (Shift key)
-	if g.inputHandler.IsKeyPressed(ebiten.KeyShift) {
-		g.weaponSystem.FireWeapon(WeaponTypeSecondary, *pos, orb.FacingAngle)
 	}
 }
 
