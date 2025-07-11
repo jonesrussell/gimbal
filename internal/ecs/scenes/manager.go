@@ -2,6 +2,7 @@ package scenes
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
@@ -38,6 +39,7 @@ type SceneManager struct {
 	inputHandler common.GameInputHandler
 	onResume     func()      // Callback to unpause game state
 	healthSystem interface{} // Health system interface for scenes to access
+	font         text.Face
 }
 
 func NewSceneManager(
@@ -45,6 +47,7 @@ func NewSceneManager(
 	config *common.GameConfig,
 	logger common.Logger,
 	inputHandler common.GameInputHandler,
+	font text.Face,
 ) *SceneManager {
 	sceneMgr := &SceneManager{
 		scenes:       make(map[SceneType]Scene),
@@ -52,17 +55,18 @@ func NewSceneManager(
 		config:       config,
 		logger:       logger,
 		inputHandler: inputHandler,
+		font:         font,
 	}
 
 	// Register all scenes
-	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr)
-	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr)
-	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr)
-	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr)
-	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr)
-	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr)
-	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(sceneMgr, "CREDITS\nGimbal Studios\n2025", SceneCredits)
-	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions)
+	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, font)
+	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, font)
+	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, font)
+	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, font)
+	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, font)
+	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, font)
+	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(sceneMgr, "CREDITS\nGimbal Studios\n2025", SceneCredits, font)
+	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, font)
 
 	return sceneMgr
 }

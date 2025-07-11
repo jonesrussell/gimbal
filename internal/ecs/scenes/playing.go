@@ -16,10 +16,14 @@ import (
 type PlayingScene struct {
 	manager     *SceneManager
 	screenShake float64 // Screen shake intensity (0 = no shake)
+	font        text.Face
 }
 
-func NewPlayingScene(manager *SceneManager) *PlayingScene {
-	return &PlayingScene{manager: manager}
+func NewPlayingScene(manager *SceneManager, font text.Face) *PlayingScene {
+	return &PlayingScene{
+		manager: manager,
+		font:    font,
+	}
 }
 
 func (s *PlayingScene) Update() error {
@@ -109,7 +113,7 @@ func (s *PlayingScene) drawLivesDisplay(screen *ebiten.Image) {
 		op.ColorScale.SetG(1)
 		op.ColorScale.SetB(1)
 		op.ColorScale.SetA(1)
-		text.Draw(screen, livesText, defaultFontFace, op)
+		text.Draw(screen, livesText, s.font, op)
 	}
 }
 
