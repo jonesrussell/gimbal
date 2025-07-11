@@ -30,6 +30,9 @@ func run() error {
 		os.Setenv("LOG_LEVEL", "DEBUG")
 	}
 
+	// Start pprof server (only in dev builds)
+	app.StartPprofServer()
+
 	// Create and initialize application container
 	container := app.NewContainer()
 

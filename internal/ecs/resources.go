@@ -25,10 +25,9 @@ const (
 
 // Resource represents a loaded game resource
 type Resource struct {
-	Type     ResourceType
-	Name     string
-	Data     interface{}
-	RefCount int
+	Type ResourceType
+	Name string
+	Data interface{}
 }
 
 // ResourceManager manages all game resources
@@ -54,8 +53,7 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 	// Check if already loaded
 	if resource, exists := rm.resources[name]; exists {
 		if sprite, ok := resource.Data.(*ebiten.Image); ok {
-			resource.RefCount++
-			rm.logger.Debug("Sprite reused", "name", name, "ref_count", resource.RefCount)
+			rm.logger.Debug("Sprite reused", "name", name)
 			return sprite, nil
 		}
 	}
@@ -95,10 +93,9 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 
 	// Store in resource manager
 	rm.resources[name] = &Resource{
-		Type:     ResourceSprite,
-		Name:     name,
-		Data:     sprite,
-		RefCount: 1,
+		Type: ResourceSprite,
+		Name: name,
+		Data: sprite,
 	}
 
 	rm.logger.Debug("Sprite loaded", "name", name, "path", path, "bounds", img.Bounds())
@@ -115,8 +112,7 @@ func (rm *ResourceManager) CreateSprite(
 	// Check if already created
 	if resource, exists := rm.resources[name]; exists {
 		if sprite, ok := resource.Data.(*ebiten.Image); ok {
-			resource.RefCount++
-			rm.logger.Debug("Sprite reused", "name", name, "ref_count", resource.RefCount)
+			rm.logger.Debug("Sprite reused", "name", name)
 			return sprite, nil
 		}
 	}
@@ -127,10 +123,9 @@ func (rm *ResourceManager) CreateSprite(
 
 	// Store in resource manager
 	rm.resources[name] = &Resource{
-		Type:     ResourceSprite,
-		Name:     name,
-		Data:     sprite,
-		RefCount: 1,
+		Type: ResourceSprite,
+		Name: name,
+		Data: sprite,
 	}
 
 	rm.logger.Debug("Sprite created", "name", name, "size", fmt.Sprintf("%dx%d", width, height))
@@ -148,23 +143,6 @@ func (rm *ResourceManager) GetSprite(name string) (*ebiten.Image, bool) {
 		}
 	}
 	return nil, false
-}
-
-// ReleaseSprite releases a sprite reference
-func (rm *ResourceManager) ReleaseSprite(name string) {
-	rm.mutex.Lock()
-	defer rm.mutex.Unlock()
-
-	if resource, exists := rm.resources[name]; exists {
-		resource.RefCount--
-		rm.logger.Debug("Sprite reference released", "name", name, "ref_count", resource.RefCount)
-
-		// Remove if no more references
-		if resource.RefCount <= 0 {
-			delete(rm.resources, name)
-			rm.logger.Debug("Sprite removed", "name", name)
-		}
-	}
 }
 
 // LoadAllSprites loads all required sprites for the game
@@ -186,7 +164,8 @@ func (rm *ResourceManager) LoadAllSprites() error {
 	}
 
 	// Create UI sprites
-	_, err = rm.CreateSprite("button", common.ButtonSpriteWidth, common.ButtonSpriteHeight, color.RGBA{common.ButtonColorR, common.ButtonColorG, common.ButtonColorB, common.ButtonColorA})
+	_, err = rm.CreateSprite("button", common.ButtonSpriteWidth, common.ButtonSpriteHeight,
+		color.RGBA{common.ButtonColorR, common.ButtonColorG, common.ButtonColorB, common.ButtonColorA})
 	if err != nil {
 		return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create button sprite", err)
 	}
@@ -215,8 +194,7 @@ func (rm *ResourceManager) GetResourceInfo() map[string]interface{} {
 	info := make(map[string]interface{})
 	for name, resource := range rm.resources {
 		info[name] = map[string]interface{}{
-			"type":      resource.Type,
-			"ref_count": resource.RefCount,
+			"type": resource.Type,
 		}
 	}
 	return info

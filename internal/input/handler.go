@@ -4,15 +4,9 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 
 	"github.com/jonesrussell/gimbal/internal/common"
-)
-
-const (
-// MovementSpeedDegreesPerFrame is the speed at which the player moves in degrees per frame
-// This is now defined in common.PlayerMovementSpeed
-
-// Touch input constants are now defined in common.Constants
 )
 
 // Handler handles input for the game
@@ -54,9 +48,9 @@ func (h *Handler) HandleInput() {
 func (h *Handler) handleKeyboardInput() {
 	if h.IsKeyPressed(ebiten.KeyLeft) || h.IsKeyPressed(ebiten.KeyRight) {
 		h.lastEvent = common.InputEventMove
-	} else if h.IsKeyPressed(ebiten.KeySpace) {
-		h.lastEvent = common.InputEventPause
 	} else if h.IsKeyPressed(ebiten.KeyEscape) {
+		h.lastEvent = common.InputEventPause
+	} else if h.IsKeyPressed(ebiten.KeySpace) {
 		h.lastEvent = common.InputEventQuit
 	}
 }
@@ -138,12 +132,17 @@ func (h *Handler) GetMovementInput() common.Angle {
 
 // IsPausePressed checks if the pause key is pressed
 func (h *Handler) IsPausePressed() bool {
-	return h.IsKeyPressed(ebiten.KeySpace)
+	return inpututil.IsKeyJustPressed(ebiten.KeyEscape)
 }
 
 // IsQuitPressed checks if the quit key is pressed
 func (h *Handler) IsQuitPressed() bool {
-	return h.IsKeyPressed(ebiten.KeyEscape)
+	return inpututil.IsKeyJustPressed(ebiten.KeySpace)
+}
+
+// IsShootPressed checks if the shoot key is pressed
+func (h *Handler) IsShootPressed() bool {
+	return inpututil.IsKeyJustPressed(ebiten.KeySpace)
 }
 
 // GetTouchState returns the current touch state

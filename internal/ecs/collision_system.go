@@ -8,6 +8,7 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // CollisionSystem manages collision detection and response
@@ -39,9 +40,9 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 	projectiles := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(ProjectileTag),
-			filter.Contains(Position),
-			filter.Contains(Size),
+			filter.Contains(core.ProjectileTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
 		),
 	).Each(cs.world, func(entry *donburi.Entry) {
 		projectiles = append(projectiles, entry.Entity())
@@ -51,10 +52,10 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 	enemies := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(EnemyTag),
-			filter.Contains(Position),
-			filter.Contains(Size),
-			filter.Contains(Health),
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
+			filter.Contains(core.Health),
 		),
 	).Each(cs.world, func(entry *donburi.Entry) {
 		enemies = append(enemies, entry.Entity())
@@ -67,8 +68,8 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 			continue
 		}
 
-		projectilePos := Position.Get(projectileEntry)
-		projectileSize := Size.Get(projectileEntry)
+		projectilePos := core.Position.Get(projectileEntry)
+		projectileSize := core.Size.Get(projectileEntry)
 
 		for _, enemyEntity := range enemies {
 			enemyEntry := cs.world.Entry(enemyEntity)
@@ -76,8 +77,8 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 				continue
 			}
 
-			enemyPos := Position.Get(enemyEntry)
-			enemySize := Size.Get(enemyEntry)
+			enemyPos := core.Position.Get(enemyEntry)
+			enemySize := core.Size.Get(enemyEntry)
 
 			// Check collision
 			if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
@@ -95,9 +96,9 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 	players := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(PlayerTag),
-			filter.Contains(Position),
-			filter.Contains(Size),
+			filter.Contains(core.PlayerTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
 		),
 	).Each(cs.world, func(entry *donburi.Entry) {
 		players = append(players, entry.Entity())
@@ -113,16 +114,16 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 		return
 	}
 
-	playerPos := Position.Get(playerEntry)
-	playerSize := Size.Get(playerEntry)
+	playerPos := core.Position.Get(playerEntry)
+	playerSize := core.Size.Get(playerEntry)
 
 	// Get all enemies
 	enemies := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
-			filter.Contains(EnemyTag),
-			filter.Contains(Position),
-			filter.Contains(Size),
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
 		),
 	).Each(cs.world, func(entry *donburi.Entry) {
 		enemies = append(enemies, entry.Entity())
@@ -135,8 +136,8 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 			continue
 		}
 
-		enemyPos := Position.Get(enemyEntry)
-		enemySize := Size.Get(enemyEntry)
+		enemyPos := core.Position.Get(enemyEntry)
+		enemySize := core.Size.Get(enemyEntry)
 
 		// Check collision
 		if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
@@ -147,7 +148,10 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 }
 
 // checkCollision checks if two entities are colliding using AABB collision detection
-func (cs *CollisionSystem) checkCollision(pos1 common.Point, size1 common.Size, pos2 common.Point, size2 common.Size) bool {
+func (cs *CollisionSystem) checkCollision(
+	pos1 common.Point, size1 common.Size,
+	pos2 common.Point, size2 common.Size,
+) bool {
 	// Calculate bounding boxes
 	left1 := pos1.X
 	right1 := pos1.X + float64(size1.Width)
@@ -163,34 +167,53 @@ func (cs *CollisionSystem) checkCollision(pos1 common.Point, size1 common.Size, 
 	return left1 < right2 && right1 > left2 && top1 < bottom2 && bottom1 > top2
 }
 
-// handleProjectileEnemyCollision handles collision between projectile and enemy
-func (cs *CollisionSystem) handleProjectileEnemyCollision(projectileEntity, enemyEntity donburi.Entity, projectileEntry, enemyEntry *donburi.Entry) {
-	// Remove projectile
-	cs.world.Remove(projectileEntity)
+// handleProjectileEnemyCollision handles collision between a projectile and an enemy
+func (cs *CollisionSystem) handleProjectileEnemyCollision(
+	projectileEntity, enemyEntity donburi.Entity,
+	projectileEntry, enemyEntry *donburi.Entry,
+) {
+	// Get projectile and enemy data
+	projectilePos := core.Position.Get(projectileEntry)
+	projectileSize := core.Size.Get(projectileEntry)
+	enemyPos := core.Position.Get(enemyEntry)
+	enemySize := core.Size.Get(enemyEntry)
+	enemyHealth := core.Health.Get(enemyEntry)
 
-	// Reduce enemy health
-	enemyHealth := Health.Get(enemyEntry)
-	*enemyHealth -= 1
+	// Check collision
+	if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
+		// Reduce enemy health
+		newHealth := *enemyHealth - 1
+		core.Health.SetValue(enemyEntry, newHealth)
 
-	// Check if enemy is destroyed
-	if *enemyHealth <= 0 {
-		// Remove enemy
-		cs.world.Remove(enemyEntity)
+		// Remove projectile
+		cs.world.Remove(projectileEntity)
 
-		// TODO: Add explosion effect
-		// TODO: Add score points
-		// TODO: Emit enemy destroyed event
+		// Remove enemy if health reaches 0
+		if newHealth <= 0 {
+			cs.world.Remove(enemyEntity)
+		}
 	}
 }
 
-// handlePlayerEnemyCollision handles collision between player and enemy
-func (cs *CollisionSystem) handlePlayerEnemyCollision(playerEntity, enemyEntity donburi.Entity, playerEntry, enemyEntry *donburi.Entry) {
-	// Remove enemy
-	cs.world.Remove(enemyEntity)
+// handlePlayerEnemyCollision handles collision between the player and an enemy
+func (cs *CollisionSystem) handlePlayerEnemyCollision(
+	playerEntity, enemyEntity donburi.Entity,
+	playerEntry, enemyEntry *donburi.Entry,
+) {
+	// Get player and enemy data
+	playerPos := core.Position.Get(playerEntry)
+	playerSize := core.Size.Get(playerEntry)
+	enemyPos := core.Position.Get(enemyEntry)
+	enemySize := core.Size.Get(enemyEntry)
 
-	// TODO: Reduce player health/lives
-	// TODO: Add player damage effect
-	// TODO: Emit player damaged event
+	// Check collision
+	if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
+		// Remove enemy
+		cs.world.Remove(enemyEntity)
+
+		// TODO: Handle player damage/lives
+		// For now, just remove the enemy
+	}
 }
 
 // GetCollisionDistance calculates the distance between two entities

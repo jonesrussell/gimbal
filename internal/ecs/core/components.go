@@ -1,4 +1,4 @@
-package ecs
+package core
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
@@ -11,13 +11,10 @@ import (
 var (
 	// PlayerTag marks an entity as a player
 	PlayerTag = donburi.NewTag()
-
 	// StarTag marks an entity as a star
 	StarTag = donburi.NewTag()
-
 	// EnemyTag marks an entity as an enemy
 	EnemyTag = donburi.NewTag()
-
 	// ProjectileTag marks an entity as a projectile
 	ProjectileTag = donburi.NewTag()
 )
@@ -26,28 +23,20 @@ var (
 var (
 	// Position component stores entity position
 	Position = donburi.NewComponentType[common.Point]()
-
 	// Sprite component stores the entity's sprite
 	Sprite = donburi.NewComponentType[*ebiten.Image]()
-
 	// Movement component stores movement data
 	Movement = donburi.NewComponentType[MovementData]()
-
 	// Orbital component stores orbital movement data
 	Orbital = donburi.NewComponentType[OrbitalData]()
-
 	// Size component stores entity dimensions
 	Size = donburi.NewComponentType[common.Size]()
-
 	// Speed component stores movement speed
 	Speed = donburi.NewComponentType[float64]()
-
 	// Angle component stores rotation angle
 	Angle = donburi.NewComponentType[common.Angle]()
-
 	// Scale component stores scaling factor
 	Scale = donburi.NewComponentType[float64]()
-
 	// Health component stores entity health
 	Health = donburi.NewComponentType[int]()
 )

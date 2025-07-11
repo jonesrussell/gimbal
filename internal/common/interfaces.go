@@ -53,6 +53,7 @@ type GameInputHandler interface {
 	GetMovementInput() Angle
 	IsQuitPressed() bool
 	IsPausePressed() bool
+	IsShootPressed() bool
 	GetTouchState() *TouchState
 	GetMousePosition() Point
 	IsMouseButtonPressed(button ebiten.MouseButton) bool

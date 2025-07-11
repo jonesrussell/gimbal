@@ -9,20 +9,36 @@ This is a Gyruss-style game built with Go using ECS (Entity Component System) ar
 ## Core Architecture
 - **ECS System**: Uses donburi ECS library for entity management
 - **Configuration**: [internal/common/config.go](mdc:internal/common/config.go) - Centralized game configuration with functional options pattern
-- **Systems**: [internal/ecs/systems.go](mdc:internal/ecs/systems.go) - ECS systems for player input, orbital movement, star movement, and rendering
-- **Components**: [internal/ecs/components.go](mdc:internal/ecs/components.go) - ECS component definitions
-- **Factory**: [internal/ecs/factory.go](mdc:internal/ecs/factory.go) - Entity creation helpers
+- **Components**: [internal/ecs/core/components.go](mdc:internal/ecs/core/components.go) - Single source of truth for ECS component definitions
+- **Systems**: [internal/ecs/core/movement_systems.go](mdc:internal/ecs/core/movement_systems.go) - Core ECS systems for movement, input, and rendering
+- **Constants**: [internal/ecs/constants.go](mdc:internal/ecs/constants.go) - Game constants and configuration values
+
+## Game Systems
+- **Combat Systems**: [internal/ecs/enemy_system.go](mdc:internal/ecs/enemy_system.go), [internal/ecs/weapon_system.go](mdc:internal/ecs/weapon_system.go), [internal/ecs/collision_system.go](mdc:internal/ecs/collision_system.go)
+- **State Management**: [internal/ecs/game_state.go](mdc:internal/ecs/game_state.go), [internal/ecs/score_manager.go](mdc:internal/ecs/score_manager.go), [internal/ecs/level_manager.go](mdc:internal/ecs/level_manager.go)
+- **Resource Management**: [internal/ecs/resources.go](mdc:internal/ecs/resources.go) - Simplified sprite caching without reference counting
 - **Events**: [internal/ecs/events.go](mdc:internal/ecs/events.go) - Event system for game state changes
+- **Scenes**: [internal/ecs/scenes/](mdc:internal/ecs/scenes/) - Scene management and UI screens
 
 ## Key Features
 - **Player Movement**: Orbital movement around screen center with angle-based controls
 - **Starfield**: Dynamic star system with radial movement and scaling
+- **Combat System**: Enemy spawning, weapon firing, collision detection
+- **Scene Management**: Professional scene transitions and state management
 - **Hot Reloading**: Development workflow with automatic rebuilds
 - **Multi-platform**: Builds for Linux, Windows, and WebAssembly
 
 ## Development Tools
 - [Taskfile.yml](mdc:Taskfile.yml) - Build and development tasks
-- [.golangci.yml](mdc:.golangci.yml) - Linting configuration with relaxed settings for refactoring
+- [.golangci.yml](mdc:.golangci.yml) - Linting configuration with zero issues
 - [go.mod](mdc:go.mod) - Go module dependencies
+
+## Recent Refactoring
+- **Removed ComponentRegistry**: Eliminated 191 lines of over-engineered code
+- **Consolidated Components**: Single source of truth in core/components.go
+- **Simplified Resource Management**: Removed unnecessary reference counting
+- **Split GameStateManager**: Separated into focused ScoreManager and LevelManager
+- **Improved Naming**: Consistent receiver names across all systems
+- **Refactored Long Functions**: Broke down complex functions into focused helpers
 alwaysApply: true
 ---
