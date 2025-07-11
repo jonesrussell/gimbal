@@ -108,10 +108,10 @@ func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, 
 	// Set angle
 	core.Angle.SetValue(entry, direction)
 
-	// Calculate velocity based on direction
+	// Simple upward movement
 	velocity := common.Point{
-		X: ws.projectileSpeed * math.Cos(angleRad),
-		Y: -ws.projectileSpeed * math.Sin(angleRad), // Negative because Y increases downward
+		X: 0,
+		Y: -ws.projectileSpeed, // Move upward (negative Y)
 	}
 
 	core.Movement.SetValue(entry, core.MovementData{
