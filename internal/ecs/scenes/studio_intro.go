@@ -7,19 +7,22 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/text"
 )
 
 type StudioIntroScene struct {
 	manager   *SceneManager
+	font      text.Face
 	startTime time.Time
 	minTime   float64
 	maxTime   float64
 	finished  bool
 }
 
-func NewStudioIntroScene(manager *SceneManager) *StudioIntroScene {
+func NewStudioIntroScene(manager *SceneManager, font text.Face) *StudioIntroScene {
 	return &StudioIntroScene{
 		manager:   manager,
+		font:      font,
 		startTime: time.Now(),
 		minTime:   2.0, // Minimum 2 seconds
 		maxTime:   4.0, // Maximum 4 seconds
@@ -59,11 +62,12 @@ func (s *StudioIntroScene) Draw(screen *ebiten.Image) {
 	drawCenteredText(screen, "GIMBAL STUDIOS",
 		float64(s.manager.config.ScreenSize.Width)/2,
 		float64(s.manager.config.ScreenSize.Height)/2,
-		fadeProgress)
+		fadeProgress, s.font)
 	drawCenteredText(screen, "Presents",
 		float64(s.manager.config.ScreenSize.Width)/2,
 		float64(s.manager.config.ScreenSize.Height)/2+50,
-		fadeProgress*0.8)
+		fadeProgress*0.8, s.font)
+	drawCenteredText(screen, "Press any key...", float64(s.manager.config.ScreenSize.Width)/2, float64(s.manager.config.ScreenSize.Height)/2+40, 1.0, s.font)
 }
 
 func (s *StudioIntroScene) Enter() {

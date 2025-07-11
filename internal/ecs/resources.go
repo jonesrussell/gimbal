@@ -8,6 +8,9 @@ import (
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 
 	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/common"
@@ -32,17 +35,48 @@ type Resource struct {
 
 // ResourceManager manages all game resources
 type ResourceManager struct {
-	resources map[string]*Resource
-	mutex     sync.RWMutex
-	logger    common.Logger
+	resources   map[string]*Resource
+	mutex       sync.RWMutex
+	logger      common.Logger
+	defaultFont text.Face
 }
 
 // NewResourceManager creates a new resource manager
 func NewResourceManager(logger common.Logger) *ResourceManager {
-	return &ResourceManager{
+	rm := &ResourceManager{
 		resources: make(map[string]*Resource),
 		logger:    logger,
 	}
+	_ = rm.loadDefaultFont()
+	return rm
+}
+
+func (rm *ResourceManager) loadDefaultFont() error {
+	fontBytes, err := assets.Assets.ReadFile("fonts/PressStart2P.ttf")
+	if err != nil {
+		rm.logger.Error("failed to read font", "error", err)
+		return err
+	}
+	fontTTF, err := opentype.Parse(fontBytes)
+	if err != nil {
+		rm.logger.Error("failed to parse font", "error", err)
+		return err
+	}
+	otFace, err := opentype.NewFace(fontTTF, &opentype.FaceOptions{
+		Size:    16,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		rm.logger.Error("failed to create opentype face", "error", err)
+		return err
+	}
+	rm.defaultFont = text.NewGoXFace(otFace)
+	return nil
+}
+
+func (rm *ResourceManager) GetDefaultFont() text.Face {
+	return rm.defaultFont
 }
 
 // LoadSprite loads a sprite from the embedded assets

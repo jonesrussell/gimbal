@@ -9,6 +9,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
+
+	"github.com/jonesrussell/gimbal/internal/ecs/scenes/menu"
 )
 
 // PauseOption represents the available pause menu options
@@ -44,7 +46,7 @@ const (
 // PausedScene manages the pause menu state and rendering
 type PausedScene struct {
 	manager           *SceneManager
-	menu              *MenuSystem
+	menu              *menu.MenuSystem
 	overlayImage      *ebiten.Image
 	animationTime     float64
 	fadeIn            float64
@@ -52,19 +54,21 @@ type PausedScene struct {
 	selectionChanged  bool
 	escWasPressed     bool
 	canUnpause        bool
+	font              text.Face
 }
 
 // NewPausedScene creates a new pause scene instance
-func NewPausedScene(manager *SceneManager) *PausedScene {
+func NewPausedScene(manager *SceneManager, font text.Face) *PausedScene {
 	scene := &PausedScene{
 		manager:           manager,
 		animationTime:     0,
 		selectionChanged:  false,
 		lastSelectionTime: time.Now(),
 		fadeIn:            0,
+		font:              font,
 	}
 
-	options := []MenuOption{
+	options := []menu.MenuOption{
 		{"Resume", func() {
 			// Call resume callback to unpause game state
 			if manager.onResume != nil {
@@ -78,10 +82,10 @@ func NewPausedScene(manager *SceneManager) *PausedScene {
 		{"Quit", func() { os.Exit(0) }},
 	}
 
-	config := PausedMenuConfig()
+	config := menu.PausedMenuConfig()
 	config.MenuY = float64(manager.config.ScreenSize.Height) / 2
 
-	scene.menu = NewMenuSystem(options, &config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height)
+	scene.menu = menu.NewMenuSystem(options, &config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height, font)
 
 	// Create overlay image once (TODO: handle resizing if needed)
 	scene.overlayImage = ebiten.NewImage(manager.config.ScreenSize.Width, manager.config.ScreenSize.Height)
@@ -187,7 +191,7 @@ func (s *PausedScene) drawTitle(screen *ebiten.Image) {
 	op.ColorScale.SetB(1.0)
 	op.ColorScale.SetA(float32(titleAlpha))
 
-	text.Draw(screen, "PAUSED", defaultFontFace, op)
+	text.Draw(screen, "PAUSED", s.font, op)
 }
 
 // drawHintText renders the hint text at the bottom of the screen
@@ -196,7 +200,7 @@ func (s *PausedScene) drawHintText(screen *ebiten.Image) {
 	hintAlpha := hintBaseAlpha * s.fadeIn * (0.8 + 0.2*math.Sin(s.animationTime*1.5))
 
 	op := &text.DrawOptions{}
-	width, _ := text.Measure(hintText, defaultFontFace, 0)
+	width, _ := text.Measure(hintText, s.font, 0)
 	op.GeoM.Translate(
 		float64(s.manager.config.ScreenSize.Width)/2-width/2,
 		float64(s.manager.config.ScreenSize.Height)-hintTextY,
@@ -206,7 +210,7 @@ func (s *PausedScene) drawHintText(screen *ebiten.Image) {
 	op.ColorScale.SetB(0.8)
 	op.ColorScale.SetA(float32(hintAlpha))
 
-	text.Draw(screen, hintText, defaultFontFace, op)
+	text.Draw(screen, hintText, s.font, op)
 }
 
 // Enter is called when the scene becomes active
