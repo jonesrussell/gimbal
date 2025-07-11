@@ -91,6 +91,11 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 
 		// Remove enemy if health reaches 0
 		if enemyHealthData.Current <= 0 {
+			// Award points for destroying enemy
+			cs.scoreManager.AddScore(10) // 10 points per enemy
+			cs.logger.Debug("Enemy destroyed, points awarded", "points", 10, "total_score", cs.scoreManager.GetScore())
+
+			// Remove enemy entity
 			cs.world.Remove(enemyEntity)
 		}
 	}
