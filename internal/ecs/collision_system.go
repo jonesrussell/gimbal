@@ -13,15 +13,27 @@ import (
 
 // CollisionSystem manages collision detection and response
 type CollisionSystem struct {
-	world  donburi.World
-	config *common.GameConfig
+	world        donburi.World
+	config       *common.GameConfig
+	healthSystem *HealthSystem
+	eventSystem  *EventSystem
+	logger       common.Logger
 }
 
 // NewCollisionSystem creates a new collision system
-func NewCollisionSystem(world donburi.World, config *common.GameConfig) *CollisionSystem {
+func NewCollisionSystem(
+	world donburi.World,
+	config *common.GameConfig,
+	healthSystem *HealthSystem,
+	eventSystem *EventSystem,
+	logger common.Logger,
+) *CollisionSystem {
 	return &CollisionSystem{
-		world:  world,
-		config: config,
+		world:        world,
+		config:       config,
+		healthSystem: healthSystem,
+		eventSystem:  eventSystem,
+		logger:       logger,
 	}
 }
 
@@ -182,14 +194,18 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 	// Check collision
 	if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
 		// Reduce enemy health
-		newHealth := *enemyHealth - 1
-		core.Health.SetValue(enemyEntry, newHealth)
+		enemyHealthData := *enemyHealth
+		enemyHealthData.Current -= 1
+		if enemyHealthData.Current < 0 {
+			enemyHealthData.Current = 0
+		}
+		core.Health.SetValue(enemyEntry, enemyHealthData)
 
 		// Remove projectile
 		cs.world.Remove(projectileEntity)
 
 		// Remove enemy if health reaches 0
-		if newHealth <= 0 {
+		if enemyHealthData.Current <= 0 {
 			cs.world.Remove(enemyEntity)
 		}
 	}
@@ -211,8 +227,8 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 		// Remove enemy
 		cs.world.Remove(enemyEntity)
 
-		// TODO: Handle player damage/lives
-		// For now, just remove the enemy
+		// Damage player (1 damage per enemy collision)
+		cs.healthSystem.DamagePlayer(playerEntity, 1)
 	}
 }
 

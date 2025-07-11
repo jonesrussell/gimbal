@@ -11,7 +11,7 @@ import (
 
 // CreatePlayer creates a player entity with orbital movement
 func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConfig) donburi.Entity {
-	entity := w.Create(PlayerTag, Position, Sprite, Orbital, Size, Angle)
+	entity := w.Create(PlayerTag, Position, Sprite, Orbital, Size, Angle, Health)
 	entry := w.Entry(entity)
 
 	// Set initial position at the center of the screen
@@ -37,6 +37,10 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConf
 
 	// Set initial angle
 	Angle.SetValue(entry, common.Angle(0))
+
+	// Set initial health (3 lives)
+	healthData := NewHealthData(3, 3)
+	Health.SetValue(entry, healthData)
 
 	return entity
 }

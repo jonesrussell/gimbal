@@ -41,6 +41,7 @@ type ECSGame struct {
 	enemySystem     *EnemySystem
 	weaponSystem    *WeaponSystem
 	collisionSystem *CollisionSystem
+	healthSystem    *HealthSystem
 
 	// Entity references
 	playerEntity donburi.Entity
@@ -110,6 +111,10 @@ func (g *ECSGame) initializeSystems() error {
 	g.eventSystem = NewEventSystem(g.world)
 	g.logger.Debug("Event system created")
 
+	// Create health system
+	g.healthSystem = NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
+	g.logger.Debug("Health system created")
+
 	// Create resource manager
 	g.resourceManager = NewResourceManager(g.logger)
 	g.logger.Debug("Resource manager created")
@@ -139,7 +144,7 @@ func (g *ECSGame) initializeSystems() error {
 	// Create combat systems
 	g.enemySystem = NewEnemySystem(g.world, g.config)
 	g.weaponSystem = NewWeaponSystem(g.world, g.config)
-	g.collisionSystem = NewCollisionSystem(g.world, g.config)
+	g.collisionSystem = NewCollisionSystem(g.world, g.config, g.healthSystem, g.eventSystem, g.logger)
 
 	return nil
 }
