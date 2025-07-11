@@ -71,7 +71,7 @@ tasks:
   run:
     desc: Run the application
     cmds:
-      - LOG_LEVEL=debug go run .
+      - LOG_LEVEL=DEBUG go run .
 
   clean:build:
     desc: Clean build directory
