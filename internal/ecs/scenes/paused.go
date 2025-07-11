@@ -45,13 +45,13 @@ const (
 type PausedScene struct {
 	manager           *SceneManager
 	menu              *MenuSystem
+	overlayImage      *ebiten.Image
 	animationTime     float64
-	selectionChanged  bool
-	lastSelectionTime time.Time
 	fadeIn            float64
-	overlayImage      *ebiten.Image // Cached overlay image
-	escWasPressed     bool          // Track if ESC was pressed when we entered
-	canUnpause        bool          // Flag to allow unpausing
+	lastSelectionTime time.Time
+	selectionChanged  bool
+	escWasPressed     bool
+	canUnpause        bool
 }
 
 // NewPausedScene creates a new pause scene instance
