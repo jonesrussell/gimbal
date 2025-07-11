@@ -404,8 +404,6 @@ func (g *ECSGame) handleMenuInput() {
 
 // handlePauseInput handles input for pause menu
 func (g *ECSGame) handlePauseInput() {
-	// Check for resume (ESC or any key)
-	if g.inputHandler.IsQuitPressed() || g.inputHandler.GetLastEvent() != common.InputEventNone {
-		g.sceneManager.SwitchScene(scenes.ScenePlaying)
-	}
+	// Pause scene handles its own input (ESC debounce logic)
+	// No additional input handling needed here
 }

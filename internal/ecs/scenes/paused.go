@@ -107,21 +107,45 @@ func (s *PausedScene) updateSelectionAnimation() {
 
 // handleInput processes pause-specific input (ESC key)
 func (s *PausedScene) handleInput() {
+	currentEscPressed := ebiten.IsKeyPressed(ebiten.KeyEscape)
+	escJustPressed := inpututil.IsKeyJustPressed(ebiten.KeyEscape)
+
+	// Debug logging every few frames
+	if int(s.animationTime*60)%30 == 0 { // Log every half second
+		s.manager.logger.Debug("Pause input state",
+			"escWasPressed", s.escWasPressed,
+			"canUnpause", s.canUnpause,
+			"currentEscPressed", currentEscPressed,
+			"escJustPressed", escJustPressed)
+	}
+
 	// If ESC was pressed when we entered, wait for it to be released
-	if s.escWasPressed && ebiten.IsKeyPressed(ebiten.KeyEscape) {
+	if s.escWasPressed && currentEscPressed {
+		s.manager.logger.Debug("Waiting for ESC release")
 		return // ESC is still held down from the pause action
 	}
 
 	// ESC has been released (or wasn't pressed when we entered)
-	if s.escWasPressed && !ebiten.IsKeyPressed(ebiten.KeyEscape) {
+	if s.escWasPressed && !currentEscPressed {
 		s.escWasPressed = false
-		s.canUnpause = true // Now we can allow unpausing
-		return              // Don't process input this frame, just mark as ready
+		s.canUnpause = true
+		s.manager.logger.Debug("ESC released, can now unpause")
+		return // Don't process input this frame, just mark as ready
 	}
 
 	// Now we can check for new ESC presses
-	if s.canUnpause && inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+	if s.canUnpause && escJustPressed {
+		s.manager.logger.Debug("ESC pressed, unpausing game")
 		s.manager.SwitchScene(ScenePlaying)
+	}
+
+	// If we entered without ESC pressed, we can unpause immediately
+	if !s.escWasPressed {
+		s.canUnpause = true
+		if escJustPressed {
+			s.manager.logger.Debug("ESC pressed (immediate), unpausing game")
+			s.manager.SwitchScene(ScenePlaying)
+		}
 	}
 }
 
@@ -186,8 +210,14 @@ func (s *PausedScene) Enter() {
 	s.fadeIn = 0
 	s.animationTime = 0
 	s.selectionChanged = false
-	s.escWasPressed = ebiten.IsKeyPressed(ebiten.KeyEscape) // Check current state
-	s.canUnpause = false                                    // Start with unpause disabled
+
+	// Check and log ESC state when entering
+	s.escWasPressed = ebiten.IsKeyPressed(ebiten.KeyEscape)
+	s.canUnpause = false
+
+	s.manager.logger.Debug("Pause scene ESC state",
+		"escWasPressed", s.escWasPressed,
+		"canUnpause", s.canUnpause)
 }
 
 // Exit is called when the scene becomes inactive
