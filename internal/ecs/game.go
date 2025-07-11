@@ -5,6 +5,7 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
@@ -26,7 +27,7 @@ type ECSGame struct {
 
 	// Game state management
 	stateManager *GameStateManager
-	scoreManager *ScoreManager
+	scoreManager *managers.ScoreManager
 	levelManager *LevelManager
 
 	// Scene management
@@ -87,7 +88,7 @@ func (g *ECSGame) IsPaused() bool {
 }
 
 // GetScoreManager returns the score manager
-func (g *ECSGame) GetScoreManager() *ScoreManager {
+func (g *ECSGame) GetScoreManager() *managers.ScoreManager {
 	return g.scoreManager
 }
 

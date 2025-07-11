@@ -6,7 +6,19 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
+
+// SceneManagerConfig groups all dependencies for SceneManager
+// to avoid argument limit lint violations
+type SceneManagerConfig struct {
+	World        donburi.World
+	Config       *common.GameConfig
+	Logger       common.Logger
+	InputHandler common.GameInputHandler
+	Font         text.Face
+	ScoreManager *managers.ScoreManager
+}
 
 type SceneType int
 
@@ -42,31 +54,30 @@ type SceneManager struct {
 	font         text.Face
 }
 
-func NewSceneManager(
-	world donburi.World,
-	config *common.GameConfig,
-	logger common.Logger,
-	inputHandler common.GameInputHandler,
-	font text.Face,
-) *SceneManager {
+func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 	sceneMgr := &SceneManager{
 		scenes:       make(map[SceneType]Scene),
-		world:        world,
-		config:       config,
-		logger:       logger,
-		inputHandler: inputHandler,
-		font:         font,
+		world:        cfg.World,
+		config:       cfg.Config,
+		logger:       cfg.Logger,
+		inputHandler: cfg.InputHandler,
+		font:         cfg.Font,
 	}
 
 	// Register all scenes
-	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, font)
-	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, font)
-	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, font)
-	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, font)
-	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, font)
-	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, font)
-	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(sceneMgr, "CREDITS\nGimbal Studios\n2025", SceneCredits, font)
-	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, font)
+	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager)
+	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
+		sceneMgr,
+		"CREDITS\nGimbal Studios\n2025",
+		SceneCredits,
+		cfg.Font,
+	)
+	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, cfg.Font)
 
 	return sceneMgr
 }
