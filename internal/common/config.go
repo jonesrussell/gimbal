@@ -56,32 +56,11 @@ type StarFieldSettings struct {
 // GameOption is a function that modifies a GameConfig
 type GameOption func(*GameConfig)
 
-// WithScreenSize sets the screen dimensions
-func WithScreenSize(width, height int) GameOption {
-	return func(c *GameConfig) {
-		c.ScreenSize = Size{Width: width, Height: height}
-		// Use the smaller dimension to ensure orbit fits within screen
-		smallerDim := width
-		if height < width {
-			smallerDim = height
-		}
-		c.Radius = float64(smallerDim/CenterDivisor) * DefaultRadiusRatio
-	}
-}
+// WithScreenSize removed - dead code
 
-// WithPlayerSize sets the player dimensions
-func WithPlayerSize(width, height int) GameOption {
-	return func(c *GameConfig) {
-		c.PlayerSize = Size{Width: width, Height: height}
-	}
-}
+// WithPlayerSize removed - dead code
 
-// WithNumStars sets the number of stars
-func WithNumStars(num int) GameOption {
-	return func(c *GameConfig) {
-		c.NumStars = num
-	}
-}
+// WithNumStars removed - dead code
 
 // WithDebug enables debug mode
 func WithDebug(debug bool) GameOption {
@@ -105,17 +84,7 @@ func WithStarSettings(size, speed float64) GameOption {
 	}
 }
 
-// WithStarFieldSettings sets comprehensive star field parameters
-func WithStarFieldSettings(settings StarFieldSettings) GameOption {
-	return func(c *GameConfig) {
-		c.StarSpawnRadiusMin = settings.SpawnRadiusMin
-		c.StarSpawnRadiusMax = settings.SpawnRadiusMax
-		c.StarMinScale = settings.MinScale
-		c.StarMaxScale = settings.MaxScale
-		c.StarScaleDistance = settings.ScaleDistance
-		c.StarResetMargin = settings.ResetMargin
-	}
-}
+// WithStarFieldSettings removed - dead code
 
 // WithAngleStep sets the angle step for player rotation
 func WithAngleStep(step float64) GameOption {
