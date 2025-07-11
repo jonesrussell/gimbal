@@ -50,7 +50,8 @@ type PausedScene struct {
 	lastSelectionTime time.Time
 	fadeIn            float64
 	overlayImage      *ebiten.Image // Cached overlay image
-	framesSinceEnter  int           // Count frames since entering pause scene
+	escWasPressed     bool          // Track if ESC was pressed when we entered
+	canUnpause        bool          // Flag to allow unpausing
 }
 
 // NewPausedScene creates a new pause scene instance
@@ -106,16 +107,20 @@ func (s *PausedScene) updateSelectionAnimation() {
 
 // handleInput processes pause-specific input (ESC key)
 func (s *PausedScene) handleInput() {
-	s.framesSinceEnter++
-
-	// Require at least 10 frames (about 1/6 second at 60fps) before allowing unpause
-	// This ensures the ESC key press that caused the pause has time to be released
-	if s.framesSinceEnter < 10 {
-		return
+	// If ESC was pressed when we entered, wait for it to be released
+	if s.escWasPressed && ebiten.IsKeyPressed(ebiten.KeyEscape) {
+		return // ESC is still held down from the pause action
 	}
 
-	// Now check for new ESC presses
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+	// ESC has been released (or wasn't pressed when we entered)
+	if s.escWasPressed && !ebiten.IsKeyPressed(ebiten.KeyEscape) {
+		s.escWasPressed = false
+		s.canUnpause = true // Now we can allow unpausing
+		return              // Don't process input this frame, just mark as ready
+	}
+
+	// Now we can check for new ESC presses
+	if s.canUnpause && inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		s.manager.SwitchScene(ScenePlaying)
 	}
 }
@@ -181,7 +186,8 @@ func (s *PausedScene) Enter() {
 	s.fadeIn = 0
 	s.animationTime = 0
 	s.selectionChanged = false
-	s.framesSinceEnter = 0 // Reset frame counter
+	s.escWasPressed = ebiten.IsKeyPressed(ebiten.KeyEscape) // Check current state
+	s.canUnpause = false                                    // Start with unpause disabled
 }
 
 // Exit is called when the scene becomes inactive
