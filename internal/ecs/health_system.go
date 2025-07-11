@@ -176,7 +176,7 @@ func (hs *HealthSystem) checkGameOverCondition() {
 }
 
 // GetPlayerHealth returns the current health of the first player found
-func (hs *HealthSystem) GetPlayerHealth() (int, int) {
+func (hs *HealthSystem) GetPlayerHealth() (current, maximum int) {
 	players := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
@@ -191,11 +191,13 @@ func (hs *HealthSystem) GetPlayerHealth() (int, int) {
 		playerEntry := hs.world.Entry(players[0])
 		if playerEntry.Valid() {
 			health := core.Health.Get(playerEntry)
-			return health.Current, health.Maximum
+			current = health.Current
+			maximum = health.Maximum
+			return
 		}
 	}
 
-	return 0, 0
+	return
 }
 
 // IsPlayerInvincible returns whether the player is currently invincible

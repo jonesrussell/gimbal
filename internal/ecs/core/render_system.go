@@ -38,7 +38,10 @@ func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
 			flashPhase := int((health.InvincibilityDuration - health.InvincibilityTime) / flashRate)
 			if flashPhase%2 == 0 {
 				// Make sprite semi-transparent during flash
-				op.ColorM.Scale(1, 1, 1, 0.5)
+				op.ColorScale.SetR(1)
+				op.ColorScale.SetG(1)
+				op.ColorScale.SetB(1)
+				op.ColorScale.SetA(0.5)
 			}
 		}
 	}
