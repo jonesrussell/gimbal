@@ -6,7 +6,6 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
-	systems "github.com/jonesrussell/gimbal/internal/ecs/systems"
 )
 
 // updateCurrentScene handles scene-specific updates
@@ -86,9 +85,8 @@ func (g *ECSGame) updateECSSystems() {
 	core.MovementSystem(g.world)
 	core.OrbitalMovementSystem(g.world)
 	core.StarMovementSystem(&ecs.ECS{World: g.world}, g.config)
-
-	// Run score display system
-	systems.ScoreDisplaySystem(g.world, font, g.scoreManager)()
+	// Score display is now handled in PlayingScene
+}
 
 // handlePlayerMovementEvents emits events when player moves
 func (g *ECSGame) handlePlayerMovementEvents(inputAngle common.Angle) {

@@ -11,18 +11,21 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
 
 type PlayingScene struct {
-	manager     *SceneManager
-	screenShake float64 // Screen shake intensity (0 = no shake)
-	font        text.Face
+	manager      *SceneManager
+	screenShake  float64 // Screen shake intensity (0 = no shake)
+	font         text.Face
+	scoreManager *managers.ScoreManager
 }
 
-func NewPlayingScene(manager *SceneManager, font text.Face) *PlayingScene {
+func NewPlayingScene(manager *SceneManager, font text.Face, scoreManager *managers.ScoreManager) *PlayingScene {
 	return &PlayingScene{
-		manager: manager,
-		font:    font,
+		manager:      manager,
+		font:         font,
+		scoreManager: scoreManager,
 	}
 }
 
@@ -71,10 +74,28 @@ func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
 	// Draw lives display
 	s.drawLivesDisplay(screen)
 
+	// Draw score display
+	s.drawScore(screen)
+
 	// Draw debug info if enabled
 	if s.manager.config.Debug {
 		s.drawDebugInfo(screen)
 	}
+}
+
+func (s *PlayingScene) drawScore(screen *ebiten.Image) {
+	score := s.scoreManager.GetScore()
+	scoreText := fmt.Sprintf("Score: %d", score)
+
+	op := &text.DrawOptions{}
+	// Position: top-right, 150px from right, 30px from top
+	w := screen.Bounds().Dx()
+	op.GeoM.Translate(float64(w-150), 30)
+	op.ColorScale.SetR(1)
+	op.ColorScale.SetG(1)
+	op.ColorScale.SetB(1)
+	op.ColorScale.SetA(1)
+	text.Draw(screen, scoreText, s.font, op)
 }
 
 // TriggerScreenShake triggers a screen shake effect

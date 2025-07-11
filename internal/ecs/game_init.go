@@ -5,6 +5,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
@@ -80,7 +81,7 @@ func (g *ECSGame) initializeSystems() error {
 
 	// Create game state managers
 	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
-	g.scoreManager = NewScoreManager(g.eventSystem, g.logger)
+	g.scoreManager = managers.NewScoreManager(10000) // Bonus life every 10,000 points
 	g.levelManager = NewLevelManager(g.logger)
 
 	// Create health system (after state manager)
@@ -94,7 +95,14 @@ func (g *ECSGame) initializeSystems() error {
 	}
 
 	// Create scene manager
-	g.sceneManager = scenes.NewSceneManager(g.world, g.config, g.logger, g.inputHandler, font)
+	g.sceneManager = scenes.NewSceneManager(&scenes.SceneManagerConfig{
+		World:        g.world,
+		Config:       g.config,
+		Logger:       g.logger,
+		InputHandler: g.inputHandler,
+		Font:         font,
+		ScoreManager: g.scoreManager,
+	})
 
 	// Set resume callback to unpause game state
 	g.sceneManager.SetResumeCallback(func() {
