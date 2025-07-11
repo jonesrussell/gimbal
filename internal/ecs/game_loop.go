@@ -69,6 +69,7 @@ func (g *ECSGame) updateCombatSystems() {
 	g.enemySystem.Update(1.0) // Assuming 60fps, so deltaTime = 1.0
 	g.weaponSystem.Update(1.0)
 	g.collisionSystem.Update()
+	g.healthSystem.Update() // Update health system (invincibility, game over, etc.)
 }
 
 // updateECSSystems runs all ECS systems
