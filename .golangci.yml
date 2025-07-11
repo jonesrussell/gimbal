@@ -40,6 +40,10 @@ linters:
   # - unparam  # Disabled: Too strict for internal desktop app code
   - whitespace
   - wrapcheck
+  # ADD THESE for file/function size management:
+  - maintidx      # Maintainability index - flags overly complex files
+  - cyclop        # Cyclomatic complexity per package/file
+  - revive        # Configurable replacement for golint
 
   settings:
     errcheck:
@@ -80,13 +84,34 @@ linters:
         underef:
           skipRecvDeref: true
 
-    # --- TEMPORARY: Relaxed for refactor phase ---
+    # RESTORE: Strict limits for better code quality
     gocyclo:
-      min-complexity: 35  # TEMP: Increased for refactor, restore to 25 after
+      min-complexity: 15  # Restore to stricter limit
 
     funlen:
-      max-func-lines: 100  # TEMP: Increased for refactor, restore to 30 after
-    # --- END TEMPORARY ---
+      max-func-lines: 50  # Restore to stricter limit
+      max-statements: 40  # Max statements per function
+
+    # ADD: File-level complexity limits
+    maintidx:
+      under: 20  # Maintainability index threshold (lower = more complex)
+      
+    cyclop:
+      max-complexity: 15     # Per function
+      package-average: 10    # Average across package
+      skip-tests: true
+
+    # ADD: Function parameter limits  
+    revive:
+      rules:
+        - name: function-length
+          arguments: [50, 0]  # Max 50 statements per function
+        - name: argument-limit
+          arguments: [5]      # Max 5 parameters per function
+        - name: cognitive-complexity
+          arguments: [15]     # Cognitive complexity limit
+        - name: line-length-limit
+          arguments: [120]    # Max line length
 
     gosec:
       severity: low  # Relaxed: Desktop apps have different security concerns
@@ -293,8 +318,18 @@ linters:
       - nolintlint
       - varnamelen
       - exhaustruct
+    # ADD: File size exclusions for specific cases
+    - path: internal/ecs/game\.go
+      linters: [maintidx, cyclop, funlen]  # TEMPORARY during refactor
+    - path: .*_generated\.go
+      linters: [maintidx, cyclop, funlen, revive]
+    - path: .*\.pb\.go  # Protocol buffer files
+      linters: [maintidx, cyclop, funlen, revive]
 
 formatters:
+  enable:
+    - goimports     # Enforces proper import organization
+    - gofumpt       # Stricter formatting than gofmt
   exclusions:
     generated: lax
     paths:
