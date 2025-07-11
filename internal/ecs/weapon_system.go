@@ -30,26 +30,30 @@ const (
 
 // WeaponSystem manages player weapons and projectiles
 type WeaponSystem struct {
-	world           donburi.World
-	config          *common.GameConfig
-	fireTimer       float64
-	fireInterval    float64
-	lastFireTime    time.Time
-	projectileSpeed float64
-	projectileSize  common.Size
+	world             donburi.World
+	config            *common.GameConfig
+	fireTimer         float64
+	fireInterval      float64
+	lastFireTime      time.Time
+	projectileSpeed   float64
+	projectileSize    common.Size
+	projectileSprites map[int]*ebiten.Image // Sprite cache
 }
 
 // NewWeaponSystem creates a new weapon system
 func NewWeaponSystem(world donburi.World, config *common.GameConfig) *WeaponSystem {
-	return &WeaponSystem{
-		world:           world,
-		config:          config,
-		fireTimer:       0,
-		fireInterval:    DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
-		lastFireTime:    time.Now(),
-		projectileSpeed: DefaultProjectileSpeed,
-		projectileSize:  common.Size{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
+	ws := &WeaponSystem{
+		world:             world,
+		config:            config,
+		fireTimer:         0,
+		fireInterval:      DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
+		lastFireTime:      time.Now(),
+		projectileSpeed:   DefaultProjectileSpeed,
+		projectileSize:    common.Size{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
+		projectileSprites: make(map[int]*ebiten.Image),
 	}
+	ws.initializeProjectileSprites()
+	return ws
 }
 
 // Update updates the weapon system
@@ -121,23 +125,26 @@ func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, 
 
 // createProjectileSprite creates a simple sprite for the projectile
 func (ws *WeaponSystem) createProjectileSprite(entry *donburi.Entry, weaponType int) {
-	// Create a simple colored square based on weapon type
-	img := ebiten.NewImage(ws.projectileSize.Width, ws.projectileSize.Height)
-
-	var projectileColor color.Color
-	switch weaponType {
-	case WeaponTypePrimary:
-		projectileColor = color.RGBA{R: 255, G: 255, B: 0, A: 255} // Yellow
-	case WeaponTypeSecondary:
-		projectileColor = color.RGBA{R: 0, G: 255, B: 255, A: 255} // Cyan
-	case WeaponTypeSpecial:
-		projectileColor = color.RGBA{R: 255, G: 0, B: 255, A: 255} // Magenta
-	default:
-		projectileColor = color.RGBA{R: 255, G: 255, B: 255, A: 255} // White
+	if sprite, exists := ws.projectileSprites[weaponType]; exists {
+		core.Sprite.SetValue(entry, sprite)
+	} else {
+		core.Sprite.SetValue(entry, ws.projectileSprites[WeaponTypePrimary])
 	}
+}
 
-	img.Fill(projectileColor)
-	core.Sprite.SetValue(entry, img)
+// initializeProjectileSprites pre-creates one image per weapon type
+func (ws *WeaponSystem) initializeProjectileSprites() {
+	ws.projectileSprites = make(map[int]*ebiten.Image)
+	weaponConfigs := map[int]color.RGBA{
+		WeaponTypePrimary:   {R: 255, G: 255, B: 0, A: 255}, // Yellow
+		WeaponTypeSecondary: {R: 0, G: 255, B: 255, A: 255}, // Cyan
+		WeaponTypeSpecial:   {R: 255, G: 0, B: 255, A: 255}, // Magenta
+	}
+	for weaponType, projectileColor := range weaponConfigs {
+		img := ebiten.NewImage(ws.projectileSize.Width, ws.projectileSize.Height)
+		img.Fill(projectileColor)
+		ws.projectileSprites[weaponType] = img
+	}
 }
 
 // updateProjectiles updates all projectile entities
@@ -191,4 +198,10 @@ func (ws *WeaponSystem) GetProjectileSpeed() float64 {
 // SetProjectileSpeed sets the projectile speed
 func (ws *WeaponSystem) SetProjectileSpeed(speed float64) {
 	ws.projectileSpeed = speed
+}
+
+// Optional: allow resizing and re-caching
+func (ws *WeaponSystem) SetProjectileSize(size common.Size) {
+	ws.projectileSize = size
+	ws.initializeProjectileSprites()
 }
