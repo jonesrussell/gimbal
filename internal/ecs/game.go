@@ -5,7 +5,10 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
 )
 
 // ECSGame represents the main game state using ECS
@@ -19,7 +22,7 @@ type ECSGame struct {
 	eventSystem *EventSystem
 
 	// Resource management
-	resourceManager *ResourceManager
+	resourceManager *resources.ResourceManager
 
 	// Game state management
 	stateManager *GameStateManager
@@ -32,8 +35,8 @@ type ECSGame struct {
 	// Combat systems
 	enemySystem     *EnemySystem
 	weaponSystem    *WeaponSystem
-	collisionSystem *CollisionSystem
-	healthSystem    *HealthSystem
+	collisionSystem *collision.CollisionSystem
+	healthSystem    *health.HealthSystem
 
 	// Entity references
 	playerEntity donburi.Entity
