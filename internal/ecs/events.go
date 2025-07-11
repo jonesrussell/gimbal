@@ -49,24 +49,24 @@ func NewEventSystem(world donburi.World) *EventSystem {
 }
 
 // EmitPlayerMoved emits a player moved event
-func (es *EventSystem) EmitPlayerMoved(pos common.Point, angle common.Angle) {
-	PlayerMovedEventType.Publish(es.world, PlayerMovedEvent{
+func (evt *EventSystem) EmitPlayerMoved(pos common.Point, angle common.Angle) {
+	PlayerMovedEventType.Publish(evt.world, PlayerMovedEvent{
 		Position: pos,
 		Angle:    angle,
 	})
 }
 
 // EmitStarCollected emits a star collected event
-func (es *EventSystem) EmitStarCollected(pos common.Point, score int) {
-	StarCollectedEventType.Publish(es.world, StarCollectedEvent{
+func (evt *EventSystem) EmitStarCollected(pos common.Point, score int) {
+	StarCollectedEventType.Publish(evt.world, StarCollectedEvent{
 		Position: pos,
 		Score:    score,
 	})
 }
 
 // EmitScoreChanged emits a score changed event
-func (es *EventSystem) EmitScoreChanged(oldScore, newScore int) {
-	ScoreChangedEventType.Publish(es.world, ScoreChangedEvent{
+func (evt *EventSystem) EmitScoreChanged(oldScore, newScore int) {
+	ScoreChangedEventType.Publish(evt.world, ScoreChangedEvent{
 		OldScore: oldScore,
 		NewScore: newScore,
 		Delta:    newScore - oldScore,
@@ -74,39 +74,39 @@ func (es *EventSystem) EmitScoreChanged(oldScore, newScore int) {
 }
 
 // EmitGamePaused emits a game paused event
-func (es *EventSystem) EmitGamePaused() {
-	GameStateEventType.Publish(es.world, GameStateEvent{IsPaused: true})
+func (evt *EventSystem) EmitGamePaused() {
+	GameStateEventType.Publish(evt.world, GameStateEvent{IsPaused: true})
 }
 
 // EmitGameResumed emits a game resumed event
-func (es *EventSystem) EmitGameResumed() {
-	GameStateEventType.Publish(es.world, GameStateEvent{IsPaused: false})
+func (evt *EventSystem) EmitGameResumed() {
+	GameStateEventType.Publish(evt.world, GameStateEvent{IsPaused: false})
 }
 
 // SubscribeToPlayerMoved subscribes to player moved events
-func (es *EventSystem) SubscribeToPlayerMoved(callback events.Subscriber[PlayerMovedEvent]) {
-	PlayerMovedEventType.Subscribe(es.world, callback)
+func (evt *EventSystem) SubscribeToPlayerMoved(callback events.Subscriber[PlayerMovedEvent]) {
+	PlayerMovedEventType.Subscribe(evt.world, callback)
 }
 
 // SubscribeToStarCollected subscribes to star collected events
-func (es *EventSystem) SubscribeToStarCollected(callback events.Subscriber[StarCollectedEvent]) {
-	StarCollectedEventType.Subscribe(es.world, callback)
+func (evt *EventSystem) SubscribeToStarCollected(callback events.Subscriber[StarCollectedEvent]) {
+	StarCollectedEventType.Subscribe(evt.world, callback)
 }
 
 // SubscribeToScoreChanged subscribes to score changed events
-func (es *EventSystem) SubscribeToScoreChanged(callback events.Subscriber[ScoreChangedEvent]) {
-	ScoreChangedEventType.Subscribe(es.world, callback)
+func (evt *EventSystem) SubscribeToScoreChanged(callback events.Subscriber[ScoreChangedEvent]) {
+	ScoreChangedEventType.Subscribe(evt.world, callback)
 }
 
 // SubscribeToGameState subscribes to game state events
-func (es *EventSystem) SubscribeToGameState(callback events.Subscriber[GameStateEvent]) {
-	GameStateEventType.Subscribe(es.world, callback)
+func (evt *EventSystem) SubscribeToGameState(callback events.Subscriber[GameStateEvent]) {
+	GameStateEventType.Subscribe(evt.world, callback)
 }
 
 // ProcessEvents processes all pending events
-func (es *EventSystem) ProcessEvents() {
-	PlayerMovedEventType.ProcessEvents(es.world)
-	StarCollectedEventType.ProcessEvents(es.world)
-	ScoreChangedEventType.ProcessEvents(es.world)
-	GameStateEventType.ProcessEvents(es.world)
+func (evt *EventSystem) ProcessEvents() {
+	PlayerMovedEventType.ProcessEvents(evt.world)
+	StarCollectedEventType.ProcessEvents(evt.world)
+	ScoreChangedEventType.ProcessEvents(evt.world)
+	GameStateEventType.ProcessEvents(evt.world)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // Weapon types
@@ -29,26 +30,30 @@ const (
 
 // WeaponSystem manages player weapons and projectiles
 type WeaponSystem struct {
-	world           donburi.World
-	config          *common.GameConfig
-	fireTimer       float64
-	fireInterval    float64
-	lastFireTime    time.Time
-	projectileSpeed float64
-	projectileSize  common.Size
+	world             donburi.World
+	config            *common.GameConfig
+	fireTimer         float64
+	fireInterval      float64
+	lastFireTime      time.Time
+	projectileSpeed   float64
+	projectileSize    common.Size
+	projectileSprites map[int]*ebiten.Image // Sprite cache
 }
 
 // NewWeaponSystem creates a new weapon system
 func NewWeaponSystem(world donburi.World, config *common.GameConfig) *WeaponSystem {
-	return &WeaponSystem{
-		world:           world,
-		config:          config,
-		fireTimer:       0,
-		fireInterval:    10, // Fire every 10 frames (6 shots per second at 60fps)
-		lastFireTime:    time.Now(),
-		projectileSpeed: 5.0,
-		projectileSize:  common.Size{Width: 4, Height: 4},
+	ws := &WeaponSystem{
+		world:             world,
+		config:            config,
+		fireTimer:         0,
+		fireInterval:      DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
+		lastFireTime:      time.Now(),
+		projectileSpeed:   DefaultProjectileSpeed,
+		projectileSize:    common.Size{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
+		projectileSprites: make(map[int]*ebiten.Image),
 	}
+	ws.initializeProjectileSprites()
+	return ws
 }
 
 // Update updates the weapon system
@@ -74,34 +79,42 @@ func (ws *WeaponSystem) FireWeapon(weaponType int, playerPos common.Point, playe
 
 // createProjectile creates a new projectile
 func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, direction common.Angle) {
-	entity := ws.world.Create(ProjectileTag, Position, Sprite, Movement, Size, Speed, Angle)
+	entity := ws.world.Create(
+		core.ProjectileTag,
+		core.Position,
+		core.Sprite,
+		core.Movement,
+		core.Size,
+		core.Speed,
+		core.Angle,
+	)
 	entry := ws.world.Entry(entity)
 
 	// Set position (slightly in front of player)
 	angleRad := float64(direction) * common.DegreesToRadians
-	offset := 20.0 // Distance from player center
+	offset := ProjectileOffset // Distance from player center
 	pos := common.Point{
 		X: startPos.X + offset*math.Cos(angleRad),
 		Y: startPos.Y - offset*math.Sin(angleRad), // Subtract because Y increases downward
 	}
-	Position.SetValue(entry, pos)
+	core.Position.SetValue(entry, pos)
 
 	// Set size
-	Size.SetValue(entry, ws.projectileSize)
+	core.Size.SetValue(entry, ws.projectileSize)
 
 	// Set speed
-	Speed.SetValue(entry, ws.projectileSpeed)
+	core.Speed.SetValue(entry, ws.projectileSpeed)
 
 	// Set angle
-	Angle.SetValue(entry, direction)
+	core.Angle.SetValue(entry, direction)
 
-	// Calculate velocity based on direction
+	// Simple upward movement
 	velocity := common.Point{
-		X: ws.projectileSpeed * math.Cos(angleRad),
-		Y: -ws.projectileSpeed * math.Sin(angleRad), // Negative because Y increases downward
+		X: 0,
+		Y: -ws.projectileSpeed, // Move upward (negative Y)
 	}
 
-	Movement.SetValue(entry, MovementData{
+	core.Movement.SetValue(entry, core.MovementData{
 		Velocity: velocity,
 		MaxSpeed: ws.projectileSpeed,
 	})
@@ -112,36 +125,39 @@ func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, 
 
 // createProjectileSprite creates a simple sprite for the projectile
 func (ws *WeaponSystem) createProjectileSprite(entry *donburi.Entry, weaponType int) {
-	// Create a simple colored square based on weapon type
-	img := ebiten.NewImage(ws.projectileSize.Width, ws.projectileSize.Height)
-
-	var projectileColor color.Color
-	switch weaponType {
-	case WeaponTypePrimary:
-		projectileColor = color.RGBA{R: 255, G: 255, B: 0, A: 255} // Yellow
-	case WeaponTypeSecondary:
-		projectileColor = color.RGBA{R: 0, G: 255, B: 255, A: 255} // Cyan
-	case WeaponTypeSpecial:
-		projectileColor = color.RGBA{R: 255, G: 0, B: 255, A: 255} // Magenta
-	default:
-		projectileColor = color.RGBA{R: 255, G: 255, B: 255, A: 255} // White
+	if sprite, exists := ws.projectileSprites[weaponType]; exists {
+		core.Sprite.SetValue(entry, sprite)
+	} else {
+		core.Sprite.SetValue(entry, ws.projectileSprites[WeaponTypePrimary])
 	}
+}
 
-	img.Fill(projectileColor)
-	Sprite.SetValue(entry, img)
+// initializeProjectileSprites pre-creates one image per weapon type
+func (ws *WeaponSystem) initializeProjectileSprites() {
+	ws.projectileSprites = make(map[int]*ebiten.Image)
+	weaponConfigs := map[int]color.RGBA{
+		WeaponTypePrimary:   {R: 255, G: 255, B: 0, A: 255}, // Yellow
+		WeaponTypeSecondary: {R: 0, G: 255, B: 255, A: 255}, // Cyan
+		WeaponTypeSpecial:   {R: 255, G: 0, B: 255, A: 255}, // Magenta
+	}
+	for weaponType, projectileColor := range weaponConfigs {
+		img := ebiten.NewImage(ws.projectileSize.Width, ws.projectileSize.Height)
+		img.Fill(projectileColor)
+		ws.projectileSprites[weaponType] = img
+	}
 }
 
 // updateProjectiles updates all projectile entities
 func (ws *WeaponSystem) updateProjectiles() {
 	query.NewQuery(
 		filter.And(
-			filter.Contains(ProjectileTag),
-			filter.Contains(Position),
-			filter.Contains(Movement),
+			filter.Contains(core.ProjectileTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Movement),
 		),
 	).Each(ws.world, func(entry *donburi.Entry) {
-		pos := Position.Get(entry)
-		mov := Movement.Get(entry)
+		pos := core.Position.Get(entry)
+		mov := core.Movement.Get(entry)
 
 		// Update position based on velocity
 		pos.X += mov.Velocity.X
@@ -157,7 +173,7 @@ func (ws *WeaponSystem) updateProjectiles() {
 
 // isOffScreen checks if a position is off screen
 func (ws *WeaponSystem) isOffScreen(pos common.Point) bool {
-	margin := 50.0
+	margin := ProjectileMargin
 	return pos.X < -margin ||
 		pos.X > float64(ws.config.ScreenSize.Width)+margin ||
 		pos.Y < -margin ||
@@ -182,4 +198,10 @@ func (ws *WeaponSystem) GetProjectileSpeed() float64 {
 // SetProjectileSpeed sets the projectile speed
 func (ws *WeaponSystem) SetProjectileSpeed(speed float64) {
 	ws.projectileSpeed = speed
+}
+
+// Optional: allow resizing and re-caching
+func (ws *WeaponSystem) SetProjectileSize(size common.Size) {
+	ws.projectileSize = size
+	ws.initializeProjectileSprites()
 }

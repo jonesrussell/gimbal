@@ -12,100 +12,208 @@ vars:
   ITCH_USERNAME: '{{default "jonesrussell" .ITCH_USERNAME}}'
   ITCH_PATH: gimbal
 
+# Task groups for better organization
 tasks:
-  serve:
-    desc: Starts a local server for development
+  # Development tasks
+  dev:run:
+    desc: Run the application in development mode (with pprof)
+    aliases: [run:dev]
+    cmds:
+      - LOG_LEVEL=DEBUG go run -tags dev .
+
+  dev:hot:
+    desc: Run with hot reloading using Air
+    aliases: [hot]
+    cmds:
+      - |
+        if ! command -v air >/dev/null 2>&1; then
+          echo "Air not found. Install with: task install:air" >&2
+          exit 1
+        fi
+      - air
+
+  dev:serve:
+    desc: Start local server for web development
+    aliases: [serve]
     cmds:
       - |
         if ! command -v wasmserve >/dev/null 2>&1; then
-          echo "wasmserve could not be found. You can install it with: go install github.com/hajimehoshi/wasmserve@latest" >&2
+          echo "wasmserve not found. Install with: go install github.com/hajimehoshi/wasmserve@latest" >&2
           exit 1
         fi
       - echo "Hosting game on http://localhost:4242"
       - wasmserve -http=":4242" -allow-origin='*' -tags .
 
+  # Production run
+  run:
+    desc: Run the application in production mode (no pprof)
+    cmds:
+      - LOG_LEVEL=INFO go run .
+
+  # Build tasks
   build:linux:
     desc: Build Linux target
     cmds:
       - rm -rf build/linux
       - mkdir -p build/linux/{{.PROJECTNAME}}
-      - go build -tags build -o build/linux/{{.PROJECTNAME}}/{{.PROJECTNAME}} .
+      - go build -tags build -ldflags "-X main.version={{.VERSION}}" -o build/linux/{{.PROJECTNAME}}/{{.PROJECTNAME}} .
 
-  build:win32:
-    desc: Build Win32 target
+  build:windows:
+    desc: Build Windows target
+    aliases: [build:win32]
     cmds:
-      - rm -rf build/win32
-      - mkdir -p build/win32/{{.PROJECTNAME}}
-      - GOOS=windows go build -tags build -o build/win32/{{.PROJECTNAME}}/{{.PROJECTNAME}}.exe .
+      - rm -rf build/windows
+      - mkdir -p build/windows/{{.PROJECTNAME}}
+      - GOOS=windows GOARCH=amd64 go build -tags build -ldflags "-X main.version={{.VERSION}}" -o build/windows/{{.PROJECTNAME}}/{{.PROJECTNAME}}.exe .
 
   build:web:
     desc: Build WebAssembly target
     cmds:
       - rm -rf build/web
       - mkdir -p build/web
-      - GOOS=js GOARCH=wasm go build -tags "build,js" -o build/web/game.wasm .
+      - GOOS=js GOARCH=wasm go build -tags "build,js" -ldflags "-X main.version={{.VERSION}}" -o build/web/game.wasm .
       - cp -r html/* build/web
       - |
         if [ ! -f {{.WASM_EXEC_PATH}} ]; then
           echo "Error: wasm_exec.js not found at {{.WASM_EXEC_PATH}}"
-          echo "Please copy wasm_exec.js from your Go installation to:"
-          echo "{{.WASM_EXEC_PATH}}"
-          echo "You can find it in your Go installation directory under misc/wasm/wasm_exec.js"
+          echo "Please copy wasm_exec.js from your Go installation"
           exit 1
         fi
       - cp {{.WASM_EXEC_PATH}} build/web
 
-  build:
+  build:all:
     desc: Build all targets
-    deps: [build:linux, build:win32, build:web]
+    aliases: [build]
+    deps: [build:linux, build:windows, build:web]
 
-  itch:
-    desc: Upload to itch.io
-    deps: [clean:build, build]
+  # Testing and quality tasks
+  test:
+    desc: Run all tests
     cmds:
-      - butler push --if-changed build/win32 {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:windows
-      - butler push --if-changed build/linux {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:linux-amd64
-      - butler push build/web {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:web
-      - echo "Project is live on http://{{.ITCH_USERNAME}}.itch.io/{{.ITCH_PATH}}"
+      - go test ./... -v -race -coverprofile=coverage.out
 
-  run:
-    desc: Run the application
+  test:short:
+    desc: Run tests without race detection (faster)
     cmds:
-      - LOG_LEVEL=debug go run .
+      - go test ./... -v -short
 
-  clean:build:
-    desc: Clean build directory
+  test:coverage:
+    desc: Run tests and show coverage report
     cmds:
-      - rm -rf build
-
-  clean:
-    desc: Clean all artifacts
-    cmds:
-      - task: clean:build
-      - rm -rf game.wasm site.zip
+      - go test ./... -v -race -coverprofile=coverage.out
+      - go tool cover -html=coverage.out -o coverage.html
+      - echo "Coverage report generated coverage.html"
 
   lint:
-    desc: "Lint the Go code"
+    desc: Lint the Go code
     cmds:
       - go fmt ./...
       - go vet ./...
       - golangci-lint run ./...
-      
-  mod:
-    desc: Tidy and download Go modules
-    cmds:
-      - go mod tidy
-      - go clean -modcache
-      - go mod download
 
-  mocks:
+  lint:fix:
+    desc: Lint and auto-fix issues where possible
+    cmds:
+      - go fmt ./...
+      - golangci-lint run --fix ./...
+
+  # Code generation tasks
+  generate:mocks:
     desc: Generate mocks using mockgen
+    aliases: [mocks]
     cmds:
       - mkdir -p test/mocks
       - mockgen -source=internal/common/interfaces.go -destination=test/mocks/mock_input.go -package=mocks
       - echo "Mocks generated successfully in test/mocks/"
 
-  test:
-    desc: Run tests
+  generate:all:
+    desc: Run all code generation
+    aliases: [generate]
+    deps: [generate:mocks]
+
+  # Dependency management
+  deps:tidy:
+    desc: Tidy and download Go modules
+    aliases: [mod, tidy]
     cmds:
-      - go test ./... -v
+      - go mod tidy
+      - go mod download
+
+  deps:update:
+    desc: Update all dependencies
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+
+  deps:verify:
+    desc: Verify dependencies
+    cmds:
+      - go mod verify
+
+  # Installation tasks
+  install:tools:
+    desc: Install all development tools
+    aliases: [install]
+    cmds:
+      - go install github.com/cosmtrek/air@latest
+      - go install github.com/hajimehoshi/wasmserve@latest
+      - go install go.uber.org/mock/mockgen@latest
+      - echo "All development tools installed successfully"
+
+  # Deployment tasks
+  deploy:itch:
+    desc: Deploy to itch.io
+    aliases: [itch]
+    deps: [clean:build, build:all]
+    cmds:
+      - |
+        if ! command -v butler >/dev/null 2>&1; then
+          echo "Butler not found. Please install from https://itch.io/docs/butler/" >&2
+          exit 1
+        fi
+      - butler push --if-changed build/windows {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:windows
+      - butler push --if-changed build/linux {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:linux-amd64
+      - butler push build/web {{.ITCH_USERNAME}}/{{.ITCH_PATH}}:web
+      - echo "Project deployed to https://{{.ITCH_USERNAME}}.itch.io/{{.ITCH_PATH}}"
+
+  # Cleanup tasks
+  clean:build:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf build
+
+  clean:test:
+    desc: Clean test artifacts
+    cmds:
+      - rm -f coverage.out coverage.html
+
+  clean:all:
+    desc: Clean all artifacts
+    aliases: [clean]
+    deps: [clean:build, clean:test]
+    cmds:
+      - rm -rf {{.BINARY_DIR}}
+      - go clean -cache -modcache -testcache
+
+  # Utility tasks
+  check:
+    desc: Run all checks (lint, test, build)
+    cmds:
+      - task: lint
+      - task: test:short
+      - task: build:all
+
+  ci:
+    desc: Run full CI pipeline
+    cmds:
+      - task: deps:verify
+      - task: generate:all
+      - task: lint
+      - task: test:coverage
+      - task: build:all
+
+  # Help task
+  help:
+    desc: Show available tasks
+    cmds:
+      - task --list

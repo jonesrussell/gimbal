@@ -1,38 +1,38 @@
 {
-    "go.lintTool": "golangci-lint",
-    "go.lintFlags": [
-        "--fast",
-        "--timeout=5m"
-    ],
-    "go.lintOnSave": "package",
     "go.useLanguageServer": true,
+    "go.lintOnSave": "package",
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": ["--fast"],
+    "go.formatTool": "gofmt",
+    "go.toolsManagement.autoUpdate": true,
+    "go.gopath": "",
+    "go.goroot": "",
+    "go.vetOnSave": "package",
+    "go.coverOnSave": false,
+    "go.testOnSave": false,
+    "go.testFlags": ["-v"],
+    "go.testTimeout": "30s",
+    "go.testEnvVars": {},
+    "go.testEnvFile": "${workspaceFolder}/.env",
+    "go.delveConfig": {
+        "dlvLoadConfig": {
+            "followPointers": true,
+            "maxVariableRecurse": 1,
+            "maxStringLen": 64,
+            "maxArrayValues": 64,
+            "maxStructFields": -1
+        },
+        "apiVersion": 2,
+        "showGlobalVariables": false
+    },
+    "go.alternateTools": {},
+    "go.inferGopath": true,
     "gopls": {
-        "formatting.gofumpt": true,
-        "ui.semanticTokens": true,
+        "buildFlags": ["-tags=dev"],
         "ui.diagnostic.analyses": {
             "unusedparams": true,
             "shadow": true
         },
-        "buildFlags": ["-tags=wireinject"],
-        "env": {
-            "GOOS": "linux"
-        }
-    },
-    "go.diagnostic.vulncheck": "Imports",
-    "go.enableCodeLens": {
-        "runtest": true
-    },
-    "go.inlayHints.parameterNames": true,
-    "go.inlayHints.compositeLiteralFields": true,
-    "go.inlayHints.compositeLiteralTypes": true,
-    "go.inlayHints.functionTypeParameters": true,
-    "go.inlayHints.rangeVariableTypes": true,
-    "go.inlayHints.constantValues": true,
-    "[go]": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "golang.go",
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "always"
-        }
+        "formatting.gofumpt": true
     }
 }

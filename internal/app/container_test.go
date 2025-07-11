@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/jonesrussell/gimbal/internal/app"
 	"github.com/jonesrussell/gimbal/test/mocks"
 )
 
@@ -15,7 +16,7 @@ func TestContainerInitialization(t *testing.T) {
 	defer ctrl.Finish()
 
 	// Create container
-	container := NewContainer()
+	container := app.NewContainer()
 
 	// Test initial state
 	if container.IsInitialized() {
@@ -54,7 +55,7 @@ func TestContainerInitialization(t *testing.T) {
 
 func TestContainerDoubleInitialization(t *testing.T) {
 	// Create container
-	container := NewContainer()
+	container := app.NewContainer()
 
 	// Initialize once
 	ctx := context.Background()
@@ -72,7 +73,7 @@ func TestContainerDoubleInitialization(t *testing.T) {
 
 func TestContainerShutdown(t *testing.T) {
 	// Create container
-	container := NewContainer()
+	container := app.NewContainer()
 
 	// Initialize
 	ctx := context.Background()
@@ -100,7 +101,7 @@ func TestContainerSetInputHandler(t *testing.T) {
 	defer ctrl.Finish()
 
 	// Create container
-	container := NewContainer()
+	container := app.NewContainer()
 
 	// Initialize
 	ctx := context.Background()
@@ -123,7 +124,7 @@ func TestContainerSetInputHandler(t *testing.T) {
 
 func TestContainerDependencyOrder(t *testing.T) {
 	// Create container
-	container := NewContainer()
+	container := app.NewContainer()
 
 	// Initialize
 	ctx := context.Background()

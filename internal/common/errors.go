@@ -129,4 +129,7 @@ const (
 	// Validation error codes
 	ErrorCodeValidationFailed = "VALIDATION_FAILED"
 	ErrorCodeValueOutOfRange  = "VALUE_OUT_OF_RANGE"
+
+	// Scene error codes
+	ErrorCodeSceneNotFound = "SCENE_NOT_FOUND"
 )
