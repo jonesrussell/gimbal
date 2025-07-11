@@ -70,7 +70,7 @@ func NewPausedScene(manager *SceneManager) *PausedScene {
 	config := PausedMenuConfig()
 	config.MenuY = float64(manager.config.ScreenSize.Height) / 2
 
-	scene.menu = NewMenuSystem(options, config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height)
+	scene.menu = NewMenuSystem(options, &config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height)
 
 	return scene
 }

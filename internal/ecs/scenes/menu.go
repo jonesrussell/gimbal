@@ -25,7 +25,7 @@ func NewMenuScene(manager *SceneManager) *MenuScene {
 	config.MenuY = float64(manager.config.ScreenSize.Height) / 2
 	return &MenuScene{
 		manager: manager,
-		menu:    NewMenuSystem(options, config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height),
+		menu:    NewMenuSystem(options, &config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height),
 	}
 }
 
