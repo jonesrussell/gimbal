@@ -12,6 +12,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 )
 
 // EnemySystem manages enemy spawning, movement, and behavior
@@ -21,24 +22,24 @@ type EnemySystem struct {
 	config        *common.GameConfig
 	spawnTimer    float64
 	spawnInterval float64
-	enemySprite   *ebiten.Image // Cached sprite
+	resourceMgr   *resources.ResourceManager
 }
 
-func NewEnemySystem(world donburi.World, config *common.GameConfig) *EnemySystem {
+func NewEnemySystem(
+	world donburi.World,
+	config *common.GameConfig,
+	resourceMgr *resources.ResourceManager,
+) *EnemySystem {
 	es := &EnemySystem{
 		world:         world,
 		config:        config,
 		spawnTimer:    0,
 		spawnInterval: 60, // Spawn every 60 frames (1 second at 60fps)
+		resourceMgr:   resourceMgr,
 	}
 
 	// Global RNG is automatically seeded in Go 1.20+
 	// No need to call rand.Seed() anymore
-
-	// Create and cache the enemy sprite (red square)
-	img := ebiten.NewImage(16, 16)
-	img.Fill(color.RGBA{255, 0, 0, 255})
-	es.enemySprite = img
 
 	return es
 }
@@ -58,10 +59,18 @@ func (es *EnemySystem) spawnEnemy() {
 	centerY := float64(es.config.ScreenSize.Height) / 2
 	spawnPos := common.Point{X: centerX, Y: centerY}
 
+	// Get enemy sprite from resource manager
+	enemySprite, exists := es.resourceMgr.GetSprite("enemy")
+	if !exists {
+		// Fallback to red square if sprite not found
+		enemySprite = ebiten.NewImage(16, 16)
+		enemySprite.Fill(color.RGBA{255, 0, 0, 255})
+	}
+
 	entity := es.world.Create(core.EnemyTag, core.Position, core.Sprite, core.Movement, core.Size, core.Health)
 	entry := es.world.Entry(entity)
 	core.Position.SetValue(entry, spawnPos)
-	core.Sprite.SetValue(entry, es.enemySprite)
+	core.Sprite.SetValue(entry, enemySprite)
 	core.Size.SetValue(entry, common.Size{Width: 16, Height: 16})
 	core.Health.SetValue(entry, core.HealthData{Current: 1, Maximum: 1, InvincibilityDuration: 0})
 
