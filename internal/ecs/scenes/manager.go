@@ -36,6 +36,7 @@ type SceneManager struct {
 	config       *common.GameConfig
 	logger       common.Logger
 	inputHandler common.GameInputHandler
+	onResume     func() // Callback to unpause game state
 }
 
 func NewSceneManager(
@@ -125,4 +126,9 @@ func (sceneMgr *SceneManager) GetLogger() common.Logger {
 
 func (sceneMgr *SceneManager) GetInputHandler() common.GameInputHandler {
 	return sceneMgr.inputHandler
+}
+
+// SetResumeCallback sets the callback function to unpause game state
+func (sceneMgr *SceneManager) SetResumeCallback(callback func()) {
+	sceneMgr.onResume = callback
 }

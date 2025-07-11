@@ -65,7 +65,15 @@ func NewPausedScene(manager *SceneManager) *PausedScene {
 	}
 
 	options := []MenuOption{
-		{"Resume", func() { manager.SwitchScene(ScenePlaying) }},
+		{"Resume", func() {
+			// Call resume callback to unpause game state
+			if manager.onResume != nil {
+				manager.onResume()
+			}
+
+			// Then switch scenes
+			manager.SwitchScene(ScenePlaying)
+		}},
 		{"Return to Menu", func() { manager.SwitchScene(SceneMenu) }},
 		{"Quit", func() { os.Exit(0) }},
 	}
@@ -110,18 +118,8 @@ func (s *PausedScene) handleInput() {
 	currentEscPressed := ebiten.IsKeyPressed(ebiten.KeyEscape)
 	escJustPressed := inpututil.IsKeyJustPressed(ebiten.KeyEscape)
 
-	// Debug logging every few frames
-	if int(s.animationTime*60)%30 == 0 { // Log every half second
-		s.manager.logger.Debug("Pause input state",
-			"escWasPressed", s.escWasPressed,
-			"canUnpause", s.canUnpause,
-			"currentEscPressed", currentEscPressed,
-			"escJustPressed", escJustPressed)
-	}
-
 	// If ESC was pressed when we entered, wait for it to be released
 	if s.escWasPressed && currentEscPressed {
-		s.manager.logger.Debug("Waiting for ESC release")
 		return // ESC is still held down from the pause action
 	}
 
@@ -129,13 +127,16 @@ func (s *PausedScene) handleInput() {
 	if s.escWasPressed && !currentEscPressed {
 		s.escWasPressed = false
 		s.canUnpause = true
-		s.manager.logger.Debug("ESC released, can now unpause")
 		return // Don't process input this frame, just mark as ready
 	}
 
 	// Now we can check for new ESC presses
 	if s.canUnpause && escJustPressed {
-		s.manager.logger.Debug("ESC pressed, unpausing game")
+		// Call resume callback to unpause game state
+		if s.manager.onResume != nil {
+			s.manager.onResume()
+		}
+
 		s.manager.SwitchScene(ScenePlaying)
 	}
 
@@ -143,7 +144,11 @@ func (s *PausedScene) handleInput() {
 	if !s.escWasPressed {
 		s.canUnpause = true
 		if escJustPressed {
-			s.manager.logger.Debug("ESC pressed (immediate), unpausing game")
+			// Call resume callback to unpause game state
+			if s.manager.onResume != nil {
+				s.manager.onResume()
+			}
+
 			s.manager.SwitchScene(ScenePlaying)
 		}
 	}
@@ -211,13 +216,9 @@ func (s *PausedScene) Enter() {
 	s.animationTime = 0
 	s.selectionChanged = false
 
-	// Check and log ESC state when entering
+	// Check ESC state when entering
 	s.escWasPressed = ebiten.IsKeyPressed(ebiten.KeyEscape)
 	s.canUnpause = false
-
-	s.manager.logger.Debug("Pause scene ESC state",
-		"escWasPressed", s.escWasPressed,
-		"canUnpause", s.canUnpause)
 }
 
 // Exit is called when the scene becomes inactive
