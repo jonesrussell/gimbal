@@ -74,10 +74,6 @@ func (g *ECSGame) initializeSystems() error {
 	g.eventSystem = NewEventSystem(g.world)
 	g.logger.Debug("Event system created")
 
-	// Create health system
-	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
-	g.logger.Debug("Health system created")
-
 	// Create resource manager
 	g.resourceManager = resources.NewResourceManager(g.logger)
 	g.logger.Debug("Resource manager created")
@@ -86,6 +82,10 @@ func (g *ECSGame) initializeSystems() error {
 	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
 	g.scoreManager = NewScoreManager(g.eventSystem, g.logger)
 	g.levelManager = NewLevelManager(g.logger)
+
+	// Create health system (after state manager)
+	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
+	g.logger.Debug("Health system created")
 
 	// Get font from resource manager
 	font := g.resourceManager.GetDefaultFont()
