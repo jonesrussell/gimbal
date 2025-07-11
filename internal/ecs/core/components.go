@@ -37,8 +37,8 @@ var (
 	Angle = donburi.NewComponentType[common.Angle]()
 	// Scale component stores scaling factor
 	Scale = donburi.NewComponentType[float64]()
-	// Health component stores entity health
-	Health = donburi.NewComponentType[int]()
+	// Health component stores entity health data
+	Health = donburi.NewComponentType[HealthData]()
 )
 
 // MovementData represents movement information
@@ -53,4 +53,24 @@ type OrbitalData struct {
 	Radius       float64
 	OrbitalAngle common.Angle
 	FacingAngle  common.Angle
+}
+
+// HealthData represents health and invincibility information
+type HealthData struct {
+	Current               int     // Current health/lives
+	Maximum               int     // Maximum health/lives
+	InvincibilityTime     float64 // Time remaining for invincibility (seconds)
+	IsInvincible          bool    // Whether entity is currently invincible
+	InvincibilityDuration float64 // Duration of invincibility when hit (seconds)
+}
+
+// NewHealthData creates a new health data with default invincibility duration
+func NewHealthData(current, maximum int) HealthData {
+	return HealthData{
+		Current:               current,
+		Maximum:               maximum,
+		InvincibilityTime:     0,
+		IsInvincible:          false,
+		InvincibilityDuration: 2.0, // 2 seconds of invincibility
+	}
 }

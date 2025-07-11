@@ -5,23 +5,38 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
 
 type PlayingScene struct {
-	manager *SceneManager
+	manager      *SceneManager
+	screenShake  float64 // Screen shake intensity (0 = no shake)
+	font         text.Face
+	scoreManager *managers.ScoreManager
 }
 
-func NewPlayingScene(manager *SceneManager) *PlayingScene {
-	return &PlayingScene{manager: manager}
+func NewPlayingScene(manager *SceneManager, font text.Face, scoreManager *managers.ScoreManager) *PlayingScene {
+	return &PlayingScene{
+		manager:      manager,
+		font:         font,
+		scoreManager: scoreManager,
+	}
 }
 
 func (s *PlayingScene) Update() error {
-	// This will be handled by the main game loop
+	// Update screen shake
+	if s.screenShake > 0 {
+		s.screenShake -= 0.1 // Reduce shake over time
+		if s.screenShake < 0 {
+			s.screenShake = 0
+		}
+	}
 	return nil
 }
 
@@ -29,15 +44,97 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 	// Clear screen
 	screen.Fill(color.Black)
 
+	// Apply screen shake if active
+	if s.screenShake > 0 {
+		// Create a temporary image for the shaken content
+		shakenImage := ebiten.NewImage(screen.Bounds().Dx(), screen.Bounds().Dy())
+
+		// Draw everything to the shaken image
+		s.drawGameContent(shakenImage)
+
+		// Apply shake offset when drawing to screen
+		op := &ebiten.DrawImageOptions{}
+		shakeOffset := s.screenShake * 5 // Scale shake intensity
+		op.GeoM.Translate(shakeOffset, shakeOffset)
+		screen.DrawImage(shakenImage, op)
+	} else {
+		// Draw normally without shake
+		s.drawGameContent(screen)
+	}
+}
+
+// drawGameContent draws the main game content (separated for screen shake)
+func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
 	// Run render system through wrapper
 	renderWrapper := core.NewRenderSystemWrapper(screen)
 	if err := renderWrapper.Update(s.manager.world); err != nil {
 		s.manager.logger.Error("Render system failed", "error", err)
 	}
 
+	// Draw lives display
+	s.drawLivesDisplay(screen)
+
+	// Draw score display
+	s.drawScore(screen)
+
 	// Draw debug info if enabled
 	if s.manager.config.Debug {
 		s.drawDebugInfo(screen)
+	}
+}
+
+func (s *PlayingScene) drawScore(screen *ebiten.Image) {
+	score := s.scoreManager.GetScore()
+	scoreText := fmt.Sprintf("Score: %d", score)
+
+	op := &text.DrawOptions{}
+	// Position: top-right, 150px from right, 30px from top
+	w := screen.Bounds().Dx()
+	op.GeoM.Translate(float64(w-150), 30)
+	op.ColorScale.SetR(1)
+	op.ColorScale.SetG(1)
+	op.ColorScale.SetB(1)
+	op.ColorScale.SetA(1)
+	text.Draw(screen, scoreText, s.font, op)
+}
+
+// TriggerScreenShake triggers a screen shake effect
+func (s *PlayingScene) TriggerScreenShake() {
+	s.screenShake = 1.0 // Set shake intensity
+}
+
+// drawLivesDisplay renders the player's remaining lives in the top-left corner
+func (s *PlayingScene) drawLivesDisplay(screen *ebiten.Image) {
+	// Get health system from scene manager
+	healthSystem := s.manager.GetHealthSystem()
+	if healthSystem == nil {
+		return
+	}
+
+	// Type assert to get current and maximum lives
+	if hs, ok := healthSystem.(interface {
+		GetPlayerHealth() (int, int)
+	}); ok {
+		current, maximum := hs.GetPlayerHealth()
+
+		// Create lives text with heart emojis
+		livesText := "Lives: "
+		for i := 0; i < maximum; i++ {
+			if i < current {
+				livesText += "❤️"
+			} else {
+				livesText += "🖤" // Empty heart
+			}
+		}
+
+		// Draw the text in the top-left corner
+		op := &text.DrawOptions{}
+		op.GeoM.Translate(20, 30)
+		op.ColorScale.SetR(1)
+		op.ColorScale.SetG(1)
+		op.ColorScale.SetB(1)
+		op.ColorScale.SetA(1)
+		text.Draw(screen, livesText, s.font, op)
 	}
 }
 

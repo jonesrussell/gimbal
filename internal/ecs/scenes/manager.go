@@ -2,10 +2,23 @@ package scenes
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
+
+// SceneManagerConfig groups all dependencies for SceneManager
+// to avoid argument limit lint violations
+type SceneManagerConfig struct {
+	World        donburi.World
+	Config       *common.GameConfig
+	Logger       common.Logger
+	InputHandler common.GameInputHandler
+	Font         text.Face
+	ScoreManager *managers.ScoreManager
+}
 
 type SceneType int
 
@@ -36,31 +49,35 @@ type SceneManager struct {
 	config       *common.GameConfig
 	logger       common.Logger
 	inputHandler common.GameInputHandler
-	onResume     func() // Callback to unpause game state
+	onResume     func()      // Callback to unpause game state
+	healthSystem interface{} // Health system interface for scenes to access
+	font         text.Face
 }
 
-func NewSceneManager(
-	world donburi.World,
-	config *common.GameConfig,
-	logger common.Logger,
-	inputHandler common.GameInputHandler,
-) *SceneManager {
+func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 	sceneMgr := &SceneManager{
 		scenes:       make(map[SceneType]Scene),
-		world:        world,
-		config:       config,
-		logger:       logger,
-		inputHandler: inputHandler,
+		world:        cfg.World,
+		config:       cfg.Config,
+		logger:       cfg.Logger,
+		inputHandler: cfg.InputHandler,
+		font:         cfg.Font,
 	}
 
 	// Register all scenes
-	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr)
-	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr)
-	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr)
-	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr)
-	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr)
-	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(sceneMgr, "CREDITS\nGimbal Studios\n2025", SceneCredits)
-	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions)
+	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager)
+	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, cfg.Font)
+	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
+		sceneMgr,
+		"CREDITS\nGimbal Studios\n2025",
+		SceneCredits,
+		cfg.Font,
+	)
+	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, cfg.Font)
 
 	return sceneMgr
 }
@@ -131,4 +148,14 @@ func (sceneMgr *SceneManager) GetInputHandler() common.GameInputHandler {
 // SetResumeCallback sets the callback function to unpause game state
 func (sceneMgr *SceneManager) SetResumeCallback(callback func()) {
 	sceneMgr.onResume = callback
+}
+
+// SetHealthSystem sets the health system for scenes to access
+func (sceneMgr *SceneManager) SetHealthSystem(healthSystem interface{}) {
+	sceneMgr.healthSystem = healthSystem
+}
+
+// GetHealthSystem returns the health system
+func (sceneMgr *SceneManager) GetHealthSystem() interface{} {
+	return sceneMgr.healthSystem
 }
