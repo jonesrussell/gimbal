@@ -28,12 +28,30 @@ type GameStateEvent struct {
 	IsPaused bool
 }
 
+type PlayerDamagedEvent struct {
+	PlayerEntity   donburi.Entity
+	Damage         int
+	RemainingLives int
+}
+
+type GameOverEvent struct {
+	Reason string
+}
+
+type LifeAddedEvent struct {
+	PlayerEntity donburi.Entity
+	NewLives     int
+}
+
 // Event types for the game
 var (
 	PlayerMovedEventType   = events.NewEventType[PlayerMovedEvent]()
 	StarCollectedEventType = events.NewEventType[StarCollectedEvent]()
 	ScoreChangedEventType  = events.NewEventType[ScoreChangedEvent]()
 	GameStateEventType     = events.NewEventType[GameStateEvent]()
+	PlayerDamagedEventType = events.NewEventType[PlayerDamagedEvent]()
+	GameOverEventType      = events.NewEventType[GameOverEvent]()
+	LifeAddedEventType     = events.NewEventType[LifeAddedEvent]()
 )
 
 // EventSystem manages game events
@@ -83,6 +101,28 @@ func (evt *EventSystem) EmitGameResumed() {
 	GameStateEventType.Publish(evt.world, GameStateEvent{IsPaused: false})
 }
 
+// EmitPlayerDamaged emits a player damaged event
+func (evt *EventSystem) EmitPlayerDamaged(playerEntity donburi.Entity, damage, remainingLives int) {
+	PlayerDamagedEventType.Publish(evt.world, PlayerDamagedEvent{
+		PlayerEntity:   playerEntity,
+		Damage:         damage,
+		RemainingLives: remainingLives,
+	})
+}
+
+// EmitGameOver emits a game over event
+func (evt *EventSystem) EmitGameOver() {
+	GameOverEventType.Publish(evt.world, GameOverEvent{Reason: "No lives remaining"})
+}
+
+// EmitLifeAdded emits a life added event
+func (evt *EventSystem) EmitLifeAdded(playerEntity donburi.Entity, newLives int) {
+	LifeAddedEventType.Publish(evt.world, LifeAddedEvent{
+		PlayerEntity: playerEntity,
+		NewLives:     newLives,
+	})
+}
+
 // SubscribeToPlayerMoved subscribes to player moved events
 func (evt *EventSystem) SubscribeToPlayerMoved(callback events.Subscriber[PlayerMovedEvent]) {
 	PlayerMovedEventType.Subscribe(evt.world, callback)
@@ -103,10 +143,28 @@ func (evt *EventSystem) SubscribeToGameState(callback events.Subscriber[GameStat
 	GameStateEventType.Subscribe(evt.world, callback)
 }
 
+// SubscribeToPlayerDamaged subscribes to player damaged events
+func (evt *EventSystem) SubscribeToPlayerDamaged(callback events.Subscriber[PlayerDamagedEvent]) {
+	PlayerDamagedEventType.Subscribe(evt.world, callback)
+}
+
+// SubscribeToGameOver subscribes to game over events
+func (evt *EventSystem) SubscribeToGameOver(callback events.Subscriber[GameOverEvent]) {
+	GameOverEventType.Subscribe(evt.world, callback)
+}
+
+// SubscribeToLifeAdded subscribes to life added events
+func (evt *EventSystem) SubscribeToLifeAdded(callback events.Subscriber[LifeAddedEvent]) {
+	LifeAddedEventType.Subscribe(evt.world, callback)
+}
+
 // ProcessEvents processes all pending events
 func (evt *EventSystem) ProcessEvents() {
 	PlayerMovedEventType.ProcessEvents(evt.world)
 	StarCollectedEventType.ProcessEvents(evt.world)
 	ScoreChangedEventType.ProcessEvents(evt.world)
 	GameStateEventType.ProcessEvents(evt.world)
+	PlayerDamagedEventType.ProcessEvents(evt.world)
+	GameOverEventType.ProcessEvents(evt.world)
+	LifeAddedEventType.ProcessEvents(evt.world)
 }

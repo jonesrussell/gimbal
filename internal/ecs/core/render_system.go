@@ -28,6 +28,21 @@ func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
 
 	op := &ebiten.DrawImageOptions{}
 	applySpriteTransform(entry, *sprite, op)
+
+	// Apply invincibility flashing if entity has health and is invincible
+	if entry.HasComponent(Health) {
+		health := Health.Get(entry)
+		if health.IsInvincible {
+			// Flash every 0.2 seconds (5 times per second)
+			flashRate := 0.2
+			flashPhase := int((health.InvincibilityDuration - health.InvincibilityTime) / flashRate)
+			if flashPhase%2 == 0 {
+				// Make sprite semi-transparent during flash
+				op.ColorM.Scale(1, 1, 1, 0.5)
+			}
+		}
+	}
+
 	// Apply position translation
 	op.GeoM.Translate(pos.X, pos.Y)
 	screen.DrawImage(*sprite, op)
