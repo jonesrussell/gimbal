@@ -4,6 +4,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 )
@@ -12,13 +13,15 @@ type SimpleTextScene struct {
 	manager   *SceneManager
 	text      string
 	sceneType SceneType
+	font      text.Face
 }
 
-func NewSimpleTextScene(manager *SceneManager, text string, sceneType SceneType) *SimpleTextScene {
+func NewSimpleTextScene(manager *SceneManager, textStr string, sceneType SceneType, font text.Face) *SimpleTextScene {
 	return &SimpleTextScene{
 		manager:   manager,
-		text:      text,
+		text:      textStr,
 		sceneType: sceneType,
+		font:      font,
 	}
 }
 
@@ -31,12 +34,15 @@ func (s *SimpleTextScene) Update() error {
 
 func (s *SimpleTextScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
-	drawCenteredText(
+	drawCenteredTextWithOptions(
 		screen,
-		s.text,
-		float64(s.manager.config.ScreenSize.Width)/2,
-		float64(s.manager.config.ScreenSize.Height)/2,
-		1.0,
+		TextDrawOptions{
+			Text:  s.text,
+			X:     float64(s.manager.config.ScreenSize.Width) / 2,
+			Y:     float64(s.manager.config.ScreenSize.Height) / 2,
+			Alpha: 1.0,
+			Font:  s.font,
+		},
 	)
 }
 

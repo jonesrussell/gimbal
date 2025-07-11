@@ -5,14 +5,22 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
-// drawCenteredText draws text centered on screen (helper method for scenes)
-func drawCenteredText(screen *ebiten.Image, textStr string, x, y, alpha float64, font text.Face) {
-	width, height := text.Measure(textStr, font, 0)
-	op := &text.DrawOptions{}
-	op.GeoM.Translate(float64(int(x)-int(width)/2), float64(int(y)+int(height)/2))
-	op.ColorScale.SetR(1)
-	op.ColorScale.SetG(1)
-	op.ColorScale.SetB(1)
-	op.ColorScale.SetA(float32(alpha))
-	text.Draw(screen, textStr, font, op)
+// TextDrawOptions holds options for drawing centered text
+type TextDrawOptions struct {
+	Text  string
+	X, Y  float64
+	Alpha float64
+	Font  text.Face
+}
+
+// drawCenteredTextWithOptions draws text with options struct
+func drawCenteredTextWithOptions(screen *ebiten.Image, opts TextDrawOptions) {
+	width, height := text.Measure(opts.Text, opts.Font, 0)
+	drawOp := &text.DrawOptions{}
+	drawOp.GeoM.Translate(float64(int(opts.X)-int(width)/2), float64(int(opts.Y)+int(height)/2))
+	drawOp.ColorScale.SetR(1)
+	drawOp.ColorScale.SetG(1)
+	drawOp.ColorScale.SetB(1)
+	drawOp.ColorScale.SetA(float32(opts.Alpha))
+	text.Draw(screen, opts.Text, opts.Font, drawOp)
 }

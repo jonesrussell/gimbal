@@ -16,7 +16,9 @@ type MenuSystem struct {
 }
 
 // NewMenuSystem creates a new menu system with the given options and config
-func NewMenuSystem(options []MenuOption, config *MenuConfig, screenWidth, screenHeight int, font text.Face) *MenuSystem {
+func NewMenuSystem(options []MenuOption, config *MenuConfig, screenWidth, screenHeight int,
+	font text.Face,
+) *MenuSystem {
 	menuConfig := *config // Copy for local modification
 	if menuConfig.MenuY == 0 {
 		menuConfig.MenuY = float64(screenHeight) / 2

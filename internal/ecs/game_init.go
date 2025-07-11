@@ -84,8 +84,14 @@ func (g *ECSGame) initializeSystems() error {
 	g.scoreManager = NewScoreManager(g.eventSystem, g.logger)
 	g.levelManager = NewLevelManager(g.logger)
 
+	// Get font from resource manager
+	font := g.resourceManager.GetDefaultFont()
+	if font == nil {
+		return common.NewGameError(common.ErrorCodeAssetLoadFailed, "failed to load default font")
+	}
+
 	// Create scene manager
-	g.sceneManager = scenes.NewSceneManager(g.world, g.config, g.logger, g.inputHandler)
+	g.sceneManager = scenes.NewSceneManager(g.world, g.config, g.logger, g.inputHandler, font)
 
 	// Set resume callback to unpause game state
 	g.sceneManager.SetResumeCallback(func() {

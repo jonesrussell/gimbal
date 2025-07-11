@@ -69,7 +69,7 @@ func NewPausedScene(manager *SceneManager, font text.Face) *PausedScene {
 	}
 
 	options := []menu.MenuOption{
-		{"Resume", func() {
+		{Text: "Resume", Action: func() {
 			// Call resume callback to unpause game state
 			if manager.onResume != nil {
 				manager.onResume()
@@ -78,14 +78,15 @@ func NewPausedScene(manager *SceneManager, font text.Face) *PausedScene {
 			// Then switch scenes
 			manager.SwitchScene(ScenePlaying)
 		}},
-		{"Return to Menu", func() { manager.SwitchScene(SceneMenu) }},
-		{"Quit", func() { os.Exit(0) }},
+		{Text: "Return to Menu", Action: func() { manager.SwitchScene(SceneMenu) }},
+		{Text: "Quit", Action: func() { os.Exit(0) }},
 	}
 
 	config := menu.PausedMenuConfig()
 	config.MenuY = float64(manager.config.ScreenSize.Height) / 2
 
-	scene.menu = menu.NewMenuSystem(options, &config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height, font)
+	scene.menu = menu.NewMenuSystem(options, &config, manager.config.ScreenSize.Width,
+		manager.config.ScreenSize.Height, font)
 
 	// Create overlay image once (TODO: handle resizing if needed)
 	scene.overlayImage = ebiten.NewImage(manager.config.ScreenSize.Width, manager.config.ScreenSize.Height)
