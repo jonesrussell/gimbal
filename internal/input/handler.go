@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 )
@@ -47,9 +48,9 @@ func (h *Handler) HandleInput() {
 func (h *Handler) handleKeyboardInput() {
 	if h.IsKeyPressed(ebiten.KeyLeft) || h.IsKeyPressed(ebiten.KeyRight) {
 		h.lastEvent = common.InputEventMove
-	} else if h.IsKeyPressed(ebiten.KeySpace) {
-		h.lastEvent = common.InputEventPause
 	} else if h.IsKeyPressed(ebiten.KeyEscape) {
+		h.lastEvent = common.InputEventPause
+	} else if h.IsKeyPressed(ebiten.KeySpace) {
 		h.lastEvent = common.InputEventQuit
 	}
 }
@@ -131,12 +132,12 @@ func (h *Handler) GetMovementInput() common.Angle {
 
 // IsPausePressed checks if the pause key is pressed
 func (h *Handler) IsPausePressed() bool {
-	return h.IsKeyPressed(ebiten.KeySpace)
+	return inpututil.IsKeyJustPressed(ebiten.KeyEscape)
 }
 
 // IsQuitPressed checks if the quit key is pressed
 func (h *Handler) IsQuitPressed() bool {
-	return h.IsKeyPressed(ebiten.KeyEscape)
+	return inpututil.IsKeyJustPressed(ebiten.KeySpace)
 }
 
 // GetTouchState returns the current touch state

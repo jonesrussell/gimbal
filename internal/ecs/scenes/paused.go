@@ -50,6 +50,7 @@ type PausedScene struct {
 	lastSelectionTime time.Time
 	fadeIn            float64
 	overlayImage      *ebiten.Image // Cached overlay image
+	framesSinceEnter  int           // Count frames since entering pause scene
 }
 
 // NewPausedScene creates a new pause scene instance
@@ -105,7 +106,15 @@ func (s *PausedScene) updateSelectionAnimation() {
 
 // handleInput processes pause-specific input (ESC key)
 func (s *PausedScene) handleInput() {
-	// Only handle pause-specific input here (ESC to resume)
+	s.framesSinceEnter++
+
+	// Require at least 10 frames (about 1/6 second at 60fps) before allowing unpause
+	// This ensures the ESC key press that caused the pause has time to be released
+	if s.framesSinceEnter < 10 {
+		return
+	}
+
+	// Now check for new ESC presses
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		s.manager.SwitchScene(ScenePlaying)
 	}
@@ -172,6 +181,7 @@ func (s *PausedScene) Enter() {
 	s.fadeIn = 0
 	s.animationTime = 0
 	s.selectionChanged = false
+	s.framesSinceEnter = 0 // Reset frame counter
 }
 
 // Exit is called when the scene becomes inactive
