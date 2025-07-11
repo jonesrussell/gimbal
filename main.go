@@ -38,7 +38,11 @@ func run() error {
 
 	// Initialize all dependencies
 	if err := container.Initialize(context.Background()); err != nil {
-		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to initialize application container", err)
+		return common.NewGameErrorWithCause(
+			common.ErrorCodeSystemFailed,
+			"failed to initialize application container",
+			err,
+		)
 	}
 
 	// Get dependencies from container

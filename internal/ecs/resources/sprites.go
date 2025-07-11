@@ -1,49 +1,16 @@
-package ecs
+package resources
 
 import (
 	"bytes"
 	"fmt"
 	"image/color"
 	"image/png"
-	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/common"
 )
-
-// ResourceType represents different types of resources
-type ResourceType int
-
-const (
-	ResourceSprite ResourceType = iota
-	ResourceSound
-	ResourceFont
-	ResourceData
-)
-
-// Resource represents a loaded game resource
-type Resource struct {
-	Type ResourceType
-	Name string
-	Data interface{}
-}
-
-// ResourceManager manages all game resources
-type ResourceManager struct {
-	resources map[string]*Resource
-	mutex     sync.RWMutex
-	logger    common.Logger
-}
-
-// NewResourceManager creates a new resource manager
-func NewResourceManager(logger common.Logger) *ResourceManager {
-	return &ResourceManager{
-		resources: make(map[string]*Resource),
-		logger:    logger,
-	}
-}
 
 // LoadSprite loads a sprite from the embedded assets
 func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) {
@@ -153,7 +120,11 @@ func (rm *ResourceManager) LoadAllSprites() error {
 		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
 		_, err = rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
 		if err != nil {
-			return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create player placeholder", err)
+			return common.NewGameErrorWithCause(
+				common.ErrorCodeAssetLoadFailed,
+				"failed to create player placeholder",
+				err,
+			)
 		}
 	}
 
@@ -178,41 +149,3 @@ func (rm *ResourceManager) LoadAllSprites() error {
 	rm.logger.Info("All sprites loaded successfully")
 	return nil
 }
-
-// GetResourceCount returns the number of loaded resources
-func (rm *ResourceManager) GetResourceCount() int {
-	rm.mutex.RLock()
-	defer rm.mutex.RUnlock()
-	return len(rm.resources)
-}
-
-// GetResourceInfo returns information about loaded resources
-func (rm *ResourceManager) GetResourceInfo() map[string]interface{} {
-	rm.mutex.RLock()
-	defer rm.mutex.RUnlock()
-
-	info := make(map[string]interface{})
-	for name, resource := range rm.resources {
-		info[name] = map[string]interface{}{
-			"type": resource.Type,
-		}
-	}
-	return info
-}
-
-// Cleanup releases all resources
-func (rm *ResourceManager) Cleanup() {
-	rm.mutex.Lock()
-	defer rm.mutex.Unlock()
-
-	rm.logger.Info("Cleaning up resources", "count", len(rm.resources))
-	rm.resources = make(map[string]*Resource)
-}
-
-// Predefined sprite names for easy access
-const (
-	SpritePlayer     = "player"
-	SpriteStar       = "star"
-	SpriteButton     = "button"
-	SpriteBackground = "background"
-)

@@ -25,6 +25,4 @@ func (rsw *RenderSystemWrapper) Update(world donburi.World, args ...interface{})
 	return nil
 }
 
-func (rsw *RenderSystemWrapper) Name() string {
-	return "RenderSystem"
-}
+// Name() method removed - no longer needed since SystemManager is unused

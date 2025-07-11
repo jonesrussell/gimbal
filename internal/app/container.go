@@ -132,12 +132,7 @@ func (c *Container) GetConfig() *common.GameConfig {
 	return c.config
 }
 
-// GetInputHandler returns the input handler
-func (c *Container) GetInputHandler() common.GameInputHandler {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.inputHandler
-}
+// GetInputHandler removed - dead code
 
 // GetGame returns the ECS game instance
 func (c *Container) GetGame() *ecs.ECSGame {
@@ -146,12 +141,7 @@ func (c *Container) GetGame() *ecs.ECSGame {
 	return c.game
 }
 
-// IsInitialized returns whether the container has been initialized
-func (c *Container) IsInitialized() bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.initialized
-}
+// IsInitialized removed - dead code
 
 // Shutdown gracefully shuts down all dependencies
 func (c *Container) Shutdown(ctx context.Context) error {
@@ -181,12 +171,4 @@ func (c *Container) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// SetInputHandler allows setting a custom input handler (useful for testing)
-func (c *Container) SetInputHandler(handler common.GameInputHandler) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.inputHandler = handler
-	if c.game != nil {
-		c.game.SetInputHandler(handler)
-	}
-}
+// SetInputHandler removed - dead code

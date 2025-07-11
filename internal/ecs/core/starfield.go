@@ -3,7 +3,6 @@ package core
 import (
 	"math"
 	"math/rand"
-	"time"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 )
@@ -29,61 +28,13 @@ type StarFieldConfig struct {
 	Seed int64
 }
 
-// DefaultStarFieldConfig returns a default star field configuration
-func DefaultStarFieldConfig() *StarFieldConfig {
-	return &StarFieldConfig{
-		SpawnRadiusMin: 30.0,
-		SpawnRadiusMax: 80.0,
-		Speed:          2.0,
-		MinScale:       0.3,
-		MaxScale:       1.0,
-		ScaleDistance:  200.0,
-		ResetMargin:    50.0,
-		Seed:           time.Now().UnixNano(),
-	}
-}
+// DefaultStarFieldConfig removed - dead code
 
-// DenseStarFieldConfig returns a configuration for a dense star field
-func DenseStarFieldConfig() *StarFieldConfig {
-	return &StarFieldConfig{
-		SpawnRadiusMin: 20.0,
-		SpawnRadiusMax: 60.0,
-		Speed:          1.5,
-		MinScale:       0.2,
-		MaxScale:       0.8,
-		ScaleDistance:  150.0,
-		ResetMargin:    40.0,
-		Seed:           time.Now().UnixNano(),
-	}
-}
+// DenseStarFieldConfig removed - dead code
 
-// SparseStarFieldConfig returns a configuration for a sparse star field
-func SparseStarFieldConfig() *StarFieldConfig {
-	return &StarFieldConfig{
-		SpawnRadiusMin: 40.0,
-		SpawnRadiusMax: 100.0,
-		Speed:          3.0,
-		MinScale:       0.4,
-		MaxScale:       1.2,
-		ScaleDistance:  250.0,
-		ResetMargin:    60.0,
-		Seed:           time.Now().UnixNano(),
-	}
-}
+// SparseStarFieldConfig removed - dead code
 
-// FastStarFieldConfig returns a configuration for a fast-moving star field
-func FastStarFieldConfig() *StarFieldConfig {
-	return &StarFieldConfig{
-		SpawnRadiusMin: 25.0,
-		SpawnRadiusMax: 70.0,
-		Speed:          4.0,
-		MinScale:       0.3,
-		MaxScale:       1.1,
-		ScaleDistance:  180.0,
-		ResetMargin:    45.0,
-		Seed:           time.Now().UnixNano(),
-	}
-}
+// FastStarFieldConfig removed - dead code
 
 // StarFieldHelper provides helper functions for star field operations
 type StarFieldHelper struct {
@@ -182,10 +133,7 @@ func (h *StarFieldHelper) ResetStar(pos *common.Point, scale *float64) {
 	*scale = h.GenerateRandomScale()
 }
 
-// UpdateStar updates a star's position and scale based on movement
-func (h *StarFieldHelper) UpdateStar(pos *common.Point, scale *float64) {
-	h.UpdateStarWithSpeed(pos, scale, h.config.Speed)
-}
+// UpdateStar removed - dead code
 
 // UpdateStarWithSpeed updates a star's position and scale based on movement with custom speed
 func (h *StarFieldHelper) UpdateStarWithSpeed(pos *common.Point, scale *float64, speed float64) {

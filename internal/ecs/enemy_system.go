@@ -62,7 +62,7 @@ func (es *EnemySystem) spawnEnemy() {
 	core.Position.SetValue(entry, spawnPos)
 	core.Sprite.SetValue(entry, es.enemySprite)
 	core.Size.SetValue(entry, common.Size{Width: 16, Height: 16})
-	core.Health.SetValue(entry, 1)
+	core.Health.SetValue(entry, core.HealthData{Current: 1, Maximum: 1, InvincibilityDuration: 0})
 	// Move straight down
 	core.Movement.SetValue(entry, core.MovementData{
 		Velocity: common.Point{X: 0, Y: 2},

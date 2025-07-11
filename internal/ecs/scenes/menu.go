@@ -5,27 +5,33 @@ import (
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
+
+	"github.com/jonesrussell/gimbal/internal/ecs/scenes/menu"
 )
 
 // MenuScene manages the main menu state and rendering
 type MenuScene struct {
 	manager *SceneManager
-	menu    *MenuSystem
+	menu    *menu.MenuSystem
+	font    text.Face
 }
 
 // NewMenuScene creates a new menu scene instance
-func NewMenuScene(manager *SceneManager) *MenuScene {
-	options := []MenuOption{
-		{"Start Game", func() { manager.SwitchScene(ScenePlaying) }},
-		{"Options", func() { manager.SwitchScene(SceneOptions) }},
-		{"Credits", func() { manager.SwitchScene(SceneCredits) }},
-		{"Quit", func() { manager.logger.Debug("Quitting game"); os.Exit(0) }},
+func NewMenuScene(manager *SceneManager, font text.Face) *MenuScene {
+	options := []menu.MenuOption{
+		{Text: "Start Game", Action: func() { manager.SwitchScene(ScenePlaying) }},
+		{Text: "Options", Action: func() { manager.SwitchScene(SceneOptions) }},
+		{Text: "Credits", Action: func() { manager.SwitchScene(SceneCredits) }},
+		{Text: "Quit", Action: func() { manager.logger.Debug("Quitting game"); os.Exit(0) }},
 	}
-	config := DefaultMenuConfig()
+	config := menu.DefaultMenuConfig()
 	config.MenuY = float64(manager.config.ScreenSize.Height) / 2
 	return &MenuScene{
 		manager: manager,
-		menu:    NewMenuSystem(options, &config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height),
+		menu: menu.NewMenuSystem(options, &config, manager.config.ScreenSize.Width,
+			manager.config.ScreenSize.Height, font),
+		font: font,
 	}
 }
 
@@ -44,9 +50,13 @@ func (s *MenuScene) Draw(screen *ebiten.Image) {
 
 // drawTitle renders the game title
 func (s *MenuScene) drawTitle(screen *ebiten.Image) {
-	drawCenteredText(screen, "GIMBAL",
-		float64(s.manager.config.ScreenSize.Width)/2,
-		titleY, titleScale)
+	drawCenteredTextWithOptions(screen, TextDrawOptions{
+		Text:  "GIMBAL",
+		X:     float64(s.manager.config.ScreenSize.Width) / 2,
+		Y:     titleY,
+		Alpha: titleScale,
+		Font:  s.font,
+	})
 }
 
 // Enter is called when the scene becomes active
