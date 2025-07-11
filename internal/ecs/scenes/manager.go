@@ -7,6 +7,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
+	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 )
 
 // SceneManagerConfig groups all dependencies for SceneManager
@@ -18,6 +19,7 @@ type SceneManagerConfig struct {
 	InputHandler common.GameInputHandler
 	Font         text.Face
 	ScoreManager *managers.ScoreManager
+	ResourceMgr  *resources.ResourceManager
 }
 
 type SceneType int
@@ -52,6 +54,7 @@ type SceneManager struct {
 	onResume     func()      // Callback to unpause game state
 	healthSystem interface{} // Health system interface for scenes to access
 	font         text.Face
+	resourceMgr  *resources.ResourceManager
 }
 
 func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
@@ -62,13 +65,14 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 		logger:       cfg.Logger,
 		inputHandler: cfg.InputHandler,
 		font:         cfg.Font,
+		resourceMgr:  cfg.ResourceMgr,
 	}
 
 	// Register all scenes
 	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
 	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, cfg.Font)
 	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager)
+	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager, cfg.ResourceMgr)
 	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, cfg.Font)
 	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, cfg.Font)
 	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
@@ -158,4 +162,9 @@ func (sceneMgr *SceneManager) SetHealthSystem(healthSystem interface{}) {
 // GetHealthSystem returns the health system
 func (sceneMgr *SceneManager) GetHealthSystem() interface{} {
 	return sceneMgr.healthSystem
+}
+
+// GetResourceManager returns the resource manager
+func (sceneMgr *SceneManager) GetResourceManager() *resources.ResourceManager {
+	return sceneMgr.resourceMgr
 }

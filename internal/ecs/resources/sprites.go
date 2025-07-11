@@ -128,6 +128,34 @@ func (rm *ResourceManager) LoadAllSprites() error {
 		}
 	}
 
+	// Load heart sprite for lives display
+	_, err = rm.LoadSprite("heart", "sprites/heart.png")
+	if err != nil {
+		rm.logger.Warn("Failed to load heart sprite, using placeholder", "error", err)
+		_, err = rm.CreateSprite("heart", 16, 16, color.RGBA{255, 0, 0, 255})
+		if err != nil {
+			return common.NewGameErrorWithCause(
+				common.ErrorCodeAssetLoadFailed,
+				"failed to create heart placeholder",
+				err,
+			)
+		}
+	}
+
+	// Load enemy sprite
+	_, err = rm.LoadSprite("enemy", "sprites/enemy.png")
+	if err != nil {
+		rm.logger.Warn("Failed to load enemy sprite, using placeholder", "error", err)
+		_, err = rm.CreateSprite("enemy", 16, 16, color.RGBA{255, 0, 0, 255})
+		if err != nil {
+			return common.NewGameErrorWithCause(
+				common.ErrorCodeAssetLoadFailed,
+				"failed to create enemy placeholder",
+				err,
+			)
+		}
+	}
+
 	// Create star sprite
 	_, err = rm.CreateSprite("star", common.StarSpriteSize, common.StarSpriteSize, color.White)
 	if err != nil {

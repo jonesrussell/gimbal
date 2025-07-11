@@ -5,27 +5,35 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	v2text "github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
+	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 )
 
 type PlayingScene struct {
 	manager      *SceneManager
 	screenShake  float64 // Screen shake intensity (0 = no shake)
-	font         text.Face
+	font         v2text.Face
 	scoreManager *managers.ScoreManager
+	resourceMgr  *resources.ResourceManager
 }
 
-func NewPlayingScene(manager *SceneManager, font text.Face, scoreManager *managers.ScoreManager) *PlayingScene {
+func NewPlayingScene(
+	manager *SceneManager,
+	font v2text.Face,
+	scoreManager *managers.ScoreManager,
+	resourceMgr *resources.ResourceManager,
+) *PlayingScene {
 	return &PlayingScene{
 		manager:      manager,
 		font:         font,
 		scoreManager: scoreManager,
+		resourceMgr:  resourceMgr,
 	}
 }
 
@@ -87,7 +95,7 @@ func (s *PlayingScene) drawScore(screen *ebiten.Image) {
 	score := s.scoreManager.GetScore()
 	scoreText := fmt.Sprintf("Score: %d", score)
 
-	op := &text.DrawOptions{}
+	op := &v2text.DrawOptions{}
 	// Position: top-right, 150px from right, 30px from top
 	w := screen.Bounds().Dx()
 	op.GeoM.Translate(float64(w-150), 30)
@@ -95,7 +103,7 @@ func (s *PlayingScene) drawScore(screen *ebiten.Image) {
 	op.ColorScale.SetG(1)
 	op.ColorScale.SetB(1)
 	op.ColorScale.SetA(1)
-	text.Draw(screen, scoreText, s.font, op)
+	v2text.Draw(screen, scoreText, s.font, op)
 }
 
 // TriggerScreenShake triggers a screen shake effect
@@ -117,24 +125,88 @@ func (s *PlayingScene) drawLivesDisplay(screen *ebiten.Image) {
 	}); ok {
 		current, maximum := hs.GetPlayerHealth()
 
-		// Create lives text with heart emojis
-		livesText := "Lives: "
-		for i := 0; i < maximum; i++ {
-			if i < current {
-				livesText += "❤️"
-			} else {
-				livesText += "🖤" // Empty heart
-			}
+		// Get heart sprite from resource manager
+		heartSprite, exists := s.resourceMgr.GetSprite("heart")
+		if !exists {
+			// Fallback to text if sprite not found
+			s.drawLivesText(screen, current, maximum)
+			return
 		}
 
-		// Draw the text in the top-left corner
-		op := &text.DrawOptions{}
-		op.GeoM.Translate(20, 30)
-		op.ColorScale.SetR(1)
-		op.ColorScale.SetG(1)
-		op.ColorScale.SetB(1)
-		op.ColorScale.SetA(1)
-		text.Draw(screen, livesText, s.font, op)
+		// Draw heart sprites
+		s.drawLivesSprites(screen, heartSprite, current, maximum)
+	}
+}
+
+// drawLivesText draws lives as text (fallback method)
+func (s *PlayingScene) drawLivesText(screen *ebiten.Image, current, maximum int) {
+	// Create lives text with heart emojis
+	livesText := "Lives: "
+	for i := 0; i < maximum; i++ {
+		if i < current {
+			livesText += "❤️"
+		} else {
+			livesText += "🖤" // Empty heart
+		}
+	}
+
+	// Draw the text in the top-left corner
+	op := &v2text.DrawOptions{}
+	op.GeoM.Translate(20, 30)
+	op.ColorScale.SetR(1)
+	op.ColorScale.SetG(1)
+	op.ColorScale.SetB(1)
+	op.ColorScale.SetA(1)
+	v2text.Draw(screen, livesText, s.font, op)
+}
+
+// drawLivesSprites draws lives as heart sprites
+func (s *PlayingScene) drawLivesSprites(screen, heartSprite *ebiten.Image, current, maximum int) {
+	// Draw "Lives:" text first
+	label := "Lives: "
+	op := &v2text.DrawOptions{}
+	op.GeoM.Translate(20, 30)
+	op.ColorScale.SetR(1)
+	op.ColorScale.SetG(1)
+	op.ColorScale.SetB(1)
+	op.ColorScale.SetA(1)
+	v2text.Draw(screen, label, s.font, op)
+
+	// Measure the actual text width using text/v2
+	labelWidth, _ := v2text.Measure(label, s.font, 0)
+
+	heartSize := 16 // Desired heart sprite size in pixels
+	spacing := 4    // Space between hearts
+
+	// Get original sprite size
+	origW, origH := heartSprite.Bounds().Dx(), heartSprite.Bounds().Dy()
+	scaleX := float64(heartSize) / float64(origW)
+	scaleY := float64(heartSize) / float64(origH)
+
+	// Draw heart sprites with proper spacing
+	heartX := 20 + labelWidth
+	for i := 0; i < maximum; i++ {
+		heartOp := &ebiten.DrawImageOptions{}
+		x := heartX + float64(i*(heartSize+spacing))
+		y := float64(30 - heartSize/2) // Center vertically with text
+		heartOp.GeoM.Translate(x, y)
+		heartOp.GeoM.Scale(scaleX, scaleY)
+
+		if i < current {
+			// Full heart
+			heartOp.ColorScale.SetR(1)
+			heartOp.ColorScale.SetG(0)
+			heartOp.ColorScale.SetB(0)
+			heartOp.ColorScale.SetA(1)
+		} else {
+			// Empty heart (grayed out)
+			heartOp.ColorScale.SetR(0.5)
+			heartOp.ColorScale.SetG(0.5)
+			heartOp.ColorScale.SetB(0.5)
+			heartOp.ColorScale.SetA(0.5)
+		}
+
+		screen.DrawImage(heartSprite, heartOp)
 	}
 }
 
