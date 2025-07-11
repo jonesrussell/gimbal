@@ -136,6 +136,9 @@ func (g *ECSGame) initializeSystems() error {
 		g.stateManager.SetPaused(false)
 	})
 
+	// Set health system for scenes to access
+	g.sceneManager.SetHealthSystem(g.healthSystem)
+
 	// Set initial scene
 	if err := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); err != nil {
 		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to set initial scene", err)
@@ -360,6 +363,23 @@ func (g *ECSGame) setupEventSubscriptions() {
 			"old_score", event.OldScore,
 			"new_score", event.NewScore,
 			"delta", event.Delta)
+	})
+
+	// Subscribe to game over events
+	g.eventSystem.SubscribeToGameOver(func(w donburi.World, event GameOverEvent) {
+		g.logger.Debug("Game over triggered", "reason", event.Reason)
+		g.sceneManager.SwitchScene(scenes.SceneGameOver)
+	})
+
+	// Subscribe to player damage events for screen shake
+	g.eventSystem.SubscribeToPlayerDamaged(func(w donburi.World, event PlayerDamagedEvent) {
+		g.logger.Debug("Player damaged", "damage", event.Damage, "remaining_lives", event.RemainingLives)
+		// Trigger screen shake if we're in the playing scene
+		if g.sceneManager.GetCurrentScene().GetType() == scenes.ScenePlaying {
+			if playingScene, ok := g.sceneManager.GetCurrentScene().(*scenes.PlayingScene); ok {
+				playingScene.TriggerScreenShake()
+			}
+		}
 	})
 }
 

@@ -36,7 +36,8 @@ type SceneManager struct {
 	config       *common.GameConfig
 	logger       common.Logger
 	inputHandler common.GameInputHandler
-	onResume     func() // Callback to unpause game state
+	onResume     func()      // Callback to unpause game state
+	healthSystem interface{} // Health system interface for scenes to access
 }
 
 func NewSceneManager(
@@ -59,6 +60,7 @@ func NewSceneManager(
 	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr)
 	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr)
 	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr)
+	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr)
 	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(sceneMgr, "CREDITS\nGimbal Studios\n2025", SceneCredits)
 	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions)
 
@@ -131,4 +133,14 @@ func (sceneMgr *SceneManager) GetInputHandler() common.GameInputHandler {
 // SetResumeCallback sets the callback function to unpause game state
 func (sceneMgr *SceneManager) SetResumeCallback(callback func()) {
 	sceneMgr.onResume = callback
+}
+
+// SetHealthSystem sets the health system for scenes to access
+func (sceneMgr *SceneManager) SetHealthSystem(healthSystem interface{}) {
+	sceneMgr.healthSystem = healthSystem
+}
+
+// GetHealthSystem returns the health system
+func (sceneMgr *SceneManager) GetHealthSystem() interface{} {
+	return sceneMgr.healthSystem
 }
