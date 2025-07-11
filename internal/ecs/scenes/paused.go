@@ -1,13 +1,10 @@
 package scenes
 
 import (
-	"image/color"
-	"math"
 	"os"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/jonesrussell/gimbal/internal/ecs/scenes/menu"
@@ -104,114 +101,12 @@ func (s *PausedScene) Update() error {
 	return nil
 }
 
-// updateFadeIn handles the fade-in animation
-func (s *PausedScene) updateFadeIn(dt float64) {
-	if s.fadeIn < 1.0 {
-		s.fadeIn = math.Min(1.0, s.fadeIn+dt/fadeInDuration)
-	}
-}
-
-// updateSelectionAnimation manages selection change animations
-func (s *PausedScene) updateSelectionAnimation() {
-	if s.selectionChanged && time.Since(s.lastSelectionTime).Seconds() > selectionDelay {
-		s.selectionChanged = false
-	}
-}
-
-// handleInput processes pause-specific input (ESC key)
-func (s *PausedScene) handleInput() {
-	currentEscPressed := ebiten.IsKeyPressed(ebiten.KeyEscape)
-	escJustPressed := inpututil.IsKeyJustPressed(ebiten.KeyEscape)
-
-	// If ESC was pressed when we entered, wait for it to be released
-	if s.escWasPressed && currentEscPressed {
-		return // ESC is still held down from the pause action
-	}
-
-	// ESC has been released (or wasn't pressed when we entered)
-	if s.escWasPressed && !currentEscPressed {
-		s.escWasPressed = false
-		s.canUnpause = true
-		return // Don't process input this frame, just mark as ready
-	}
-
-	// Now we can check for new ESC presses
-	if s.canUnpause && escJustPressed {
-		// Call resume callback to unpause game state
-		if s.manager.onResume != nil {
-			s.manager.onResume()
-		}
-
-		s.manager.SwitchScene(ScenePlaying)
-	}
-
-	// If we entered without ESC pressed, we can unpause immediately
-	if !s.escWasPressed {
-		s.canUnpause = true
-		if escJustPressed {
-			// Call resume callback to unpause game state
-			if s.manager.onResume != nil {
-				s.manager.onResume()
-			}
-
-			s.manager.SwitchScene(ScenePlaying)
-		}
-	}
-}
-
 // Draw renders the pause menu
 func (s *PausedScene) Draw(screen *ebiten.Image) {
 	s.drawOverlay(screen)
 	s.drawTitle(screen)
 	s.menu.Draw(screen, s.fadeIn)
 	s.drawHintText(screen)
-}
-
-// drawOverlay renders the semi-transparent background overlay
-func (s *PausedScene) drawOverlay(screen *ebiten.Image) {
-	alpha := uint8(overlayAlpha * s.fadeIn)
-	s.overlayImage.Fill(color.RGBA{0, 0, 0, alpha})
-	screen.DrawImage(s.overlayImage, &ebiten.DrawImageOptions{})
-}
-
-// drawTitle renders the "PAUSED" title with pulsing animation
-func (s *PausedScene) drawTitle(screen *ebiten.Image) {
-	titleAlpha := s.fadeIn
-	// Add subtle pulsing effect to title
-	pulse := 0.9 + 0.1*math.Sin(s.animationTime*2.0)
-	titleAlpha *= pulse
-
-	op := &text.DrawOptions{}
-	op.GeoM.Scale(titleScale, titleScale)
-	op.GeoM.Translate(
-		float64(s.manager.config.ScreenSize.Width)/2-75, // Adjust for scaling
-		titleY,
-	)
-	op.ColorScale.SetR(0.2)
-	op.ColorScale.SetG(0.8)
-	op.ColorScale.SetB(1.0)
-	op.ColorScale.SetA(float32(titleAlpha))
-
-	text.Draw(screen, "PAUSED", s.font, op)
-}
-
-// drawHintText renders the hint text at the bottom of the screen
-func (s *PausedScene) drawHintText(screen *ebiten.Image) {
-	hintText := "Press ESC to resume quickly"
-	hintAlpha := hintBaseAlpha * s.fadeIn * (0.8 + 0.2*math.Sin(s.animationTime*1.5))
-
-	op := &text.DrawOptions{}
-	width, _ := text.Measure(hintText, s.font, 0)
-	op.GeoM.Translate(
-		float64(s.manager.config.ScreenSize.Width)/2-width/2,
-		float64(s.manager.config.ScreenSize.Height)-hintTextY,
-	)
-	op.ColorScale.SetR(0.8)
-	op.ColorScale.SetG(0.8)
-	op.ColorScale.SetB(0.8)
-	op.ColorScale.SetA(float32(hintAlpha))
-
-	text.Draw(screen, hintText, s.font, op)
 }
 
 // Enter is called when the scene becomes active
