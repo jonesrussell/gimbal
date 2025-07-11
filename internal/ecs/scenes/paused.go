@@ -1,4 +1,4 @@
-package ecs
+package scenes
 
 import (
 	"image/color"
@@ -49,6 +49,7 @@ type PausedScene struct {
 	selectionChanged  bool
 	lastSelectionTime time.Time
 	fadeIn            float64
+	overlayImage      *ebiten.Image // Cached overlay image
 }
 
 // NewPausedScene creates a new pause scene instance
@@ -72,6 +73,8 @@ func NewPausedScene(manager *SceneManager) *PausedScene {
 
 	scene.menu = NewMenuSystem(options, &config, manager.config.ScreenSize.Width, manager.config.ScreenSize.Height)
 
+	// Create overlay image once (TODO: handle resizing if needed)
+	scene.overlayImage = ebiten.NewImage(manager.config.ScreenSize.Width, manager.config.ScreenSize.Height)
 	return scene
 }
 
@@ -119,9 +122,8 @@ func (s *PausedScene) Draw(screen *ebiten.Image) {
 // drawOverlay renders the semi-transparent background overlay
 func (s *PausedScene) drawOverlay(screen *ebiten.Image) {
 	alpha := uint8(overlayAlpha * s.fadeIn)
-	overlay := ebiten.NewImage(s.manager.config.ScreenSize.Width, s.manager.config.ScreenSize.Height)
-	overlay.Fill(color.RGBA{0, 0, 0, alpha})
-	screen.DrawImage(overlay, &ebiten.DrawImageOptions{})
+	s.overlayImage.Fill(color.RGBA{0, 0, 0, alpha})
+	screen.DrawImage(s.overlayImage, &ebiten.DrawImageOptions{})
 }
 
 // drawTitle renders the "PAUSED" title with pulsing animation
