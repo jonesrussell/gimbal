@@ -91,7 +91,7 @@ func (ms *MovementSystem) updatePlayerMovement(deltaTime float64) {
 		// When at right (0°), face left (180°)
 		// When at top (270°), face down (90°)
 		// When at left (180°), face right (0°)
-		facingAngle := orbital.OrbitalAngle + 180
+		facingAngle := orbital.OrbitalAngle - 90
 
 		// Normalize angle to 0-360 range
 		for facingAngle < 0 {
