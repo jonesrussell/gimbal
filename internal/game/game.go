@@ -99,11 +99,9 @@ func (g *ECSGame) Draw(screen *ebiten.Image) {
 	}
 }
 
-// Layout implements ebiten.Game interface
+// Layout returns the game's logical screen size
 func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	// Return the actual window size for responsive scaling
-	// This allows Ebiten to scale the game content to fit the window
-	return outsideWidth, outsideHeight
+	return g.config.ScreenSize.Width, g.config.ScreenSize.Height
 }
 
 // Cleanup cleans up resources
