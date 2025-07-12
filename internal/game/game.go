@@ -15,6 +15,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 	enemysys "github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 	healthsys "github.com/jonesrussell/gimbal/internal/ecs/systems/health"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
 	weaponsys "github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 	"github.com/jonesrussell/gimbal/internal/ui"
@@ -46,6 +47,9 @@ type ECSGame struct {
 	weaponSystem    *weaponsys.WeaponSystem
 	collisionSystem *collision.CollisionSystem
 	healthSystem    *healthsys.HealthSystem
+
+	// Movement system
+	movementSystem *movement.MovementSystem
 
 	// 2025: EbitenUI responsive design system
 	ui common.GameUI
@@ -92,6 +96,16 @@ func (g *ECSGame) Update() error {
 			dur := time.Since(start)
 			if dur > 5*time.Millisecond {
 				g.logger.Warn("Slow system update", "system", "health", "duration", dur)
+			}
+		}
+		if g.movementSystem != nil {
+			start := time.Now()
+			if err := g.movementSystem.Update(ctx, deltaTime); err != nil {
+				g.logger.Error("Movement system update failed", "error", err)
+			}
+			dur := time.Since(start)
+			if dur > 5*time.Millisecond {
+				g.logger.Warn("Slow system update", "system", "movement", "duration", dur)
 			}
 		}
 		if g.enemySystem != nil {
