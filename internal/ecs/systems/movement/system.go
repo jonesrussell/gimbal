@@ -125,7 +125,7 @@ func (ms *MovementSystem) updateStarMovement(deltaTime float64) {
 		}
 
 		// Move star outward from center
-		movementDistance := *speed * deltaTime
+		movementDistance := *speed * deltaTime * 5.0 // 5x faster for more engaging starfield
 		pos.X += dx * movementDistance
 		pos.Y += dy * movementDistance
 
