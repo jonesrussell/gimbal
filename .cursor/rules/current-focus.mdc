@@ -43,7 +43,3 @@
 - Keep functions focused and under 30 lines
 - Extract magic numbers to constants
 - Maintain zero linter issues
-description:
-globs:
-alwaysApply: false
----

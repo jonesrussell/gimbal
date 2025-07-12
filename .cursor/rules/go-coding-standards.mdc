@@ -29,5 +29,3 @@
 - Use descriptive test names that explain the scenario
 - Test error conditions and edge cases
 - Maintain good test coverage for critical systems
-alwaysApply: true
----

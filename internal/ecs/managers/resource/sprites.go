@@ -2,6 +2,7 @@ package resources
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"image/color"
 	"image/png"
@@ -14,7 +15,14 @@ import (
 )
 
 // LoadSprite loads a sprite from the embedded assets
-func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) {
+func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*ebiten.Image, error) {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 
@@ -105,7 +113,14 @@ func (rm *ResourceManager) CreateSprite(
 }
 
 // GetSprite retrieves a loaded sprite
-func (rm *ResourceManager) GetSprite(name string) (*ebiten.Image, bool) {
+func (rm *ResourceManager) GetSprite(ctx context.Context, name string) (*ebiten.Image, bool) {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return nil, false
+	default:
+	}
+
 	rm.mutex.RLock()
 	defer rm.mutex.RUnlock()
 
@@ -117,71 +132,156 @@ func (rm *ResourceManager) GetSprite(name string) (*ebiten.Image, bool) {
 	return nil, false
 }
 
-// LoadAllSprites loads all required sprites for the game
-func (rm *ResourceManager) LoadAllSprites() error {
-	// Load player sprite from file
-	_, err := rm.LoadSprite("player", "sprites/player.png")
+type SpriteLoadConfig struct {
+	Name           string
+	Path           string
+	FallbackWidth  int
+	FallbackHeight int
+	FallbackColor  color.Color
+}
+
+func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, config SpriteLoadConfig) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	_, err := rm.LoadSprite(ctx, config.Name, config.Path)
 	if err != nil {
-		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
-		_, err = rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
+		rm.logger.Warn("Failed to load sprite, using placeholder", "name", config.Name, "error", err)
+		_, err = rm.CreateSprite(config.Name, config.FallbackWidth, config.FallbackHeight, config.FallbackColor)
 		if err != nil {
 			return errors.NewGameErrorWithCause(
 				errors.ErrorCodeAssetLoadFailed,
-				"failed to create player placeholder",
+				fmt.Sprintf("failed to create %s placeholder", config.Name),
 				err,
 			)
 		}
 	}
+	return nil
+}
 
-	// Load heart sprite for lives display
-	_, err = rm.LoadSprite("heart", "sprites/heart.png")
-	if err != nil {
-		rm.logger.Warn("Failed to load heart sprite, using placeholder", "error", err)
-		_, err = rm.CreateSprite("heart", 16, 16, color.RGBA{255, 0, 0, 255})
-		if err != nil {
-			return errors.NewGameErrorWithCause(
-				errors.ErrorCodeAssetLoadFailed,
-				"failed to create heart placeholder",
-				err,
-			)
-		}
-	}
+func (rm *ResourceManager) loadPlayerSprites(ctx context.Context) error {
+	return rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
+		Name:           "player",
+		Path:           "sprites/player.png",
+		FallbackWidth:  32,
+		FallbackHeight: 32,
+		FallbackColor:  color.RGBA{0, 255, 0, 255},
+	})
+}
 
-	// Load enemy sprite
+func (rm *ResourceManager) loadHeartSprites(ctx context.Context) error {
+	return rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
+		Name:           "heart",
+		Path:           "sprites/heart.png",
+		FallbackWidth:  16,
+		FallbackHeight: 16,
+		FallbackColor:  color.RGBA{255, 0, 0, 255},
+	})
+}
+
+func (rm *ResourceManager) loadEnemySprites(ctx context.Context) error {
 	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy sprite", "path", "sprites/enemy.png")
-	_, err = rm.LoadSprite("enemy", "sprites/enemy.png")
-	if err != nil {
-		rm.logger.Warn("[SPRITE_WARN] Failed to load enemy sprite, using placeholder", "error", err)
-		_, err = rm.CreateSprite("enemy", 32, 32, color.RGBA{255, 0, 0, 255})
-		if err != nil {
-			return errors.NewGameErrorWithCause(
-				errors.ErrorCodeAssetLoadFailed,
-				"failed to create enemy placeholder",
-				err,
-			)
-		}
-	} else {
+	err := rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
+		Name:           "enemy",
+		Path:           "sprites/enemy.png",
+		FallbackWidth:  32,
+		FallbackHeight: 32,
+		FallbackColor:  color.RGBA{255, 0, 0, 255},
+	})
+	if err == nil {
 		rm.logger.Debug("[SPRITE_LOAD] Enemy sprite loaded successfully")
 	}
+	return err
+}
 
+// createUISprites creates UI-related sprites
+func (rm *ResourceManager) createUISprites(ctx context.Context) error {
 	// Create star sprite
-	_, err = rm.CreateSprite("star", ui.StarSpriteSize, ui.StarSpriteSize, color.White)
-	if err != nil {
+	if _, err := rm.CreateSprite("star", ui.StarSpriteSize, ui.StarSpriteSize, color.White); err != nil {
 		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create star sprite", err)
 	}
 
-	// Create UI sprites
-	_, err = rm.CreateSprite("button", ui.ButtonSpriteWidth, ui.ButtonSpriteHeight,
-		color.RGBA{ui.ButtonColorR, ui.ButtonColorG, ui.ButtonColorB, ui.ButtonColorA})
-	if err != nil {
+	// Create button sprite
+	if _, err := rm.CreateSprite("button", ui.ButtonSpriteWidth, ui.ButtonSpriteHeight,
+		color.RGBA{ui.ButtonColorR, ui.ButtonColorG, ui.ButtonColorB, ui.ButtonColorA}); err != nil {
 		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create button sprite", err)
 	}
 
-	_, err = rm.CreateSprite("background", 1, 1, color.Black)
-	if err != nil {
+	// Create background sprite
+	if _, err := rm.CreateSprite("background", 1, 1, color.Black); err != nil {
 		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create background sprite", err)
+	}
+
+	return nil
+}
+
+// LoadAllSprites loads all required sprites for the game
+func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
+	// Check for cancellation at the start
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Load different sprite types
+	if err := rm.loadPlayerSprites(ctx); err != nil {
+		return err
+	}
+	if err := rm.loadHeartSprites(ctx); err != nil {
+		return err
+	}
+	if err := rm.loadEnemySprites(ctx); err != nil {
+		return err
+	}
+	if err := rm.createUISprites(ctx); err != nil {
+		return err
 	}
 
 	rm.logger.Info("[SPRITE_LOAD] All sprites loaded successfully")
 	return nil
+}
+
+// GetScaledSprite returns a sprite scaled to the given width and height, with caching
+func (rm *ResourceManager) GetScaledSprite(ctx context.Context, name string, width, height int) (*ebiten.Image, error) {
+	cacheKey := fmt.Sprintf("%s_%dx%d", name, width, height)
+
+	rm.mutex.RLock()
+	if img, ok := rm.scaledCache[cacheKey]; ok {
+		rm.mutex.RUnlock()
+		return img, nil
+	}
+	rm.mutex.RUnlock()
+
+	// Get the base sprite
+	sprite, ok := rm.GetSprite(ctx, name)
+	if !ok || sprite == nil {
+		return nil, fmt.Errorf("sprite '%s' not found", name)
+	}
+
+	// If already correct size, return as is
+	bounds := sprite.Bounds()
+	if bounds.Dx() == width && bounds.Dy() == height {
+		return sprite, nil
+	}
+
+	// Scale the sprite
+	scaled := ebiten.NewImage(width, height)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(float64(width)/float64(bounds.Dx()), float64(height)/float64(bounds.Dy()))
+	scaled.DrawImage(sprite, op)
+
+	rm.mutex.Lock()
+	rm.scaledCache[cacheKey] = scaled
+	rm.mutex.Unlock()
+
+	return scaled, nil
+}
+
+// GetUISprite is a convenience method for square UI icons
+func (rm *ResourceManager) GetUISprite(ctx context.Context, name string, size int) (*ebiten.Image, error) {
+	return rm.GetScaledSprite(ctx, name, size, size)
 }

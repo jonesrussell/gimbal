@@ -166,8 +166,8 @@ func (v *ConfigValidator) validateStarConfig(config *GameConfig, result *Validat
 	if config.StarSpeed <= 0 {
 		result.AddError("star_speed", "must be positive")
 	}
-	if config.StarSpeed > 10 {
-		result.AddError("star_speed", "maximum star speed is 10")
+	if config.StarSpeed > 500 {
+		result.AddError("star_speed", "maximum star speed is 500")
 	}
 
 	// Validate star spawn radius

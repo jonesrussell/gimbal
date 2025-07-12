@@ -1,0 +1,42 @@
+version: '3'
+
+tasks:
+  linux:
+    desc: Build Linux binary
+    cmds:
+      - rm -rf build/linux
+      - mkdir -p build/linux/{{.PROJECTNAME}}
+      - go build -tags build -ldflags "-X main.version={{.VERSION}} -s -w" -o build/linux/{{.PROJECTNAME}}/{{.PROJECTNAME}} .
+
+  windows:
+    desc: Build Windows binary
+    cmds:
+      - rm -rf build/windows
+      - mkdir -p build/windows/{{.PROJECTNAME}}
+      - GOOS=windows GOARCH=amd64 go build -tags build -ldflags "-X main.version={{.VERSION}} -s -w" -o build/windows/{{.PROJECTNAME}}/{{.PROJECTNAME}}.exe .
+
+  web:
+    desc: Build WebAssembly binary
+    cmds:
+      - rm -rf build/web
+      - mkdir -p build/web
+      - GOOS=js GOARCH=wasm go build -tags "build,js" -ldflags "-X main.version={{.VERSION}} -s -w" -o build/web/game.wasm .
+      - |
+        if [ ! -f {{.WASM_EXEC_PATH}} ]; then
+          echo "wasm_exec.js not found at {{.WASM_EXEC_PATH}}"
+          exit 1
+        fi
+      - cp {{.WASM_EXEC_PATH}} build/web
+      - |
+        if [ -d html ]; then
+          cp -r html/* build/web
+        fi
+
+  all:
+    desc: Build all targets
+    deps: [linux, windows, web]
+
+  current:
+    desc: Build for current platform
+    cmds:
+      - go build -tags build -ldflags "-X main.version={{.VERSION}}" -o {{.BINARY_NAME}} . 

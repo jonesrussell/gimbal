@@ -1,6 +1,9 @@
 package events
 
 import (
+	"context"
+	"time"
+
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/features/events"
 
@@ -44,15 +47,22 @@ type LifeAddedEvent struct {
 	NewLives     int
 }
 
+type EnemyDestroyedEvent struct {
+	Entity donburi.Entity
+	Points int
+	Time   int64
+}
+
 // Event types for the game
 var (
-	PlayerMovedEventType   = events.NewEventType[PlayerMovedEvent]()
-	StarCollectedEventType = events.NewEventType[StarCollectedEvent]()
-	ScoreChangedEventType  = events.NewEventType[ScoreChangedEvent]()
-	GameStateEventType     = events.NewEventType[GameStateEvent]()
-	PlayerDamagedEventType = events.NewEventType[PlayerDamagedEvent]()
-	GameOverEventType      = events.NewEventType[GameOverEvent]()
-	LifeAddedEventType     = events.NewEventType[LifeAddedEvent]()
+	PlayerMovedEventType    = events.NewEventType[PlayerMovedEvent]()
+	StarCollectedEventType  = events.NewEventType[StarCollectedEvent]()
+	ScoreChangedEventType   = events.NewEventType[ScoreChangedEvent]()
+	GameStateEventType      = events.NewEventType[GameStateEvent]()
+	PlayerDamagedEventType  = events.NewEventType[PlayerDamagedEvent]()
+	GameOverEventType       = events.NewEventType[GameOverEvent]()
+	LifeAddedEventType      = events.NewEventType[LifeAddedEvent]()
+	EnemyDestroyedEventType = events.NewEventType[EnemyDestroyedEvent]()
 )
 
 // EventSystem manages game events
@@ -124,6 +134,16 @@ func (evt *EventSystem) EmitLifeAdded(playerEntity donburi.Entity, newLives int)
 	})
 }
 
+// EmitEnemyDestroyed emits an event when an enemy is destroyed with points awarded
+func (evt *EventSystem) EmitEnemyDestroyed(ctx context.Context, entity donburi.Entity, points int) error {
+	EnemyDestroyedEventType.Publish(evt.world, EnemyDestroyedEvent{
+		Entity: entity,
+		Points: points,
+		Time:   time.Now().Unix(),
+	})
+	return nil
+}
+
 // SubscribeToPlayerMoved subscribes to player moved events
 func (evt *EventSystem) SubscribeToPlayerMoved(callback events.Subscriber[PlayerMovedEvent]) {
 	PlayerMovedEventType.Subscribe(evt.world, callback)
@@ -159,6 +179,11 @@ func (evt *EventSystem) SubscribeToLifeAdded(callback events.Subscriber[LifeAdde
 	LifeAddedEventType.Subscribe(evt.world, callback)
 }
 
+// SubscribeToEnemyDestroyed subscribes to enemy destroyed events
+func (evt *EventSystem) SubscribeToEnemyDestroyed(callback events.Subscriber[EnemyDestroyedEvent]) {
+	EnemyDestroyedEventType.Subscribe(evt.world, callback)
+}
+
 // ProcessEvents processes all pending events
 func (evt *EventSystem) ProcessEvents() {
 	PlayerMovedEventType.ProcessEvents(evt.world)
@@ -168,4 +193,5 @@ func (evt *EventSystem) ProcessEvents() {
 	PlayerDamagedEventType.ProcessEvents(evt.world)
 	GameOverEventType.ProcessEvents(evt.world)
 	LifeAddedEventType.ProcessEvents(evt.world)
+	EnemyDestroyedEventType.ProcessEvents(evt.world)
 }

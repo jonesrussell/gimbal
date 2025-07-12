@@ -1,0 +1,51 @@
+# Context Integration Patterns
+
+## Method Signature Patterns
+```go
+// Resource loading with context and timeout
+func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*ebiten.Image, error) {
+    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+    defer cancel()
+    
+    select {
+    case <-ctx.Done():
+        return nil, ctx.Err()
+    default:
+    }
+    // ... implementation
+}
+```
+
+## Call Site Patterns
+```go
+// Initialization - use Background context
+sprite, err := rm.LoadSprite(context.Background(), "player", "sprites/player.png")
+
+// With timeout for user-initiated operations
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+err := rm.LoadAllSprites(ctx)
+```
+
+## Cancellation Check Pattern
+```go
+// In loops and long operations
+for _, item := range items {
+    select {
+    case <-ctx.Done():
+        return ctx.Err()
+    default:
+    }
+    // ... process item
+}
+```
+
+## Interface Compliance
+- All ResourceManager methods must match ResourceSystem interface
+- Context parameter always comes first after receiver
+- Return errors when context operations can fail
+- Check cancellation before expensive operations
+description:
+globs:
+alwaysApply: false
+---

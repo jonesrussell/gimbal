@@ -96,9 +96,30 @@ func (h *Handler) updateLastEvent() {
 		h.lastEvent = common.InputEventMove
 	} else if h.touchState != nil {
 		h.lastEvent = common.InputEventTouch
+	} else if h.isAnyInputPressed() {
+		h.lastEvent = common.InputEventAny
 	} else {
 		h.lastEvent = common.InputEventNone
 	}
+}
+
+// isAnyInputPressed checks if any key or mouse button is pressed
+func (h *Handler) isAnyInputPressed() bool {
+	// Check for any key press
+	for key := ebiten.Key(0); key <= ebiten.KeyMax; key++ {
+		if inpututil.IsKeyJustPressed(key) {
+			return true
+		}
+	}
+
+	// Check for any mouse button press
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) ||
+		inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) ||
+		inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonMiddle) {
+		return true
+	}
+
+	return false
 }
 
 // IsKeyPressed checks if a specific key is currently pressed
@@ -135,7 +156,7 @@ func (h *Handler) IsQuitPressed() bool {
 
 // IsPausePressed checks if the pause key is pressed
 func (h *Handler) IsPausePressed() bool {
-	return inpututil.IsKeyJustPressed(ebiten.KeyP)
+	return inpututil.IsKeyJustPressed(ebiten.KeyEscape)
 }
 
 // IsShootPressed checks if the shoot key is pressed

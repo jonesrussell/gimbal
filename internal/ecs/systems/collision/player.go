@@ -1,16 +1,19 @@
 package collision
 
 import (
+	"context"
+
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
+	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
-// checkPlayerEnemyCollisions checks for collisions between player and enemies
-func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
-	// Get player
+// getPlayerEntity returns the first valid player entity
+func (cs *CollisionSystem) getPlayerEntity() (donburi.Entity, *donburi.Entry) {
 	players := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
@@ -21,34 +24,65 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 	).Each(cs.world, func(entry *donburi.Entry) {
 		players = append(players, entry.Entity())
 	})
-
 	if len(players) == 0 {
-		return
+		return 0, nil
 	}
-
 	playerEntity := players[0]
 	playerEntry := cs.world.Entry(playerEntity)
 	if !playerEntry.Valid() {
-		return
+		return 0, nil
+	}
+	return playerEntity, playerEntry
+}
+
+// checkPlayerEnemyCollisions checks for collisions between player and enemies
+func (cs *CollisionSystem) checkPlayerEnemyCollisions(ctx context.Context) error {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
 	}
 
+	playerEntity, playerEntry := cs.getPlayerEntity()
+	if playerEntry == nil {
+		return nil
+	}
 	playerPos := core.Position.Get(playerEntry)
 	playerSize := core.Size.Get(playerEntry)
 
-	// Get all enemies
-	enemies := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.EnemyTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
-		enemies = append(enemies, entry.Entity())
-	})
+	enemies, err := cs.getEnemyEntities(ctx)
+	if err != nil {
+		return err
+	}
+	return cs.checkCollisionsWithEnemies(ctx, PlayerCollisionData{
+		Entity: playerEntity,
+		Entry:  playerEntry,
+		Pos:    playerPos,
+		Size:   playerSize,
+	}, enemies)
+}
 
-	// Check player against each enemy
+type PlayerCollisionData struct {
+	Entity donburi.Entity
+	Entry  *donburi.Entry
+	Pos    *common.Point
+	Size   *config.Size
+}
+
+func (cs *CollisionSystem) checkCollisionsWithEnemies(
+	ctx context.Context,
+	player PlayerCollisionData,
+	enemies []donburi.Entity,
+) error {
 	for _, enemyEntity := range enemies {
+		// Check for cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		enemyEntry := cs.world.Entry(enemyEntity)
 		if !enemyEntry.Valid() {
 			continue
@@ -58,18 +92,23 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions() {
 		enemySize := core.Size.Get(enemyEntry)
 
 		// Check collision
-		if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
-			// Handle collision
-			cs.handlePlayerEnemyCollision(playerEntity, enemyEntity, playerEntry, enemyEntry)
+		if cs.checkCollision(*player.Pos, *player.Size, *enemyPos, *enemySize) {
+			if err := cs.handlePlayerEnemyCollision(
+				ctx, player.Entity, enemyEntity, player.Entry, enemyEntry,
+			); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 // handlePlayerEnemyCollision handles collision between the player and an enemy
 func (cs *CollisionSystem) handlePlayerEnemyCollision(
+	ctx context.Context,
 	playerEntity, enemyEntity donburi.Entity,
 	playerEntry, enemyEntry *donburi.Entry,
-) {
+) error {
 	// Get player and enemy data
 	playerPos := core.Position.Get(playerEntry)
 	playerSize := core.Size.Get(playerEntry)
@@ -82,11 +121,10 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 		cs.world.Remove(enemyEntity)
 
 		// Damage player (1 damage per enemy collision)
-		// Note: Using interface to avoid circular dependency
-		if healthSystem, ok := cs.healthSystem.(interface {
-			DamagePlayer(donburi.Entity, int)
-		}); ok {
-			healthSystem.DamagePlayer(playerEntity, 1)
-		}
+		cs.healthSystem.DamagePlayer(playerEntity, 1)
+
+		cs.logger.Debug("Player damaged by enemy collision")
 	}
+
+	return nil
 }
