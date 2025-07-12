@@ -101,26 +101,9 @@ func (g *ECSGame) Draw(screen *ebiten.Image) {
 
 // Layout implements ebiten.Game interface
 func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	// 2025: Responsive layout based on screen size
-	aspectRatio := float64(outsideWidth) / float64(outsideHeight)
-
-	// Mobile portrait
-	if outsideWidth < 768 && aspectRatio < 1.0 {
-		return 1080, 1920
-	}
-
-	// Mobile landscape / tablet
-	if outsideWidth < 1024 {
-		return 1440, 1080
-	}
-
-	// Desktop standard
-	if outsideWidth < 1920 {
-		return 1920, 1080
-	}
-
-	// Ultrawide support
-	return outsideWidth, 1080
+	// Return the actual window size for responsive scaling
+	// This allows Ebiten to scale the game content to fit the window
+	return outsideWidth, outsideHeight
 }
 
 // Cleanup cleans up resources

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/jonesrussell/gimbal/internal/common"
@@ -32,13 +33,16 @@ type ResourceManager struct {
 	mutex       sync.RWMutex
 	logger      common.Logger
 	defaultFont text.Face
+
+	scaledCache map[string]*ebiten.Image // Cache for scaled sprites
 }
 
 // NewResourceManager creates a new resource manager
 func NewResourceManager(logger common.Logger) *ResourceManager {
 	rm := &ResourceManager{
-		resources: make(map[string]*Resource),
-		logger:    logger,
+		resources:   make(map[string]*Resource),
+		logger:      logger,
+		scaledCache: make(map[string]*ebiten.Image),
 	}
 	if err := rm.loadDefaultFont(context.Background()); err != nil {
 		logger.Error("failed to load default font", "error", err)
