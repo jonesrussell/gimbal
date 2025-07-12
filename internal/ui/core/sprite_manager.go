@@ -1,11 +1,9 @@
-package ui
+package core
 
 import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-
-	"github.com/jonesrussell/gimbal/internal/ui/core"
 )
 
 // SpriteManager handles sprite operations and scaling
@@ -17,8 +15,8 @@ type SpriteManager struct {
 // NewSpriteManager creates a new sprite manager
 func NewSpriteManager(heartSprite, ammoSprite *ebiten.Image) *SpriteManager {
 	return &SpriteManager{
-		heartSprite: scaleSprite(heartSprite, core.HeartIconSize, core.HeartIconSize),
-		ammoSprite:  scaleSprite(ammoSprite, core.AmmoIconSize, core.AmmoIconSize),
+		heartSprite: scaleSprite(heartSprite, HeartIconSize, HeartIconSize),
+		ammoSprite:  scaleSprite(ammoSprite, AmmoIconSize, AmmoIconSize),
 	}
 }
 
@@ -57,7 +55,7 @@ func scaleSprite(sprite *ebiten.Image, width, height int) *ebiten.Image {
 
 // createFallbackAmmoSprite creates a simple colored square as fallback
 func (sm *SpriteManager) createFallbackAmmoSprite() *ebiten.Image {
-	sprite := ebiten.NewImage(core.AmmoIconSize, core.AmmoIconSize)
+	sprite := ebiten.NewImage(AmmoIconSize, AmmoIconSize)
 	sprite.Fill(color.NRGBA{R: 255, G: 255, B: 0, A: 255}) // Yellow square
 	return sprite
 }

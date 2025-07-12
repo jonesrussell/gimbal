@@ -1,4 +1,4 @@
-package ui
+package rendering
 
 import (
 	"github.com/jonesrussell/gimbal/internal/ui/core"

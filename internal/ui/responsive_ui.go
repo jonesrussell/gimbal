@@ -6,15 +6,16 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/jonesrussell/gimbal/internal/ui/core"
+	"github.com/jonesrussell/gimbal/internal/ui/rendering"
 )
 
 // ResponsiveUI implements a clean, responsive UI system
 type ResponsiveUI struct {
 	ui            *ebitenui.UI
 	state         *State
-	layout        *Layout
-	hudBuilder    *HUDBuilder
-	spriteManager *SpriteManager
+	layout        *rendering.Layout
+	hudBuilder    *core.HUDBuilder
+	spriteManager *core.SpriteManager
 
 	// UI components
 	hudContainer   *widget.Container
@@ -34,12 +35,12 @@ func NewResponsiveUI(config *Config) (*ResponsiveUI, error) {
 		return nil, err
 	}
 
-	spriteManager := NewSpriteManager(config.HeartSprite, config.AmmoSprite)
-	hudBuilder := NewHUDBuilder(config.Font, spriteManager)
+	spriteManager := core.NewSpriteManager(config.HeartSprite, config.AmmoSprite)
+	hudBuilder := core.NewHUDBuilder(config.Font, spriteManager)
 
 	ui := &ResponsiveUI{
 		state:         NewState(),
-		layout:        NewLayout(),
+		layout:        rendering.NewLayout(),
 		hudBuilder:    hudBuilder,
 		spriteManager: spriteManager,
 		heartIcons:    make([]*widget.Graphic, 0),
