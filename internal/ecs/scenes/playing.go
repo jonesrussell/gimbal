@@ -5,28 +5,46 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	v2text "github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
+	"github.com/jonesrussell/gimbal/internal/ecs/resources"
+	"github.com/jonesrussell/gimbal/internal/ecs/ui"
 )
 
 type PlayingScene struct {
 	manager      *SceneManager
 	screenShake  float64 // Screen shake intensity (0 = no shake)
-	font         text.Face
+	font         v2text.Face
 	scoreManager *managers.ScoreManager
+	resourceMgr  *resources.ResourceManager
+	uiRenderer   *ui.UIRenderer
 }
 
-func NewPlayingScene(manager *SceneManager, font text.Face, scoreManager *managers.ScoreManager) *PlayingScene {
-	return &PlayingScene{
+func NewPlayingScene(
+	manager *SceneManager,
+	font v2text.Face,
+	scoreManager *managers.ScoreManager,
+	resourceMgr *resources.ResourceManager,
+) *PlayingScene {
+	scene := &PlayingScene{
 		manager:      manager,
 		font:         font,
 		scoreManager: scoreManager,
+		resourceMgr:  resourceMgr,
 	}
+
+	// Initialize UI renderer with default theme
+	scene.uiRenderer = ui.NewUIRenderer(nil, ui.DefaultTheme)
+
+	// Set up theme fonts
+	ui.DefaultTheme.SetFonts(font, font, font)
+
+	return scene
 }
 
 func (s *PlayingScene) Update() error {
@@ -65,17 +83,25 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 
 // drawGameContent draws the main game content (separated for screen shake)
 func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
+	// Set the screen for the UI renderer
+	s.uiRenderer.SetScreen(screen)
+
+	// Set up heart sprite for lives display
+	if heartSprite, exists := s.resourceMgr.GetSprite("heart"); exists {
+		s.uiRenderer.SetHeartSprite(heartSprite)
+	}
+
+	// Enable debug mode if configured
+	s.uiRenderer.SetDebug(s.manager.config.Debug)
+
 	// Run render system through wrapper
 	renderWrapper := core.NewRenderSystemWrapper(screen)
 	if err := renderWrapper.Update(s.manager.world); err != nil {
 		s.manager.logger.Error("Render system failed", "error", err)
 	}
 
-	// Draw lives display
-	s.drawLivesDisplay(screen)
-
-	// Draw score display
-	s.drawScore(screen)
+	// Draw UI elements using the new renderer
+	s.drawUIElements()
 
 	// Draw debug info if enabled
 	if s.manager.config.Debug {
@@ -83,28 +109,8 @@ func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
 	}
 }
 
-func (s *PlayingScene) drawScore(screen *ebiten.Image) {
-	score := s.scoreManager.GetScore()
-	scoreText := fmt.Sprintf("Score: %d", score)
-
-	op := &text.DrawOptions{}
-	// Position: top-right, 150px from right, 30px from top
-	w := screen.Bounds().Dx()
-	op.GeoM.Translate(float64(w-150), 30)
-	op.ColorScale.SetR(1)
-	op.ColorScale.SetG(1)
-	op.ColorScale.SetB(1)
-	op.ColorScale.SetA(1)
-	text.Draw(screen, scoreText, s.font, op)
-}
-
-// TriggerScreenShake triggers a screen shake effect
-func (s *PlayingScene) TriggerScreenShake() {
-	s.screenShake = 1.0 // Set shake intensity
-}
-
-// drawLivesDisplay renders the player's remaining lives in the top-left corner
-func (s *PlayingScene) drawLivesDisplay(screen *ebiten.Image) {
+// drawUIElements draws all UI elements using the new renderer system
+func (s *PlayingScene) drawUIElements() {
 	// Get health system from scene manager
 	healthSystem := s.manager.GetHealthSystem()
 	if healthSystem == nil {
@@ -117,25 +123,29 @@ func (s *PlayingScene) drawLivesDisplay(screen *ebiten.Image) {
 	}); ok {
 		current, maximum := hs.GetPlayerHealth()
 
-		// Create lives text with heart emojis
-		livesText := "Lives: "
-		for i := 0; i < maximum; i++ {
-			if i < current {
-				livesText += "❤️"
-			} else {
-				livesText += "🖤" // Empty heart
-			}
-		}
+		// Debug logging for health values
+		s.manager.logger.Debug("Health system values",
+			"current_lives", current,
+			"maximum_lives", maximum,
+		)
 
-		// Draw the text in the top-left corner
-		op := &text.DrawOptions{}
-		op.GeoM.Translate(20, 30)
-		op.ColorScale.SetR(1)
-		op.ColorScale.SetG(1)
-		op.ColorScale.SetB(1)
-		op.ColorScale.SetA(1)
-		text.Draw(screen, livesText, s.font, op)
+		// Draw lives display using UI renderer
+		livesDisplay := ui.NewLivesDisplay(current, maximum)
+		s.uiRenderer.Draw(livesDisplay, ui.TopLeft(20, 20))
 	}
+
+	// Draw score display using UI renderer
+	score := s.scoreManager.GetScore()
+	scoreDisplay := ui.NewScoreDisplay(score)
+
+	// Get screen width for proper top-right positioning
+	screenWidth := s.uiRenderer.GetScreenWidth()
+	s.uiRenderer.Draw(scoreDisplay, ui.TopRightRelative(screenWidth, 150, 20))
+}
+
+// TriggerScreenShake triggers a screen shake effect
+func (s *PlayingScene) TriggerScreenShake() {
+	s.screenShake = 1.0 // Set shake intensity
 }
 
 // drawDebugInfo renders debug information

@@ -145,6 +145,16 @@ func (h *Handler) IsShootPressed() bool {
 	return inpututil.IsKeyJustPressed(ebiten.KeySpace)
 }
 
+// IsDebugTogglePressed checks if the debug toggle key is pressed
+func (h *Handler) IsDebugTogglePressed() bool {
+	return inpututil.IsKeyJustPressed(ebiten.KeyF3)
+}
+
+// IsDebugLevelCyclePressed checks if the debug level cycle key is pressed
+func (h *Handler) IsDebugLevelCyclePressed() bool {
+	return inpututil.IsKeyJustPressed(ebiten.KeyF4)
+}
+
 // GetTouchState returns the current touch state
 func (h *Handler) GetTouchState() *common.TouchState {
 	var touchIDs []ebiten.TouchID

@@ -6,7 +6,9 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
+	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 )
 
 // SceneManagerConfig groups all dependencies for SceneManager
@@ -18,6 +20,7 @@ type SceneManagerConfig struct {
 	InputHandler common.GameInputHandler
 	Font         text.Face
 	ScoreManager *managers.ScoreManager
+	ResourceMgr  *resources.ResourceManager
 }
 
 type SceneType int
@@ -43,15 +46,17 @@ type Scene interface {
 }
 
 type SceneManager struct {
-	currentScene Scene
-	scenes       map[SceneType]Scene
-	world        donburi.World
-	config       *common.GameConfig
-	logger       common.Logger
-	inputHandler common.GameInputHandler
-	onResume     func()      // Callback to unpause game state
-	healthSystem interface{} // Health system interface for scenes to access
-	font         text.Face
+	currentScene  Scene
+	scenes        map[SceneType]Scene
+	world         donburi.World
+	config        *common.GameConfig
+	logger        common.Logger
+	inputHandler  common.GameInputHandler
+	onResume      func()      // Callback to unpause game state
+	healthSystem  interface{} // Health system interface for scenes to access
+	font          text.Face
+	resourceMgr   *resources.ResourceManager
+	debugRenderer *debug.DebugRenderer
 }
 
 func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
@@ -62,13 +67,18 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 		logger:       cfg.Logger,
 		inputHandler: cfg.InputHandler,
 		font:         cfg.Font,
+		resourceMgr:  cfg.ResourceMgr,
 	}
+
+	// Initialize debug renderer
+	sceneMgr.debugRenderer = debug.NewDebugRenderer(cfg.Config, cfg.Logger)
+	sceneMgr.debugRenderer.SetFont(cfg.Font)
 
 	// Register all scenes
 	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
 	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, cfg.Font)
 	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager)
+	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager, cfg.ResourceMgr)
 	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, cfg.Font)
 	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, cfg.Font)
 	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
@@ -83,6 +93,21 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 }
 
 func (sceneMgr *SceneManager) Update() error {
+	// Handle debug controls
+	if sceneMgr.inputHandler != nil {
+		if handler, ok := sceneMgr.inputHandler.(interface {
+			IsDebugTogglePressed() bool
+			IsDebugLevelCyclePressed() bool
+		}); ok {
+			if handler.IsDebugTogglePressed() {
+				sceneMgr.debugRenderer.Toggle()
+			}
+			if handler.IsDebugLevelCyclePressed() {
+				sceneMgr.debugRenderer.CycleLevel()
+			}
+		}
+	}
+
 	if sceneMgr.currentScene == nil {
 		return nil // No scene set yet, nothing to update
 	}
@@ -94,6 +119,9 @@ func (sceneMgr *SceneManager) Draw(screen *ebiten.Image) {
 		return // No scene set yet, nothing to draw
 	}
 	sceneMgr.currentScene.Draw(screen)
+
+	// Draw debug overlay on top of everything
+	sceneMgr.debugRenderer.Render(screen, sceneMgr.world)
 }
 
 func (sceneMgr *SceneManager) SetInitialScene(sceneType SceneType) error {
@@ -158,4 +186,14 @@ func (sceneMgr *SceneManager) SetHealthSystem(healthSystem interface{}) {
 // GetHealthSystem returns the health system
 func (sceneMgr *SceneManager) GetHealthSystem() interface{} {
 	return sceneMgr.healthSystem
+}
+
+// GetResourceManager returns the resource manager
+func (sceneMgr *SceneManager) GetResourceManager() *resources.ResourceManager {
+	return sceneMgr.resourceMgr
+}
+
+// GetDebugRenderer returns the debug renderer
+func (sceneMgr *SceneManager) GetDebugRenderer() *debug.DebugRenderer {
+	return sceneMgr.debugRenderer
 }

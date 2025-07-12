@@ -78,7 +78,7 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 
 	// Check collision
 	if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
-		// Remove enemy
+		// Remove enemy immediately
 		cs.world.Remove(enemyEntity)
 
 		// Damage player (1 damage per enemy collision)

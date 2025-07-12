@@ -181,6 +181,8 @@ github.com/tetratelabs/wazero v1.8.2 h1:yIgLR/b2bN31bjxwXHD8a3d+BogigR952csSDdLY
 github.com/tetratelabs/wazero v1.8.2/go.mod h1:yAI0XTsMBhREkM/YDAK/zNou3GoiAce1P6+rp/wQhjs=
 github.com/yohamta/donburi v1.15.7 h1:so/vHf1L133d0SFVrCUzMMueh2ko39wRkrcpNLdzvz8=
 github.com/yohamta/donburi v1.15.7/go.mod h1:FdjU9hpwAsAs1qRvqsSTJimPJ0dipvdnr9hMJXYc1Rk=
+github.com/yohamta/ganim8/v2 v2.1.29 h1:lWunUdhziDGLKQ1hie4QsQ/kIRHXXcrJ4HMAhysE4Bg=
+github.com/yohamta/ganim8/v2 v2.1.29/go.mod h1:TyKLLUSwEGzsz6DcsoTHvNyqOz/HyvqWynQye9J/m2A=
 github.com/yuin/goldmark v1.7.8 h1:iERMLn0/QJeHFhxSt3p6PeN9mGnvIKSpG9YYorDMnic=
 github.com/yuin/goldmark v1.7.8/go.mod h1:uzxRWxtg69N339t3louHJ7+O03ezfj6PlliRlaOzY1E=
 github.com/yuin/goldmark-emoji v1.0.4 h1:vCwMkPZSNefSUnOW2ZKRUjBSD5Ok3W78IXhGxxAEF90=

@@ -3,7 +3,7 @@ package common
 const (
 	DefaultScreenWidth  = 640
 	DefaultScreenHeight = 480
-	DefaultPlayerSize   = 32 // Doubled from 16
+	DefaultPlayerSize   = 48 // Reduced for better gameplay balance
 	DefaultNumStars     = 100
 	DefaultSpeed        = 0.04
 	DefaultStarSize     = 5.0
