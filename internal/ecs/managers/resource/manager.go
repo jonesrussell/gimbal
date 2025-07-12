@@ -38,13 +38,13 @@ type ResourceManager struct {
 }
 
 // NewResourceManager creates a new resource manager
-func NewResourceManager(logger common.Logger) *ResourceManager {
+func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceManager {
 	rm := &ResourceManager{
 		resources:   make(map[string]*Resource),
 		logger:      logger,
 		scaledCache: make(map[string]*ebiten.Image),
 	}
-	if err := rm.loadDefaultFont(context.Background()); err != nil {
+	if err := rm.loadDefaultFont(ctx); err != nil {
 		logger.Error("failed to load default font", "error", err)
 	}
 	return rm

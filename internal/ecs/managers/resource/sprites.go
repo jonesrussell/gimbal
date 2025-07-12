@@ -132,6 +132,70 @@ func (rm *ResourceManager) GetSprite(ctx context.Context, name string) (*ebiten.
 	return nil, false
 }
 
+// loadSpriteWithFallback loads a sprite from file, falling back to a placeholder if loading fails
+func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, name, path string, fallbackWidth, fallbackHeight int, fallbackColor color.Color) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	_, err := rm.LoadSprite(ctx, name, path)
+	if err != nil {
+		rm.logger.Warn("Failed to load sprite, using placeholder", "name", name, "error", err)
+		_, err = rm.CreateSprite(name, fallbackWidth, fallbackHeight, fallbackColor)
+		if err != nil {
+			return errors.NewGameErrorWithCause(
+				errors.ErrorCodeAssetLoadFailed,
+				fmt.Sprintf("failed to create %s placeholder", name),
+				err,
+			)
+		}
+	}
+	return nil
+}
+
+// loadPlayerSprites loads player-related sprites
+func (rm *ResourceManager) loadPlayerSprites(ctx context.Context) error {
+	return rm.loadSpriteWithFallback(ctx, "player", "sprites/player.png", 32, 32, color.RGBA{0, 255, 0, 255})
+}
+
+// loadHeartSprites loads heart sprites for UI
+func (rm *ResourceManager) loadHeartSprites(ctx context.Context) error {
+	return rm.loadSpriteWithFallback(ctx, "heart", "sprites/heart.png", 16, 16, color.RGBA{255, 0, 0, 255})
+}
+
+// loadEnemySprites loads enemy sprites
+func (rm *ResourceManager) loadEnemySprites(ctx context.Context) error {
+	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy sprite", "path", "sprites/enemy.png")
+	err := rm.loadSpriteWithFallback(ctx, "enemy", "sprites/enemy.png", 32, 32, color.RGBA{255, 0, 0, 255})
+	if err == nil {
+		rm.logger.Debug("[SPRITE_LOAD] Enemy sprite loaded successfully")
+	}
+	return err
+}
+
+// createUISprites creates UI-related sprites
+func (rm *ResourceManager) createUISprites(ctx context.Context) error {
+	// Create star sprite
+	if _, err := rm.CreateSprite("star", ui.StarSpriteSize, ui.StarSpriteSize, color.White); err != nil {
+		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create star sprite", err)
+	}
+
+	// Create button sprite
+	if _, err := rm.CreateSprite("button", ui.ButtonSpriteWidth, ui.ButtonSpriteHeight,
+		color.RGBA{ui.ButtonColorR, ui.ButtonColorG, ui.ButtonColorB, ui.ButtonColorA}); err != nil {
+		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create button sprite", err)
+	}
+
+	// Create background sprite
+	if _, err := rm.CreateSprite("background", 1, 1, color.Black); err != nil {
+		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create background sprite", err)
+	}
+
+	return nil
+}
+
 // LoadAllSprites loads all required sprites for the game
 func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 	// Check for cancellation at the start
@@ -141,82 +205,18 @@ func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 	default:
 	}
 
-	// Load player sprite from file
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	// Load different sprite types
+	if err := rm.loadPlayerSprites(ctx); err != nil {
+		return err
 	}
-	_, err := rm.LoadSprite(ctx, "player", "sprites/player.png")
-	if err != nil {
-		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
-		_, err = rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
-		if err != nil {
-			return errors.NewGameErrorWithCause(
-				errors.ErrorCodeAssetLoadFailed,
-				"failed to create player placeholder",
-				err,
-			)
-		}
+	if err := rm.loadHeartSprites(ctx); err != nil {
+		return err
 	}
-
-	// Load heart sprite for lives display
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := rm.loadEnemySprites(ctx); err != nil {
+		return err
 	}
-	_, err = rm.LoadSprite(ctx, "heart", "sprites/heart.png")
-	if err != nil {
-		rm.logger.Warn("Failed to load heart sprite, using placeholder", "error", err)
-		_, err = rm.CreateSprite("heart", 16, 16, color.RGBA{255, 0, 0, 255})
-		if err != nil {
-			return errors.NewGameErrorWithCause(
-				errors.ErrorCodeAssetLoadFailed,
-				"failed to create heart placeholder",
-				err,
-			)
-		}
-	}
-
-	// Load enemy sprite
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy sprite", "path", "sprites/enemy.png")
-	_, err = rm.LoadSprite(ctx, "enemy", "sprites/enemy.png")
-	if err != nil {
-		rm.logger.Warn("[SPRITE_WARN] Failed to load enemy sprite, using placeholder", "error", err)
-		_, err = rm.CreateSprite("enemy", 32, 32, color.RGBA{255, 0, 0, 255})
-		if err != nil {
-			return errors.NewGameErrorWithCause(
-				errors.ErrorCodeAssetLoadFailed,
-				"failed to create enemy placeholder",
-				err,
-			)
-		}
-	} else {
-		rm.logger.Debug("[SPRITE_LOAD] Enemy sprite loaded successfully")
-	}
-
-	// Create star sprite
-	_, err = rm.CreateSprite("star", ui.StarSpriteSize, ui.StarSpriteSize, color.White)
-	if err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create star sprite", err)
-	}
-
-	// Create UI sprites
-	_, err = rm.CreateSprite("button", ui.ButtonSpriteWidth, ui.ButtonSpriteHeight,
-		color.RGBA{ui.ButtonColorR, ui.ButtonColorG, ui.ButtonColorB, ui.ButtonColorA})
-	if err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create button sprite", err)
-	}
-
-	_, err = rm.CreateSprite("background", 1, 1, color.Black)
-	if err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create background sprite", err)
+	if err := rm.createUISprites(ctx); err != nil {
+		return err
 	}
 
 	rm.logger.Info("[SPRITE_LOAD] All sprites loaded successfully")

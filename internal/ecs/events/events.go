@@ -135,8 +135,8 @@ func (evt *EventSystem) EmitLifeAdded(playerEntity donburi.Entity, newLives int)
 }
 
 // EmitEnemyDestroyed emits an event when an enemy is destroyed with points awarded
-func (es *EventSystem) EmitEnemyDestroyed(ctx context.Context, entity donburi.Entity, points int) error {
-	EnemyDestroyedEventType.Publish(es.world, EnemyDestroyedEvent{
+func (evt *EventSystem) EmitEnemyDestroyed(ctx context.Context, entity donburi.Entity, points int) error {
+	EnemyDestroyedEventType.Publish(evt.world, EnemyDestroyedEvent{
 		Entity: entity,
 		Points: points,
 		Time:   time.Now().Unix(),
@@ -180,8 +180,8 @@ func (evt *EventSystem) SubscribeToLifeAdded(callback events.Subscriber[LifeAdde
 }
 
 // SubscribeToEnemyDestroyed subscribes to enemy destroyed events
-func (es *EventSystem) SubscribeToEnemyDestroyed(callback events.Subscriber[EnemyDestroyedEvent]) {
-	EnemyDestroyedEventType.Subscribe(es.world, callback)
+func (evt *EventSystem) SubscribeToEnemyDestroyed(callback events.Subscriber[EnemyDestroyedEvent]) {
+	EnemyDestroyedEventType.Subscribe(evt.world, callback)
 }
 
 // ProcessEvents processes all pending events

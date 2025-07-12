@@ -25,7 +25,7 @@ type HealthSystem interface {
 	DamageEntity(ctx context.Context, entity donburi.Entity, damage int) error
 	HealEntity(ctx context.Context, entity donburi.Entity, amount int) error
 	IsInvincible(ctx context.Context, entity donburi.Entity) bool
-	GetHealth(ctx context.Context, entity donburi.Entity) (current, max int, ok bool)
+	GetHealth(ctx context.Context, entity donburi.Entity) (current, maxHealth int, ok bool)
 	AddLife(ctx context.Context, entity donburi.Entity) error
 	Update(ctx context.Context) error
 }
