@@ -1,4 +1,4 @@
-package ui
+package responsive
 
 import (
 	"github.com/ebitenui/ebitenui"
