@@ -15,6 +15,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
 	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/scenes"
@@ -112,6 +113,10 @@ func (g *ECSGame) initializeSystems() error {
 	// Create health system (after state manager)
 	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
 	g.logger.Debug("Health system created")
+
+	// Create movement system
+	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.logger, g.inputHandler)
+	g.logger.Debug("Movement system created")
 
 	// Get font from resource manager
 	font, err := g.resourceManager.GetDefaultFont(context.Background())
