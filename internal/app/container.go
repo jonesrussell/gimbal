@@ -114,7 +114,7 @@ func (c *Container) initializeGame(ctx context.Context) error {
 	// Create UI factory
 	uiFactory := &ui.EbitenUIFactory{}
 
-	game, err := gamepkg.NewECSGame(c.config, c.logger, c.inputHandler, uiFactory)
+	game, err := gamepkg.NewECSGame(ctx, c.config, c.logger, c.inputHandler, uiFactory)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (c *Container) Shutdown(ctx context.Context) error {
 	// Shutdown in reverse order of initialization
 	if c.game != nil {
 		if ctx == nil {
-			ctx = context.Background()
+			return fmt.Errorf("context must not be nil in Shutdown")
 		}
 		c.game.Cleanup(ctx)
 		c.logger.Debug("Game cleaned up")

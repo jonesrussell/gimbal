@@ -67,13 +67,15 @@ type ECSGame struct {
 	perfMonitor     *debug.PerformanceMonitor
 }
 
-// Update updates the game state
-func (g *ECSGame) Update() error {
-	// Start performance monitoring
+// updatePerformanceMonitoring handles performance monitoring for the frame
+func (g *ECSGame) updatePerformanceMonitoring() {
 	if g.perfMonitor != nil {
 		g.perfMonitor.StartFrame()
 	}
+}
 
+// updateDebugLogging handles periodic debug logging
+func (g *ECSGame) updateDebugLogging() {
 	g.frameCount++
 	if g.frameCount%60 == 0 {
 		g.logger.Debug("Game loop running",
@@ -83,92 +85,123 @@ func (g *ECSGame) Update() error {
 			"fps", ebiten.ActualFPS(),
 			"player_valid", g.playerEntity != 0)
 	}
-	// Handle input
+}
+
+// updateCoreSystems updates scene manager and UI
+func (g *ECSGame) updateCoreSystems() error {
 	g.inputHandler.HandleInput()
 
 	if err := g.sceneManager.Update(); err != nil {
 		g.logger.Error("Scene manager update failed", "error", err)
+		return err
 	}
 
 	if err := g.ui.Update(); err != nil {
 		g.logger.Error("UI update failed", "error", err)
+		return err
 	}
 
-	// NEW: Add ECS system updates during gameplay
+	return nil
+}
+
+// updateGameplaySystems updates ECS systems during gameplay
+func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 	currentScene := g.sceneManager.GetCurrentScene()
-	if currentScene != nil && currentScene.GetType() == scenes.ScenePlaying {
-		deltaTime := 1.0 / 60.0 // Or use actual delta time
-		ctx := context.Background()
-
-		if g.healthSystem != nil {
-			start := time.Now()
-			if err := g.healthSystem.Update(ctx); err != nil {
-				g.logger.Error("Health system update failed", "error", err)
-			}
-			dur := time.Since(start)
-			if dur > 5*time.Millisecond {
-				g.logger.Warn("Slow system update", "system", "health", "duration", dur)
-			}
-		}
-		if g.movementSystem != nil {
-			start := time.Now()
-			if err := g.movementSystem.Update(ctx, deltaTime); err != nil {
-				g.logger.Error("Movement system update failed", "error", err)
-			}
-			dur := time.Since(start)
-			if dur > 5*time.Millisecond {
-				g.logger.Warn("Slow system update", "system", "movement", "duration", dur)
-			}
-		}
-		if g.enemySystem != nil {
-			start := time.Now()
-			g.enemySystem.Update(deltaTime)
-			dur := time.Since(start)
-			if dur > 5*time.Millisecond {
-				g.logger.Warn("Slow system update", "system", "enemy", "duration", dur)
-			}
-		}
-		if g.weaponSystem != nil {
-			start := time.Now()
-			g.weaponSystem.Update(deltaTime)
-			dur := time.Since(start)
-			if dur > 5*time.Millisecond {
-				g.logger.Warn("Slow system update", "system", "weapon", "duration", dur)
-			}
-		}
-		if g.collisionSystem != nil {
-			start := time.Now()
-			if err := g.collisionSystem.Update(ctx); err != nil {
-				g.logger.Error("Collision system update failed", "error", err)
-			}
-			dur := time.Since(start)
-			if dur > 5*time.Millisecond {
-				g.logger.Warn("Slow system update", "system", "collision", "duration", dur)
-			}
-		}
-		// Add other ECS systems here if needed
-		g.logger.Debug("ECS systems updated", "delta", deltaTime)
+	isPlayingScene := currentScene != nil && currentScene.GetType() == scenes.ScenePlaying
+	if !isPlayingScene {
+		return nil
 	}
 
-	// End performance monitoring
-	if g.perfMonitor != nil {
-		g.perfMonitor.EndFrame()
+	deltaTime := 1.0 / 60.0 // Or use actual delta time
+
+	systems := []struct {
+		name     string
+		updateFn func() error
+	}{
+		{"health", func() error { return g.healthSystem.Update(ctx) }},
+		{"movement", func() error { return g.movementSystem.Update(ctx, deltaTime) }},
+		{"collision", func() error { return g.collisionSystem.Update(ctx) }},
 	}
 
+	for _, system := range systems {
+		if err := g.updateSystemWithTiming(system.name, system.updateFn); err != nil {
+			return err
+		}
+	}
+
+	// Update systems without error returns
+	if err := g.updateSystemWithTiming("enemy", func() error { g.enemySystem.Update(deltaTime); return nil }); err != nil {
+		return err
+	}
+	if err := g.updateSystemWithTiming("weapon", func() error { g.weaponSystem.Update(deltaTime); return nil }); err != nil {
+		return err
+	}
+
+	g.logger.Debug("ECS systems updated", "delta", deltaTime)
+	return nil
+}
+
+// updateSystemWithTiming updates a system with performance timing
+func (g *ECSGame) updateSystemWithTiming(systemName string, updateFn func() error) error {
+	start := time.Now()
+	err := updateFn()
+	dur := time.Since(start)
+
+	if err != nil {
+		g.logger.Error("System update failed", "system", systemName, "error", err)
+		return err
+	}
+
+	if dur > 5*time.Millisecond {
+		g.logger.Warn("Slow system update", "system", systemName, "duration", dur)
+	}
+
+	return nil
+}
+
+// updateHUD updates the heads-up display
+func (g *ECSGame) updateHUD() {
 	current, maximum := g.healthSystem.GetPlayerHealth()
 	healthPercent := 1.0
 	if maximum > 0 {
 		healthPercent = float64(current) / float64(maximum)
 	}
+
 	uiData := ui.HUDData{
 		Score:  g.scoreManager.GetScore(),
 		Lives:  current,
 		Level:  g.levelManager.GetLevel(),
 		Health: healthPercent,
 	}
+
 	if hudUI, ok := g.ui.(interface{ UpdateHUD(ui.HUDData) }); ok {
 		hudUI.UpdateHUD(uiData)
 	}
+}
+
+// endPerformanceMonitoring ends performance monitoring for the frame
+func (g *ECSGame) endPerformanceMonitoring() {
+	if g.perfMonitor != nil {
+		g.perfMonitor.EndFrame()
+	}
+}
+
+// Update updates the game state
+func (g *ECSGame) Update() error {
+	g.updatePerformanceMonitoring()
+	g.updateDebugLogging()
+
+	if err := g.updateCoreSystems(); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	if err := g.updateGameplaySystems(ctx); err != nil {
+		return err
+	}
+
+	g.updateHUD()
+	g.endPerformanceMonitoring()
 
 	return nil
 }

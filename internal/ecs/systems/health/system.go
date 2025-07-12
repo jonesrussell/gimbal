@@ -32,14 +32,14 @@ type HealthSystem struct {
 // NewHealthSystem creates a new health system with proper dependency injection
 func NewHealthSystem(
 	world donburi.World,
-	config *config.GameConfig,
+	cfg *config.GameConfig,
 	eventSystem interface{},
 	gameStateManager interface{},
 	logger common.Logger,
 ) *HealthSystem {
 	return &HealthSystem{
 		world:            world,
-		config:           config,
+		config:           cfg,
 		eventSystem:      eventSystem,
 		gameStateManager: gameStateManager,
 		logger:           logger,
@@ -198,7 +198,7 @@ func (hs *HealthSystem) IsInvincible(ctx context.Context, entity donburi.Entity)
 }
 
 // GetHealth returns the current and maximum health of an entity
-func (hs *HealthSystem) GetHealth(ctx context.Context, entity donburi.Entity) (current, max int, ok bool) {
+func (hs *HealthSystem) GetHealth(ctx context.Context, entity donburi.Entity) (current, maxHealth int, ok bool) {
 	// Check for cancellation
 	select {
 	case <-ctx.Done():
@@ -251,8 +251,8 @@ func (hs *HealthSystem) IsPlayerInvincible() bool {
 }
 
 // GetPlayerHealth returns the current and maximum health of the player
-func (hs *HealthSystem) GetPlayerHealth() (current, max int) {
-	// Find the player entity
+func (hs *HealthSystem) GetPlayerHealth() (current, maxHealth int) {
+	// Find player entity
 	query.NewQuery(
 		filter.And(
 			filter.Contains(core.PlayerTag),
@@ -261,7 +261,8 @@ func (hs *HealthSystem) GetPlayerHealth() (current, max int) {
 	).Each(hs.world, func(entry *donburi.Entry) {
 		health := core.Health.Get(entry)
 		current = health.Current
-		max = health.Maximum
+		maxHealth = health.Maximum
 	})
-	return current, max
+
+	return current, maxHealth
 }

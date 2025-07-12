@@ -16,24 +16,27 @@ type SystemRegistryImpl struct {
 	stateSystem    StateSystem
 }
 
+// SystemRegistryConfig groups all system dependencies for the registry
+type SystemRegistryConfig struct {
+	Health    HealthSystem
+	Events    EventSystem
+	Enemies   EnemySystem
+	Weapons   WeaponSystem
+	Resources ResourceSystem
+	Score     ScoreSystem
+	State     StateSystem
+}
+
 // NewSystemRegistry creates a new system registry with all required systems
-func NewSystemRegistry(
-	health HealthSystem,
-	events EventSystem,
-	enemies EnemySystem,
-	weapons WeaponSystem,
-	resources ResourceSystem,
-	score ScoreSystem,
-	state StateSystem,
-) SystemRegistry {
+func NewSystemRegistry(config *SystemRegistryConfig) SystemRegistry {
 	return &SystemRegistryImpl{
-		healthSystem:   health,
-		eventSystem:    events,
-		enemySystem:    enemies,
-		weaponSystem:   weapons,
-		resourceSystem: resources,
-		scoreSystem:    score,
-		stateSystem:    state,
+		healthSystem:   config.Health,
+		eventSystem:    config.Events,
+		enemySystem:    config.Enemies,
+		weaponSystem:   config.Weapons,
+		resourceSystem: config.Resources,
+		scoreSystem:    config.Score,
+		stateSystem:    config.State,
 	}
 }
 

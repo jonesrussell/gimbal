@@ -35,15 +35,15 @@ type CollisionSystem struct {
 }
 
 // NewCollisionSystem creates a new collision system with proper dependency injection
-func NewCollisionSystem(config *CollisionSystemConfig) *CollisionSystem {
+func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
 	return &CollisionSystem{
-		world:        config.World,
-		config:       config.Config,
-		healthSystem: config.HealthSystem,
-		eventSystem:  config.EventSystem,
-		scoreManager: config.ScoreManager,
-		enemySystem:  config.EnemySystem,
-		logger:       config.Logger,
+		world:        cfg.World,
+		config:       cfg.Config,
+		healthSystem: cfg.HealthSystem,
+		eventSystem:  cfg.EventSystem,
+		scoreManager: cfg.ScoreManager,
+		enemySystem:  cfg.EnemySystem,
+		logger:       cfg.Logger,
 	}
 }
 
