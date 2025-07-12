@@ -240,7 +240,9 @@ func (hs *HealthSystem) respawnEntity(ctx context.Context, entity donburi.Entity
 }
 
 func (hs *HealthSystem) DamagePlayer(entity donburi.Entity, damage int) {
-	hs.DamageEntity(context.Background(), entity, damage)
+	if err := hs.DamageEntity(context.Background(), entity, damage); err != nil {
+		hs.logger.Error("Failed to damage entity", "error", err, "entity", entity)
+	}
 }
 
 func (hs *HealthSystem) IsPlayerInvincible() bool {

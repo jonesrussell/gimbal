@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/yohamta/donburi"
 
@@ -69,7 +70,10 @@ func NewECSGame(
 	if err != nil {
 		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", err)
 	}
-	heartSprite, _ := game.resourceManager.GetUISprite(context.Background(), "heart", ui.HeartIconSize)
+	heartSprite, err := game.resourceManager.GetUISprite(context.Background(), "heart", ui.HeartIconSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load heart sprite: %w", err)
+	}
 	uiConfig := ui.UIConfig{
 		Font:  font,
 		Theme: heartSprite,

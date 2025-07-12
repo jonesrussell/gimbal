@@ -58,7 +58,7 @@ func (c *Container) Initialize(ctx context.Context) error {
 	}
 
 	// Step 4: Initialize game
-	if err := c.initializeGame(); err != nil {
+	if err := c.initializeGame(ctx); err != nil {
 		return fmt.Errorf("failed to initialize game: %w", err)
 	}
 
@@ -110,7 +110,7 @@ func (c *Container) initializeInputHandler() error {
 }
 
 // initializeGame creates the ECS game instance
-func (c *Container) initializeGame() error {
+func (c *Container) initializeGame(ctx context.Context) error {
 	// Create UI factory
 	uiFactory := &ui.EbitenUIFactory{}
 
