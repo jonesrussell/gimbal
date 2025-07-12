@@ -20,6 +20,28 @@ func TopRightRelative(screenWidth, x, y float64) Position {
 	return Position{X: screenWidth - x, Y: y}
 }
 
+// Responsive positioning based on screen dimensions
+func CenterHorizontal(screenWidth, elementWidth float64) float64 {
+	return (screenWidth - elementWidth) / 2
+}
+
+func CenterVertical(screenHeight, elementHeight float64) float64 {
+	return (screenHeight - elementHeight) / 2
+}
+
+func ResponsivePosition(screenWidth, screenHeight float64, anchor string) Position {
+	switch anchor {
+	case "center":
+		return Position{X: screenWidth / 2, Y: screenHeight / 2}
+	case "top-center":
+		return Position{X: screenWidth / 2, Y: DefaultTheme.Sizes.Margin}
+	case "bottom-center":
+		return Position{X: screenWidth / 2, Y: screenHeight - DefaultTheme.Sizes.Margin}
+	default:
+		return Position{X: 0, Y: 0}
+	}
+}
+
 // HorizontalLayout arranges elements horizontally with consistent spacing
 type HorizontalLayout struct {
 	elements []UIElement
@@ -75,5 +97,63 @@ func (hl *HorizontalLayout) Draw(renderer *UIRenderer, pos Position) {
 		element.Draw(renderer, Position{X: currentX, Y: pos.Y})
 		w, _ := element.GetSize()
 		currentX += w + hl.spacing
+	}
+}
+
+// VerticalLayout arranges elements vertically with consistent spacing
+type VerticalLayout struct {
+	elements []UIElement
+	spacing  float64
+}
+
+// Ensure VerticalLayout implements UIElement
+var _ UIElement = (*VerticalLayout)(nil)
+
+// NewVerticalLayout creates a new vertical layout with the specified spacing
+func NewVerticalLayout(spacing float64) *VerticalLayout {
+	return &VerticalLayout{
+		elements: make([]UIElement, 0),
+		spacing:  spacing,
+	}
+}
+
+// Add adds an element to the layout
+func (vl *VerticalLayout) Add(element UIElement) {
+	vl.elements = append(vl.elements, element)
+}
+
+// GetSize calculates the total size of the layout
+func (vl *VerticalLayout) GetSize() (width, height float64) {
+	if len(vl.elements) == 0 {
+		return 0, 0
+	}
+
+	maxWidth := 0.0
+	totalHeight := 0.0
+
+	for i, element := range vl.elements {
+		w, h := element.GetSize()
+		if w > maxWidth {
+			maxWidth = w
+		}
+		totalHeight += h
+
+		// Add spacing between elements (but not after the last one)
+		if i < len(vl.elements)-1 {
+			totalHeight += vl.spacing
+		}
+	}
+
+	return maxWidth, totalHeight
+}
+
+// Draw renders all elements in the vertical layout
+func (vl *VerticalLayout) Draw(renderer *UIRenderer, pos Position) {
+	currentY := pos.Y
+
+	for _, element := range vl.elements {
+		element.Draw(renderer, Position{X: pos.X, Y: currentY})
+		_, h := element.GetSize()
+		currentY += h + vl.spacing
 	}
 }

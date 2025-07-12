@@ -20,11 +20,21 @@ type TextElement struct {
 	style TextStyle
 }
 
+// TextAlignment defines text alignment options
+type TextAlignment int
+
+const (
+	AlignLeft TextAlignment = iota
+	AlignCenter
+	AlignRight
+)
+
 // TextStyle defines the appearance of text elements
 type TextStyle struct {
-	Font  text.Face
-	Color color.RGBA
-	Size  float64
+	Font      text.Face
+	Color     color.RGBA
+	Size      float64
+	Alignment TextAlignment
 }
 
 // NewTextWithStyle creates a new text element with custom styling
@@ -42,23 +52,31 @@ func (te *TextElement) Draw(renderer *UIRenderer, pos Position) {
 	}
 
 	op := &text.DrawOptions{}
-	op.GeoM.Translate(pos.X, pos.Y)
+
+	// Handle text alignment
+	textWidth, _ := text.Measure(te.text, te.style.Font, 0)
+	switch te.style.Alignment {
+	case AlignCenter:
+		op.GeoM.Translate(pos.X-textWidth/2, pos.Y)
+	case AlignRight:
+		op.GeoM.Translate(pos.X-textWidth, pos.Y)
+	default: // AlignLeft
+		op.GeoM.Translate(pos.X, pos.Y)
+	}
+
 	text.Draw(renderer.screen, te.text, te.style.Font, op)
 }
 
 // GetSize calculates the size of the text element
 func (te *TextElement) GetSize() (width, height float64) {
 	if te.style.Font == nil {
-		return 0, 0
+		te.style.Font = DefaultTheme.Fonts.UI
 	}
 
-	// Use text/v2.Measure for accurate text sizing
-	// Note: This is a simplified version - in practice you'd use text/v2.Measure
-	// For now, we'll estimate based on character count and font size
-	estimatedWidth := float64(len(te.text)) * te.style.Size * 0.6 // Rough estimate
-	estimatedHeight := te.style.Size
+	// Use ebiten's text/v2.Measure for accurate sizing
+	width, height = text.Measure(te.text, te.style.Font, 0)
 
-	return estimatedWidth, estimatedHeight
+	return width, height
 }
 
 // IconElement represents an icon element with proper sizing
