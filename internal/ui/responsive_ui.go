@@ -26,7 +26,7 @@ type ResponsiveUI struct {
 	ammoIcons  []*widget.Graphic
 }
 
-// NewResponsiveUI creates a new responsive UI instance
+// NewResponsiveUI creates a new responsive UI system with the provided configuration
 func NewResponsiveUI(config *Config) (*ResponsiveUI, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err

@@ -29,7 +29,7 @@ type HealthSystem struct {
 	lastUpdate       time.Time
 }
 
-// NewHealthSystem creates a new health system with proper dependency injection
+// NewHealthSystem creates a new health management system with the provided dependencies
 func NewHealthSystem(
 	world donburi.World,
 	cfg *config.GameConfig,

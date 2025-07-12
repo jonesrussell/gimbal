@@ -24,6 +24,7 @@ type MovementSystem struct {
 	inputHandler common.GameInputHandler
 }
 
+// NewMovementSystem creates a new movement system with the provided dependencies
 func NewMovementSystem(
 	world donburi.World,
 	cfg *config.GameConfig,

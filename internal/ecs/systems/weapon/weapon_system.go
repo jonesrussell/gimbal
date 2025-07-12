@@ -53,7 +53,7 @@ type WeaponSystem struct {
 	projectileSprites map[int]*ebiten.Image // Sprite cache
 }
 
-// NewWeaponSystem creates a new weapon system
+// NewWeaponSystem creates a new weapon management system with the provided configuration
 func NewWeaponSystem(world donburi.World, gameConfig *config.GameConfig) *WeaponSystem {
 	ws := &WeaponSystem{
 		world:             world,

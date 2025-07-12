@@ -9,7 +9,7 @@ type ScoreManager struct {
 	bonusLifeAwarded bool
 }
 
-// NewScoreManager creates a new score manager with default settings
+// NewScoreManager creates a new score management system with the specified bonus life threshold
 func NewScoreManager(bonusLifeScore int) *ScoreManager {
 	return &ScoreManager{
 		score:            0,

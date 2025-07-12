@@ -10,7 +10,7 @@ type LevelManager struct {
 	logger common.Logger
 }
 
-// NewLevelManager creates a new level manager
+// NewLevelManager creates a new level management system with the provided logger
 func NewLevelManager(logger common.Logger) *LevelManager {
 	return &LevelManager{
 		level:  1,
