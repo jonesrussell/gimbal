@@ -31,7 +31,7 @@ func (s *TitleScreenScene) Update() error {
 	s.manager.logger.Debug("TitleScreen input event", "event", event)
 
 	// Transition on any key or mouse event
-	if event != common.InputEventNone {
+	if event == common.InputEventAny {
 		s.manager.SwitchScene(SceneMenu) // Or ScenePlaying if you want to go straight to gameplay
 	}
 	return nil

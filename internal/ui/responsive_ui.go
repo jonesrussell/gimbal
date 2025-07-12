@@ -48,6 +48,16 @@ type ResponsiveUI struct {
 
 // NewResponsiveUI creates a new EbitenUI-based responsive UI system
 func NewResponsiveUI(font text.Face, heartSprite, ammoSprite *ebiten.Image) *ResponsiveUI {
+	// Ensure heartSprite is 32x32 for UI
+	if heartSprite != nil {
+		if heartSprite.Bounds().Dx() != HeartIconSize || heartSprite.Bounds().Dy() != HeartIconSize {
+			scaled := ebiten.NewImage(HeartIconSize, HeartIconSize)
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(float64(HeartIconSize)/float64(heartSprite.Bounds().Dx()), float64(HeartIconSize)/float64(heartSprite.Bounds().Dy()))
+			scaled.DrawImage(heartSprite, op)
+			heartSprite = scaled
+		}
+	}
 	ui := &ResponsiveUI{
 		font:          font,
 		heartSprite:   heartSprite,

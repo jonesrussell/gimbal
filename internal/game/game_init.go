@@ -69,7 +69,7 @@ func NewECSGame(
 	if err != nil {
 		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", err)
 	}
-	heartSprite, _ := game.resourceManager.GetSprite(context.Background(), "heart")
+	heartSprite, _ := game.resourceManager.GetUISprite(context.Background(), "heart", ui.HeartIconSize)
 	uiConfig := ui.UIConfig{
 		Font:  font,
 		Theme: heartSprite,

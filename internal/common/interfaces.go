@@ -102,6 +102,7 @@ const (
 	InputEventQuit
 	InputEventTouch
 	InputEventMouseMove
+	InputEventAny // Any key or mouse input - perfect for title screens
 )
 
 // PhysicsSystem represents a system that handles physics calculations

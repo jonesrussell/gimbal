@@ -47,7 +47,6 @@ func run() error {
 
 	// Get dependencies from container
 	logger := container.GetLogger()
-	config := container.GetConfig()
 	game := container.GetGame()
 
 	// Ensure graceful shutdown
@@ -67,7 +66,7 @@ func run() error {
 	)
 
 	// Run game with Ebiten
-	ebiten.SetWindowSize(config.ScreenSize.Width, config.ScreenSize.Height)
+	ebiten.SetWindowSize(1280, 720) // Responsive default size
 	ebiten.SetWindowTitle("Gimbal - ECS Version")
 	ebiten.SetTPS(60)
 
