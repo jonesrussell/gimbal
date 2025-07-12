@@ -166,20 +166,6 @@ func NewECSGame(
 	return game, nil
 }
 
-// initializeSystems creates all the systems and managers
-func (g *ECSGame) initializeSystems(ctx context.Context) error {
-	if err := g.createCoreSystems(ctx); err != nil {
-		return err
-	}
-	if err := g.createGameplaySystems(ctx); err != nil {
-		return err
-	}
-	if err := g.registerAllSystems(ctx); err != nil {
-		return err
-	}
-	return g.setupInitialScene(ctx)
-}
-
 // loadAssets loads and prepares game assets
 func (g *ECSGame) loadAssets(ctx context.Context) error {
 	// Load all sprites through resource manager

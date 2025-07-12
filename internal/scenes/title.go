@@ -65,7 +65,12 @@ func (s *TitleScreenScene) Draw(screen *ebiten.Image) {
 		})
 	}
 	// Draw debug info at the bottom
-	debugText := fmt.Sprintf("Resolution: %dx%d | TPS: %.1f", s.manager.config.ScreenSize.Width, s.manager.config.ScreenSize.Height, ebiten.CurrentTPS())
+	debugText := fmt.Sprintf(
+		"Resolution: %dx%d | TPS: %.1f",
+		s.manager.config.ScreenSize.Width,
+		s.manager.config.ScreenSize.Height,
+		ebiten.CurrentTPS(),
+	)
 	drawCenteredTextWithOptions(screen, TextDrawOptions{
 		Text:  debugText,
 		X:     float64(s.manager.config.ScreenSize.Width) / 2,

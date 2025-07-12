@@ -132,22 +132,29 @@ func (rm *ResourceManager) GetSprite(ctx context.Context, name string) (*ebiten.
 	return nil, false
 }
 
-// loadSpriteWithFallback loads a sprite from file, falling back to a placeholder if loading fails
-func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, name, path string, fallbackWidth, fallbackHeight int, fallbackColor color.Color) error {
+type SpriteLoadConfig struct {
+	Name           string
+	Path           string
+	FallbackWidth  int
+	FallbackHeight int
+	FallbackColor  color.Color
+}
+
+func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, config SpriteLoadConfig) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
 	}
 
-	_, err := rm.LoadSprite(ctx, name, path)
+	_, err := rm.LoadSprite(ctx, config.Name, config.Path)
 	if err != nil {
-		rm.logger.Warn("Failed to load sprite, using placeholder", "name", name, "error", err)
-		_, err = rm.CreateSprite(name, fallbackWidth, fallbackHeight, fallbackColor)
+		rm.logger.Warn("Failed to load sprite, using placeholder", "name", config.Name, "error", err)
+		_, err = rm.CreateSprite(config.Name, config.FallbackWidth, config.FallbackHeight, config.FallbackColor)
 		if err != nil {
 			return errors.NewGameErrorWithCause(
 				errors.ErrorCodeAssetLoadFailed,
-				fmt.Sprintf("failed to create %s placeholder", name),
+				fmt.Sprintf("failed to create %s placeholder", config.Name),
 				err,
 			)
 		}
@@ -155,20 +162,35 @@ func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, name, pat
 	return nil
 }
 
-// loadPlayerSprites loads player-related sprites
 func (rm *ResourceManager) loadPlayerSprites(ctx context.Context) error {
-	return rm.loadSpriteWithFallback(ctx, "player", "sprites/player.png", 32, 32, color.RGBA{0, 255, 0, 255})
+	return rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
+		Name:           "player",
+		Path:           "sprites/player.png",
+		FallbackWidth:  32,
+		FallbackHeight: 32,
+		FallbackColor:  color.RGBA{0, 255, 0, 255},
+	})
 }
 
-// loadHeartSprites loads heart sprites for UI
 func (rm *ResourceManager) loadHeartSprites(ctx context.Context) error {
-	return rm.loadSpriteWithFallback(ctx, "heart", "sprites/heart.png", 16, 16, color.RGBA{255, 0, 0, 255})
+	return rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
+		Name:           "heart",
+		Path:           "sprites/heart.png",
+		FallbackWidth:  16,
+		FallbackHeight: 16,
+		FallbackColor:  color.RGBA{255, 0, 0, 255},
+	})
 }
 
-// loadEnemySprites loads enemy sprites
 func (rm *ResourceManager) loadEnemySprites(ctx context.Context) error {
 	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy sprite", "path", "sprites/enemy.png")
-	err := rm.loadSpriteWithFallback(ctx, "enemy", "sprites/enemy.png", 32, 32, color.RGBA{255, 0, 0, 255})
+	err := rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
+		Name:           "enemy",
+		Path:           "sprites/enemy.png",
+		FallbackWidth:  32,
+		FallbackHeight: 32,
+		FallbackColor:  color.RGBA{255, 0, 0, 255},
+	})
 	if err == nil {
 		rm.logger.Debug("[SPRITE_LOAD] Enemy sprite loaded successfully")
 	}

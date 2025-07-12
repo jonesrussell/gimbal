@@ -130,10 +130,18 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 	}
 
 	// Update systems without error returns
-	if err := g.updateSystemWithTiming("enemy", func() error { g.enemySystem.Update(deltaTime); return nil }); err != nil {
+	enemyUpdateFunc := func() error {
+		g.enemySystem.Update(deltaTime)
+		return nil
+	}
+	if err := g.updateSystemWithTiming("enemy", enemyUpdateFunc); err != nil {
 		return err
 	}
-	if err := g.updateSystemWithTiming("weapon", func() error { g.weaponSystem.Update(deltaTime); return nil }); err != nil {
+	weaponUpdateFunc := func() error {
+		g.weaponSystem.Update(deltaTime)
+		return nil
+	}
+	if err := g.updateSystemWithTiming("weapon", weaponUpdateFunc); err != nil {
 		return err
 	}
 
