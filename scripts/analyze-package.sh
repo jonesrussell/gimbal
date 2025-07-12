@@ -27,6 +27,7 @@ usage() {
     echo "  -f, --full      Show full file contents (default: summary only)"
     echo "  -s, --structs   Show detailed struct analysis"
     echo "  -i, --imports   Show detailed import analysis"
+    echo "  -I, --interfaces Show detailed interface analysis"
     echo "  -m, --methods   Show method signatures and complexity"
     echo "  -d, --deps      Show dependency graph"
     echo "  -o, --output    Output to file instead of stdout"
@@ -36,6 +37,7 @@ usage() {
     echo "  $0 internal/ecs/systems/collision"
     echo "  $0 internal/input -f -s -m"
     echo "  $0 internal/game --full --methods --output game_analysis.txt"
+    echo "  $0 internal/ecs --interfaces --methods"
 }
 
 # Default options
@@ -43,6 +45,7 @@ PACKAGE_PATH=""
 SHOW_FULL=false
 SHOW_STRUCTS=false
 SHOW_IMPORTS=false
+SHOW_INTERFACES=false
 SHOW_METHODS=false
 SHOW_DEPS=false
 OUTPUT_FILE=""
@@ -60,6 +63,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -i|--imports)
             SHOW_IMPORTS=true
+            shift
+            ;;
+        -I|--interfaces)
+            SHOW_INTERFACES=true
             shift
             ;;
         -m|--methods)
@@ -255,8 +262,12 @@ analyze_package() {
             field_count=$(sed -n "${line_num},/^}/p" "$file" | grep -c "^\s*[A-Z]" || echo "0")
             echo "    Fields: ~$field_count"
         done
+    fi
+    
+    # Interface analysis
+    if [ "$SHOW_INTERFACES" = true ]; then
+        print_subheader "🔌 Interface Analysis"
         
-        echo ""
         echo "Interface definitions:"
         echo "$go_files" | xargs grep -n "^type.*interface" | while read -r line; do
             local file_line
@@ -276,6 +287,30 @@ analyze_package() {
             local method_count
             method_count=$(sed -n "${line_num},/^}/p" "$file" | grep -c "^\s*[A-Z].*(" || echo "0")
             echo "    Methods: ~$method_count"
+            
+            # Show method signatures for interfaces
+            echo "    Method signatures:"
+            sed -n "${line_num},/^}/p" "$file" | grep "^\s*[A-Z].*(" | while read -r method_line; do
+                local clean_method
+                clean_method=$(echo "$method_line" | sed 's/^\s*//' | sed 's/\s*$//')
+                echo "      $clean_method"
+            done
+        done
+        
+        echo ""
+        echo "Interface usage analysis:"
+        echo "Types implementing interfaces:"
+        echo "$go_files" | xargs grep -n "func (.*) " | grep -E "\([^)]*\) [A-Z]" | while read -r line; do
+            local file_line
+            file_line=$(echo "$line" | cut -d: -f1,2)
+            local method_def
+            method_def=$(echo "$line" | cut -d: -f3-)
+            local receiver
+            receiver=$(echo "$method_def" | sed 's/^func (\([^)]*\)).*/\1/')
+            local method_name
+            method_name=$(echo "$method_def" | sed 's/^func ([^)]*) \([^(]*\).*/\1/')
+            
+            echo "  $method_name ($receiver) ($file_line)"
         done
     fi
     
