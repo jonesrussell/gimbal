@@ -3,6 +3,7 @@ package movement
 import (
 	"context"
 	"math"
+	"math/rand"
 
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
@@ -112,19 +113,23 @@ func (ms *MovementSystem) updateStarMovement(deltaTime float64) {
 		pos := core.Position.Get(entry)
 		speed := core.Speed.Get(entry)
 
-		// Calculate center of screen
+		// Calculate screen center
 		centerX := float64(ms.config.ScreenSize.Width) / 2
 		centerY := float64(ms.config.ScreenSize.Height) / 2
 
-		// Calculate direction from center to star
+		// Calculate direction from center (normalize the vector)
 		dx := pos.X - centerX
 		dy := pos.Y - centerY
-
-		// Calculate distance from center
 		distance := math.Sqrt(dx*dx + dy*dy)
 
-		// Normalize direction vector
-		if distance > 0 {
+		// Handle edge case where star is exactly at center
+		if distance == 0 {
+			// Give it a random direction
+			angle := rand.Float64() * 2 * math.Pi
+			dx = math.Cos(angle)
+			dy = math.Sin(angle)
+		} else {
+			// Normalize the direction vector
 			dx /= distance
 			dy /= distance
 		}
@@ -134,17 +139,24 @@ func (ms *MovementSystem) updateStarMovement(deltaTime float64) {
 		pos.X += dx * movementDistance
 		pos.Y += dy * movementDistance
 
-		// Check if star has moved too far and needs to be reset
-		newDistance := math.Sqrt((pos.X-centerX)*(pos.X-centerX) + (pos.Y-centerY)*(pos.Y-centerY))
-		if newDistance > ms.config.StarResetMargin {
+		// FIXED: Check if star has moved off-screen (not distance from center!)
+		screenWidth := float64(ms.config.ScreenSize.Width)
+		screenHeight := float64(ms.config.ScreenSize.Height)
+
+		// Reset star when it goes off any edge of the screen
+		if pos.X < 0 || pos.X > screenWidth || pos.Y < 0 || pos.Y > screenHeight {
 			// Reset star to a random position near the center
 			ms.resetStarPosition(entry, centerX, centerY)
+			ms.logger.Debug("Star reset to new position",
+				"entity_id", entry.Entity().String(),
+				"new_position", pos)
 		}
 
 		// Update scale based on distance from center (stars get bigger as they move outward)
 		if entry.HasComponent(core.Scale) {
 			scale := core.Scale.Get(entry)
 			// Scale from min to max based on distance
+			newDistance := math.Sqrt((pos.X-centerX)*(pos.X-centerX) + (pos.Y-centerY)*(pos.Y-centerY))
 			scaleFactor := math.Min(1.0, newDistance/ms.config.StarScaleDistance)
 			*scale = ms.config.StarMinScale + (ms.config.StarMaxScale-ms.config.StarMinScale)*scaleFactor
 		}
@@ -156,11 +168,11 @@ func (ms *MovementSystem) resetStarPosition(entry *donburi.Entry, centerX, cente
 	pos := core.Position.Get(entry)
 
 	// Generate random angle
-	angle := float64(entry.Entity().Id()%360) * math.Pi / 180.0
+	angle := rand.Float64() * 2 * math.Pi
 
 	// Generate random radius within spawn range
 	spawnRadius := ms.config.StarSpawnRadiusMin +
-		float64(int64(entry.Entity().Id())%int64(ms.config.StarSpawnRadiusMax-ms.config.StarSpawnRadiusMin))
+		rand.Float64()*(ms.config.StarSpawnRadiusMax-ms.config.StarSpawnRadiusMin)
 
 	// Set new position
 	pos.X = centerX + math.Cos(angle)*spawnRadius
@@ -173,6 +185,6 @@ func (ms *MovementSystem) resetStarPosition(entry *donburi.Entry, centerX, cente
 	}
 
 	ms.logger.Debug("Star reset to new position",
-		"entity_id", entry.Entity(),
+		"entity_id", entry.Entity().String(),
 		"new_position", pos)
 }

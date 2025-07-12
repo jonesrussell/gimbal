@@ -7,7 +7,7 @@ const (
 	DefaultNumStars     = 100
 	DefaultSpeed        = 0.04
 	DefaultStarSize     = 5.0
-	DefaultStarSpeed    = 2.0
+	DefaultStarSpeed    = 40.0
 	DefaultAngleStep    = 0.05
 	DefaultRadiusRatio  = 0.8
 	// CenterDivisor is used to calculate the center point by dividing dimensions

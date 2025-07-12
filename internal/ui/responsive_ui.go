@@ -276,12 +276,8 @@ func (ui *ResponsiveUI) createAmmoCounter() *widget.Container {
 
 // updateLivesIcons updates the heart icons based on current lives
 func (ui *ResponsiveUI) updateLivesIcons(container *widget.Container) {
-	// Debug logging
-	fmt.Printf("updateLivesIcons called: currentLives=%d, existing hearts=%d\n", ui.currentLives, len(ui.heartIcons))
-
 	// Remove existing heart icons
-	for i, heartIcon := range ui.heartIcons {
-		fmt.Printf("Removing heart icon %d\n", i)
+	for _, heartIcon := range ui.heartIcons {
 		container.RemoveChild(heartIcon)
 	}
 	ui.heartIcons = ui.heartIcons[:0] // Clear the slice
@@ -298,10 +294,7 @@ func (ui *ResponsiveUI) updateLivesIcons(container *widget.Container) {
 		)
 		container.AddChild(heartIcon)
 		ui.heartIcons = append(ui.heartIcons, heartIcon)
-		fmt.Printf("Added heart icon %d\n", i)
 	}
-
-	fmt.Printf("Final heart count: %d\n", len(ui.heartIcons))
 }
 
 // updateAmmoIcons updates the ammo icons based on current ammo
@@ -340,12 +333,9 @@ func (ui *ResponsiveUI) updateAmmoIcons(container *widget.Container) {
 
 // UpdateLives updates the lives display
 func (ui *ResponsiveUI) UpdateLives(lives int) {
-	fmt.Printf("UpdateLives called: currentLives=%d, newLives=%d\n", ui.currentLives, lives)
 	if ui.currentLives != lives {
 		ui.currentLives = lives
 		ui.updateLivesIcons(ui.livesContainer)
-	} else {
-		fmt.Printf("UpdateLives: no change, skipping update\n")
 	}
 }
 
