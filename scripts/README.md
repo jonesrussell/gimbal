@@ -8,19 +8,17 @@ The scripts follow a modular architecture with shared libraries:
 
 ```
 scripts/
-├── analyze-package.sh          # Original monolithic script (483 lines)
-├── analyze-package-new.sh      # New modular orchestrator (189 lines)
+├── analyze-package.sh          # Modular package analysis (189 lines)
 ├── lib/                        # Shared library modules
 │   ├── common.sh              # Shared utilities (colors, helpers)
 │   ├── package-info.sh        # Basic package information
-│   ├── file-analysis.sh       # File overview and summaries
 │   ├── import-analysis.sh     # Import analysis
 │   ├── struct-analysis.sh     # Struct analysis
 │   ├── interface-analysis.sh  # Interface analysis
 │   ├── method-analysis.sh     # Method analysis
 │   ├── dependency-analysis.sh # Dependency analysis
 │   └── metrics.sh             # Code quality metrics
-└── tools/                      # Standalone analysis tools
+└── tools/                      # Standalone analysis tools (future)
     ├── complexity-checker.sh  # Cyclomatic complexity analysis
     └── dependency-graph.sh    # Dependency visualization
 ```
@@ -56,20 +54,16 @@ scripts/
 
 ### Basic Analysis
 ```bash
-# Use the new modular script
-./scripts/analyze-package-new.sh internal/ecs/systems/collision
-
-# Use the original monolithic script
 ./scripts/analyze-package.sh internal/ecs/systems/collision
 ```
 
 ### Detailed Analysis
 ```bash
 # Interface and method analysis
-./scripts/analyze-package-new.sh internal/ecs --interfaces --methods
+./scripts/analyze-package.sh internal/ecs --interfaces --methods
 
 # Full analysis with all options
-./scripts/analyze-package-new.sh internal/game -f -s -i -I -m -d
+./scripts/analyze-package.sh internal/game -f -s -i -I -m -d
 ```
 
 ## Module Descriptions
@@ -122,9 +116,9 @@ scripts/
 - **Size**: 85 lines
 - **Dependencies**: `common.sh`
 
-## Migration Path
+## Current State
 
-The original `analyze-package.sh` script is preserved for backward compatibility. The new modular approach provides:
+The script has been successfully refactored to use a modular architecture:
 
 1. **Same functionality** - All features preserved
 2. **Better organization** - Clear separation of concerns

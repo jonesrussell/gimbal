@@ -14,72 +14,123 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ui/core"
 )
 
-// LoadSprite loads a sprite from the embedded assets
+// LoadSprite loads a sprite from embedded assets with simplified logic
 func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*ebiten.Image, error) {
-	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+	// Check context cancellation
+	if err := rm.checkContext(ctx); err != nil {
+		return nil, err
 	}
 
+	// Try cache first
+	if cached := rm.getCachedSprite(name); cached != nil {
+		rm.logger.Debug("[SPRITE_CACHE] Sprite reused from cache", "name", name)
+		return cached, nil
+	}
+
+	// Load and decode sprite
+	return rm.loadAndCacheSprite(ctx, name, path)
+}
+
+// checkContext verifies context is not cancelled
+func (rm *ResourceManager) checkContext(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return nil
+	}
+}
+
+// getCachedSprite retrieves sprite from cache if exists
+func (rm *ResourceManager) getCachedSprite(name string) *ebiten.Image {
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 
-	// Check if already loaded
 	if resource, exists := rm.resources[name]; exists {
 		if sprite, ok := resource.Data.(*ebiten.Image); ok {
-			rm.logger.Debug("[SPRITE_CACHE] Sprite reused from cache",
-				"name", name, "was_processed", name == "enemy_sheet")
-			return sprite, nil
+			return sprite
 		}
 	}
+	return nil
+}
+
+// loadAndCacheSprite loads sprite from assets and caches it
+func (rm *ResourceManager) loadAndCacheSprite(ctx context.Context, name, path string) (*ebiten.Image, error) {
+	rm.logger.Debug("[SPRITE_LOAD] Loading sprite from embed", "name", name, "path", path)
 
 	// Load from embedded assets
-	rm.logger.Debug("[SPRITE_LOAD] Attempting to load sprite from embed", "name", name, "path", path)
-
-	// List all embedded files for debugging
-	files, listErr := assets.Assets.ReadDir("sprites")
-	if listErr != nil {
-		rm.logger.Error("[SPRITE_ERROR] Failed to list embedded files", "error", listErr)
-	} else {
-		rm.logger.Debug("[SPRITE_FILES] Embedded files found", "files", files)
-		for _, f := range files {
-			rm.logger.Debug("[SPRITE_FILES] Embedded file", "name", f.Name(), "is_dir", f.IsDir())
-		}
+	imageData, err := rm.loadSpriteFile(path)
+	if err != nil {
+		return nil, err
 	}
 
+	// Decode PNG data
+	sprite, err := rm.decodePNGData(name, path, imageData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the sprite
+	rm.cacheSprite(name, sprite)
+
+	rm.logger.Debug("[SPRITE_LOAD] Sprite loaded successfully", "name", name)
+	return sprite, nil
+}
+
+// loadSpriteFile loads sprite file from embedded assets
+func (rm *ResourceManager) loadSpriteFile(path string) ([]byte, error) {
 	imageData, err := assets.Assets.ReadFile(path)
 	if err != nil {
-		rm.logger.Error("[SPRITE_ERROR] Failed to read sprite file from embed",
-			"name", name, "path", path, "error", err)
+		rm.logger.Error("[SPRITE_ERROR] Failed to read sprite file", "path", path, "error", err)
 		return nil, errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to read sprite file", err)
 	}
 
-	rm.logger.Debug("[SPRITE_LOAD] Sprite file read successfully", "name", name, "size", len(imageData), "path", path)
+	rm.logger.Debug("[SPRITE_LOAD] Sprite file read successfully", "path", path, "size", len(imageData))
+	return imageData, nil
+}
 
-	// Use PNG decoder specifically for PNG files
+// decodePNGData decodes PNG data into ebiten image
+func (rm *ResourceManager) decodePNGData(name, path string, imageData []byte) (*ebiten.Image, error) {
 	img, err := png.Decode(bytes.NewReader(imageData))
 	if err != nil {
 		rm.logger.Error("[SPRITE_ERROR] Failed to decode PNG sprite", "name", name, "path", path, "error", err)
 		return nil, errors.NewGameErrorWithCause(errors.AssetInvalid, "failed to decode sprite", err)
 	}
 
+	sprite := ebiten.NewImageFromImage(img)
 	rm.logger.Debug("[SPRITE_DECODE] Sprite decoded successfully", "name", name, "bounds", img.Bounds())
 
-	// Create ebiten image from decoded image
-	sprite := ebiten.NewImageFromImage(img)
-	rm.logger.Debug("[SPRITE_PROCESS] Created ebiten image from decoded sprite")
+	return sprite, nil
+}
 
-	// Store in resource manager
-	rm.resources[name] = &Resource{
-		Type: ResourceSprite,
-		Name: name,
-		Data: sprite,
+// cacheSprite stores sprite in the resource cache
+func (rm *ResourceManager) cacheSprite(name string, sprite *ebiten.Image) {
+	rm.mutex.Lock()
+	defer rm.mutex.Unlock()
+
+	if rm.resources == nil {
+		rm.resources = make(map[string]*Resource)
 	}
 
-	rm.logger.Debug("[SPRITE_LOAD] Sprite loaded", "name", name, "path", path, "bounds", img.Bounds())
-	return sprite, nil
+	rm.resources[name] = &Resource{
+		Name: name,
+		Type: ResourceSprite,
+		Data: sprite,
+	}
+}
+
+// debugListEmbeddedFiles lists embedded files for debugging (optional helper)
+func (rm *ResourceManager) debugListEmbeddedFiles() {
+	files, err := assets.Assets.ReadDir("sprites")
+	if err != nil {
+		rm.logger.Error("[SPRITE_ERROR] Failed to list embedded files", "error", err)
+		return
+	}
+
+	rm.logger.Debug("[SPRITE_FILES] Embedded files found", "count", len(files))
+	for _, f := range files {
+		rm.logger.Debug("[SPRITE_FILES] Embedded file", "name", f.Name(), "is_dir", f.IsDir())
+	}
 }
 
 // CreateSprite creates a simple colored sprite
