@@ -290,7 +290,7 @@ analyze_package() {
             local func_sig
             func_sig=$(echo "$line" | cut -d: -f3- | sed 's/^func //')
             local func_name
-            func_name=$(echo "$func_sig" | awk '{print $1}' | sed 's/(.*//')
+            func_name=$(echo "$func_sig" | awk '{print $1}' | sed 's/(.*$//')
             
             echo "  $func_name ($file_line)"
             
@@ -302,7 +302,11 @@ analyze_package() {
             
             # Find function end (rough estimate)
             local complexity
-            complexity=$(sed -n "${start_line},/^}/p" "$file" | grep -c "if\|for\|switch\|case\|range" || echo "0")
+            complexity=$(sed -n "${start_line},/^}/p" "$file" | grep -c "if\|for\|switch\|case\|range" 2>/dev/null || echo "0")
+            # Ensure complexity is a number
+            if ! [[ "$complexity" =~ ^[0-9]+$ ]]; then
+                complexity=0
+            fi
             if [ "$complexity" -gt 7 ]; then
                 print_warning "    High complexity: $complexity"
             elif [ "$complexity" -gt 4 ]; then
