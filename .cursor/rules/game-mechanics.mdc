@@ -1,4 +1,3 @@
----
-description: When modifying player or entity behaviors
-alwaysApply: false
----
+# Game Mechanics
+
+This rule applies when modifying player or entity behaviors in the game.

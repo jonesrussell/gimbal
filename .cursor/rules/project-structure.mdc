@@ -40,5 +40,3 @@ This is a Gyruss-style game built with Go using ECS (Entity Component System) ar
 - **Split GameStateManager**: Separated into focused ScoreManager and LevelManager
 - **Improved Naming**: Consistent receiver names across all systems
 - **Refactored Long Functions**: Broke down complex functions into focused helpers
-alwaysApply: true
----
