@@ -7,26 +7,33 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/kelseyhightower/envconfig"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 // Config holds logger configuration
 type Config struct {
-	LogFile    string
-	LogLevel   string
-	ConsoleOut bool
-	FileOut    bool
+	LogFile    string `envconfig:"LOG_FILE" default:"logs/gimbal.log"`
+	LogLevel   string `envconfig:"LOG_LEVEL" default:"DEBUG"`
+	ConsoleOut bool   `envconfig:"LOG_CONSOLE_OUT" default:"true"`
+	FileOut    bool   `envconfig:"LOG_FILE_OUT" default:"true"`
 }
 
 // DefaultConfig returns default logger configuration
 func DefaultConfig() *Config {
-	return &Config{
-		LogFile:    "logs/gimbal.log",
-		LogLevel:   "DEBUG",
-		ConsoleOut: true,
-		FileOut:    true,
+	config := &Config{}
+	// Use envconfig to load defaults
+	if err := envconfig.Process("", config); err != nil {
+		// Fallback to hardcoded defaults if envconfig fails
+		return &Config{
+			LogFile:    "logs/gimbal.log",
+			LogLevel:   "DEBUG",
+			ConsoleOut: true,
+			FileOut:    true,
+		}
 	}
+	return config
 }
 
 // syncWriter wraps an io.Writer to make it safe for concurrent use

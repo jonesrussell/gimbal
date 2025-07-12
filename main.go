@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	"github.com/jonesrussell/gimbal/internal/app"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/errors"
@@ -153,6 +155,10 @@ func run() error {
 }
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading .env file: %v\n", err)
+	}
+
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(int(ExitFailure))
