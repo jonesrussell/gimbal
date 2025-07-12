@@ -78,8 +78,12 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 
 	// Check collision
 	if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
-		// Remove enemy
-		cs.world.Remove(enemyEntity)
+		// Trigger explosion animation for enemy
+		if enemySystem, ok := cs.enemySystem.(interface {
+			TriggerExplosion(donburi.Entity)
+		}); ok {
+			enemySystem.TriggerExplosion(enemyEntity)
+		}
 
 		// Damage player (1 damage per enemy collision)
 		// Note: Using interface to avoid circular dependency
