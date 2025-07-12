@@ -1,5 +1,9 @@
 package ui
 
+import (
+	"github.com/jonesrussell/gimbal/internal/ui/core"
+)
+
 // State represents the current UI state
 type State struct {
 	Lives  int
@@ -21,16 +25,16 @@ func NewState() *State {
 // Validate ensures the state values are valid
 func (s *State) Validate() error {
 	if s.Lives < 0 {
-		return ErrInvalidLives
+		return core.ErrInvalidLives
 	}
 	if s.Score < 0 {
-		return ErrInvalidScore
+		return core.ErrInvalidScore
 	}
 	if s.Health < 0 || s.Health > 1 {
-		return ErrInvalidHealth
+		return core.ErrInvalidHealth
 	}
 	if s.Ammo < 0 {
-		return ErrInvalidAmmo
+		return core.ErrInvalidAmmo
 	}
 	return nil
 }

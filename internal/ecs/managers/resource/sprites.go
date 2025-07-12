@@ -11,7 +11,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/errors"
-	"github.com/jonesrussell/gimbal/internal/ui"
+	"github.com/jonesrussell/gimbal/internal/ui/core"
 )
 
 // LoadSprite loads a sprite from the embedded assets
@@ -200,13 +200,13 @@ func (rm *ResourceManager) loadEnemySprites(ctx context.Context) error {
 // createUISprites creates UI-related sprites
 func (rm *ResourceManager) createUISprites(ctx context.Context) error {
 	// Create star sprite
-	if _, err := rm.CreateSprite("star", ui.StarSpriteSize, ui.StarSpriteSize, color.White); err != nil {
+	if _, err := rm.CreateSprite("star", core.StarSpriteSize, core.StarSpriteSize, color.White); err != nil {
 		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create star sprite", err)
 	}
 
 	// Create button sprite
-	if _, err := rm.CreateSprite("button", ui.ButtonSpriteWidth, ui.ButtonSpriteHeight,
-		color.RGBA{ui.ButtonColorR, ui.ButtonColorG, ui.ButtonColorB, ui.ButtonColorA}); err != nil {
+	if _, err := rm.CreateSprite("button", core.ButtonSpriteWidth, core.ButtonSpriteHeight,
+		color.RGBA{core.ButtonColorR, core.ButtonColorG, core.ButtonColorB, core.ButtonColorA}); err != nil {
 		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create button sprite", err)
 	}
 
