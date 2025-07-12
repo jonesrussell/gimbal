@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"context"
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -39,7 +40,7 @@ func NewResourceManager(logger common.Logger) *ResourceManager {
 		resources: make(map[string]*Resource),
 		logger:    logger,
 	}
-	if err := rm.loadDefaultFont(); err != nil {
+	if err := rm.loadDefaultFont(context.Background()); err != nil {
 		logger.Error("failed to load default font", "error", err)
 	}
 	return rm
@@ -67,12 +68,20 @@ func (rm *ResourceManager) GetResourceInfo() map[string]interface{} {
 }
 
 // Cleanup releases all resources
-func (rm *ResourceManager) Cleanup() {
+func (rm *ResourceManager) Cleanup(ctx context.Context) error {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 
 	rm.logger.Info("Cleaning up resources", "count", len(rm.resources))
 	rm.resources = make(map[string]*Resource)
+	return nil
 }
 
 // Predefined sprite names for easy access
