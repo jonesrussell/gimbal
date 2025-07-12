@@ -76,7 +76,7 @@ font := resourceManager.GetDefaultFont()
 heartSprite, _ := resourceManager.GetSprite("heart")
 ammoSprite, _ := resourceManager.GetSprite("ammo")
 
-responsiveUI := ui_ebitenui.NewResponsiveUI(font, heartSprite, ammoSprite)
+responsiveUI := ui.NewResponsiveUI(font, heartSprite, ammoSprite)
 ```
 
 ### **Game Integration**
@@ -235,7 +235,7 @@ heartSprite, _ := resourceManager.GetSprite("heart")
 ammoSprite, _ := resourceManager.GetSprite("ammo")
 
 // Create responsive UI with resources
-responsiveUI := ui_ebitenui.NewResponsiveUI(font, heartSprite, ammoSprite)
+responsiveUI := ui.NewResponsiveUI(font, heartSprite, ammoSprite)
 ```
 
 ## 🎯 Performance Benefits

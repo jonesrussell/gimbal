@@ -7,8 +7,8 @@ import (
 	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	v2text "github.com/hajimehoshi/ebiten/v2/text/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
@@ -87,23 +87,21 @@ func (dr *DebugRenderer) SetFont(font v2text.Face) {
 	dr.font = font
 }
 
-// UpdateMousePosition updates the current mouse position for hover detection
+// UpdateMousePosition updates the mouse position for hover detection
 func (dr *DebugRenderer) UpdateMousePosition() {
 	dr.mouseX, dr.mouseY = ebiten.CursorPosition()
 }
 
-// shouldShowEntityInfo determines if entity info should be shown based on mouse proximity
+// shouldShowEntityInfo returns true if the mouse is near the given position
 func (dr *DebugRenderer) shouldShowEntityInfo(pos *common.Point) bool {
-	if dr.level != DebugDetailed {
+	if pos == nil {
 		return false
 	}
-
-	// Calculate distance from mouse cursor
-	dist := math.Sqrt(math.Pow(pos.X-float64(dr.mouseX), 2) + math.Pow(pos.Y-float64(dr.mouseY), 2))
-	return dist < dr.hoverRange
+	distance := math.Sqrt(math.Pow(float64(dr.mouseX)-pos.X, 2) + math.Pow(float64(dr.mouseY)-pos.Y, 2))
+	return distance <= dr.hoverRange
 }
 
-// drawTextWithBackground draws text with a subtle dark background for better readability
+// drawTextWithBackground draws text with a semi-transparent background
 func (dr *DebugRenderer) drawTextWithBackground(screen *ebiten.Image, text string, x, y float64) {
 	if dr.font == nil {
 		return
@@ -113,13 +111,13 @@ func (dr *DebugRenderer) drawTextWithBackground(screen *ebiten.Image, text strin
 	width, height := v2text.Measure(text, dr.font, 0)
 
 	// Draw semi-transparent black rectangle behind text
-	padding := 4.0
-	ebitenutil.DrawRect(screen,
-		x-padding,
-		y-height-padding,
-		width+padding*2,
-		height+padding*2,
-		color.RGBA{0, 0, 0, 100})
+	padding := float32(4.0)
+	vector.DrawFilledRect(screen,
+		float32(x)-padding,
+		float32(y-height)-padding,
+		float32(width)+padding*2,
+		float32(height)+padding*2,
+		color.RGBA{0, 0, 0, 100}, false)
 
 	// Draw text on top
 	op := &v2text.DrawOptions{}
@@ -156,14 +154,14 @@ func (dr *DebugRenderer) drawGrid(screen *ebiten.Image) {
 
 	// Draw vertical lines - barely visible guide lines
 	for x := 0; x < bounds.Dx(); x += gridSize {
-		ebitenutil.DrawLine(screen, float64(x), 0, float64(x), float64(bounds.Dy()),
-			color.RGBA{255, 255, 255, 20})
+		vector.StrokeLine(screen, float32(x), 0, float32(x), float32(bounds.Dy()),
+			1, color.RGBA{255, 255, 255, 20}, false)
 	}
 
 	// Draw horizontal lines - barely visible guide lines
 	for y := 0; y < bounds.Dy(); y += gridSize {
-		ebitenutil.DrawLine(screen, 0, float64(y), float64(bounds.Dx()), float64(y),
-			color.RGBA{255, 255, 255, 20})
+		vector.StrokeLine(screen, 0, float32(y), float32(bounds.Dx()), float32(y),
+			1, color.RGBA{255, 255, 255, 20}, false)
 	}
 }
 
@@ -211,7 +209,7 @@ func (dr *DebugRenderer) drawEntityDebug(screen *ebiten.Image, world donburi.Wor
 		entityColor := dr.getEntityColor(entry)
 
 		// Draw entity center point - tiny colored dot
-		ebitenutil.DrawCircle(screen, pos.X, pos.Y, 1, entityColor)
+		vector.DrawFilledCircle(screen, float32(pos.X), float32(pos.Y), 1, entityColor, false)
 
 		// Draw bounding box if size component exists
 		if entry.HasComponent(core.Size) {
@@ -222,8 +220,8 @@ func (dr *DebugRenderer) drawEntityDebug(screen *ebiten.Image, world donburi.Wor
 				boundsY := pos.Y - float64(size.Height)/2
 
 				// Draw bounding box - very thin colored outline
-				ebitenutil.DrawRect(screen, boundsX, boundsY, float64(size.Width), float64(size.Height),
-					entityColor)
+				vector.StrokeRect(screen, float32(boundsX), float32(boundsY), float32(size.Width), float32(size.Height),
+					1, entityColor, false)
 
 				// Only show entity info text if mouse is nearby
 				if dr.shouldShowEntityInfo(pos) {
@@ -275,12 +273,12 @@ func (dr *DebugRenderer) drawSpriteDebug(screen, sprite *ebiten.Image, x, y floa
 	spriteY := y - float64(bounds.Dy())/2
 
 	// Draw sprite boundary rectangle - very thin white outline
-	ebitenutil.DrawRect(screen, spriteX, spriteY, float64(bounds.Dx()), float64(bounds.Dy()),
-		color.RGBA{255, 255, 255, 30})
+	vector.StrokeRect(screen, float32(spriteX), float32(spriteY), float32(bounds.Dx()), float32(bounds.Dy()),
+		1, color.RGBA{255, 255, 255, 30}, false)
 
 	// Draw sprite center point - tiny white dot
 	centerX, centerY := x, y
-	ebitenutil.DrawCircle(screen, centerX, centerY, 1, color.RGBA{255, 255, 255, 80})
+	vector.DrawFilledCircle(screen, float32(centerX), float32(centerY), 1, color.RGBA{255, 255, 255, 80}, false)
 }
 
 // drawCollisionDebug draws collision boundaries and detection ranges
@@ -308,8 +306,8 @@ func (dr *DebugRenderer) drawCollisionDebug(screen *ebiten.Image, world donburi.
 		// Draw player collision box - very thin green outline
 		boundsX := pos.X - float64(size.Width)/2
 		boundsY := pos.Y - float64(size.Height)/2
-		ebitenutil.DrawRect(screen, boundsX, boundsY, float64(size.Width), float64(size.Height),
-			color.RGBA{0, 255, 0, 60})
+		vector.StrokeRect(screen, float32(boundsX), float32(boundsY), float32(size.Width), float32(size.Height),
+			1, color.RGBA{0, 255, 0, 60}, false)
 	})
 
 	// Draw enemy collision areas
@@ -335,7 +333,7 @@ func (dr *DebugRenderer) drawCollisionDebug(screen *ebiten.Image, world donburi.
 		// Draw enemy collision box - very thin red outline
 		boundsX := pos.X - float64(size.Width)/2
 		boundsY := pos.Y - float64(size.Height)/2
-		ebitenutil.DrawRect(screen, boundsX, boundsY, float64(size.Width), float64(size.Height),
-			color.RGBA{255, 0, 0, 60})
+		vector.StrokeRect(screen, float32(boundsX), float32(boundsY), float32(size.Width), float32(size.Height),
+			1, color.RGBA{255, 0, 0, 60}, false)
 	})
 }
