@@ -27,6 +27,3 @@
 - Return errors for recoverable conditions
 - Log and continue for non-critical issues
 - Use proper error context and wrapping
-globs: internal/ecs/**/*
-alwaysApply: false
----
