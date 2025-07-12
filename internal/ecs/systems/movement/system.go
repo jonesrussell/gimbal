@@ -23,7 +23,12 @@ type MovementSystem struct {
 	inputHandler common.GameInputHandler
 }
 
-func NewMovementSystem(world donburi.World, config *config.GameConfig, logger common.Logger, inputHandler common.GameInputHandler) *MovementSystem {
+func NewMovementSystem(
+	world donburi.World,
+	config *config.GameConfig,
+	logger common.Logger,
+	inputHandler common.GameInputHandler,
+) *MovementSystem {
 	return &MovementSystem{
 		world:        world,
 		config:       config,

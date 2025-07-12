@@ -12,14 +12,18 @@ import (
 
 // checkProjectileEnemyCollisions checks for collisions between projectiles and enemies
 func (cs *CollisionSystem) checkProjectileEnemyCollisions(ctx context.Context) error {
-	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	projectiles, err := cs.getProjectileEntities(ctx)
+	if err != nil {
+		return err
 	}
+	enemies, err := cs.getEnemyEntities(ctx)
+	if err != nil {
+		return err
+	}
+	return cs.processProjectileEnemyCollisions(ctx, projectiles, enemies)
+}
 
-	// Get all projectiles
+func (cs *CollisionSystem) getProjectileEntities(ctx context.Context) ([]donburi.Entity, error) {
 	projectiles := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
@@ -30,8 +34,10 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions(ctx context.Context) e
 	).Each(cs.world, func(entry *donburi.Entry) {
 		projectiles = append(projectiles, entry.Entity())
 	})
+	return projectiles, nil
+}
 
-	// Get all enemies
+func (cs *CollisionSystem) getEnemyEntities(ctx context.Context) ([]donburi.Entity, error) {
 	enemies := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
@@ -43,8 +49,10 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions(ctx context.Context) e
 	).Each(cs.world, func(entry *donburi.Entry) {
 		enemies = append(enemies, entry.Entity())
 	})
+	return enemies, nil
+}
 
-	// Check each projectile against each enemy
+func (cs *CollisionSystem) processProjectileEnemyCollisions(ctx context.Context, projectiles, enemies []donburi.Entity) error {
 	for _, projectileEntity := range projectiles {
 		// Check for cancellation
 		select {
@@ -72,15 +80,15 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions(ctx context.Context) e
 
 			// Check collision
 			if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
-				// Handle collision
-				if err := cs.handleProjectileEnemyCollision(ctx, projectileEntity, enemyEntity, projectileEntry, enemyEntry); err != nil {
+				if err := cs.handleProjectileEnemyCollision(
+					ctx, projectileEntity, enemyEntity, projectileEntry, enemyEntry,
+				); err != nil {
 					return err
 				}
 				break // Projectile can only hit one enemy
 			}
 		}
 	}
-
 	return nil
 }
 

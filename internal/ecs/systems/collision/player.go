@@ -67,16 +67,24 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions(ctx context.Context) error
 	playerSize := core.Size.Get(playerEntry)
 
 	enemies := cs.getEnemyEntities()
-	return cs.checkCollisionsWithEnemies(ctx, playerEntity, playerEntry, playerPos, playerSize, enemies)
+	return cs.checkCollisionsWithEnemies(ctx, PlayerCollisionData{
+		Entity: playerEntity,
+		Entry:  playerEntry,
+		Pos:    playerPos,
+		Size:   playerSize,
+	}, enemies)
 }
 
-// checkCollisionsWithEnemies checks collisions between the player and a list of enemies
+type PlayerCollisionData struct {
+	Entity donburi.Entity
+	Entry  *donburi.Entry
+	Pos    *common.Point
+	Size   *config.Size
+}
+
 func (cs *CollisionSystem) checkCollisionsWithEnemies(
 	ctx context.Context,
-	playerEntity donburi.Entity,
-	playerEntry *donburi.Entry,
-	playerPos *common.Point,
-	playerSize *config.Size,
+	player PlayerCollisionData,
 	enemies []donburi.Entity,
 ) error {
 	for _, enemyEntity := range enemies {
@@ -96,9 +104,10 @@ func (cs *CollisionSystem) checkCollisionsWithEnemies(
 		enemySize := core.Size.Get(enemyEntry)
 
 		// Check collision
-		if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
-			// Handle collision
-			if err := cs.handlePlayerEnemyCollision(ctx, playerEntity, enemyEntity, playerEntry, enemyEntry); err != nil {
+		if cs.checkCollision(*player.Pos, *player.Size, *enemyPos, *enemySize) {
+			if err := cs.handlePlayerEnemyCollision(
+				ctx, player.Entity, enemyEntity, player.Entry, enemyEntry,
+			); err != nil {
 				return err
 			}
 		}
