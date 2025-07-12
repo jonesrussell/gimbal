@@ -199,7 +199,7 @@ func (ui *ResponsiveUI) createHealthBar() *widget.Container {
 		),
 	)
 
-	// Health bar fill
+	// Health bar fill with required TrackImage.Idle
 	ui.healthBar = widget.NewProgressBar(
 		widget.ProgressBarOpts.WidgetOpts(
 			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
@@ -207,6 +207,17 @@ func (ui *ResponsiveUI) createHealthBar() *widget.Container {
 				VerticalPosition:   widget.AnchorLayoutPositionCenter,
 			}),
 		),
+		widget.ProgressBarOpts.Images(
+			&widget.ProgressBarImage{
+				Idle:  image.NewNineSliceColor(color.NRGBA{R: 100, G: 100, B: 100, A: 255}), // Track (background)
+				Hover: image.NewNineSliceColor(color.NRGBA{R: 120, G: 120, B: 120, A: 255}),
+			},
+			&widget.ProgressBarImage{
+				Idle:  image.NewNineSliceColor(color.NRGBA{R: 0, G: 255, B: 0, A: 255}), // Fill (foreground)
+				Hover: image.NewNineSliceColor(color.NRGBA{R: 0, G: 200, B: 0, A: 255}),
+			},
+		),
+		widget.ProgressBarOpts.Values(1, 3, 3),
 	)
 
 	container.AddChild(healthBarBg)
@@ -272,9 +283,22 @@ func (ui *ResponsiveUI) updateAmmoIcons(container *widget.Container) {
 	// For now, just add ammo icons without removing existing ones
 	// This is a simplified approach that works with EbitenUI
 	ui.ammoIcons = make([]*widget.Graphic, 0, ui.currentAmmo)
+
+	// Use ammo sprite if available, otherwise use heart sprite or create a simple colored image
+	var ammoIconImage *ebiten.Image
+	if ui.ammoSprite != nil {
+		ammoIconImage = ui.ammoSprite
+	} else if ui.heartSprite != nil {
+		ammoIconImage = ui.heartSprite
+	} else {
+		// Create a simple yellow square for ammo icons
+		ammoIconImage = ebiten.NewImage(16, 16)
+		ammoIconImage.Fill(color.NRGBA{R: 255, G: 255, B: 0, A: 255}) // Yellow square
+	}
+
 	for i := 0; i < ui.currentAmmo && i < 10; i++ { // Limit to 10 visible icons
 		ammoIcon := widget.NewGraphic(
-			widget.GraphicOpts.Image(ui.ammoSprite),
+			widget.GraphicOpts.Image(ammoIconImage),
 			widget.GraphicOpts.WidgetOpts(
 				widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 					Position: widget.RowLayoutPositionCenter,
