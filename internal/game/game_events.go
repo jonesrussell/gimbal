@@ -4,7 +4,7 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
-	scenes "github.com/jonesrussell/gimbal/internal/scenes"
+	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
 // setupEventSubscriptions sets up event handlers
@@ -40,9 +40,10 @@ func (g *ECSGame) setupEventSubscriptions() {
 		g.logger.Debug("Player damaged", "damage", event.Damage, "remaining_lives", event.RemainingLives)
 		// Trigger screen shake if we're in the playing scene
 		if g.sceneManager.GetCurrentScene().GetType() == scenes.ScenePlaying {
-			if playingScene, ok := g.sceneManager.GetCurrentScene().(*scenes.PlayingScene); ok {
-				playingScene.TriggerScreenShake()
-			}
+			// TODO: Re-enable after PlayingScene is moved to gameplay package
+			// if playingScene, ok := g.sceneManager.GetCurrentScene().(*scenes.PlayingScene); ok {
+			// 	playingScene.TriggerScreenShake()
+			// }
 		}
 	})
 

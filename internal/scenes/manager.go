@@ -80,19 +80,20 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 	sceneMgr.debugRenderer.SetFont(cfg.Font)
 
 	// Register all scenes
-	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager, cfg.ResourceMgr)
-	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
-		sceneMgr,
-		"CREDITS\nGimbal Studios\n2025",
-		SceneCredits,
-		cfg.Font,
-	)
-	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, cfg.Font)
+	// TODO: Re-enable after all scenes are moved to their respective packages
+	// sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
+	// sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, cfg.Font)
+	// sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, cfg.Font)
+	// sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager, cfg.ResourceMgr)
+	// sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, cfg.Font)
+	// sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, cfg.Font)
+	// sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
+	// 	sceneMgr,
+	// 	"CREDITS\nGimbal Studios\n2025",
+	// 	SceneCredits,
+	// 	cfg.Font,
+	// )
+	// sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, cfg.Font)
 
 	return sceneMgr
 }
