@@ -125,6 +125,7 @@ func (ms *MovementSystem) updateStarMovement(deltaTime float64) {
 		// Handle edge case where star is exactly at center
 		if distance == 0 {
 			// Give it a random direction
+			//nolint:gosec // math/rand is fine for non-crypto game randomness
 			angle := rand.Float64() * 2 * math.Pi
 			dx = math.Cos(angle)
 			dy = math.Sin(angle)
@@ -168,9 +169,11 @@ func (ms *MovementSystem) resetStarPosition(entry *donburi.Entry, centerX, cente
 	pos := core.Position.Get(entry)
 
 	// Generate random angle
+	//nolint:gosec // math/rand is fine for non-crypto game randomness
 	angle := rand.Float64() * 2 * math.Pi
 
 	// Generate random radius within spawn range
+	//nolint:gosec // math/rand is fine for non-crypto game randomness
 	spawnRadius := ms.config.StarSpawnRadiusMin +
 		rand.Float64()*(ms.config.StarSpawnRadiusMax-ms.config.StarSpawnRadiusMin)
 

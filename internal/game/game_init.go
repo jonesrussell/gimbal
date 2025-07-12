@@ -114,6 +114,75 @@ func (g *ECSGame) registerAllSystems(ctx context.Context) error {
 	return nil
 }
 
+// initializeSystems initializes all game systems
+func (g *ECSGame) initializeSystems(ctx context.Context) error {
+	if err := g.validateGameConfig(g.config); err != nil {
+		return err
+	}
+	if err := g.createCoreSystems(ctx); err != nil {
+		return err
+	}
+	if err := g.createGameplaySystems(ctx); err != nil {
+		return err
+	}
+	if err := g.registerAllSystems(ctx); err != nil {
+		return err
+	}
+	if err := g.loadAssets(ctx); err != nil {
+		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load assets", err)
+	}
+	return nil
+}
+
+// initializeUI sets up the game UI
+func (g *ECSGame) initializeUI(ctx context.Context) error {
+	font, err := g.resourceManager.GetDefaultFont(ctx)
+	if err != nil {
+		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", err)
+	}
+
+	heartSprite, err := g.resourceManager.GetUISprite(ctx, "heart", ui.HeartIconSize)
+	if err != nil {
+		return fmt.Errorf("failed to load heart sprite: %w", err)
+	}
+
+	ammoSprite, err := g.resourceManager.GetUISprite(ctx, "ammo", ui.AmmoIconSize)
+	if err != nil {
+		g.logger.Warn("Failed to load ammo sprite, using fallback", "error", err)
+		ammoSprite = nil // Will use fallback in UI
+	}
+
+	uiConfig := &ui.Config{
+		Font:        font,
+		HeartSprite: heartSprite,
+		AmmoSprite:  ammoSprite,
+	}
+
+	gameUI, err := ui.NewResponsiveUI(uiConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create game UI: %w", err)
+	}
+	g.ui = gameUI
+	return nil
+}
+
+// finalizeInitialization completes the game initialization
+func (g *ECSGame) finalizeInitialization(ctx context.Context) error {
+	err := g.createGameEntities(ctx)
+	if err != nil {
+		return errors.NewGameErrorWithCause(errors.ErrorCodeEntityCreationFailed, "failed to create entities", err)
+	}
+
+	err = g.setupInitialScene(ctx)
+	if err != nil {
+		return err
+	}
+
+	g.setupEventSubscriptions()
+	g.setupSystems()
+	return nil
+}
+
 // NewECSGame creates a new ECS-based game instance with dependency-injected UI
 func NewECSGame(
 	ctx context.Context,
@@ -136,48 +205,18 @@ func NewECSGame(
 		logger:       logger,
 	}
 
-	if err := game.validateGameConfig(gameConfig); err != nil {
+	if err := game.initializeSystems(ctx); err != nil {
 		return nil, err
 	}
-	if err := game.createCoreSystems(ctx); err != nil {
+
+	if err := game.initializeUI(ctx); err != nil {
 		return nil, err
 	}
-	if err := game.createGameplaySystems(ctx); err != nil {
+
+	if err := game.finalizeInitialization(ctx); err != nil {
 		return nil, err
 	}
-	if err := game.registerAllSystems(ctx); err != nil {
-		return nil, err
-	}
-	if err := game.loadAssets(ctx); err != nil {
-		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load assets", err)
-	}
-	font, fontErr := game.resourceManager.GetDefaultFont(ctx)
-	if fontErr != nil {
-		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", fontErr)
-	}
-	heartSprite, spriteErr := game.resourceManager.GetUISprite(ctx, "heart", ui.HeartIconSize)
-	if spriteErr != nil {
-		return nil, fmt.Errorf("failed to load heart sprite: %w", spriteErr)
-	}
-	ammoSprite, _ := game.resourceManager.GetUISprite(ctx, "ammo", ui.AmmoIconSize)
-	uiConfig := &ui.Config{
-		Font:        font,
-		HeartSprite: heartSprite,
-		AmmoSprite:  ammoSprite,
-	}
-	gameUI, err := ui.NewResponsiveUI(uiConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create game UI: %w", err)
-	}
-	game.ui = gameUI
-	if err := game.createGameEntities(ctx); err != nil {
-		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeEntityCreationFailed, "failed to create entities", err)
-	}
-	if err := game.setupInitialScene(ctx); err != nil {
-		return nil, err
-	}
-	game.setupEventSubscriptions()
-	game.setupSystems()
+
 	return game, nil
 }
 
