@@ -101,11 +101,6 @@ func (a *Application) Shutdown(ctx context.Context) error {
 
 // setupEnvironment configures the runtime environment
 func (a *Application) setupEnvironment() error {
-	// Force stdout to be unbuffered
-	if err := os.Stdout.Sync(); err != nil {
-		return fmt.Errorf("failed to sync stdout: %w", err)
-	}
-
 	// Set default log level if not configured
 	if os.Getenv("LOG_LEVEL") == "" && a.config.LogLevel != "" {
 		if err := os.Setenv("LOG_LEVEL", a.config.LogLevel); err != nil {
