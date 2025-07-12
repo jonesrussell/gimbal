@@ -10,7 +10,7 @@ import (
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
-	"github.com/jonesrussell/gimbal/internal/ecs/viewport"
+	"github.com/jonesrussell/gimbal/internal/ecs/ui_ebitenui"
 )
 
 // ECSGame represents the main game state using ECS
@@ -40,12 +40,8 @@ type ECSGame struct {
 	collisionSystem *collision.CollisionSystem
 	healthSystem    *health.HealthSystem
 
-	// 2025: Advanced responsive design system
-	viewport           *viewport.AdvancedViewportManager
-	fluidGrid          *viewport.FluidGrid
-	responsiveHUD      *viewport.GameHUD
-	responsiveRenderer *viewport.ResponsiveRenderer
-	accessibility      *viewport.AccessibilityConfig
+	// 2025: EbitenUI responsive design system
+	responsiveUI *ui_ebitenui.ResponsiveUI
 
 	// Entity references
 	playerEntity donburi.Entity
@@ -80,23 +76,26 @@ func (g *ECSGame) Draw(screen *ebiten.Image) {
 
 // Layout implements ebiten.Game interface
 func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	// 2025: Update advanced viewport with responsive techniques
-	g.viewport.UpdateAdvanced(outsideWidth, outsideHeight)
+	// 2025: Responsive layout based on screen size
+	aspectRatio := float64(outsideWidth) / float64(outsideHeight)
 
-	// 2025: Adaptive logical screen size based on device class
-	switch g.viewport.GetDeviceClass() {
-	case string(viewport.DeviceClassMobile):
-		if g.viewport.GetOrientation() == string(viewport.OrientationPortrait) {
-			return 1080, 1920 // Mobile portrait
-		}
-		return 1920, 1080 // Mobile landscape
-	case string(viewport.DeviceClassTablet):
-		return 1440, 1080 // Tablet optimized
-	case string(viewport.DeviceClassUltrawide):
-		return 2560, 1080 // Ultrawide support
-	default:
-		return 1920, 1080 // Standard desktop
+	// Mobile portrait
+	if outsideWidth < 768 && aspectRatio < 1.0 {
+		return 1080, 1920
 	}
+
+	// Mobile landscape / tablet
+	if outsideWidth < 1024 {
+		return 1440, 1080
+	}
+
+	// Desktop standard
+	if outsideWidth < 1920 {
+		return 1920, 1080
+	}
+
+	// Ultrawide support
+	return outsideWidth, 1080
 }
 
 // Cleanup cleans up resources
@@ -138,10 +137,10 @@ func (g *ECSGame) GetInputHandler() common.GameInputHandler {
 
 // renderResponsiveHUD renders the 2025 responsive HUD overlay
 func (g *ECSGame) renderResponsiveHUD(screen *ebiten.Image) {
-	// Update fluid grid container dimensions
-	width, height := g.viewport.GetCurrentDimensions()
-	g.fluidGrid.UpdateContainer(float64(width), float64(height))
+	// Update responsive UI layout
+	width, height := ebiten.WindowSize()
+	g.responsiveUI.UpdateResponsiveLayout(width, height)
 
-	// Render the responsive HUD using the performance-optimized renderer
-	g.responsiveRenderer.RenderFrame(screen, g.viewport, g.responsiveHUD)
+	// Draw the EbitenUI system
+	g.responsiveUI.Draw(screen)
 }

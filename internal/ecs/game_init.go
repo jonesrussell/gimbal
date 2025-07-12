@@ -10,7 +10,7 @@ import (
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
-	"github.com/jonesrussell/gimbal/internal/ecs/viewport"
+	"github.com/jonesrussell/gimbal/internal/ecs/ui_ebitenui"
 )
 
 // NewECSGame creates a new ECS-based game instance
@@ -132,18 +132,13 @@ func (g *ECSGame) initializeSystems() error {
 		Logger:       g.logger,
 	})
 
-	// 2025: Initialize advanced responsive design system
-	g.viewport = viewport.NewAdvancedViewportManager()
-	g.fluidGrid = viewport.NewFluidGrid()
-	g.responsiveHUD = viewport.NewGameHUD()
-	g.responsiveRenderer = viewport.NewResponsiveRenderer()
-	g.accessibility = viewport.NewAccessibilityConfig()
+	// 2025: Initialize EbitenUI responsive design system
+	heartSprite, _ := g.resourceManager.GetSprite("heart")
+	ammoSprite, _ := g.resourceManager.GetSprite("ammo")
 
-	g.logger.Debug("2025 responsive design system initialized",
-		"device_class", g.viewport.GetDeviceClass(),
-		"orientation", g.viewport.GetOrientation(),
-		"intrinsic_scale", g.viewport.GetIntrinsicScale(),
-	)
+	g.responsiveUI = ui_ebitenui.NewResponsiveUI(font, heartSprite, ammoSprite)
+
+	g.logger.Debug("2025 EbitenUI responsive design system initialized")
 
 	return nil
 }

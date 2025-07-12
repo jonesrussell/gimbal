@@ -13,7 +13,6 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	"github.com/jonesrussell/gimbal/internal/ecs/resources"
-	"github.com/jonesrussell/gimbal/internal/ecs/ui"
 )
 
 type PlayingScene struct {
@@ -22,7 +21,6 @@ type PlayingScene struct {
 	font         v2text.Face
 	scoreManager *managers.ScoreManager
 	resourceMgr  *resources.ResourceManager
-	uiRenderer   *ui.UIRenderer
 }
 
 func NewPlayingScene(
@@ -38,11 +36,7 @@ func NewPlayingScene(
 		resourceMgr:  resourceMgr,
 	}
 
-	// Initialize UI renderer with default theme
-	scene.uiRenderer = ui.NewUIRenderer(nil, ui.DefaultTheme)
-
-	// Set up theme fonts
-	ui.DefaultTheme.SetFonts(font, font, font)
+	// UI is now handled by the main game's EbitenUI system
 
 	return scene
 }
@@ -83,25 +77,11 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 
 // drawGameContent draws the main game content (separated for screen shake)
 func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
-	// Set the screen for the UI renderer
-	s.uiRenderer.SetScreen(screen)
-
-	// Set up heart sprite for lives display
-	if heartSprite, exists := s.resourceMgr.GetSprite("heart"); exists {
-		s.uiRenderer.SetHeartSprite(heartSprite)
-	}
-
-	// Enable debug mode if configured
-	s.uiRenderer.SetDebug(s.manager.config.Debug)
-
 	// Run render system through wrapper
 	renderWrapper := core.NewRenderSystemWrapper(screen)
 	if err := renderWrapper.Update(s.manager.world); err != nil {
 		s.manager.logger.Error("Render system failed", "error", err)
 	}
-
-	// Draw UI elements using the new renderer
-	s.drawUIElements()
 
 	// Draw debug info if enabled
 	if s.manager.config.Debug {
@@ -109,39 +89,7 @@ func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
 	}
 }
 
-// drawUIElements draws all UI elements using the new renderer system
-func (s *PlayingScene) drawUIElements() {
-	// Get health system from scene manager
-	healthSystem := s.manager.GetHealthSystem()
-	if healthSystem == nil {
-		return
-	}
-
-	// Type assert to get current and maximum lives
-	if hs, ok := healthSystem.(interface {
-		GetPlayerHealth() (int, int)
-	}); ok {
-		current, maximum := hs.GetPlayerHealth()
-
-		// Debug logging for health values
-		s.manager.logger.Debug("Health system values",
-			"current_lives", current,
-			"maximum_lives", maximum,
-		)
-
-		// Draw lives display using UI renderer
-		livesDisplay := ui.NewLivesDisplay(current, maximum)
-		s.uiRenderer.Draw(livesDisplay, ui.TopLeft(20, 20))
-	}
-
-	// Draw score display using UI renderer
-	score := s.scoreManager.GetScore()
-	scoreDisplay := ui.NewScoreDisplay(score)
-
-	// Get screen width for proper top-right positioning
-	screenWidth := s.uiRenderer.GetScreenWidth()
-	s.uiRenderer.Draw(scoreDisplay, ui.TopRightRelative(screenWidth, 150, 20))
-}
+// UI elements are now handled by the main game's EbitenUI system
 
 // TriggerScreenShake triggers a screen shake effect
 func (s *PlayingScene) TriggerScreenShake() {
