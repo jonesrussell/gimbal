@@ -10,6 +10,7 @@ import (
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
+	"github.com/jonesrussell/gimbal/internal/ecs/viewport"
 )
 
 // NewECSGame creates a new ECS-based game instance
@@ -130,6 +131,19 @@ func (g *ECSGame) initializeSystems() error {
 		EnemySystem:  g.enemySystem,
 		Logger:       g.logger,
 	})
+
+	// 2025: Initialize advanced responsive design system
+	g.viewport = viewport.NewAdvancedViewportManager()
+	g.fluidGrid = viewport.NewFluidGrid()
+	g.responsiveHUD = viewport.NewGameHUD()
+	g.responsiveRenderer = viewport.NewResponsiveRenderer()
+	g.accessibility = viewport.NewAccessibilityConfig()
+
+	g.logger.Debug("2025 responsive design system initialized",
+		"device_class", g.viewport.GetDeviceClass(),
+		"orientation", g.viewport.GetOrientation(),
+		"intrinsic_scale", g.viewport.GetIntrinsicScale(),
+	)
 
 	return nil
 }
