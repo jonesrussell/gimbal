@@ -3,7 +3,6 @@ package logger
 import (
 	"context"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -20,7 +19,6 @@ type Config struct {
 	LogLevel   string `envconfig:"LOG_LEVEL" default:"DEBUG"`
 	ConsoleOut bool   `envconfig:"LOG_CONSOLE_OUT" default:"true"`
 	FileOut    bool   `envconfig:"LOG_FILE_OUT" default:"true"`
-	UseSlog    bool   `envconfig:"LOG_USE_SLOG" default:"false"` // Use structured logging with log/slog
 }
 
 // syncWriter wraps an io.Writer to make it safe for concurrent use
@@ -41,8 +39,6 @@ type Logger struct {
 	lastLogs map[string]any
 	mu       sync.RWMutex
 	file     *os.File
-	slog     *slog.Logger // Structured logger for modern Go
-	useSlog  bool
 }
 
 // NewWithConfig creates a new logger instance with custom configuration
@@ -58,7 +54,6 @@ func NewWithConfig(config *Config) (*Logger, error) {
 				LogLevel:   "DEBUG",
 				ConsoleOut: true,
 				FileOut:    true,
-				UseSlog:    false,
 			}
 		}
 	}
@@ -74,7 +69,7 @@ func NewWithConfig(config *Config) (*Logger, error) {
 	}
 
 	zapLogger := createZapLogger(cores)
-	logger := createLogger(zapLogger, logFile, config.UseSlog)
+	logger := createLogger(zapLogger, logFile)
 
 	// Log initial message
 	logger.logInitialization(config)
@@ -188,22 +183,12 @@ func createZapLogger(cores []zapcore.Core) *zap.Logger {
 }
 
 // createLogger creates the Logger wrapper
-func createLogger(zapLogger *zap.Logger, logFile *os.File, useSlog bool) *Logger {
-	logger := &Logger{
+func createLogger(zapLogger *zap.Logger, logFile *os.File) *Logger {
+	return &Logger{
 		Logger:   zapLogger,
 		lastLogs: make(map[string]any),
 		file:     logFile,
-		useSlog:  useSlog,
 	}
-
-	// Initialize structured logger if enabled
-	if useSlog {
-		logger.slog = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		}))
-	}
-
-	return logger
 }
 
 // logInitialization logs the initial logger setup message
@@ -212,8 +197,7 @@ func (l *Logger) logInitialization(config *Config) {
 		"log_file", config.LogFile,
 		"log_level", config.LogLevel,
 		"console_output", config.ConsoleOut,
-		"file_output", config.FileOut,
-		"use_slog", config.UseSlog)
+		"file_output", config.FileOut)
 }
 
 // Debug logs a debug message
@@ -221,12 +205,7 @@ func (l *Logger) Debug(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-
-	if l.useSlog {
-		l.logSlog(slog.LevelDebug, msg, fields...)
-	} else {
-		l.Logger.Debug(msg, toZapFields(fields...)...)
-	}
+	l.Logger.Debug(msg, toZapFields(fields...)...)
 }
 
 // Info logs an info message
@@ -234,12 +213,7 @@ func (l *Logger) Info(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-
-	if l.useSlog {
-		l.logSlog(slog.LevelInfo, msg, fields...)
-	} else {
-		l.Logger.Info(msg, toZapFields(fields...)...)
-	}
+	l.Logger.Info(msg, toZapFields(fields...)...)
 }
 
 // Warn logs a warning message
@@ -247,22 +221,13 @@ func (l *Logger) Warn(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-
-	if l.useSlog {
-		l.logSlog(slog.LevelWarn, msg, fields...)
-	} else {
-		l.Logger.Warn(msg, toZapFields(fields...)...)
-	}
+	l.Logger.Warn(msg, toZapFields(fields...)...)
 }
 
 // Error logs an error message
 func (l *Logger) Error(msg string, fields ...any) {
 	// Always log errors, don't deduplicate them
-	if l.useSlog {
-		l.logSlog(slog.LevelError, msg, fields...)
-	} else {
-		l.Logger.Error(msg, toZapFields(fields...)...)
-	}
+	l.Logger.Error(msg, toZapFields(fields...)...)
 }
 
 // DebugContext logs a debug message with context
@@ -270,12 +235,7 @@ func (l *Logger) DebugContext(ctx context.Context, msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-
-	if l.useSlog {
-		l.logSlogContext(ctx, slog.LevelDebug, msg, fields...)
-	} else {
-		l.Logger.Debug(msg, toZapFields(fields...)...)
-	}
+	l.Logger.Debug(msg, toZapFields(fields...)...)
 }
 
 // InfoContext logs an info message with context
@@ -283,12 +243,7 @@ func (l *Logger) InfoContext(ctx context.Context, msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-
-	if l.useSlog {
-		l.logSlogContext(ctx, slog.LevelInfo, msg, fields...)
-	} else {
-		l.Logger.Info(msg, toZapFields(fields...)...)
-	}
+	l.Logger.Info(msg, toZapFields(fields...)...)
 }
 
 // WarnContext logs a warning message with context
@@ -296,59 +251,13 @@ func (l *Logger) WarnContext(ctx context.Context, msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-
-	if l.useSlog {
-		l.logSlogContext(ctx, slog.LevelWarn, msg, fields...)
-	} else {
-		l.Logger.Warn(msg, toZapFields(fields...)...)
-	}
+	l.Logger.Warn(msg, toZapFields(fields...)...)
 }
 
 // ErrorContext logs an error message with context
 func (l *Logger) ErrorContext(ctx context.Context, msg string, fields ...any) {
 	// Always log errors, don't deduplicate them
-	if l.useSlog {
-		l.logSlogContext(ctx, slog.LevelError, msg, fields...)
-	} else {
-		l.Logger.Error(msg, toZapFields(fields...)...)
-	}
-}
-
-// logSlog logs using structured logging
-func (l *Logger) logSlog(level slog.Level, msg string, fields ...any) {
-	if l.slog == nil {
-		return
-	}
-
-	attrs := make([]slog.Attr, 0, len(fields)/2)
-	for i := 0; i < len(fields); i += 2 {
-		if i+1 < len(fields) {
-			if key, ok := fields[i].(string); ok {
-				attrs = append(attrs, slog.Any(key, fields[i+1]))
-			}
-		}
-	}
-
-	// Use context.Background() for now, but in a real application you might want to pass context through
-	l.slog.LogAttrs(context.Background(), level, msg, attrs...)
-}
-
-// logSlogContext logs using structured logging with context
-func (l *Logger) logSlogContext(ctx context.Context, level slog.Level, msg string, fields ...any) {
-	if l.slog == nil {
-		return
-	}
-
-	attrs := make([]slog.Attr, 0, len(fields)/2)
-	for i := 0; i < len(fields); i += 2 {
-		if i+1 < len(fields) {
-			if key, ok := fields[i].(string); ok {
-				attrs = append(attrs, slog.Any(key, fields[i+1]))
-			}
-		}
-	}
-
-	l.slog.LogAttrs(ctx, level, msg, attrs...)
+	l.Logger.Error(msg, toZapFields(fields...)...)
 }
 
 // shouldLog determines if a message should be logged based on deduplication rules
