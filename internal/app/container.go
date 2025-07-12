@@ -130,13 +130,6 @@ func (c *Container) GetLogger() common.Logger {
 	return c.logger
 }
 
-// GetConfig returns the game configuration
-func (c *Container) GetConfig() *config.GameConfig {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.config
-}
-
 // GetInputHandler removed - dead code
 
 // GetGame returns the ECS game instance
