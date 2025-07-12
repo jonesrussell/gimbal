@@ -2,6 +2,9 @@ package common
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/math"
 )
 
 type GameUI interface {
@@ -46,14 +49,14 @@ type Movable interface {
 // Rotatable represents an entity that can rotate
 type Rotatable interface {
 	Movable
-	SetAngle(angle Angle)
-	GetAngle() Angle
+	SetAngle(angle math.Angle)
+	GetAngle() math.Angle
 }
 
 // Collidable represents an entity that can collide with others
 type Collidable interface {
 	Entity
-	GetBounds() Size
+	GetBounds() config.Size
 	CheckCollision(other Collidable) bool
 }
 
@@ -68,7 +71,7 @@ type InputHandler interface {
 type GameInputHandler interface {
 	HandleInput()
 	IsKeyPressed(key ebiten.Key) bool
-	GetMovementInput() Angle
+	GetMovementInput() math.Angle
 	IsQuitPressed() bool
 	IsPausePressed() bool
 	IsShootPressed() bool
@@ -103,12 +106,12 @@ const (
 
 // PhysicsSystem represents a system that handles physics calculations
 type PhysicsSystem interface {
-	CalculatePosition(angle Angle, radius float64) Point
-	ValidatePosition(pos Point, bounds Size) Point
+	CalculatePosition(angle math.Angle, radius float64) Point
+	ValidatePosition(pos Point, bounds config.Size) Point
 }
 
 // RenderSystem represents a system that handles rendering
 type RenderSystem interface {
-	Draw(screen *ebiten.Image, sprite *ebiten.Image, pos Point, angle Angle)
+	Draw(screen *ebiten.Image, sprite *ebiten.Image, pos Point, angle math.Angle)
 	DrawDebug(screen *ebiten.Image)
 }

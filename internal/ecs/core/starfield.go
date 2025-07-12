@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 )
 
 // StarFieldConfig holds configuration for the star field behavior
@@ -32,11 +33,11 @@ type StarFieldConfig struct {
 type StarFieldHelper struct {
 	config       *StarFieldConfig
 	center       common.Point
-	screenBounds common.Size
+	screenBounds config.Size
 }
 
 // NewStarFieldHelper creates a new star field helper
-func NewStarFieldHelper(config *StarFieldConfig, screenBounds common.Size) *StarFieldHelper {
+func NewStarFieldHelper(config *StarFieldConfig, screenBounds config.Size) *StarFieldHelper {
 	return &StarFieldHelper{
 		config:       config,
 		center:       common.Point{X: float64(screenBounds.Width) / 2, Y: float64(screenBounds.Height) / 2},

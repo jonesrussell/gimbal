@@ -14,6 +14,7 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -31,7 +32,7 @@ type DebugRenderer struct {
 	enabled    bool
 	level      DebugLevel
 	font       v2text.Face
-	config     *common.GameConfig
+	config     *config.GameConfig
 	logger     common.Logger
 	mouseX     int
 	mouseY     int
@@ -39,7 +40,7 @@ type DebugRenderer struct {
 }
 
 // NewDebugRenderer creates a new debug renderer
-func NewDebugRenderer(config *common.GameConfig, logger common.Logger) *DebugRenderer {
+func NewDebugRenderer(config *config.GameConfig, logger common.Logger) *DebugRenderer {
 	return &DebugRenderer{
 		enabled:    false,
 		level:      DebugBasic,

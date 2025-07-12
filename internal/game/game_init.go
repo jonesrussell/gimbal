@@ -4,6 +4,7 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
@@ -12,25 +13,26 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
+	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 	"github.com/jonesrussell/gimbal/internal/ui"
 )
 
 // NewECSGame creates a new ECS-based game instance with dependency-injected UI
 func NewECSGame(
-	config *common.GameConfig,
+	config *config.GameConfig,
 	logger common.Logger,
 	inputHandler common.GameInputHandler,
 	uiFactory ui.UIFactory,
 ) (*ECSGame, error) {
 	if config == nil {
-		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "config cannot be nil")
+		return nil, errors.NewGameError(errors.ErrorCodeConfigMissing, "config cannot be nil")
 	}
 	if logger == nil {
-		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "logger cannot be nil")
+		return nil, errors.NewGameError(errors.ErrorCodeConfigMissing, "logger cannot be nil")
 	}
 	if inputHandler == nil {
-		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "inputHandler cannot be nil")
+		return nil, errors.NewGameError(errors.ErrorCodeConfigMissing, "inputHandler cannot be nil")
 	}
 
 	logger.Debug("Creating new ECS game instance",
@@ -57,7 +59,7 @@ func NewECSGame(
 
 	// Load assets
 	if err := game.loadAssets(); err != nil {
-		return nil, common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to load assets", err)
+		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load assets", err)
 	}
 
 	// Create UI through factory (dependency injection)
@@ -71,7 +73,7 @@ func NewECSGame(
 
 	// Create entities
 	if err := game.createEntities(); err != nil {
-		return nil, common.NewGameErrorWithCause(common.ErrorCodeEntityCreationFailed, "failed to create entities", err)
+		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeEntityCreationFailed, "failed to create entities", err)
 	}
 
 	// Set up event subscriptions
@@ -105,7 +107,7 @@ func (g *ECSGame) initializeSystems() error {
 	// Get font from resource manager
 	font := g.resourceManager.GetDefaultFont()
 	if font == nil {
-		return common.NewGameError(common.ErrorCodeAssetLoadFailed, "failed to load default font")
+		return errors.NewGameError(errors.ErrorCodeAssetLoadFailed, "failed to load default font")
 	}
 
 	// Create scene manager
@@ -129,7 +131,7 @@ func (g *ECSGame) initializeSystems() error {
 
 	// Set initial scene
 	if err := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); err != nil {
-		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "failed to set initial scene", err)
+		return errors.NewGameErrorWithCause(errors.ErrorCodeSystemFailed, "failed to set initial scene", err)
 	}
 
 	// Create combat systems
@@ -152,7 +154,7 @@ func (g *ECSGame) initializeSystems() error {
 func (g *ECSGame) loadAssets() error {
 	// Load all sprites through resource manager
 	if err := g.resourceManager.LoadAllSprites(); err != nil {
-		return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to load sprites", err)
+		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load sprites", err)
 	}
 
 	g.logger.Debug("Assets loaded successfully", "resource_count", g.resourceManager.GetResourceCount())
@@ -164,12 +166,12 @@ func (g *ECSGame) createEntities() error {
 	// Get sprites from resource manager
 	playerSprite, ok := g.resourceManager.GetSprite(resources.SpritePlayer)
 	if !ok {
-		return common.NewGameError(common.ErrorCodeSpriteNotFound, "player sprite not found")
+		return errors.NewGameError(errors.ErrorCodeSpriteNotFound, "player sprite not found")
 	}
 
 	starSprite, ok := g.resourceManager.GetSprite(resources.SpriteStar)
 	if !ok {
-		return common.NewGameError(common.ErrorCodeSpriteNotFound, "star sprite not found")
+		return errors.NewGameError(errors.ErrorCodeSpriteNotFound, "star sprite not found")
 	}
 
 	// Create player
@@ -198,5 +200,4 @@ func (g *ECSGame) createEntities() error {
 // This method is kept for compatibility but does nothing
 func (g *ECSGame) setupSystems() {
 	// Systems are now called directly in the Update loop
-	// No need for system manager with wrappers
 }

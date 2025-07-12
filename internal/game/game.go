@@ -5,6 +5,7 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
@@ -13,12 +14,13 @@ import (
 	healthsys "github.com/jonesrussell/gimbal/internal/ecs/systems/health"
 	weaponsys "github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
 	"github.com/jonesrussell/gimbal/internal/scenes"
+	"github.com/jonesrussell/gimbal/internal/ui"
 )
 
 // ECSGame represents the main game state using ECS
 type ECSGame struct {
 	world        donburi.World
-	config       *common.GameConfig
+	config       *config.GameConfig
 	inputHandler common.GameInputHandler
 	logger       common.Logger
 
@@ -71,13 +73,13 @@ func (g *ECSGame) Update() error {
 	if maximum > 0 {
 		healthPercent = float64(current) / float64(maximum)
 	}
-	uiData := common.HUDData{
+	uiData := ui.HUDData{
 		Score:  g.scoreManager.GetScore(),
 		Lives:  current,
 		Level:  g.levelManager.GetLevel(),
 		Health: healthPercent,
 	}
-	if ui, ok := g.ui.(interface{ UpdateHUD(common.HUDData) }); ok {
+	if ui, ok := g.ui.(interface{ UpdateHUD(ui.HUDData) }); ok {
 		ui.UpdateHUD(uiData)
 	}
 

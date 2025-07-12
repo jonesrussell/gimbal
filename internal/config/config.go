@@ -1,4 +1,4 @@
-package common
+package config
 
 const (
 	DefaultScreenWidth  = 640
@@ -129,4 +129,9 @@ func NewConfig(opts ...GameOption) *GameConfig {
 		opt(config)
 	}
 	return config
+}
+
+// Size represents dimensions
+type Size struct {
+	Width, Height int
 }

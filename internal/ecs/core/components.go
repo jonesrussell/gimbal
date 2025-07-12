@@ -5,6 +5,8 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/math"
 )
 
 // Component tags for different entity types
@@ -30,11 +32,11 @@ var (
 	// Orbital component stores orbital movement data
 	Orbital = donburi.NewComponentType[OrbitalData]()
 	// Size component stores entity dimensions
-	Size = donburi.NewComponentType[common.Size]()
+	Size = donburi.NewComponentType[config.Size]()
 	// Speed component stores movement speed
 	Speed = donburi.NewComponentType[float64]()
 	// Angle component stores rotation angle
-	Angle = donburi.NewComponentType[common.Angle]()
+	Angle = donburi.NewComponentType[math.Angle]()
 	// Scale component stores scaling factor
 	Scale = donburi.NewComponentType[float64]()
 	// Health component stores entity health data
@@ -51,8 +53,8 @@ type MovementData struct {
 type OrbitalData struct {
 	Center       common.Point
 	Radius       float64
-	OrbitalAngle common.Angle
-	FacingAngle  common.Angle
+	OrbitalAngle math.Angle
+	FacingAngle  math.Angle
 }
 
 // HealthData represents health and invincibility information

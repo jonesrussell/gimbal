@@ -7,10 +7,12 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/math"
 )
 
 // CreatePlayer creates a player entity with orbital movement
-func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConfig) donburi.Entity {
+func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *config.GameConfig) donburi.Entity {
 	entity := w.Create(PlayerTag, Position, Sprite, Orbital, Size, Angle, Health)
 	entry := w.Entry(entity)
 
@@ -27,8 +29,8 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConf
 	orbitalData := OrbitalData{
 		Center:       center,
 		Radius:       config.Radius,
-		OrbitalAngle: common.HalfCircleDegrees, // 180 degrees
-		FacingAngle:  0,                        // Will be calculated by PlayerInputSystem
+		OrbitalAngle: 180, // 180 degrees
+		FacingAngle:  0,   // Will be calculated by PlayerInputSystem
 	}
 	Orbital.SetValue(entry, orbitalData)
 
@@ -36,7 +38,7 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConf
 	Size.SetValue(entry, config.PlayerSize)
 
 	// Set initial angle
-	Angle.SetValue(entry, common.Angle(0))
+	Angle.SetValue(entry, math.Angle(0))
 
 	// Set initial health (3 lives)
 	healthData := NewHealthData(3, 3)
@@ -46,7 +48,7 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, config *common.GameConf
 }
 
 // CreateStar creates a star entity with Gyruss-style movement
-func CreateStar(w donburi.World, sprite *ebiten.Image, config *common.GameConfig, x, y float64) donburi.Entity {
+func CreateStar(w donburi.World, sprite *ebiten.Image, config *config.GameConfig, x, y float64) donburi.Entity {
 	entity := w.Create(StarTag, Position, Sprite, Speed, Size, Scale)
 	entry := w.Entry(entity)
 
@@ -58,7 +60,10 @@ func CreateStar(w donburi.World, sprite *ebiten.Image, config *common.GameConfig
 	Speed.SetValue(entry, config.StarSpeed)
 
 	// Set size
-	Size.SetValue(entry, common.Size{Width: int(config.StarSize), Height: int(config.StarSize)})
+	starSize := struct {
+		Width, Height int
+	}{Width: int(config.StarSize), Height: int(config.StarSize)}
+	Size.SetValue(entry, starSize)
 
 	// Set random initial scale (0.3 to 0.8)
 	initialScale := 0.3 + float64(entry.Entity().Id()%6)*0.1
@@ -68,7 +73,7 @@ func CreateStar(w donburi.World, sprite *ebiten.Image, config *common.GameConfig
 }
 
 // CreateStarField creates multiple stars for the background in Gyruss-style pattern
-func CreateStarField(w donburi.World, sprite *ebiten.Image, config *common.GameConfig) []donburi.Entity {
+func CreateStarField(w donburi.World, sprite *ebiten.Image, config *config.GameConfig) []donburi.Entity {
 	entities := make([]donburi.Entity, config.NumStars)
 
 	// Create star field helper with configuration from game config

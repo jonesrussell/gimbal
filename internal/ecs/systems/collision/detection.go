@@ -2,12 +2,13 @@ package collision
 
 import (
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 )
 
 // checkCollision checks if two entities are colliding using AABB collision detection
 func (cs *CollisionSystem) checkCollision(
-	pos1 common.Point, size1 common.Size,
-	pos2 common.Point, size2 common.Size,
+	pos1 common.Point, size1 config.Size,
+	pos2 common.Point, size2 config.Size,
 ) bool {
 	// Calculate bounding boxes
 	left1 := pos1.X
