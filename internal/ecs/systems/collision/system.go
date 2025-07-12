@@ -8,29 +8,42 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
-	"github.com/jonesrussell/gimbal/internal/ecs/contracts"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
+
+// CollisionSystemConfig groups all dependencies for CollisionSystem
+// to avoid argument limit lint violations
+type CollisionSystemConfig struct {
+	World        donburi.World
+	Config       *config.GameConfig
+	HealthSystem HealthSystemInterface
+	EventSystem  EventSystemInterface
+	ScoreManager *managers.ScoreManager
+	EnemySystem  EnemySystemInterface
+	Logger       common.Logger
+}
 
 // CollisionSystem manages collision detection and response with proper type safety
 type CollisionSystem struct {
-	world    donburi.World
-	config   *config.GameConfig
-	registry contracts.SystemRegistry
-	logger   common.Logger
+	world        donburi.World
+	config       *config.GameConfig
+	healthSystem HealthSystemInterface
+	eventSystem  EventSystemInterface
+	scoreManager *managers.ScoreManager
+	enemySystem  EnemySystemInterface
+	logger       common.Logger
 }
 
 // NewCollisionSystem creates a new collision system with proper dependency injection
-func NewCollisionSystem(
-	world donburi.World,
-	config *config.GameConfig,
-	registry contracts.SystemRegistry,
-	logger common.Logger,
-) *CollisionSystem {
+func NewCollisionSystem(config *CollisionSystemConfig) *CollisionSystem {
 	return &CollisionSystem{
-		world:    world,
-		config:   config,
-		registry: registry,
-		logger:   logger,
+		world:        config.World,
+		config:       config.Config,
+		healthSystem: config.HealthSystem,
+		eventSystem:  config.EventSystem,
+		scoreManager: config.ScoreManager,
+		enemySystem:  config.EnemySystem,
+		logger:       config.Logger,
 	}
 }
 
