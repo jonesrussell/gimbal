@@ -1,15 +1,31 @@
 package ui
 
 const (
-	// Sprite dimensions
-	StarSpriteSize     = 10
-	ButtonSpriteWidth  = 100
-	ButtonSpriteHeight = 30
-	HeartIconSize      = 32 // UI heart icon size
+	// UI element sizes
+	HeartIconSize = 32
+	AmmoIconSize  = 16
+	MaxAmmoIcons  = 10
 
-	// Color values
-	ButtonColorR = 100
-	ButtonColorG = 100
-	ButtonColorB = 100
-	ButtonColorA = 255
+	// Layout constants
+	HUDSpacing  = 24
+	HUDPadding  = 16
+	HUDPaddingV = 12
+	IconSpacing = 4
+
+	// Device breakpoints
+	MobileBreakpoint    = 768
+	TabletBreakpoint    = 1024
+	UltrawideBreakpoint = 1920
+
+	// Colors
+	SemiTransparentBlack = 180
+	HealthBarMax         = 100
+)
+
+// Device classes
+const (
+	DeviceMobile    = "mobile"
+	DeviceTablet    = "tablet"
+	DeviceDesktop   = "desktop"
+	DeviceUltrawide = "ultrawide"
 )

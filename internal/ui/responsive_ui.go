@@ -1,468 +1,194 @@
 package ui
 
 import (
-	"fmt"
-	"image/color"
-
 	"github.com/ebitenui/ebitenui"
-	"github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
-	"golang.org/x/image/colornames"
 )
 
-// ResponsiveUI implements 2025 responsive design using EbitenUI
+// ResponsiveUI implements a clean, responsive UI system
 type ResponsiveUI struct {
-	ui *ebitenui.UI
+	ui            *ebitenui.UI
+	state         *State
+	layout        *Layout
+	hudBuilder    *HUDBuilder
+	spriteManager *SpriteManager
 
 	// UI components
-	hudContainer    *widget.Container
-	livesContainer  *widget.Container
-	scoreContainer  *widget.Container
-	healthContainer *widget.Container
-	ammoContainer   *widget.Container
+	hudContainer   *widget.Container
+	livesContainer *widget.Container
+	ammoContainer  *widget.Container
+	livesText      *widget.Text
+	scoreText      *widget.Text
 
-	// Widgets
-	livesText  *widget.Text
-	scoreText  *widget.Text
-	healthBar  *widget.ProgressBar
+	// Dynamic widgets
+	heartIcons []*widget.Graphic
 	ammoIcons  []*widget.Graphic
-	heartIcons []*widget.Graphic // Track heart icons separately
-
-	// Resources
-	font        text.Face
-	heartSprite *ebiten.Image
-	ammoSprite  *ebiten.Image
-
-	// State
-	currentLives  int
-	currentScore  int
-	currentHealth float64
-	currentAmmo   int
-
-	// Responsive settings
-	screenWidth  int
-	screenHeight int
-	deviceClass  string
 }
 
-// NewResponsiveUI creates a new EbitenUI-based responsive UI system
-func NewResponsiveUI(font text.Face, heartSprite, ammoSprite *ebiten.Image) *ResponsiveUI {
-	// Ensure heartSprite is 32x32 for UI
-	if heartSprite != nil {
-		if heartSprite.Bounds().Dx() != HeartIconSize || heartSprite.Bounds().Dy() != HeartIconSize {
-			scaled := ebiten.NewImage(HeartIconSize, HeartIconSize)
-			op := &ebiten.DrawImageOptions{}
-			scaleX := float64(HeartIconSize) / float64(heartSprite.Bounds().Dx())
-			scaleY := float64(HeartIconSize) / float64(heartSprite.Bounds().Dy())
-			op.GeoM.Scale(scaleX, scaleY)
-			scaled.DrawImage(heartSprite, op)
-			heartSprite = scaled
-		}
+// NewResponsiveUI creates a new responsive UI instance
+func NewResponsiveUI(config *Config) (*ResponsiveUI, error) {
+	if err := config.Validate(); err != nil {
+		return nil, err
 	}
+
+	spriteManager := NewSpriteManager(config.HeartSprite, config.AmmoSprite)
+	hudBuilder := NewHUDBuilder(config.Font, spriteManager)
+
 	ui := &ResponsiveUI{
-		font:          font,
-		heartSprite:   heartSprite,
-		ammoSprite:    ammoSprite,
-		currentLives:  3,
-		currentScore:  0,
-		currentHealth: 1.0,
-		currentAmmo:   10,
+		state:         NewState(),
+		layout:        NewLayout(),
+		hudBuilder:    hudBuilder,
+		spriteManager: spriteManager,
+		heartIcons:    make([]*widget.Graphic, 0),
+		ammoIcons:     make([]*widget.Graphic, 0),
 	}
 
-	ui.createResponsiveUI()
-	return ui
+	if err := ui.build(); err != nil {
+		return nil, err
+	}
+
+	return ui, nil
 }
 
-// createResponsiveUI creates the main responsive UI structure
-func (ui *ResponsiveUI) createResponsiveUI() {
-	// Main HUD row at top left
-	hudRow := widget.NewContainer(
-		widget.ContainerOpts.BackgroundImage(
-			image.NewNineSliceColor(color.NRGBA{0, 0, 0, 180}), // semi-transparent black
-		),
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(24),
-			widget.RowLayoutOpts.Padding(widget.Insets{Top: 12, Left: 16, Right: 16, Bottom: 12}),
-		)),
-	)
+// build constructs the UI components
+func (ui *ResponsiveUI) build() error {
+	ui.hudContainer = ui.hudBuilder.BuildHUD()
+	ui.livesContainer = ui.hudBuilder.BuildLivesContainer()
+	ui.ammoContainer = ui.hudBuilder.BuildAmmoContainer()
 
-	// Lives: icon + value
-	livesContainer := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(4),
-		)),
-	)
-	livesIcon := widget.NewGraphic(
-		widget.GraphicOpts.Image(ui.heartSprite),
-		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.MinSize(24, 24)),
-	)
-	ui.livesText = widget.NewText(
-		widget.TextOpts.Text("x3", ui.font, colornames.White),
-		widget.TextOpts.WidgetOpts(widget.WidgetOpts.MinSize(32, 24)),
-	)
-	livesContainer.AddChild(livesIcon)
-	livesContainer.AddChild(ui.livesText)
+	// Build initial components
+	ui.rebuildLivesDisplay()
+	ui.rebuildScoreDisplay()
+	ui.rebuildAmmoDisplay()
 
-	// Score
-	ui.scoreText = widget.NewText(
-		widget.TextOpts.Text("Score: 0", ui.font, colornames.White),
-		widget.TextOpts.WidgetOpts(widget.WidgetOpts.MinSize(120, 24)),
-	)
+	// Assemble HUD
+	ui.hudContainer.AddChild(ui.livesContainer)
+	ui.hudContainer.AddChild(ui.scoreText)
+	ui.hudContainer.AddChild(ui.ammoContainer)
 
-	// Ammo: icon + value (or icons)
-	ammoContainer := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(4),
-		)),
-	)
-	// Use up to 10 ammo icons, or a single icon + value for infinite
-	ui.ammoIcons = ui.ammoIcons[:0]
-	if ui.ammoSprite != nil {
-		for i := 0; i < ui.currentAmmo && i < 10; i++ {
-			ammoIcon := widget.NewGraphic(
-				widget.GraphicOpts.Image(ui.ammoSprite),
-				widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.MinSize(16, 16)),
-			)
-			ammoContainer.AddChild(ammoIcon)
-			ui.ammoIcons = append(ui.ammoIcons, ammoIcon)
-		}
-	} else {
-		// fallback: text
-		ammoText := widget.NewText(
-			widget.TextOpts.Text("Ammo: ∞", ui.font, colornames.White),
-			widget.TextOpts.WidgetOpts(widget.WidgetOpts.MinSize(60, 24)),
-		)
-		ammoContainer.AddChild(ammoText)
-	}
-
-	// Add all sections to the HUD row
-	hudRow.AddChild(livesContainer)
-	hudRow.AddChild(ui.scoreText)
-	hudRow.AddChild(ammoContainer)
-
-	// Root container with anchor layout, HUD row anchored top left
+	// Create root container
 	root := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
 	)
-	root.AddChild(hudRow)
+	root.AddChild(ui.hudContainer)
 
 	ui.ui = &ebitenui.UI{Container: root}
+	return nil
 }
 
-// createHUDContainer creates the responsive HUD layout
-func (ui *ResponsiveUI) createHUDContainer() *widget.Container {
-	hud := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
-	)
+// rebuildLivesDisplay rebuilds the lives display
+func (ui *ResponsiveUI) rebuildLivesDisplay() {
+	ui.clearContainer(ui.livesContainer, ui.heartIcons)
+	ui.heartIcons = nil
 
-	// Lives display - top left
-	ui.livesContainer = ui.createLivesDisplay()
-	hud.AddChild(ui.livesContainer)
+	// Add heart icon
+	heartIcon := ui.hudBuilder.BuildLivesIcon()
+	ui.livesContainer.AddChild(heartIcon)
+	ui.heartIcons = append(ui.heartIcons, heartIcon)
 
-	// Score display - top right
-	ui.scoreContainer = ui.createScoreDisplay()
-	hud.AddChild(ui.scoreContainer)
-
-	// Health bar - bottom left
-	ui.healthContainer = ui.createHealthBar()
-	hud.AddChild(ui.healthContainer)
-
-	// Ammo counter - bottom right
-	ui.ammoContainer = ui.createAmmoCounter()
-	hud.AddChild(ui.ammoContainer)
-
-	return hud
+	// Add lives text
+	ui.livesText = ui.hudBuilder.BuildLivesText(ui.state.Lives)
+	ui.livesContainer.AddChild(ui.livesText)
 }
 
-// createLivesDisplay creates the responsive lives display
-func (ui *ResponsiveUI) createLivesDisplay() *widget.Container {
-	container := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(5), // Reduced spacing
-		)),
-		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				HorizontalPosition: widget.AnchorLayoutPositionStart,
-				VerticalPosition:   widget.AnchorLayoutPositionStart,
-				Padding: widget.Insets{
-					Left: 20, Top: 20,
-				},
-			}),
-		),
-	)
-
-	// Lives text
-	ui.livesText = widget.NewText(
-		widget.TextOpts.Text("Lives:", ui.font, colornames.White),
-		widget.TextOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.RowLayoutData{
-				Position: widget.RowLayoutPositionCenter,
-			}),
-		),
-	)
-	container.AddChild(ui.livesText)
-
-	// Don't call updateLivesIcons here - let it be called by UpdateLives
-	// ui.updateLivesIcons(container)
-
-	return container
+// rebuildScoreDisplay rebuilds the score display
+func (ui *ResponsiveUI) rebuildScoreDisplay() {
+	ui.scoreText = ui.hudBuilder.BuildScoreText(ui.state.Score)
 }
 
-// createScoreDisplay creates the responsive score display
-func (ui *ResponsiveUI) createScoreDisplay() *widget.Container {
-	container := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
-		widget.ContainerOpts.BackgroundImage(
-			image.NewNineSliceColor(color.RGBA{0, 0, 0, 180}),
-		),
-		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				HorizontalPosition: widget.AnchorLayoutPositionEnd,
-				VerticalPosition:   widget.AnchorLayoutPositionStart,
-				Padding: widget.Insets{
-					Right: 20, Top: 20,
-				},
-			}),
-		),
-	)
+// rebuildAmmoDisplay rebuilds the ammo display
+func (ui *ResponsiveUI) rebuildAmmoDisplay() {
+	ui.clearContainer(ui.ammoContainer, ui.ammoIcons)
+	ui.ammoIcons = nil
 
-	ui.scoreText = widget.NewText(
-		widget.TextOpts.Text("Score: 0", ui.font, colornames.White),
-		widget.TextOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				HorizontalPosition: widget.AnchorLayoutPositionCenter,
-				VerticalPosition:   widget.AnchorLayoutPositionCenter,
-			}),
-		),
-	)
-	container.AddChild(ui.scoreText)
-
-	return container
-}
-
-// createHealthBar creates the responsive health bar
-func (ui *ResponsiveUI) createHealthBar() *widget.Container {
-	container := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
-		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				HorizontalPosition: widget.AnchorLayoutPositionStart,
-				VerticalPosition:   widget.AnchorLayoutPositionEnd,
-				Padding: widget.Insets{
-					Left: 20, Bottom: 20,
-				},
-			}),
-		),
-	)
-
-	// Health bar background
-	healthBarBg := widget.NewContainer(
-		widget.ContainerOpts.BackgroundImage(
-			image.NewNineSliceColor(color.RGBA{40, 40, 40, 200}),
-		),
-		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				HorizontalPosition: widget.AnchorLayoutPositionStart,
-				VerticalPosition:   widget.AnchorLayoutPositionCenter,
-			}),
-		),
-	)
-
-	// Health bar fill with required TrackImage.Idle
-	ui.healthBar = widget.NewProgressBar(
-		widget.ProgressBarOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				HorizontalPosition: widget.AnchorLayoutPositionStart,
-				VerticalPosition:   widget.AnchorLayoutPositionCenter,
-			}),
-		),
-		widget.ProgressBarOpts.Images(
-			&widget.ProgressBarImage{
-				Idle:  image.NewNineSliceColor(color.NRGBA{R: 100, G: 100, B: 100, A: 255}), // Track (background)
-				Hover: image.NewNineSliceColor(color.NRGBA{R: 120, G: 120, B: 120, A: 255}),
-			},
-			&widget.ProgressBarImage{
-				Idle:  image.NewNineSliceColor(color.NRGBA{R: 0, G: 255, B: 0, A: 255}), // Fill (foreground)
-				Hover: image.NewNineSliceColor(color.NRGBA{R: 0, G: 200, B: 0, A: 255}),
-			},
-		),
-		widget.ProgressBarOpts.Values(1, 3, 3),
-	)
-
-	container.AddChild(healthBarBg)
-	container.AddChild(ui.healthBar)
-
-	return container
-}
-
-// createAmmoCounter creates the responsive ammo counter
-func (ui *ResponsiveUI) createAmmoCounter() *widget.Container {
-	container := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(5),
-		)),
-		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				HorizontalPosition: widget.AnchorLayoutPositionEnd,
-				VerticalPosition:   widget.AnchorLayoutPositionEnd,
-				Padding: widget.Insets{
-					Right: 20, Bottom: 20,
-				},
-			}),
-		),
-	)
-
-	// Ammo text
-	ammoText := widget.NewText(
-		widget.TextOpts.Text("Ammo:", ui.font, colornames.White),
-		widget.TextOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.RowLayoutData{
-				Position: widget.RowLayoutPositionCenter,
-			}),
-		),
-	)
-	container.AddChild(ammoText)
-
-	// Ammo icons
-	ui.updateAmmoIcons(container)
-
-	return container
-}
-
-// updateLivesIcons updates the heart icons based on current lives
-func (ui *ResponsiveUI) updateLivesIcons(container *widget.Container) {
-	// Remove existing heart icons
-	for _, heartIcon := range ui.heartIcons {
-		container.RemoveChild(heartIcon)
-	}
-	ui.heartIcons = ui.heartIcons[:0] // Clear the slice
-
-	// Add new heart icons
-	for i := 0; i < ui.currentLives; i++ {
-		heartIcon := widget.NewGraphic(
-			widget.GraphicOpts.Image(ui.heartSprite),
-			widget.GraphicOpts.WidgetOpts(
-				widget.WidgetOpts.LayoutData(widget.RowLayoutData{
-					Position: widget.RowLayoutPositionCenter,
-				}),
-			),
-		)
-		container.AddChild(heartIcon)
-		ui.heartIcons = append(ui.heartIcons, heartIcon)
-	}
-}
-
-// updateAmmoIcons updates the ammo icons based on current ammo
-func (ui *ResponsiveUI) updateAmmoIcons(container *widget.Container) {
-	// Remove existing ammo icons
-	for _, ammoIcon := range ui.ammoIcons {
-		container.RemoveChild(ammoIcon)
-	}
-	ui.ammoIcons = ui.ammoIcons[:0] // Clear the slice
-
-	// Use ammo sprite if available, otherwise use heart sprite or create a simple colored image
-	var ammoIconImage *ebiten.Image
-	if ui.ammoSprite != nil {
-		ammoIconImage = ui.ammoSprite
-	} else if ui.heartSprite != nil {
-		ammoIconImage = ui.heartSprite
+	if ui.state.Ammo <= MaxAmmoIcons {
+		// Show individual ammo icons
+		for i := 0; i < ui.state.Ammo; i++ {
+			ammoIcon := ui.hudBuilder.BuildAmmoIcon()
+			ui.ammoContainer.AddChild(ammoIcon)
+			ui.ammoIcons = append(ui.ammoIcons, ammoIcon)
+		}
 	} else {
-		// Create a simple yellow square for ammo icons
-		ammoIconImage = ebiten.NewImage(16, 16)
-		ammoIconImage.Fill(color.NRGBA{R: 255, G: 255, B: 0, A: 255}) // Yellow square
+		// Show fallback text for high ammo counts
+		ammoText := ui.hudBuilder.BuildAmmoText()
+		ui.ammoContainer.AddChild(ammoText)
 	}
+}
 
-	for i := 0; i < ui.currentAmmo && i < 10; i++ { // Limit to 10 visible icons
-		ammoIcon := widget.NewGraphic(
-			widget.GraphicOpts.Image(ammoIconImage),
-			widget.GraphicOpts.WidgetOpts(
-				widget.WidgetOpts.LayoutData(widget.RowLayoutData{
-					Position: widget.RowLayoutPositionCenter,
-				}),
-			),
-		)
-		container.AddChild(ammoIcon)
-		ui.ammoIcons = append(ui.ammoIcons, ammoIcon)
+// clearContainer removes widgets from container and clears the slice
+func (ui *ResponsiveUI) clearContainer(container *widget.Container, widgets []*widget.Graphic) {
+	for _, widget := range widgets {
+		container.RemoveChild(widget)
 	}
 }
 
 // UpdateLives updates the lives display
-func (ui *ResponsiveUI) UpdateLives(lives int) {
-	if ui.currentLives != lives {
-		ui.currentLives = lives
-		ui.updateLivesIcons(ui.livesContainer)
+func (ui *ResponsiveUI) UpdateLives(lives int) error {
+	newState := *ui.state
+	newState.Lives = lives
+	if err := newState.Validate(); err != nil {
+		return err
 	}
+
+	if ui.state.Lives != lives {
+		ui.state.Lives = lives
+		ui.livesText.Label = ui.hudBuilder.BuildLivesText(lives).Label
+	}
+	return nil
 }
 
 // UpdateScore updates the score display
-func (ui *ResponsiveUI) UpdateScore(score int) {
-	if ui.currentScore != score {
-		ui.currentScore = score
-		ui.scoreText.Label = fmt.Sprintf("Score: %d", score)
+func (ui *ResponsiveUI) UpdateScore(score int) error {
+	newState := *ui.state
+	newState.Score = score
+	if err := newState.Validate(); err != nil {
+		return err
 	}
+
+	if ui.state.Score != score {
+		ui.state.Score = score
+		ui.scoreText.Label = ui.hudBuilder.BuildScoreText(score).Label
+	}
+	return nil
 }
 
-// UpdateHealth updates the health bar
-func (ui *ResponsiveUI) UpdateHealth(health float64) {
-	if ui.currentHealth != health {
-		ui.currentHealth = health
-		ui.healthBar.SetCurrent(int(health * 100)) // Convert to percentage
+// UpdateAmmo updates the ammo display
+func (ui *ResponsiveUI) UpdateAmmo(ammo int) error {
+	newState := *ui.state
+	newState.Ammo = ammo
+	if err := newState.Validate(); err != nil {
+		return err
 	}
+
+	if ui.state.Ammo != ammo {
+		ui.state.Ammo = ammo
+		ui.rebuildAmmoDisplay()
+	}
+	return nil
 }
 
-// UpdateAmmo updates the ammo counter
-func (ui *ResponsiveUI) UpdateAmmo(ammo int) {
-	if ui.currentAmmo != ammo {
-		ui.currentAmmo = ammo
-		ui.updateAmmoIcons(ui.ammoContainer)
-	}
-}
-
-// UpdateResponsiveLayout updates the UI layout based on screen size
+// UpdateResponsiveLayout updates the layout based on screen dimensions
 func (ui *ResponsiveUI) UpdateResponsiveLayout(width, height int) {
-	ui.screenWidth = width
-	ui.screenHeight = height
-
-	// Determine device class
-	if width < 768 {
-		ui.deviceClass = "mobile"
-	} else if width < 1024 {
-		ui.deviceClass = "tablet"
-	} else if width > 1920 {
-		ui.deviceClass = "ultrawide"
-	} else {
-		ui.deviceClass = "desktop"
-	}
+	ui.layout.Update(width, height)
 }
 
-// Update updates the EbitenUI system
+// Update updates the UI system
 func (ui *ResponsiveUI) Update() {
 	ui.ui.Update()
 }
 
-// Draw draws the UI
+// Draw renders the UI
 func (ui *ResponsiveUI) Draw(screen *ebiten.Image) {
 	ui.ui.Draw(screen)
 }
 
-// GetUI returns the underlying EbitenUI instance
-func (ui *ResponsiveUI) GetUI() *ebitenui.UI {
-	return ui.ui
-}
-
 // GetDeviceClass returns the current device class
 func (ui *ResponsiveUI) GetDeviceClass() string {
-	return ui.deviceClass
+	return ui.layout.GetDeviceClass()
 }
 
 // GetScreenDimensions returns the current screen dimensions
 func (ui *ResponsiveUI) GetScreenDimensions() (width, height int) {
-	return ui.screenWidth, ui.screenHeight
+	return ui.layout.GetDimensions()
 }
