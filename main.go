@@ -11,6 +11,12 @@ import (
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/game"
+
+	_ "github.com/jonesrussell/gimbal/internal/scenes/gameover"
+	_ "github.com/jonesrussell/gimbal/internal/scenes/gameplay"
+	_ "github.com/jonesrussell/gimbal/internal/scenes/intro"
+	_ "github.com/jonesrussell/gimbal/internal/scenes/mainmenu"
+	_ "github.com/jonesrussell/gimbal/internal/scenes/pause"
 )
 
 // ExitCode represents the program's exit status
