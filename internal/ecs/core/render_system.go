@@ -5,6 +5,8 @@ import (
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
+
+	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 func RenderSystem(w donburi.World, screen *ebiten.Image) {
@@ -26,8 +28,12 @@ func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
 		return
 	}
 
+	renderStaticEntity(entry, screen, pos, *sprite)
+}
+
+func renderStaticEntity(entry *donburi.Entry, screen *ebiten.Image, pos *common.Point, sprite *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	applySpriteTransform(entry, *sprite, op)
+	applySpriteTransform(entry, sprite, op)
 
 	// Apply invincibility flashing if entity has health and is invincible
 	if entry.HasComponent(Health) {
@@ -48,7 +54,7 @@ func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
 
 	// Apply position translation
 	op.GeoM.Translate(pos.X, pos.Y)
-	screen.DrawImage(*sprite, op)
+	screen.DrawImage(sprite, op)
 }
 
 func applySpriteTransform(entry *donburi.Entry, sprite *ebiten.Image, op *ebiten.DrawImageOptions) {

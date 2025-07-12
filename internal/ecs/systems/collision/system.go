@@ -4,7 +4,20 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
+
+// CollisionSystemConfig groups all dependencies for CollisionSystem
+// to avoid argument limit lint violations
+type CollisionSystemConfig struct {
+	World        donburi.World
+	Config       *common.GameConfig
+	HealthSystem interface{} // Using interface to avoid circular dependency
+	EventSystem  interface{} // Using interface to avoid circular dependency
+	ScoreManager *managers.ScoreManager
+	EnemySystem  interface{} // Using interface to avoid circular dependency
+	Logger       common.Logger
+}
 
 // CollisionSystem manages collision detection and response
 type CollisionSystem struct {
@@ -12,23 +25,21 @@ type CollisionSystem struct {
 	config       *common.GameConfig
 	healthSystem interface{} // Using interface to avoid circular dependency
 	eventSystem  interface{} // Using interface to avoid circular dependency
+	scoreManager *managers.ScoreManager
+	enemySystem  interface{} // Using interface to avoid circular dependency
 	logger       common.Logger
 }
 
 // NewCollisionSystem creates a new collision system
-func NewCollisionSystem(
-	world donburi.World,
-	config *common.GameConfig,
-	healthSystem interface{},
-	eventSystem interface{},
-	logger common.Logger,
-) *CollisionSystem {
+func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
 	return &CollisionSystem{
-		world:        world,
-		config:       config,
-		healthSystem: healthSystem,
-		eventSystem:  eventSystem,
-		logger:       logger,
+		world:        cfg.World,
+		config:       cfg.Config,
+		healthSystem: cfg.HealthSystem,
+		eventSystem:  cfg.EventSystem,
+		scoreManager: cfg.ScoreManager,
+		enemySystem:  cfg.EnemySystem,
+		logger:       cfg.Logger,
 	}
 }
 

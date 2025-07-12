@@ -102,6 +102,7 @@ func (g *ECSGame) initializeSystems() error {
 		InputHandler: g.inputHandler,
 		Font:         font,
 		ScoreManager: g.scoreManager,
+		ResourceMgr:  g.resourceManager,
 	})
 
 	// Set resume callback to unpause game state
@@ -118,9 +119,17 @@ func (g *ECSGame) initializeSystems() error {
 	}
 
 	// Create combat systems
-	g.enemySystem = NewEnemySystem(g.world, g.config)
+	g.enemySystem = NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
 	g.weaponSystem = NewWeaponSystem(g.world, g.config)
-	g.collisionSystem = collision.NewCollisionSystem(g.world, g.config, g.healthSystem, g.eventSystem, g.logger)
+	g.collisionSystem = collision.NewCollisionSystem(&collision.CollisionSystemConfig{
+		World:        g.world,
+		Config:       g.config,
+		HealthSystem: g.healthSystem,
+		EventSystem:  g.eventSystem,
+		ScoreManager: g.scoreManager,
+		EnemySystem:  g.enemySystem,
+		Logger:       g.logger,
+	})
 
 	return nil
 }
