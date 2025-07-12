@@ -267,7 +267,7 @@ func (dr *DebugRenderer) getEntityColor(entry *donburi.Entry) color.RGBA {
 }
 
 // drawSpriteDebug draws sprite boundaries and center points
-func (dr *DebugRenderer) drawSpriteDebug(screen *ebiten.Image, sprite *ebiten.Image, x, y float64) {
+func (dr *DebugRenderer) drawSpriteDebug(screen, sprite *ebiten.Image, x, y float64) {
 	bounds := sprite.Bounds()
 
 	// Calculate sprite position (assuming sprite is centered on entity)

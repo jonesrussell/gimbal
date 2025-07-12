@@ -108,15 +108,7 @@ layout.Add(element2)
 layout.Draw(renderer, pos)
 ```
 
-### VerticalLayout
-Arranges elements top-to-bottom with consistent spacing.
 
-```go
-layout := NewVerticalLayout(spacing)
-layout.Add(element1)
-layout.Add(element2)
-layout.Draw(renderer, pos)
-```
 
 ## Positioning Helpers
 
@@ -125,14 +117,8 @@ layout.Draw(renderer, pos)
 - `TopRightRelative(screenWidth, x, y)` - Position from top-right
 
 ### Responsive Positioning
-- `CenterHorizontal(screenWidth, elementWidth)` - Center horizontally
-- `CenterVertical(screenHeight, elementHeight)` - Center vertically
-- `ResponsivePosition(screenWidth, screenHeight, anchor)` - Anchor-based positioning
-
-### Anchor Options
-- `"center"` - Screen center
-- `"top-center"` - Top center with margin
-- `"bottom-center"` - Bottom center with margin
+- `TopLeft(x, y)` - Position at top-left coordinates
+- `TopRightRelative(screenWidth, x, y)` - Position from top-right
 
 ## Theme System
 
@@ -179,7 +165,7 @@ text := NewTextWithStyle("Game Over", TextStyle{
     Size:      24,
     Alignment: AlignCenter,
 })
-text.Draw(renderer, ResponsivePosition(screenWidth, screenHeight, "center"))
+text.Draw(renderer, TopLeft(screenWidth/2, screenHeight/2))
 ```
 
 ### Horizontal Layout with Icons
@@ -192,14 +178,7 @@ for i := 0; i < lives; i++ {
 layout.Draw(renderer, TopLeft(20, 20))
 ```
 
-### Vertical Layout for Menu
-```go
-layout := NewVerticalLayout(16.0)
-layout.Add(NewTextWithStyle("Start Game", menuStyle))
-layout.Add(NewTextWithStyle("Options", menuStyle))
-layout.Add(NewTextWithStyle("Quit", menuStyle))
-layout.Draw(renderer, ResponsivePosition(screenWidth, screenHeight, "center"))
-```
+
 
 ## Debug Mode
 

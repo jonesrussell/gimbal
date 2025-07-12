@@ -20,7 +20,8 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 	// Check if already loaded
 	if resource, exists := rm.resources[name]; exists {
 		if sprite, ok := resource.Data.(*ebiten.Image); ok {
-			rm.logger.Debug("[SPRITE_CACHE] Sprite reused from cache", "name", name, "was_processed", name == "enemy_sheet")
+			rm.logger.Debug("[SPRITE_CACHE] Sprite reused from cache",
+				"name", name, "was_processed", name == "enemy_sheet")
 			return sprite, nil
 		}
 	}
@@ -41,7 +42,8 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 
 	imageData, err := assets.Assets.ReadFile(path)
 	if err != nil {
-		rm.logger.Error("[SPRITE_ERROR] Failed to read sprite file from embed", "name", name, "path", path, "error", err)
+		rm.logger.Error("[SPRITE_ERROR] Failed to read sprite file from embed",
+			"name", name, "path", path, "error", err)
 		return nil, common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to read sprite file", err)
 	}
 

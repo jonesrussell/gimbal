@@ -117,6 +117,11 @@ tasks:
       - go fmt ./...
       - golangci-lint run --fix ./...
 
+  deadcode:
+    desc: Check for dead code
+    cmds:
+      - deadcode ./...
+
   # Code generation tasks
   generate:mocks:
     desc: Generate mocks using mockgen
@@ -197,9 +202,10 @@ tasks:
 
   # Utility tasks
   check:
-    desc: Run all checks (lint, test, build)
+    desc: Run all checks (lint, test, build, deadcode)
     cmds:
       - task: lint
+      - task: deadcode
       - task: test:short
       - task: build:all
 
