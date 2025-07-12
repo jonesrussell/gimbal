@@ -28,7 +28,7 @@ type Container struct {
 	shutdown    bool
 }
 
-// NewContainer creates a new application container
+// NewContainer creates a new application dependency container with the provided configuration
 func NewContainer(appConfig *config.AppConfig) *Container {
 	return &Container{
 		appConfig: appConfig,

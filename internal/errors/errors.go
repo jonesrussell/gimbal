@@ -22,7 +22,7 @@ func (e *GameError) Unwrap() error {
 	return e.Cause
 }
 
-// NewGameError creates a new GameError
+// NewGameError creates a new game error with the specified code and message
 func NewGameError(code, message string) *GameError {
 	return &GameError{
 		Code:    code,
@@ -30,7 +30,7 @@ func NewGameError(code, message string) *GameError {
 	}
 }
 
-// NewGameErrorWithCause creates a new GameError with a cause
+// NewGameErrorWithCause creates a new game error with the specified code, message, and underlying cause
 func NewGameErrorWithCause(code, message string, cause error) *GameError {
 	return &GameError{
 		Code:    code,

@@ -37,7 +37,7 @@ type CollisionSystem struct {
 	logger       common.Logger
 }
 
-// NewCollisionSystem creates a new collision system with proper dependency injection
+// NewCollisionSystem creates a new collision detection system with the provided configuration
 func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
 	return &CollisionSystem{
 		world:        cfg.World,

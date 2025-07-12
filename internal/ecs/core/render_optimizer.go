@@ -25,7 +25,7 @@ type RenderOptimizer struct {
 	cullMargin float64
 }
 
-// NewRenderOptimizer creates a new render optimizer
+// NewRenderOptimizer creates a new render optimization system with the provided configuration
 func NewRenderOptimizer(cfg *config.GameConfig) *RenderOptimizer {
 	return &RenderOptimizer{
 		config:     cfg,

@@ -15,7 +15,7 @@ type ImagePool struct {
 	logger common.Logger
 }
 
-// NewImagePool creates a new image pool
+// NewImagePool creates a new image resource pool with the provided logger
 func NewImagePool(logger common.Logger) *ImagePool {
 	return &ImagePool{
 		pool:   make(map[string][]*ebiten.Image),

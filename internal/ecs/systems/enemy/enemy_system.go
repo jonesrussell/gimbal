@@ -30,6 +30,7 @@ type EnemySystem struct {
 	enemySprite *ebiten.Image
 }
 
+// NewEnemySystem creates a new enemy management system with the provided dependencies
 func NewEnemySystem(
 	world donburi.World,
 	gameConfig *config.GameConfig,

@@ -37,7 +37,7 @@ type ResourceManager struct {
 	scaledCache map[string]*ebiten.Image // Cache for scaled sprites
 }
 
-// NewResourceManager creates a new resource manager
+// NewResourceManager creates a new resource management system with the provided logger
 func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceManager {
 	rm := &ResourceManager{
 		resources:   make(map[string]*Resource),
