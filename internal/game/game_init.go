@@ -21,6 +21,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 	"github.com/jonesrussell/gimbal/internal/ui"
+	uicore "github.com/jonesrussell/gimbal/internal/ui/core"
 )
 
 // validateGameConfig validates the provided game configuration
@@ -141,12 +142,12 @@ func (g *ECSGame) initializeUI(ctx context.Context) error {
 		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", err)
 	}
 
-	heartSprite, err := g.resourceManager.GetUISprite(ctx, "heart", ui.HeartIconSize)
+	heartSprite, err := g.resourceManager.GetUISprite(ctx, "heart", uicore.HeartIconSize)
 	if err != nil {
 		return fmt.Errorf("failed to load heart sprite: %w", err)
 	}
 
-	ammoSprite, err := g.resourceManager.GetUISprite(ctx, "ammo", ui.AmmoIconSize)
+	ammoSprite, err := g.resourceManager.GetUISprite(ctx, "ammo", uicore.AmmoIconSize)
 	if err != nil {
 		g.logger.Warn("Failed to load ammo sprite, using fallback", "error", err)
 		ammoSprite = nil // Will use fallback in UI
