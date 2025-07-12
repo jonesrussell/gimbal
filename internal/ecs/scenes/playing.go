@@ -131,7 +131,7 @@ func (s *PlayingScene) drawUIElements() {
 
 		// Draw lives display using UI renderer
 		livesDisplay := ui.NewLivesDisplay(current, maximum)
-		s.uiRenderer.Draw(livesDisplay, ui.TopLeft(20, 20))
+		s.uiRenderer.Draw(livesDisplay, ui.TopLeft(80, 10))
 	}
 
 	// Draw score display using UI renderer
