@@ -56,14 +56,6 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 	// Clear screen
 	screen.Fill(color.Black)
 
-	// Visual debug: draw a red rectangle in the top-left
-	screen.Set(10, 10, color.RGBA{255, 0, 0, 255})
-	for x := 10; x < 60; x++ {
-		for y := 10; y < 60; y++ {
-			screen.Set(x, y, color.RGBA{255, 0, 0, 255})
-		}
-	}
-
 	s.manager.logger.Debug("PlayingScene.Draw called", "screen_size", screen.Bounds())
 
 	// Apply screen shake if active
