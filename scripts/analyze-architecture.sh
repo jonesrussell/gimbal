@@ -1,164 +1,139 @@
 #!/bin/bash
 
-# Go Project Architecture Analysis Script
-# Run from project root: ./scripts/analyze-architecture.sh
+# scripts/analyze-architecture-new.sh
+# Modular Go project architecture analysis
 
 set -e
 
-echo "🔍 Go Project Architecture Analysis"
-echo "====================================="
-echo ""
+# Source all library modules
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/common.sh"
+source "$SCRIPT_DIR/lib/project-structure.sh"
+source "$SCRIPT_DIR/lib/code-metrics.sh"
+source "$SCRIPT_DIR/lib/static-analysis.sh"
+source "$SCRIPT_DIR/lib/architecture-recommendations.sh"
+
+# Usage function
+usage() {
+    echo "Usage: $0 [options]"
+    echo ""
+    echo "Analyze Go project architecture and identify improvement opportunities"
+    echo ""
+    echo "Options:"
+    echo "  -s, --structure   Show detailed project structure analysis"
+    echo "  -m, --metrics     Show detailed code metrics"
+    echo "  -a, --analysis    Show static analysis results"
+    echo "  -i, --issues      Show potential issues and anti-patterns"
+    echo "  -r, --recommend   Show architecture recommendations"
+    echo "  -o, --output      Output to file instead of stdout"
+    echo "  -h, --help        Show this help"
+    echo ""
+    echo "Examples:"
+    echo "  $0                    # Full analysis"
+    echo "  $0 --structure --metrics"
+    echo "  $0 --issues --recommend --output analysis.txt"
+}
+
+# Default options
+SHOW_STRUCTURE=false
+SHOW_METRICS=false
+SHOW_ANALYSIS=false
+SHOW_ISSUES=false
+SHOW_RECOMMEND=false
+OUTPUT_FILE=""
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -s|--structure)
+            SHOW_STRUCTURE=true
+            shift
+            ;;
+        -m|--metrics)
+            SHOW_METRICS=true
+            shift
+            ;;
+        -a|--analysis)
+            SHOW_ANALYSIS=true
+            shift
+            ;;
+        -i|--issues)
+            SHOW_ISSUES=true
+            shift
+            ;;
+        -r|--recommend)
+            SHOW_RECOMMEND=true
+            shift
+            ;;
+        -o|--output)
+            OUTPUT_FILE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -*|--*)
+            echo "Unknown option $1"
+            usage
+            exit 1
+            ;;
+        *)
+            echo "Unexpected argument $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+# Setup output redirection
+if [ -n "$OUTPUT_FILE" ]; then
+    exec > "$OUTPUT_FILE"
+fi
 
 # Change to project root (assuming script is in scripts/ directory)
 cd "$(dirname "$0")/.."
 
-echo "📁 PROJECT STRUCTURE"
-echo "---------------------"
-echo "Project root: $(pwd)"
-echo ""
+# Main analysis function
+analyze_architecture() {
+    print_header "🔍 Go Project Architecture Analysis"
+    
+    # Always show basic structure and dependencies
+    analyze_project_structure
+    analyze_dependencies
+    analyze_entry_points
+    analyze_build_tools
+    
+    # Optional detailed analyses
+    if [ "$SHOW_METRICS" = true ] || [ "$SHOW_STRUCTURE" = false ] && [ "$SHOW_ANALYSIS" = false ] && [ "$SHOW_ISSUES" = false ] && [ "$SHOW_RECOMMEND" = false ]; then
+        analyze_code_metrics
+        analyze_patterns
+    fi
+    
+    if [ "$SHOW_ANALYSIS" = true ] || [ "$SHOW_STRUCTURE" = false ] && [ "$SHOW_METRICS" = false ] && [ "$SHOW_ISSUES" = false ] && [ "$SHOW_RECOMMEND" = false ]; then
+        analyze_static_analysis
+    fi
+    
+    if [ "$SHOW_ISSUES" = true ] || [ "$SHOW_STRUCTURE" = false ] && [ "$SHOW_METRICS" = false ] && [ "$SHOW_ANALYSIS" = false ] && [ "$SHOW_RECOMMEND" = false ]; then
+        analyze_potential_issues
+    fi
+    
+    if [ "$SHOW_RECOMMEND" = true ] || [ "$SHOW_STRUCTURE" = false ] && [ "$SHOW_METRICS" = false ] && [ "$SHOW_ANALYSIS" = false ] && [ "$SHOW_ISSUES" = false ]; then
+        generate_architecture_recommendations
+    fi
+    
+    # Always show summary and recommendations if no specific options
+    if [ "$SHOW_STRUCTURE" = false ] && [ "$SHOW_METRICS" = false ] && [ "$SHOW_ANALYSIS" = false ] && [ "$SHOW_ISSUES" = false ] && [ "$SHOW_RECOMMEND" = false ]; then
+        # Full analysis mode
+        analyze_code_metrics
+        analyze_patterns
+        analyze_static_analysis
+        analyze_potential_issues
+        generate_architecture_recommendations
+    fi
+    
+    generate_analysis_summary
+}
 
-# Check if tree is available, fallback to find
-if command -v tree &> /dev/null; then
-    echo "Directory structure:"
-    tree -I 'vendor|node_modules|.git|*.exe|*.so|*.dylib' -L 3
-else
-    echo "Directory structure (using find):"
-    find . -type d -name ".git" -prune -o -type d -name "vendor" -prune -o -type d -name "node_modules" -prune -o -type d -print | head -20
-fi
-
-echo ""
-echo "Go files structure:"
-find . -type f -name "*.go" | grep -v vendor | head -20
-
-echo ""
-echo "📦 DEPENDENCIES & MODULES"
-echo "-------------------------"
-if [ -f "go.mod" ]; then
-    echo "Go module info:"
-    head -10 go.mod
-    echo ""
-    echo "Dependency graph (top 20):"
-    go mod graph | head -20
-else
-    echo "❌ No go.mod found - not a Go module project"
-fi
-
-echo ""
-echo "📊 CODE METRICS"
-echo "---------------"
-echo "Go files count:"
-find . -name "*.go" -not -path "./vendor/*" | wc -l
-
-echo ""
-echo "Total lines of Go code:"
-find . -name "*.go" -not -path "./vendor/*" -exec wc -l {} + | tail -1
-
-echo ""
-echo "Lines per file (largest files first):"
-find . -name "*.go" -not -path "./vendor/*" -exec wc -l {} + | sort -nr | head -10
-
-echo ""
-echo "Function/method counts:"
-echo "Total functions: $(grep -r "^func " . --include="*.go" --exclude-dir=vendor | wc -l)"
-echo "Methods (receiver functions): $(grep -r "^func (" . --include="*.go" --exclude-dir=vendor | wc -l)"
-
-echo ""
-echo "🎯 MAIN ENTRY POINTS"
-echo "--------------------"
-echo "Main files found:"
-find . -name "main.go" -not -path "./vendor/*"
-
-echo ""
-echo "Main functions:"
-grep -r "func main()" . --include="*.go" --exclude-dir=vendor
-
-echo ""
-echo "🛠️  BUILD TOOLS & TASKS"
-echo "----------------------"
-if command -v task &> /dev/null; then
-    echo "Available tasks:"
-    task --list
-    echo ""
-else
-    echo "❌ Task not found - install from https://taskfile.dev"
-fi
-
-echo ""
-echo "🔧 STATIC ANALYSIS"
-echo "------------------"
-
-# Check for common static analysis tools
-echo "Checking for static analysis tools..."
-
-if command -v gocyclo &> /dev/null; then
-    echo "Cyclomatic complexity (top 10 most complex functions):"
-    gocyclo -top 10 .
-    echo ""
-else
-    echo "📝 Install gocyclo for complexity analysis: go install github.com/fzipp/gocyclo/cmd/gocyclo@latest"
-fi
-
-if command -v golint &> /dev/null; then
-    echo "Lint issues (first 20):"
-    golint ./... | head -20
-    echo ""
-else
-    echo "📝 Install golint: go install golang.org/x/lint/golint@latest"
-fi
-
-if command -v staticcheck &> /dev/null; then
-    echo "Static analysis issues (first 20):"
-    staticcheck ./... | head -20
-    echo ""
-else
-    echo "📝 Install staticcheck: go install honnef.co/go/tools/cmd/staticcheck@latest"
-fi
-
-# Basic pattern analysis
-echo ""
-echo "🔍 PATTERN ANALYSIS"
-echo "-------------------"
-echo "Struct definitions:"
-grep -r "^type.*struct" . --include="*.go" --exclude-dir=vendor | wc -l
-
-echo ""
-echo "Interface definitions:"
-grep -r "^type.*interface" . --include="*.go" --exclude-dir=vendor | wc -l
-
-echo ""
-echo "Package declarations:"
-grep -r "^package " . --include="*.go" --exclude-dir=vendor | cut -d: -f2 | sort | uniq -c | sort -nr
-
-echo ""
-echo "🚨 POTENTIAL ISSUES"
-echo "-------------------"
-echo "Files with >500 lines (potential refactoring candidates):"
-find . -name "*.go" -not -path "./vendor/*" -exec wc -l {} + | awk '$1 > 500 {print $2 " (" $1 " lines)"}' | sort
-
-echo ""
-echo "Long function names (>30 chars, might indicate SRP violations):"
-grep -r "^func " . --include="*.go" --exclude-dir=vendor | grep -E "func [^(]{30,}\(" | head -10
-
-echo ""
-echo "Global variables (potential state management issues):"
-grep -r "^var " . --include="*.go" --exclude-dir=vendor | head -10
-
-echo ""
-echo "Init functions (initialization complexity):"
-grep -r "func init()" . --include="*.go" --exclude-dir=vendor
-
-echo ""
-echo "✅ ANALYSIS COMPLETE"
-echo "===================="
-echo "Review the output above to identify:"
-echo "- Large files that need refactoring"
-echo "- Complex functions that violate SRP"
-echo "- Missing interfaces (low interface count vs struct count)"
-echo "- Package organization issues"
-echo "- Global state management problems"
-echo ""
-echo "Next steps:"
-echo "1. Install missing static analysis tools"
-echo "2. Review largest/most complex files first"
-echo "3. Look for common anti-patterns"
-echo "4. Check for proper separation of concerns"
+# Run the analysis
+analyze_architecture 
