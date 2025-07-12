@@ -63,13 +63,59 @@ func New() (*Logger, error) {
 
 // NewWithConfig creates a new logger instance with custom configuration
 func NewWithConfig(config *Config) (*Logger, error) {
-	// Parse log level
 	level, err := zapcore.ParseLevel(config.LogLevel)
 	if err != nil {
 		level = zapcore.DebugLevel
 	}
 
-	// Create encoder for console output
+	cores, logFile, err := createLoggerCores(config, level)
+	if err != nil {
+		return nil, err
+	}
+
+	zapLogger := createZapLogger(cores)
+	logger := createLogger(zapLogger, logFile)
+
+	// Log initial message
+	logger.logInitialization(config)
+
+	return logger, nil
+}
+
+// createLoggerCores creates and configures the logger cores
+func createLoggerCores(config *Config, level zapcore.Level) ([]zapcore.Core, *os.File, error) {
+	var cores []zapcore.Core
+	var logFile *os.File
+	var err error
+
+	// Add console core if enabled
+	if config.ConsoleOut {
+		consoleCore := createConsoleCore(level)
+		cores = append(cores, consoleCore)
+	}
+
+	// Add file core if enabled
+	if config.FileOut && config.LogFile != "" {
+		logFile, err = createLogFile(config.LogFile)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		fileCore := createFileCore(logFile, level)
+		cores = append(cores, fileCore)
+	}
+
+	// If no cores configured, default to console
+	if len(cores) == 0 {
+		consoleCore := createConsoleCore(level)
+		cores = append(cores, consoleCore)
+	}
+
+	return cores, logFile, nil
+}
+
+// createConsoleCore creates a console output core
+func createConsoleCore(level zapcore.Level) zapcore.Core {
 	consoleEncoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "ts",
 		LevelKey:       "level",
@@ -85,7 +131,15 @@ func NewWithConfig(config *Config) (*Logger, error) {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	// Create encoder for file output (JSON format for better parsing)
+	return zapcore.NewCore(
+		zapcore.NewConsoleEncoder(consoleEncoderConfig),
+		zapcore.AddSync(&syncWriter{Writer: os.Stdout}),
+		level,
+	)
+}
+
+// createFileCore creates a file output core
+func createFileCore(logFile *os.File, level zapcore.Level) zapcore.Core {
 	fileEncoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "timestamp",
 		LevelKey:       "level",
@@ -101,75 +155,54 @@ func NewWithConfig(config *Config) (*Logger, error) {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	var cores []zapcore.Core
+	return zapcore.NewCore(
+		zapcore.NewJSONEncoder(fileEncoderConfig),
+		zapcore.AddSync(&syncWriter{Writer: logFile}),
+		level,
+	)
+}
 
-	// Add console core if enabled
-	if config.ConsoleOut {
-		consoleCore := zapcore.NewCore(
-			zapcore.NewConsoleEncoder(consoleEncoderConfig),
-			zapcore.AddSync(&syncWriter{Writer: os.Stdout}),
-			level,
-		)
-		cores = append(cores, consoleCore)
+// createLogFile creates and opens the log file
+func createLogFile(logFilePath string) (*os.File, error) {
+	// Ensure log directory exists
+	logDir := filepath.Dir(logFilePath)
+	if mkdirErr := os.MkdirAll(logDir, 0o755); mkdirErr != nil {
+		return nil, mkdirErr
 	}
 
-	// Add file core if enabled
-	var logFile *os.File
-	if config.FileOut && config.LogFile != "" {
-		// Ensure log directory exists
-		logDir := filepath.Dir(config.LogFile)
-		if err := os.MkdirAll(logDir, 0o755); err != nil {
-			return nil, err
-		}
+	// Open log file (create if doesn't exist, append if exists)
+	return os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+}
 
-		// Open log file (create if doesn't exist, append if exists)
-		logFile, err = os.OpenFile(config.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-		if err != nil {
-			return nil, err
-		}
-
-		fileCore := zapcore.NewCore(
-			zapcore.NewJSONEncoder(fileEncoderConfig),
-			zapcore.AddSync(&syncWriter{Writer: logFile}),
-			level,
-		)
-		cores = append(cores, fileCore)
-	}
-
-	// If no cores configured, default to console
-	if len(cores) == 0 {
-		consoleCore := zapcore.NewCore(
-			zapcore.NewConsoleEncoder(consoleEncoderConfig),
-			zapcore.AddSync(&syncWriter{Writer: os.Stdout}),
-			level,
-		)
-		cores = append(cores, consoleCore)
-	}
-
+// createZapLogger creates the zap logger with cores
+func createZapLogger(cores []zapcore.Core) *zap.Logger {
 	// Create multi-core
 	core := zapcore.NewTee(cores...)
 
 	// Create logger with development options
-	zapLogger := zap.New(core,
+	return zap.New(core,
 		zap.Development(),
 		zap.AddCaller(),
 		zap.AddStacktrace(zapcore.ErrorLevel),
 	)
+}
 
-	logger := &Logger{
+// createLogger creates the Logger wrapper
+func createLogger(zapLogger *zap.Logger, logFile *os.File) *Logger {
+	return &Logger{
 		Logger:   zapLogger,
 		lastLogs: make(map[string]any),
 		file:     logFile,
 	}
+}
 
-	// Log initial message
-	logger.Info("Logger initialized",
+// logInitialization logs the initial logger setup message
+func (l *Logger) logInitialization(config *Config) {
+	l.Info("Logger initialized",
 		"log_file", config.LogFile,
 		"log_level", config.LogLevel,
 		"console_output", config.ConsoleOut,
 		"file_output", config.FileOut)
-
-	return logger, nil
 }
 
 // Debug logs a debug message
