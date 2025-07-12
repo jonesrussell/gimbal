@@ -86,11 +86,30 @@ func (ms *MovementSystem) updatePlayerMovement(deltaTime float64) {
 		pos.Y = newY
 
 		// Update facing angle to point towards center (Gyruss-style)
-		// Calculate angle from player to center
-		dx := orbital.Center.X - pos.X
-		dy := orbital.Center.Y - pos.Y
-		facingAngle := math.Atan2(dy, dx) * 180.0 / math.Pi
+		// The facing angle should point toward the center
+		// When at bottom (90°), face up (270°)
+		// When at right (0°), face left (180°)
+		// When at top (270°), face down (90°)
+		// When at left (180°), face right (0°)
+		facingAngle := orbital.OrbitalAngle + 180
+
+		// Normalize angle to 0-360 range
+		for facingAngle < 0 {
+			facingAngle += 360
+		}
+		for facingAngle >= 360 {
+			facingAngle -= 360
+		}
+
 		orbital.FacingAngle = internalmath.Angle(facingAngle)
+
+		// DEBUG: Log the facing angle calculation
+		ms.logger.Debug("Facing angle calculation",
+			"orbital_angle", orbital.OrbitalAngle,
+			"calculated_facing", facingAngle,
+			"final_facing", orbital.FacingAngle,
+			"position", pos,
+			"center", orbital.Center)
 
 		ms.logger.Debug("Player orbital movement updated",
 			"input", movementInput,

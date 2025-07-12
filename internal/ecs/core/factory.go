@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -8,7 +9,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
-	"github.com/jonesrussell/gimbal/internal/math"
+	internalmath "github.com/jonesrussell/gimbal/internal/math"
 )
 
 // CreatePlayer creates a player entity with orbital movement
@@ -22,7 +23,12 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, gameConfig *config.Game
 		Y: float64(gameConfig.ScreenSize.Height) / 2,
 	}
 
-	Position.SetValue(entry, center)
+	// Calculate initial position at bottom of orbital path (90 degrees)
+	initialRadians := 90.0 * math.Pi / 180.0
+	initialX := center.X + math.Cos(initialRadians)*gameConfig.Radius
+	initialY := center.Y + math.Sin(initialRadians)*gameConfig.Radius
+
+	Position.SetValue(entry, common.Point{X: initialX, Y: initialY})
 	Sprite.SetValue(entry, sprite)
 
 	// Set up orbital movement - start at bottom (90 degrees)
@@ -38,11 +44,15 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, gameConfig *config.Game
 	Size.SetValue(entry, gameConfig.PlayerSize)
 
 	// Set initial angle
-	Angle.SetValue(entry, math.Angle(0))
+	Angle.SetValue(entry, internalmath.Angle(0))
 
 	// Set initial health (3 lives)
 	healthData := NewHealthData(3, 3)
 	Health.SetValue(entry, healthData)
+
+	// DEBUG: Log initial player setup
+	// Note: We can't access logger here, but we can verify the values are set correctly
+	// The movement system will log the actual values when it runs
 
 	return entity
 }

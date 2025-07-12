@@ -10,6 +10,7 @@ import (
 // AppConfig holds all application configuration
 type AppConfig struct {
 	LogLevel string
+	Logging  *LoggingConfig
 	Game     *AppGameConfig
 	Debug    *DebugConfig
 }
@@ -22,6 +23,13 @@ type AppGameConfig struct {
 	TPS          int
 	Resizable    bool
 	DefaultScene string
+}
+
+// LoggingConfig holds logging-specific configuration
+type LoggingConfig struct {
+	LogFile    string
+	ConsoleOut bool
+	FileOut    bool
 }
 
 // DebugConfig holds debug-specific configuration
@@ -46,6 +54,7 @@ type SystemInfo struct {
 func LoadAppConfig() (*AppConfig, error) {
 	config := &AppConfig{
 		LogLevel: getEnvWithDefault("LOG_LEVEL", "DEBUG"),
+		Logging:  loadLoggingConfig(),
 		Game:     loadAppGameConfig(),
 		Debug:    loadDebugConfig(),
 	}
@@ -62,6 +71,15 @@ func loadAppGameConfig() *AppGameConfig {
 		TPS:          getEnvIntWithDefault("GAME_TPS", 60),
 		Resizable:    getEnvBoolWithDefault("GAME_RESIZABLE", true),
 		DefaultScene: getEnvWithDefault("GAME_DEFAULT_SCENE", "menu"),
+	}
+}
+
+// loadLoggingConfig loads logging configuration
+func loadLoggingConfig() *LoggingConfig {
+	return &LoggingConfig{
+		LogFile:    getEnvWithDefault("LOG_FILE", "logs/gimbal.log"),
+		ConsoleOut: getEnvBoolWithDefault("LOG_CONSOLE_OUT", true),
+		FileOut:    getEnvBoolWithDefault("LOG_FILE_OUT", true),
 	}
 }
 
@@ -94,6 +112,10 @@ func (c *AppConfig) GetSystemInfo() *SystemInfo {
 
 // Validate validates the application configuration
 func (c *AppConfig) Validate() error {
+	if err := c.Logging.Validate(); err != nil {
+		return err
+	}
+
 	if err := c.Game.Validate(); err != nil {
 		return err
 	}
@@ -117,6 +139,19 @@ func (gc *AppGameConfig) Validate() error {
 
 	if gc.WindowTitle == "" {
 		return fmt.Errorf("window title cannot be empty")
+	}
+
+	return nil
+}
+
+// Validate validates logging configuration
+func (lc *LoggingConfig) Validate() error {
+	if lc.LogFile == "" {
+		return fmt.Errorf("log file path cannot be empty")
+	}
+
+	if !lc.ConsoleOut && !lc.FileOut {
+		return fmt.Errorf("at least one output destination must be enabled")
 	}
 
 	return nil
