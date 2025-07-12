@@ -37,7 +37,6 @@ require (
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/tdewolff/parse/v2 v2.7.15 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
 )
@@ -47,11 +46,14 @@ require (
 	github.com/go-text/typesetting v0.3.0 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/tools v0.34.0 // indirect
 )
 
 tool (
 	github.com/air-verse/air
 	github.com/hajimehoshi/wasmserve
+	go.uber.org/mock/mockgen
 )
