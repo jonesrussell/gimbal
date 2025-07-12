@@ -130,3 +130,18 @@ func (es *EnemySystem) updateEnemies() {
 		}
 	})
 }
+
+// DestroyEnemy destroys an enemy entity and returns points
+func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
+	entry := es.world.Entry(entity)
+	if !entry.Valid() {
+		return 0
+	}
+
+	// Remove the entity from the world
+	es.world.Remove(entity)
+
+	// Return points for destroying the enemy
+	// This could be made configurable based on enemy type
+	return 100
+}

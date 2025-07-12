@@ -112,20 +112,13 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 
 		// Remove enemy if health reaches 0
 		if enemyHealthData.Current <= 0 {
-			// Award points for destroying enemy using the registry
-			if err := cs.registry.Score().AddScore(ctx, 10); err != nil {
-				return err
-			}
+			// Award points for destroying enemy
+			cs.scoreManager.AddScore(10)
 
-			// Emit enemy destroyed event
-			if err := cs.registry.Events().EmitEnemyDestroyed(ctx, enemyEntity, 10); err != nil {
-				return err
-			}
+			// Remove enemy entity and get points
+			points := cs.enemySystem.DestroyEnemy(enemyEntity)
 
-			// Remove enemy entity
-			cs.world.Remove(enemyEntity)
-
-			cs.logger.Debug("Enemy destroyed", "points", 10)
+			cs.logger.Debug("Enemy destroyed", "points", points)
 		}
 	}
 

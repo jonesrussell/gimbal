@@ -102,10 +102,8 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 		// Remove enemy immediately
 		cs.world.Remove(enemyEntity)
 
-		// Damage player (1 damage per enemy collision) using the registry
-		if err := cs.registry.Health().DamageEntity(ctx, playerEntity, 1); err != nil {
-			return err
-		}
+		// Damage player (1 damage per enemy collision)
+		cs.healthSystem.DamagePlayer(playerEntity, 1)
 
 		cs.logger.Debug("Player damaged by enemy collision")
 	}
