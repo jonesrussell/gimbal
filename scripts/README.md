@@ -9,6 +9,7 @@ The scripts follow a modular architecture with shared libraries:
 ```
 scripts/
 ├── analyze-package.sh          # Modular package analysis (189 lines)
+├── analyze-architecture.sh     # Modular architecture analysis (150 lines)
 ├── lib/                        # Shared library modules
 │   ├── common.sh              # Shared utilities (colors, helpers)
 │   ├── package-info.sh        # Basic package information
@@ -17,7 +18,11 @@ scripts/
 │   ├── interface-analysis.sh  # Interface analysis
 │   ├── method-analysis.sh     # Method analysis
 │   ├── dependency-analysis.sh # Dependency analysis
-│   └── metrics.sh             # Code quality metrics
+│   ├── metrics.sh             # Code quality metrics
+│   ├── project-structure.sh   # Project structure analysis
+│   ├── code-metrics.sh        # Code metrics analysis
+│   ├── static-analysis.sh     # Static analysis tools
+│   └── architecture-recommendations.sh # Architecture recommendations
 └── tools/                      # Standalone analysis tools (future)
     ├── complexity-checker.sh  # Cyclomatic complexity analysis
     └── dependency-graph.sh    # Dependency visualization
@@ -52,18 +57,28 @@ scripts/
 
 ## Usage
 
-### Basic Analysis
+### Package Analysis
 ```bash
+# Basic package analysis
 ./scripts/analyze-package.sh internal/ecs/systems/collision
-```
 
-### Detailed Analysis
-```bash
-# Interface and method analysis
+# Detailed package analysis
 ./scripts/analyze-package.sh internal/ecs --interfaces --methods
 
-# Full analysis with all options
+# Full package analysis with all options
 ./scripts/analyze-package.sh internal/game -f -s -i -I -m -d
+```
+
+### Architecture Analysis
+```bash
+# Full project architecture analysis
+./scripts/analyze-architecture.sh
+
+# Focused analysis
+./scripts/analyze-architecture.sh --structure --metrics
+
+# Issues and recommendations only
+./scripts/analyze-architecture.sh --issues --recommend
 ```
 
 ## Module Descriptions
@@ -114,6 +129,30 @@ scripts/
 - **Purpose**: Code quality metrics and recommendations
 - **Functions**: Statistical analysis, best practice recommendations
 - **Size**: 85 lines
+- **Dependencies**: `common.sh`
+
+### `project-structure.sh`
+- **Purpose**: Project structure and dependency analysis
+- **Functions**: Directory structure, module info, entry points, build tools
+- **Size**: 67 lines
+- **Dependencies**: `common.sh`
+
+### `code-metrics.sh`
+- **Purpose**: Code metrics and pattern analysis
+- **Functions**: File counts, function analysis, pattern statistics
+- **Size**: 67 lines
+- **Dependencies**: `common.sh`
+
+### `static-analysis.sh`
+- **Purpose**: Static analysis tools integration
+- **Functions**: Complexity analysis, linting, potential issues
+- **Size**: 89 lines
+- **Dependencies**: `common.sh`
+
+### `architecture-recommendations.sh`
+- **Purpose**: Architecture recommendations and summary
+- **Functions**: Project health analysis, priority actions, final summary
+- **Size**: 89 lines
 - **Dependencies**: `common.sh`
 
 ## Current State
