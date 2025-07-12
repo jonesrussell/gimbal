@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
@@ -52,22 +53,69 @@ type ECSGame struct {
 	// Entity references
 	playerEntity donburi.Entity
 	starEntities []donburi.Entity
+	frameCount   int // For debug logging
 }
 
 // Update updates the game state
 func (g *ECSGame) Update() error {
+	g.frameCount++
+	if g.frameCount%60 == 0 {
+		g.logger.Debug("Game loop running",
+			"frame", g.frameCount,
+			"scene", g.sceneManager.GetCurrentScene(),
+			"entities", g.world.Len(),
+			"fps", ebiten.ActualFPS(),
+			"player_valid", g.playerEntity != 0)
+	}
 	// Handle input
 	g.inputHandler.HandleInput()
+	g.sceneManager.Update()
+	g.ui.Update()
 
-	// Update scene manager
-	if err := g.sceneManager.Update(); err != nil {
-		g.logger.Error("Scene update failed", "error", err)
-		return err
-	}
+	// NEW: Add ECS system updates during gameplay
+	currentScene := g.sceneManager.GetCurrentScene()
+	if currentScene != nil && currentScene.GetType() == scenes.ScenePlaying {
+		deltaTime := 1.0 / 60.0 // Or use actual delta time
+		ctx := context.Background()
 
-	// Update based on current scene
-	if err := g.ui.Update(); err != nil {
-		return err
+		if g.healthSystem != nil {
+			start := time.Now()
+			if err := g.healthSystem.Update(ctx); err != nil {
+				g.logger.Error("Health system update failed", "error", err)
+			}
+			dur := time.Since(start)
+			if dur > 5*time.Millisecond {
+				g.logger.Warn("Slow system update", "system", "health", "duration", dur)
+			}
+		}
+		if g.enemySystem != nil {
+			start := time.Now()
+			g.enemySystem.Update(deltaTime)
+			dur := time.Since(start)
+			if dur > 5*time.Millisecond {
+				g.logger.Warn("Slow system update", "system", "enemy", "duration", dur)
+			}
+		}
+		if g.weaponSystem != nil {
+			start := time.Now()
+			g.weaponSystem.Update(deltaTime)
+			dur := time.Since(start)
+			if dur > 5*time.Millisecond {
+				g.logger.Warn("Slow system update", "system", "weapon", "duration", dur)
+			}
+		}
+		if g.collisionSystem != nil {
+			start := time.Now()
+			if err := g.collisionSystem.Update(ctx); err != nil {
+				g.logger.Error("Collision system update failed", "error", err)
+			}
+			dur := time.Since(start)
+			if dur > 5*time.Millisecond {
+				g.logger.Warn("Slow system update", "system", "collision", "duration", dur)
+			}
+		}
+		// Add other ECS systems here if needed
+		g.logger.Debug("ECS systems updated", "delta", deltaTime)
 	}
 
 	current, maximum := g.healthSystem.GetPlayerHealth()

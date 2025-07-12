@@ -149,6 +149,12 @@ func (sceneMgr *SceneManager) SwitchScene(sceneType SceneType) {
 			sceneMgr.logger.Debug("Setting initial scene", "scene_type", sceneType)
 		}
 		sceneMgr.currentScene = scene
+		if sceneType == ScenePlaying {
+			sceneMgr.logger.Debug("Entering gameplay scene",
+				"player_entity", sceneMgr.world, // Replace with actual player entity if accessible
+				"health_system", sceneMgr.healthSystem != nil,
+				"resource_mgr", sceneMgr.resourceMgr != nil)
+		}
 		sceneMgr.currentScene.Enter()
 	} else {
 		sceneMgr.logger.Error("Scene not found", "scene_type", sceneType)
