@@ -9,6 +9,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
@@ -143,6 +144,12 @@ func (g *ECSGame) initializeSystems() error {
 	// Set health system for scenes to access
 	g.sceneManager.SetHealthSystem(g.healthSystem)
 
+	// Set render optimizer for scenes to access
+	g.sceneManager.SetRenderOptimizer(g.renderOptimizer)
+
+	// Set image pool for scenes to access
+	g.sceneManager.SetImagePool(g.imagePool)
+
 	// Set initial scene
 	if err := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); err != nil {
 		return errors.NewGameErrorWithCause(errors.ErrorCodeSystemFailed, "failed to set initial scene", err)
@@ -160,6 +167,13 @@ func (g *ECSGame) initializeSystems() error {
 		EnemySystem:  g.enemySystem,
 		Logger:       g.logger,
 	})
+
+	// Initialize performance optimizations
+	g.renderOptimizer = core.NewRenderOptimizer(g.config)
+	g.imagePool = core.NewImagePool(g.logger)
+	g.perfMonitor = debug.NewPerformanceMonitor(g.logger)
+
+	g.logger.Debug("Performance optimizations initialized")
 
 	return nil
 }

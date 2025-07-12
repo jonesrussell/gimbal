@@ -68,7 +68,10 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 
 	// Apply screen shake if active
 	if s.screenShake > 0 {
-		shakenImage := ebiten.NewImage(screen.Bounds().Dx(), screen.Bounds().Dy())
+		// Get image from pool instead of creating new one
+		shakenImage := s.manager.GetImagePool().GetImage(screen.Bounds().Dx(), screen.Bounds().Dy())
+		defer s.manager.GetImagePool().ReturnImage(shakenImage)
+
 		s.drawGameContent(shakenImage)
 		op := &ebiten.DrawImageOptions{}
 		shakeOffset := s.screenShake * 5
@@ -81,10 +84,16 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 
 func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
 	s.manager.logger.Debug("drawGameContent called", "screen_size", screen.Bounds())
-	// Run render system through wrapper
-	renderWrapper := core.NewRenderSystemWrapper(screen)
-	if err := renderWrapper.Update(s.manager.world); err != nil {
-		s.manager.logger.Error("Render system failed", "error", err)
+
+	// Use optimized render system if available
+	if renderOptimizer := s.manager.GetRenderOptimizer(); renderOptimizer != nil {
+		renderOptimizer.OptimizedRenderSystem(s.manager.world, screen)
+	} else {
+		// Fallback to original render system
+		renderWrapper := core.NewRenderSystemWrapper(screen)
+		if err := renderWrapper.Update(s.manager.world); err != nil {
+			s.manager.logger.Error("Render system failed", "error", err)
+		}
 	}
 
 	if s.manager.config.Debug {

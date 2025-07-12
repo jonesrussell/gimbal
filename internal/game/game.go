@@ -9,6 +9,8 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
@@ -58,10 +60,20 @@ type ECSGame struct {
 	playerEntity donburi.Entity
 	starEntities []donburi.Entity
 	frameCount   int // For debug logging
+
+	// Performance optimization
+	renderOptimizer *core.RenderOptimizer
+	imagePool       *core.ImagePool
+	perfMonitor     *debug.PerformanceMonitor
 }
 
 // Update updates the game state
 func (g *ECSGame) Update() error {
+	// Start performance monitoring
+	if g.perfMonitor != nil {
+		g.perfMonitor.StartFrame()
+	}
+
 	g.frameCount++
 	if g.frameCount%60 == 0 {
 		g.logger.Debug("Game loop running",
@@ -136,6 +148,11 @@ func (g *ECSGame) Update() error {
 		}
 		// Add other ECS systems here if needed
 		g.logger.Debug("ECS systems updated", "delta", deltaTime)
+	}
+
+	// End performance monitoring
+	if g.perfMonitor != nil {
+		g.perfMonitor.EndFrame()
 	}
 
 	current, maximum := g.healthSystem.GetPlayerHealth()
