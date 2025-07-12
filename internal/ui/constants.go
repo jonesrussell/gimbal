@@ -6,6 +6,11 @@ const (
 	AmmoIconSize  = 16
 	MaxAmmoIcons  = 10
 
+	// Sprite sizes
+	StarSpriteSize     = 5
+	ButtonSpriteWidth  = 100
+	ButtonSpriteHeight = 40
+
 	// Layout constants
 	HUDSpacing  = 24
 	HUDPadding  = 16
@@ -20,6 +25,12 @@ const (
 	// Colors
 	SemiTransparentBlack = 180
 	HealthBarMax         = 100
+
+	// Button colors
+	ButtonColorR = 100
+	ButtonColorG = 100
+	ButtonColorB = 100
+	ButtonColorA = 255
 )
 
 // Device classes

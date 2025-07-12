@@ -120,7 +120,6 @@ func NewECSGame(
 	gameConfig *config.GameConfig,
 	logger common.Logger,
 	inputHandler common.GameInputHandler,
-	uiFactory ui.UIFactory,
 ) (*ECSGame, error) {
 	logger.Debug("Creating new ECS game instance",
 		"screen_size", gameConfig.ScreenSize,
@@ -160,11 +159,17 @@ func NewECSGame(
 	if spriteErr != nil {
 		return nil, fmt.Errorf("failed to load heart sprite: %w", spriteErr)
 	}
-	uiConfig := ui.UIConfig{
-		Font:  font,
-		Theme: heartSprite,
+	ammoSprite, _ := game.resourceManager.GetUISprite(ctx, "ammo", ui.AmmoIconSize)
+	uiConfig := &ui.Config{
+		Font:        font,
+		HeartSprite: heartSprite,
+		AmmoSprite:  ammoSprite,
 	}
-	game.ui = uiFactory.CreateGameUI(uiConfig)
+	gameUI, err := ui.NewResponsiveUI(uiConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create game UI: %w", err)
+	}
+	game.ui = gameUI
 	if err := game.createGameEntities(ctx); err != nil {
 		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeEntityCreationFailed, "failed to create entities", err)
 	}
