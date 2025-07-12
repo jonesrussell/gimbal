@@ -1,0 +1,23 @@
+version: '3'
+
+tasks:
+  all:
+    desc: Run all tests (race, coverage)
+    cmds:
+      - go test ./... -v -race -coverprofile=coverage.out -timeout=60s
+
+  short:
+    desc: Run fast tests (no race)
+    cmds:
+      - go test ./... -v -short -timeout=30s
+
+  coverage:
+    desc: Generate HTML coverage report
+    cmds:
+      - go test ./... -v -race -coverprofile=coverage.out -timeout=60s
+      - go tool cover -html=coverage.out -o coverage.html
+
+  bench:
+    desc: Run benchmarks
+    cmds:
+      - go test -bench=. -benchmem ./... 
