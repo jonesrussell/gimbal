@@ -9,17 +9,6 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
-// SystemRegistry provides access to all game systems with proper type safety
-type SystemRegistry interface {
-	Health() HealthSystem
-	Events() EventSystem
-	Enemies() EnemySystem
-	Weapons() WeaponSystem
-	Resources() ResourceSystem
-	Score() ScoreSystem
-	State() StateSystem
-}
-
 // HealthSystem manages entity health, damage, and invincibility
 type HealthSystem interface {
 	DamageEntity(ctx context.Context, entity donburi.Entity, damage int) error

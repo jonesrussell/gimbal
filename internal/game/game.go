@@ -65,6 +65,11 @@ type ECSGame struct {
 	renderOptimizer *core.RenderOptimizer
 	imagePool       *core.ImagePool
 	perfMonitor     *debug.PerformanceMonitor
+
+	// Debug system
+	renderDebugger  *debug.RenderingDebugger
+	showDebugInfo   bool
+	debugKeyPressed bool
 }
 
 // updatePerformanceMonitoring handles performance monitoring for the frame
@@ -84,6 +89,20 @@ func (g *ECSGame) updateDebugLogging() {
 			"entities", g.world.Len(),
 			"fps", ebiten.ActualFPS(),
 			"player_valid", g.playerEntity != 0)
+	}
+}
+
+// updateDebugInput handles debug key input
+func (g *ECSGame) updateDebugInput() {
+	if ebiten.IsKeyPressed(ebiten.KeyF3) && !g.debugKeyPressed {
+		g.showDebugInfo = !g.showDebugInfo
+		if g.renderDebugger != nil {
+			g.renderDebugger.Toggle()
+		}
+		g.debugKeyPressed = true
+		g.logger.Debug("Debug overlay toggled", "enabled", g.showDebugInfo)
+	} else if !ebiten.IsKeyPressed(ebiten.KeyF3) {
+		g.debugKeyPressed = false
 	}
 }
 
@@ -197,6 +216,7 @@ func (g *ECSGame) endPerformanceMonitoring() {
 func (g *ECSGame) Update() error {
 	g.updatePerformanceMonitoring()
 	g.updateDebugLogging()
+	g.updateDebugInput()
 
 	if err := g.updateCoreSystems(); err != nil {
 		return err
@@ -221,6 +241,12 @@ func (g *ECSGame) Draw(screen *ebiten.Image) {
 	// 2025: Render responsive HUD overlay
 	if g.sceneManager.GetCurrentScene().GetType() == scenes.ScenePlaying {
 		g.ui.Draw(screen)
+	}
+
+	// Render debug overlay if enabled
+	if g.showDebugInfo && g.renderDebugger != nil {
+		g.renderDebugger.StartFrame()
+		g.renderDebugger.RenderDebugInfo(screen, g.world)
 	}
 }
 

@@ -100,6 +100,16 @@ func (g *ECSGame) registerAllSystems(ctx context.Context) error {
 	g.renderOptimizer = core.NewRenderOptimizer(g.config)
 	g.imagePool = core.NewImagePool(g.logger)
 	g.perfMonitor = debug.NewPerformanceMonitor(g.logger)
+
+	// Initialize rendering debugger with default font
+	font, err := g.resourceManager.GetDefaultFont(ctx)
+	if err != nil {
+		g.logger.Warn("Failed to get font for debugger, debug overlay disabled", "error", err)
+	} else {
+		g.renderDebugger = debug.NewRenderingDebugger(font, g.logger)
+		g.logger.Debug("Rendering debugger initialized")
+	}
+
 	g.logger.Debug("Performance optimizations initialized")
 	return nil
 }
