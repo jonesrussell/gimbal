@@ -20,22 +20,6 @@ type Config struct {
 	FileOut    bool   `envconfig:"LOG_FILE_OUT" default:"true"`
 }
 
-// DefaultConfig returns default logger configuration
-func DefaultConfig() *Config {
-	config := &Config{}
-	// Use envconfig to load defaults
-	if err := envconfig.Process("", config); err != nil {
-		// Fallback to hardcoded defaults if envconfig fails
-		return &Config{
-			LogFile:    "logs/gimbal.log",
-			LogLevel:   "DEBUG",
-			ConsoleOut: true,
-			FileOut:    true,
-		}
-	}
-	return config
-}
-
 // syncWriter wraps an io.Writer to make it safe for concurrent use
 type syncWriter struct {
 	io.Writer
@@ -56,13 +40,23 @@ type Logger struct {
 	file     *os.File
 }
 
-// New creates a new logger instance with default configuration
-func New() (*Logger, error) {
-	return NewWithConfig(DefaultConfig())
-}
-
 // NewWithConfig creates a new logger instance with custom configuration
 func NewWithConfig(config *Config) (*Logger, error) {
+	// If no config provided, create default config
+	if config == nil {
+		config = &Config{}
+		// Use envconfig to load defaults
+		if err := envconfig.Process("", config); err != nil {
+			// Fallback to hardcoded defaults if envconfig fails
+			config = &Config{
+				LogFile:    "logs/gimbal.log",
+				LogLevel:   "DEBUG",
+				ConsoleOut: true,
+				FileOut:    true,
+			}
+		}
+	}
+
 	level, err := zapcore.ParseLevel(config.LogLevel)
 	if err != nil {
 		level = zapcore.DebugLevel
