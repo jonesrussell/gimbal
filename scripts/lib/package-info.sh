@@ -3,7 +3,8 @@
 # scripts/lib/package-info.sh
 # Basic package information analysis
 
-source "$(dirname "$0")/common.sh"
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/common.sh"
 
 # Analyze basic package information
 analyze_package_info() {

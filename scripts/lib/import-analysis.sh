@@ -3,7 +3,8 @@
 # scripts/lib/import-analysis.sh
 # Import analysis functionality
 
-source "$(dirname "$0")/common.sh"
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/common.sh"
 
 # Analyze imports in detail
 analyze_imports() {

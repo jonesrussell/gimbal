@@ -3,7 +3,8 @@
 # scripts/lib/dependency-analysis.sh
 # Dependency analysis functionality
 
-source "$(dirname "$0")/common.sh"
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/common.sh"
 
 # Analyze dependencies
 analyze_dependencies() {

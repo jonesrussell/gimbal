@@ -3,7 +3,8 @@
 # scripts/lib/interface-analysis.sh
 # Interface analysis functionality
 
-source "$(dirname "$0")/common.sh"
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/common.sh"
 
 # Analyze interfaces in detail
 analyze_interfaces() {
