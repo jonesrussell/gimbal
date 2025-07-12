@@ -11,6 +11,7 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
@@ -18,7 +19,7 @@ import (
 // EnemySystem manages enemy spawning, movement, and behavior
 type EnemySystem struct {
 	world         donburi.World
-	config        *common.GameConfig
+	config        *config.GameConfig
 	spawnTimer    float64
 	spawnInterval float64
 	resourceMgr   *resources.ResourceManager
@@ -30,7 +31,7 @@ type EnemySystem struct {
 
 func NewEnemySystem(
 	world donburi.World,
-	config *common.GameConfig,
+	config *config.GameConfig,
 	resourceMgr *resources.ResourceManager,
 	logger common.Logger,
 ) *EnemySystem {
@@ -86,7 +87,7 @@ func (es *EnemySystem) spawnEnemy() {
 
 	// Set sprite to the enemy sprite
 	core.Sprite.SetValue(entry, es.enemySprite)
-	core.Size.SetValue(entry, common.Size{Width: 32, Height: 32})
+	core.Size.SetValue(entry, config.Size{Width: 32, Height: 32})
 	core.Health.SetValue(entry, core.HealthData{Current: 1, Maximum: 1, InvincibilityDuration: 0})
 
 	// Calculate random angle for outward movement

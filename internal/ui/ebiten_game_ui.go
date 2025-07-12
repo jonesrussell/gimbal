@@ -2,8 +2,6 @@ package ui
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-
-	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 type EbitenGameUI struct {
@@ -46,7 +44,7 @@ func (e *EbitenGameUI) SetDeviceClass(deviceClass string) {
 }
 
 // Data-driven update for HUD
-func (e *EbitenGameUI) UpdateHUD(data common.HUDData) {
+func (e *EbitenGameUI) UpdateHUD(data HUDData) {
 	e.UpdateScore(data.Score)
 	e.UpdateLives(data.Lives)
 	// TODO: Add health, level, etc.

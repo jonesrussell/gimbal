@@ -6,16 +6,18 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
+	"github.com/jonesrussell/gimbal/internal/errors"
 )
 
 // SceneManagerConfig groups all dependencies for SceneManager
 // to avoid argument limit lint violations
 type SceneManagerConfig struct {
 	World        donburi.World
-	Config       *common.GameConfig
+	Config       *config.GameConfig
 	Logger       common.Logger
 	InputHandler common.GameInputHandler
 	Font         text.Face
@@ -49,7 +51,7 @@ type SceneManager struct {
 	currentScene  Scene
 	scenes        map[SceneType]Scene
 	world         donburi.World
-	config        *common.GameConfig
+	config        *config.GameConfig
 	logger        common.Logger
 	inputHandler  common.GameInputHandler
 	onResume      func()      // Callback to unpause game state
@@ -132,7 +134,7 @@ func (sceneMgr *SceneManager) SetInitialScene(sceneType SceneType) error {
 		return nil
 	} else {
 		sceneMgr.logger.Error("Scene not found for initial scene", "scene_type", sceneType)
-		return common.NewGameError(common.ErrorCodeSceneNotFound, "initial scene not found")
+		return errors.NewGameError(errors.ErrorCodeSceneNotFound, "initial scene not found")
 	}
 }
 
@@ -161,7 +163,7 @@ func (sceneMgr *SceneManager) GetWorld() donburi.World {
 	return sceneMgr.world
 }
 
-func (sceneMgr *SceneManager) GetConfig() *common.GameConfig {
+func (sceneMgr *SceneManager) GetConfig() *config.GameConfig {
 	return sceneMgr.config
 }
 

@@ -11,7 +11,9 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	gameMath "github.com/jonesrussell/gimbal/internal/math"
 )
 
 // Weapon system constants
@@ -39,26 +41,30 @@ const (
 
 // WeaponSystem manages player weapons and projectiles
 type WeaponSystem struct {
-	world             donburi.World
-	config            *common.GameConfig
-	fireTimer         float64
-	fireInterval      float64
-	lastFireTime      time.Time
-	projectileSpeed   float64
-	projectileSize    common.Size
+	world           donburi.World
+	config          *config.GameConfig
+	fireTimer       float64
+	fireInterval    float64
+	lastFireTime    time.Time
+	projectileSpeed float64
+	projectileSize  struct {
+		Width, Height int
+	}
 	projectileSprites map[int]*ebiten.Image // Sprite cache
 }
 
 // NewWeaponSystem creates a new weapon system
-func NewWeaponSystem(world donburi.World, config *common.GameConfig) *WeaponSystem {
+func NewWeaponSystem(world donburi.World, config *config.GameConfig) *WeaponSystem {
 	ws := &WeaponSystem{
-		world:             world,
-		config:            config,
-		fireTimer:         0,
-		fireInterval:      DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
-		lastFireTime:      time.Now(),
-		projectileSpeed:   DefaultProjectileSpeed,
-		projectileSize:    common.Size{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
+		world:           world,
+		config:          config,
+		fireTimer:       0,
+		fireInterval:    DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
+		lastFireTime:    time.Now(),
+		projectileSpeed: DefaultProjectileSpeed,
+		projectileSize: struct {
+			Width, Height int
+		}{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
 		projectileSprites: make(map[int]*ebiten.Image),
 	}
 	ws.initializeProjectileSprites()
@@ -74,7 +80,7 @@ func (ws *WeaponSystem) Update(deltaTime float64) {
 }
 
 // FireWeapon fires a weapon if enough time has passed
-func (ws *WeaponSystem) FireWeapon(weaponType int, playerPos common.Point, playerAngle common.Angle) bool {
+func (ws *WeaponSystem) FireWeapon(weaponType int, playerPos common.Point, playerAngle gameMath.Angle) bool {
 	if ws.fireTimer < ws.fireInterval {
 		return false
 	}
@@ -87,7 +93,7 @@ func (ws *WeaponSystem) FireWeapon(weaponType int, playerPos common.Point, playe
 }
 
 // createProjectile creates a new projectile
-func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, direction common.Angle) {
+func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, direction gameMath.Angle) {
 	entity := ws.world.Create(
 		core.ProjectileTag,
 		core.Position,
@@ -100,7 +106,7 @@ func (ws *WeaponSystem) createProjectile(weaponType int, startPos common.Point, 
 	entry := ws.world.Entry(entity)
 
 	// Set position (slightly in front of player)
-	angleRad := float64(direction) * common.DegreesToRadians
+	angleRad := float64(direction) * gameMath.DegreesToRadians
 	offset := ProjectileOffset // Distance from player center
 	pos := common.Point{
 		X: startPos.X + offset*math.Cos(angleRad),
@@ -198,10 +204,8 @@ func (ws *WeaponSystem) updateProjectiles() {
 // isOffScreen checks if a position is off screen
 func (ws *WeaponSystem) isOffScreen(pos common.Point) bool {
 	margin := ProjectileMargin
-	return pos.X < -margin ||
-		pos.X > float64(ws.config.ScreenSize.Width)+margin ||
-		pos.Y < -margin ||
-		pos.Y > float64(ws.config.ScreenSize.Height)+margin
+	return pos.X < -margin || pos.X > float64(ws.config.ScreenSize.Width)+margin ||
+		pos.Y < -margin || pos.Y > float64(ws.config.ScreenSize.Height)+margin
 }
 
 // GetFireInterval returns the current fire interval
@@ -224,8 +228,10 @@ func (ws *WeaponSystem) SetProjectileSpeed(speed float64) {
 	ws.projectileSpeed = speed
 }
 
-// Optional: allow resizing and re-caching
-func (ws *WeaponSystem) SetProjectileSize(size common.Size) {
+// SetProjectileSize sets the projectile size
+func (ws *WeaponSystem) SetProjectileSize(size struct {
+	Width, Height int
+},
+) {
 	ws.projectileSize = size
-	ws.initializeProjectileSprites()
 }

@@ -5,12 +5,13 @@ import (
 	"github.com/yohamta/donburi/features/events"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/math"
 )
 
 // Event data structures
 type PlayerMovedEvent struct {
 	Position common.Point
-	Angle    common.Angle
+	Angle    math.Angle
 }
 
 type StarCollectedEvent struct {
@@ -67,7 +68,7 @@ func NewEventSystem(world donburi.World) *EventSystem {
 }
 
 // EmitPlayerMoved emits a player moved event
-func (evt *EventSystem) EmitPlayerMoved(pos common.Point, angle common.Angle) {
+func (evt *EventSystem) EmitPlayerMoved(pos common.Point, angle math.Angle) {
 	PlayerMovedEventType.Publish(evt.world, PlayerMovedEvent{
 		Position: pos,
 		Angle:    angle,
