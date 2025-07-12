@@ -59,7 +59,7 @@ func (rm *ResourceManager) GetDefaultFont(ctx context.Context) (text.Face, error
 		}
 	}
 	if rm.defaultFont == nil {
-		return nil, errors.NewGameError(errors.ErrorCodeAssetLoadFailed, "default font not loaded")
+		return nil, errors.NewGameError(errors.AssetLoadFailed, "default font not loaded")
 	}
 	return rm.defaultFont, nil
 }

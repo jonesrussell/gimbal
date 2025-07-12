@@ -53,7 +53,7 @@ func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*
 	if err != nil {
 		rm.logger.Error("[SPRITE_ERROR] Failed to read sprite file from embed",
 			"name", name, "path", path, "error", err)
-		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to read sprite file", err)
+		return nil, errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to read sprite file", err)
 	}
 
 	rm.logger.Debug("[SPRITE_LOAD] Sprite file read successfully", "name", name, "size", len(imageData), "path", path)
@@ -62,7 +62,7 @@ func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*
 	img, err := png.Decode(bytes.NewReader(imageData))
 	if err != nil {
 		rm.logger.Error("[SPRITE_ERROR] Failed to decode PNG sprite", "name", name, "path", path, "error", err)
-		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetInvalid, "failed to decode sprite", err)
+		return nil, errors.NewGameErrorWithCause(errors.AssetInvalid, "failed to decode sprite", err)
 	}
 
 	rm.logger.Debug("[SPRITE_DECODE] Sprite decoded successfully", "name", name, "bounds", img.Bounds())
@@ -153,7 +153,7 @@ func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, config Sp
 		_, err = rm.CreateSprite(config.Name, config.FallbackWidth, config.FallbackHeight, config.FallbackColor)
 		if err != nil {
 			return errors.NewGameErrorWithCause(
-				errors.ErrorCodeAssetLoadFailed,
+				errors.AssetLoadFailed,
 				fmt.Sprintf("failed to create %s placeholder", config.Name),
 				err,
 			)
@@ -201,18 +201,18 @@ func (rm *ResourceManager) loadEnemySprites(ctx context.Context) error {
 func (rm *ResourceManager) createUISprites(ctx context.Context) error {
 	// Create star sprite
 	if _, err := rm.CreateSprite("star", core.StarSpriteSize, core.StarSpriteSize, color.White); err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create star sprite", err)
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to create star sprite", err)
 	}
 
 	// Create button sprite
 	if _, err := rm.CreateSprite("button", core.ButtonSpriteWidth, core.ButtonSpriteHeight,
 		color.RGBA{core.ButtonColorR, core.ButtonColorG, core.ButtonColorB, core.ButtonColorA}); err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create button sprite", err)
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to create button sprite", err)
 	}
 
 	// Create background sprite
 	if _, err := rm.CreateSprite("background", 1, 1, color.Black); err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to create background sprite", err)
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to create background sprite", err)
 	}
 
 	return nil

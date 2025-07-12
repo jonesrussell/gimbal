@@ -166,7 +166,7 @@ func (sceneMgr *SceneManager) SetInitialScene(sceneType SceneType) error {
 		return nil
 	} else {
 		sceneMgr.logger.Error("Scene not found for initial scene", "scene_type", sceneType)
-		return errors.NewGameError(errors.ErrorCodeSceneNotFound, "initial scene not found")
+		return errors.NewGameError(errors.SceneNotFound, "initial scene not found")
 	}
 }
 

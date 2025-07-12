@@ -68,7 +68,7 @@ func (a *Application) Initialize(ctx context.Context) error {
 	// Initialize container
 	if err := a.container.Initialize(ctx); err != nil {
 		return errors.NewGameErrorWithCause(
-			errors.ErrorCodeSystemFailed,
+			errors.SystemInitFailed,
 			"failed to initialize application container",
 			err,
 		)
@@ -90,7 +90,7 @@ func (a *Application) Run() error {
 
 	if err := gameRunner.Run(); err != nil {
 		return errors.NewGameErrorWithCause(
-			errors.ErrorCodeSystemFailed,
+			errors.SystemInitFailed,
 			"game execution failed",
 			err,
 		)

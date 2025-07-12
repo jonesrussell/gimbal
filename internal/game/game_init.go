@@ -27,7 +27,7 @@ import (
 // validateGameConfig validates the provided game configuration
 func (g *ECSGame) validateGameConfig(cfg *config.GameConfig) error {
 	if cfg == nil {
-		return errors.NewGameError(errors.ErrorCodeConfigMissing, "config cannot be nil")
+		return errors.NewGameError(errors.ConfigMissing, "config cannot be nil")
 	}
 	return nil
 }
@@ -41,7 +41,7 @@ func (g *ECSGame) createGameEntities(ctx context.Context) error {
 func (g *ECSGame) setupInitialScene(ctx context.Context) error {
 	font, err := g.resourceManager.GetDefaultFont(ctx)
 	if err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", err)
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to get default font", err)
 	}
 	g.sceneManager = scenes.NewSceneManager(&scenes.SceneManagerConfig{
 		World:        g.world,
@@ -59,7 +59,7 @@ func (g *ECSGame) setupInitialScene(ctx context.Context) error {
 	g.sceneManager.SetRenderOptimizer(g.renderOptimizer)
 	g.sceneManager.SetImagePool(g.imagePool)
 	if sceneErr := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); sceneErr != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeSystemFailed, "failed to set initial scene", sceneErr)
+		return errors.NewGameErrorWithCause(errors.SystemInitFailed, "failed to set initial scene", sceneErr)
 	}
 	return nil
 }
@@ -130,7 +130,7 @@ func (g *ECSGame) initializeSystems(ctx context.Context) error {
 		return err
 	}
 	if err := g.loadAssets(ctx); err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load assets", err)
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to load assets", err)
 	}
 	return nil
 }
@@ -139,7 +139,7 @@ func (g *ECSGame) initializeSystems(ctx context.Context) error {
 func (g *ECSGame) initializeUI(ctx context.Context) error {
 	font, err := g.resourceManager.GetDefaultFont(ctx)
 	if err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", err)
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to get default font", err)
 	}
 
 	heartSprite, err := g.resourceManager.GetUISprite(ctx, "heart", uicore.HeartIconSize)
@@ -171,7 +171,7 @@ func (g *ECSGame) initializeUI(ctx context.Context) error {
 func (g *ECSGame) finalizeInitialization(ctx context.Context) error {
 	err := g.createGameEntities(ctx)
 	if err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeEntityCreationFailed, "failed to create entities", err)
+		return errors.NewGameErrorWithCause(errors.EntityInvalid, "failed to create entities", err)
 	}
 
 	err = g.setupInitialScene(ctx)
@@ -225,7 +225,7 @@ func NewECSGame(
 func (g *ECSGame) loadAssets(ctx context.Context) error {
 	// Load all sprites through resource manager
 	if err := g.resourceManager.LoadAllSprites(ctx); err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load sprites", err)
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to load sprites", err)
 	}
 
 	g.logger.Debug("Assets loaded successfully", "resource_count", g.resourceManager.GetResourceCount())
@@ -237,12 +237,12 @@ func (g *ECSGame) createEntities(ctx context.Context) error {
 	// Get sprites from resource manager
 	playerSprite, ok := g.resourceManager.GetSprite(ctx, resources.SpritePlayer)
 	if !ok {
-		return errors.NewGameError(errors.ErrorCodeSpriteNotFound, "player sprite not found")
+		return errors.NewGameError(errors.AssetNotFound, "player sprite not found")
 	}
 
 	starSprite, ok := g.resourceManager.GetSprite(ctx, resources.SpriteStar)
 	if !ok {
-		return errors.NewGameError(errors.ErrorCodeSpriteNotFound, "star sprite not found")
+		return errors.NewGameError(errors.AssetNotFound, "star sprite not found")
 	}
 
 	// Create player
