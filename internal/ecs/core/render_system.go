@@ -1,6 +1,8 @@
 package core
 
 import (
+	"log"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
@@ -10,6 +12,7 @@ import (
 )
 
 func RenderSystem(w donburi.World, screen *ebiten.Image) {
+	count := 0
 	query.NewQuery(
 		filter.And(
 			filter.Contains(Position),
@@ -17,7 +20,9 @@ func RenderSystem(w donburi.World, screen *ebiten.Image) {
 		),
 	).Each(w, func(entry *donburi.Entry) {
 		RenderEntity(entry, screen)
+		count++
 	})
+	log.Printf("[RenderSystem] Entities rendered: %d, screen bounds: %+v", count, screen.Bounds())
 }
 
 func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {

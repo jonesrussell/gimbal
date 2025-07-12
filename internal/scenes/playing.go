@@ -56,34 +56,37 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 	// Clear screen
 	screen.Fill(color.Black)
 
+	// Visual debug: draw a red rectangle in the top-left
+	screen.Set(10, 10, color.RGBA{255, 0, 0, 255})
+	for x := 10; x < 60; x++ {
+		for y := 10; y < 60; y++ {
+			screen.Set(x, y, color.RGBA{255, 0, 0, 255})
+		}
+	}
+
+	s.manager.logger.Debug("PlayingScene.Draw called", "screen_size", screen.Bounds())
+
 	// Apply screen shake if active
 	if s.screenShake > 0 {
-		// Create a temporary image for the shaken content
 		shakenImage := ebiten.NewImage(screen.Bounds().Dx(), screen.Bounds().Dy())
-
-		// Draw everything to the shaken image
 		s.drawGameContent(shakenImage)
-
-		// Apply shake offset when drawing to screen
 		op := &ebiten.DrawImageOptions{}
-		shakeOffset := s.screenShake * 5 // Scale shake intensity
+		shakeOffset := s.screenShake * 5
 		op.GeoM.Translate(shakeOffset, shakeOffset)
 		screen.DrawImage(shakenImage, op)
 	} else {
-		// Draw normally without shake
 		s.drawGameContent(screen)
 	}
 }
 
-// drawGameContent draws the main game content (separated for screen shake)
 func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
+	s.manager.logger.Debug("drawGameContent called", "screen_size", screen.Bounds())
 	// Run render system through wrapper
 	renderWrapper := core.NewRenderSystemWrapper(screen)
 	if err := renderWrapper.Update(s.manager.world); err != nil {
 		s.manager.logger.Error("Render system failed", "error", err)
 	}
 
-	// Draw debug info if enabled
 	if s.manager.config.Debug {
 		s.drawDebugInfo(screen)
 	}
