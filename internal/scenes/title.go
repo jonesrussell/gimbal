@@ -1,11 +1,14 @@
 package scenes
 
 import (
+	"fmt"
 	"image/color"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
+
+	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 type TitleScreenScene struct {
@@ -23,7 +26,14 @@ func NewTitleScreenScene(manager *SceneManager, font text.Face) *TitleScreenScen
 }
 
 func (s *TitleScreenScene) Update() error {
-	// Check for any key press to continue (handled by input system)
+	// Log input event for debugging
+	event := s.manager.inputHandler.GetLastEvent()
+	s.manager.logger.Debug("TitleScreen input event", "event", event)
+
+	// Transition on any key or mouse event
+	if event != common.InputEventNone {
+		s.manager.SwitchScene(SceneMenu) // Or ScenePlaying if you want to go straight to gameplay
+	}
 	return nil
 }
 
@@ -54,6 +64,15 @@ func (s *TitleScreenScene) Draw(screen *ebiten.Image) {
 			Font:  s.font,
 		})
 	}
+	// Draw debug info at the bottom
+	debugText := fmt.Sprintf("Resolution: %dx%d | TPS: %.1f", s.manager.config.ScreenSize.Width, s.manager.config.ScreenSize.Height, ebiten.CurrentTPS())
+	drawCenteredTextWithOptions(screen, TextDrawOptions{
+		Text:  debugText,
+		X:     float64(s.manager.config.ScreenSize.Width) / 2,
+		Y:     float64(s.manager.config.ScreenSize.Height) - 30,
+		Alpha: 0.5,
+		Font:  s.font,
+	})
 }
 
 func (s *TitleScreenScene) Enter() {

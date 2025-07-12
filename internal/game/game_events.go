@@ -45,4 +45,10 @@ func (g *ECSGame) setupEventSubscriptions() {
 			}
 		}
 	})
+
+	// Subscribe to enemy destroyed events for scoring
+	g.eventSystem.SubscribeToEnemyDestroyed(func(w donburi.World, event events.EnemyDestroyedEvent) {
+		g.scoreManager.AddScore(event.Points)
+		g.logger.Debug("Score added from enemy destruction", "points", event.Points, "total_score", g.scoreManager.GetScore())
+	})
 }

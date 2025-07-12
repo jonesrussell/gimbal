@@ -115,9 +115,9 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 			// Remove enemy entity and get points
 			points := cs.enemySystem.DestroyEnemy(enemyEntity)
 
-			// Award points for enemy destruction
-			if cs.scoreManager != nil {
-				cs.scoreManager.AddScore(points)
+			// Emit enemy destroyed event (includes points)
+			if err := cs.eventSystem.EmitEnemyDestroyed(ctx, enemyEntity, points); err != nil {
+				cs.logger.Error("Failed to emit enemy destroyed event", "error", err)
 			}
 
 			cs.logger.Debug("Enemy destroyed", "points", points)
