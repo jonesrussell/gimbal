@@ -1,4 +1,4 @@
-package ecs
+package events
 
 import (
 	"github.com/yohamta/donburi"

@@ -1,4 +1,4 @@
-package ecs
+package enemy
 
 import (
 	"image/color"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
-	"github.com/jonesrussell/gimbal/internal/ecs/resources"
+	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
 // EnemySystem manages enemy spawning, movement, and behavior

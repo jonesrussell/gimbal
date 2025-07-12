@@ -1,15 +1,18 @@
-package ecs
+package game
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
-	"github.com/jonesrussell/gimbal/internal/ecs/resources"
-	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
+	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
-	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
+	enemysys "github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
+	healthsys "github.com/jonesrussell/gimbal/internal/ecs/systems/health"
+	weaponsys "github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
+	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
 // ECSGame represents the main game state using ECS
@@ -20,7 +23,7 @@ type ECSGame struct {
 	logger       common.Logger
 
 	// Event system
-	eventSystem *EventSystem
+	eventSystem *events.EventSystem
 
 	// Resource management
 	resourceManager *resources.ResourceManager
@@ -28,16 +31,16 @@ type ECSGame struct {
 	// Game state management
 	stateManager *GameStateManager
 	scoreManager *managers.ScoreManager
-	levelManager *LevelManager
+	levelManager *managers.LevelManager
 
 	// Scene management
 	sceneManager *scenes.SceneManager
 
 	// Combat systems
-	enemySystem     *EnemySystem
-	weaponSystem    *WeaponSystem
+	enemySystem     *enemysys.EnemySystem
+	weaponSystem    *weaponsys.WeaponSystem
 	collisionSystem *collision.CollisionSystem
-	healthSystem    *health.HealthSystem
+	healthSystem    *healthsys.HealthSystem
 
 	// 2025: EbitenUI responsive design system
 	ui common.GameUI
@@ -139,7 +142,7 @@ func (g *ECSGame) GetScoreManager() *managers.ScoreManager {
 }
 
 // GetLevelManager returns the level manager
-func (g *ECSGame) GetLevelManager() *LevelManager {
+func (g *ECSGame) GetLevelManager() *managers.LevelManager {
 	return g.levelManager
 }
 

@@ -1,4 +1,4 @@
-package ecs
+package weapon
 
 import (
 	"image/color"
@@ -12,6 +12,15 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+)
+
+// Weapon system constants
+const (
+	DefaultWeaponFireIntervalFrames = 10   // 10 frames between shots (6 shots/sec at 60fps)
+	DefaultProjectileSpeed          = 8.0  // Pixels per frame
+	DefaultProjectileSize           = 4    // Projectile size in pixels
+	ProjectileOffset                = 20.0 // Distance from player center
+	ProjectileMargin                = 50.0 // Screen margin for cleanup
 )
 
 // Weapon types

@@ -1,15 +1,19 @@
-package ecs
+package game
 
 import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
-	"github.com/jonesrussell/gimbal/internal/ecs/resources"
-	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
+	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
+	"github.com/jonesrussell/gimbal/internal/scenes"
+	"github.com/jonesrussell/gimbal/internal/ui"
 )
 
 // NewECSGame creates a new ECS-based game instance with dependency-injected UI
@@ -17,7 +21,7 @@ func NewECSGame(
 	config *common.GameConfig,
 	logger common.Logger,
 	inputHandler common.GameInputHandler,
-	uiFactory UIFactory,
+	uiFactory ui.UIFactory,
 ) (*ECSGame, error) {
 	if config == nil {
 		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "config cannot be nil")
@@ -59,7 +63,7 @@ func NewECSGame(
 	// Create UI through factory (dependency injection)
 	font := game.resourceManager.GetDefaultFont()
 	heartSprite, _ := game.resourceManager.GetSprite("heart")
-	uiConfig := UIConfig{
+	uiConfig := ui.UIConfig{
 		Font:  font,
 		Theme: heartSprite,
 	}
@@ -82,7 +86,7 @@ func NewECSGame(
 // initializeSystems creates all the systems and managers
 func (g *ECSGame) initializeSystems() error {
 	// Create event system
-	g.eventSystem = NewEventSystem(g.world)
+	g.eventSystem = events.NewEventSystem(g.world)
 	g.logger.Debug("Event system created")
 
 	// Create resource manager
@@ -92,7 +96,7 @@ func (g *ECSGame) initializeSystems() error {
 	// Create game state managers
 	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
 	g.scoreManager = managers.NewScoreManager(10000) // Bonus life every 10,000 points
-	g.levelManager = NewLevelManager(g.logger)
+	g.levelManager = managers.NewLevelManager(g.logger)
 
 	// Create health system (after state manager)
 	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
@@ -129,8 +133,8 @@ func (g *ECSGame) initializeSystems() error {
 	}
 
 	// Create combat systems
-	g.enemySystem = NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
-	g.weaponSystem = NewWeaponSystem(g.world, g.config)
+	g.enemySystem = enemy.NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
+	g.weaponSystem = weapon.NewWeaponSystem(g.world, g.config)
 	g.collisionSystem = collision.NewCollisionSystem(&collision.CollisionSystemConfig{
 		World:        g.world,
 		Config:       g.config,

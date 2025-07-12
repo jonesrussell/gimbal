@@ -8,7 +8,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
-	"github.com/jonesrussell/gimbal/internal/ecs/resources"
+	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
 // SceneManagerConfig groups all dependencies for SceneManager
