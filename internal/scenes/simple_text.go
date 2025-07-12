@@ -34,9 +34,9 @@ func (s *SimpleTextScene) Update() error {
 
 func (s *SimpleTextScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
-	drawCenteredTextWithOptions(
+	DrawCenteredTextWithOptions(
 		screen,
-		textDrawOptions{
+		TextDrawOptions{
 			Text:  s.text,
 			X:     float64(s.manager.GetConfig().ScreenSize.Width) / 2,
 			Y:     float64(s.manager.GetConfig().ScreenSize.Height) / 2,
