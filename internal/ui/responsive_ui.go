@@ -4,6 +4,8 @@ import (
 	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/jonesrussell/gimbal/internal/ui/core"
 )
 
 // ResponsiveUI implements a clean, responsive UI system
@@ -102,7 +104,7 @@ func (ui *ResponsiveUI) rebuildAmmoDisplay() {
 	ui.clearContainer(ui.ammoContainer, ui.ammoIcons)
 	ui.ammoIcons = nil
 
-	if ui.state.Ammo <= MaxAmmoIcons {
+	if ui.state.Ammo <= core.MaxAmmoIcons {
 		// Show individual ammo icons
 		for i := 0; i < ui.state.Ammo; i++ {
 			ammoIcon := ui.hudBuilder.BuildAmmoIcon()
@@ -194,12 +196,12 @@ func (ui *ResponsiveUI) GetScreenDimensions() (width, height int) {
 func (ui *ResponsiveUI) SetDeviceClass(deviceClass string) {
 	// Map deviceClass string to a width for layout.Update
 	switch deviceClass {
-	case DeviceMobile:
-		ui.layout.Update(MobileBreakpoint-1, 600)
-	case DeviceTablet:
-		ui.layout.Update(TabletBreakpoint-1, 800)
-	case DeviceUltrawide:
-		ui.layout.Update(UltrawideBreakpoint+1, 1080)
+	case core.DeviceMobile:
+		ui.layout.Update(core.MobileBreakpoint-1, 600)
+	case core.DeviceTablet:
+		ui.layout.Update(core.TabletBreakpoint-1, 800)
+	case core.DeviceUltrawide:
+		ui.layout.Update(core.UltrawideBreakpoint+1, 1080)
 	default:
 		ui.layout.Update(1280, 720)
 	}
