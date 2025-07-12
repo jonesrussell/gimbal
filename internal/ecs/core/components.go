@@ -3,7 +3,6 @@ package core
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
-	"github.com/yohamta/ganim8/v2"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 )
@@ -40,8 +39,6 @@ var (
 	Scale = donburi.NewComponentType[float64]()
 	// Health component stores entity health data
 	Health = donburi.NewComponentType[HealthData]()
-	// Animation component stores animation data
-	Animation = donburi.NewComponentType[AnimationData]()
 )
 
 // MovementData represents movement information
@@ -57,22 +54,6 @@ type OrbitalData struct {
 	OrbitalAngle common.Angle
 	FacingAngle  common.Angle
 }
-
-// AnimationData represents animation information
-type AnimationData struct {
-	CurrentAnimation *ganim8.Animation
-	State            EnemyState
-	IdleAnimation    *ganim8.Animation
-	ExplodeAnimation *ganim8.Animation
-}
-
-// EnemyState represents the current state of an enemy
-type EnemyState int
-
-const (
-	EnemyStateIdle EnemyState = iota
-	EnemyStateExploding
-)
 
 // HealthData represents health and invincibility information
 type HealthData struct {

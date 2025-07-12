@@ -119,7 +119,7 @@ func (g *ECSGame) initializeSystems() error {
 	}
 
 	// Create combat systems
-	g.enemySystem = NewEnemySystem(g.world, g.config, g.resourceManager)
+	g.enemySystem = NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
 	g.weaponSystem = NewWeaponSystem(g.world, g.config)
 	g.collisionSystem = collision.NewCollisionSystem(&collision.CollisionSystemConfig{
 		World:        g.world,
