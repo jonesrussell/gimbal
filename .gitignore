@@ -4,6 +4,7 @@ coverage/
 gimbal
 test/mocks/
 tmp/
+logs/
 *.log
 coverage.out
 
