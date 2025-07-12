@@ -79,23 +79,51 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 	sceneMgr.debugRenderer = debug.NewDebugRenderer(cfg.Config, cfg.Logger)
 	sceneMgr.debugRenderer.SetFont(cfg.Font)
 
-	// Register all scenes
-	// TODO: Re-enable after all scenes are moved to their respective packages
-	// sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
-	// sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, cfg.Font)
-	// sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, cfg.Font)
-	// sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager, cfg.ResourceMgr)
-	// sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, cfg.Font)
-	// sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, cfg.Font)
-	// sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
-	// 	sceneMgr,
-	// 	"CREDITS\nGimbal Studios\n2025",
-	// 	SceneCredits,
-	// 	cfg.Font,
-	// )
-	// sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, cfg.Font)
+	// Register all scenes using factory functions
+	sceneMgr.registerScenes(cfg)
 
 	return sceneMgr
+}
+
+// registerScenes registers all scenes using the scene registry
+func (sceneMgr *SceneManager) registerScenes(cfg *SceneManagerConfig) {
+	sceneMgr.registerGameScenes(cfg)
+	sceneMgr.registerMenuScenes(cfg)
+}
+
+// registerGameScenes registers the main game scenes
+func (sceneMgr *SceneManager) registerGameScenes(cfg *SceneManagerConfig) {
+	sceneMgr.registerScene(SceneStudioIntro, "STUDIO INTRO", cfg)
+	sceneMgr.registerScene(SceneTitleScreen, "TITLE SCREEN", cfg)
+	sceneMgr.registerScene(ScenePlaying, "PLAYING", cfg)
+	sceneMgr.registerScene(ScenePaused, "PAUSED", cfg)
+	sceneMgr.registerScene(SceneGameOver, "GAME OVER", cfg)
+}
+
+// registerMenuScenes registers the menu scenes
+func (sceneMgr *SceneManager) registerMenuScenes(cfg *SceneManagerConfig) {
+	sceneMgr.registerScene(SceneMenu, "MENU", cfg)
+	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
+		sceneMgr,
+		"CREDITS\nGimbal Studios\n2025",
+		SceneCredits,
+		cfg.Font,
+	)
+	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, cfg.Font)
+}
+
+// registerScene registers a single scene using the registry
+func (sceneMgr *SceneManager) registerScene(sceneType SceneType, fallbackName string, cfg *SceneManagerConfig) {
+	if scene, exists := CreateScene(sceneType, sceneMgr, cfg.Font, cfg.ScoreManager, cfg.ResourceMgr); exists {
+		sceneMgr.scenes[sceneType] = scene
+	} else {
+		sceneMgr.scenes[sceneType] = NewSimpleTextScene(
+			sceneMgr,
+			fallbackName+"\n(Not Registered)",
+			sceneType,
+			cfg.Font,
+		)
+	}
 }
 
 func (sceneMgr *SceneManager) Update() error {
