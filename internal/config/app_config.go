@@ -4,40 +4,41 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"strconv"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 // AppConfig holds all application configuration
 type AppConfig struct {
-	LogLevel string
+	LogLevel string `envconfig:"LOG_LEVEL" default:"DEBUG"`
 	Logging  *LoggingConfig
 	Game     *AppGameConfig
 	Debug    *DebugConfig
 }
 
-// AppGameConfig holds application-level game configuration
-type AppGameConfig struct {
-	WindowWidth  int
-	WindowHeight int
-	WindowTitle  string
-	TPS          int
-	Resizable    bool
-	DefaultScene string
-}
-
 // LoggingConfig holds logging-specific configuration
 type LoggingConfig struct {
-	LogFile    string
-	ConsoleOut bool
-	FileOut    bool
+	LogFile    string `envconfig:"LOG_FILE" default:"logs/gimbal.log"`
+	ConsoleOut bool   `envconfig:"LOG_CONSOLE_OUT" default:"true"`
+	FileOut    bool   `envconfig:"LOG_FILE_OUT" default:"true"`
+}
+
+// AppGameConfig holds application-level game configuration
+type AppGameConfig struct {
+	WindowWidth  int    `envconfig:"GAME_WINDOW_WIDTH" default:"1280"`
+	WindowHeight int    `envconfig:"GAME_WINDOW_HEIGHT" default:"720"`
+	WindowTitle  string `envconfig:"GAME_TITLE" default:"Gimbal - ECS Version"`
+	TPS          int    `envconfig:"GAME_TPS" default:"60"`
+	Resizable    bool   `envconfig:"GAME_RESIZABLE" default:"true"`
+	DefaultScene string `envconfig:"GAME_DEFAULT_SCENE" default:"menu"`
 }
 
 // DebugConfig holds debug-specific configuration
 type DebugConfig struct {
-	Enabled    bool
-	PprofPort  int
-	ShowFPS    bool
-	ShowMemory bool
+	Enabled    bool `envconfig:"DEBUG_ENABLED" default:"true"`
+	PprofPort  int  `envconfig:"DEBUG_PPROF_PORT" default:"6060"`
+	ShowFPS    bool `envconfig:"DEBUG_SHOW_FPS" default:"false"`
+	ShowMemory bool `envconfig:"DEBUG_SHOW_MEMORY" default:"false"`
 }
 
 // SystemInfo holds system information
@@ -52,45 +53,30 @@ type SystemInfo struct {
 
 // LoadAppConfig loads application configuration from environment and defaults
 func LoadAppConfig() (*AppConfig, error) {
-	config := &AppConfig{
-		LogLevel: getEnvWithDefault("LOG_LEVEL", "DEBUG"),
-		Logging:  loadLoggingConfig(),
-		Game:     loadAppGameConfig(),
-		Debug:    loadDebugConfig(),
+	config := &AppConfig{}
+
+	// Load main app config
+	if err := envconfig.Process("", config); err != nil {
+		return nil, fmt.Errorf("failed to process app config: %w", err)
+	}
+
+	// Load nested configs
+	config.Logging = &LoggingConfig{}
+	if err := envconfig.Process("", config.Logging); err != nil {
+		return nil, fmt.Errorf("failed to process logging config: %w", err)
+	}
+
+	config.Game = &AppGameConfig{}
+	if err := envconfig.Process("", config.Game); err != nil {
+		return nil, fmt.Errorf("failed to process game config: %w", err)
+	}
+
+	config.Debug = &DebugConfig{}
+	if err := envconfig.Process("", config.Debug); err != nil {
+		return nil, fmt.Errorf("failed to process debug config: %w", err)
 	}
 
 	return config, nil
-}
-
-// loadAppGameConfig loads application-level game configuration
-func loadAppGameConfig() *AppGameConfig {
-	return &AppGameConfig{
-		WindowWidth:  getEnvIntWithDefault("GAME_WINDOW_WIDTH", 1280),
-		WindowHeight: getEnvIntWithDefault("GAME_WINDOW_HEIGHT", 720),
-		WindowTitle:  getEnvWithDefault("GAME_TITLE", "Gimbal - ECS Version"),
-		TPS:          getEnvIntWithDefault("GAME_TPS", 60),
-		Resizable:    getEnvBoolWithDefault("GAME_RESIZABLE", true),
-		DefaultScene: getEnvWithDefault("GAME_DEFAULT_SCENE", "menu"),
-	}
-}
-
-// loadLoggingConfig loads logging configuration
-func loadLoggingConfig() *LoggingConfig {
-	return &LoggingConfig{
-		LogFile:    getEnvWithDefault("LOG_FILE", "logs/gimbal.log"),
-		ConsoleOut: getEnvBoolWithDefault("LOG_CONSOLE_OUT", true),
-		FileOut:    getEnvBoolWithDefault("LOG_FILE_OUT", true),
-	}
-}
-
-// loadDebugConfig loads debug configuration
-func loadDebugConfig() *DebugConfig {
-	return &DebugConfig{
-		Enabled:    getEnvBoolWithDefault("DEBUG_ENABLED", true),
-		PprofPort:  getEnvIntWithDefault("DEBUG_PPROF_PORT", 6060),
-		ShowFPS:    getEnvBoolWithDefault("DEBUG_SHOW_FPS", false),
-		ShowMemory: getEnvBoolWithDefault("DEBUG_SHOW_MEMORY", false),
-	}
 }
 
 // IsDevelopment returns true if running in development mode
@@ -127,6 +113,19 @@ func (c *AppConfig) Validate() error {
 	return nil
 }
 
+// Validate validates logging configuration
+func (lc *LoggingConfig) Validate() error {
+	if lc.LogFile == "" {
+		return fmt.Errorf("log file path cannot be empty")
+	}
+
+	if !lc.ConsoleOut && !lc.FileOut {
+		return fmt.Errorf("at least one output destination must be enabled")
+	}
+
+	return nil
+}
+
 // Validate validates application game configuration
 func (gc *AppGameConfig) Validate() error {
 	if gc.WindowWidth <= 0 || gc.WindowHeight <= 0 {
@@ -144,19 +143,6 @@ func (gc *AppGameConfig) Validate() error {
 	return nil
 }
 
-// Validate validates logging configuration
-func (lc *LoggingConfig) Validate() error {
-	if lc.LogFile == "" {
-		return fmt.Errorf("log file path cannot be empty")
-	}
-
-	if !lc.ConsoleOut && !lc.FileOut {
-		return fmt.Errorf("at least one output destination must be enabled")
-	}
-
-	return nil
-}
-
 // Validate validates debug configuration
 func (dc *DebugConfig) Validate() error {
 	if dc.PprofPort <= 0 || dc.PprofPort > 65535 {
@@ -166,28 +152,10 @@ func (dc *DebugConfig) Validate() error {
 	return nil
 }
 
-// Helper functions for environment variable parsing
+// Helper function for system info (still needed for APP_VERSION)
 func getEnvWithDefault(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
-	}
-	return defaultValue
-}
-
-func getEnvIntWithDefault(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
-func getEnvBoolWithDefault(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		if boolValue, err := strconv.ParseBool(value); err == nil {
-			return boolValue
-		}
 	}
 	return defaultValue
 }
