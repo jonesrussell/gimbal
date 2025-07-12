@@ -15,6 +15,7 @@ type CollisionSystemConfig struct {
 	HealthSystem interface{} // Using interface to avoid circular dependency
 	EventSystem  interface{} // Using interface to avoid circular dependency
 	ScoreManager *managers.ScoreManager
+	EnemySystem  interface{} // Using interface to avoid circular dependency
 	Logger       common.Logger
 }
 
@@ -25,6 +26,7 @@ type CollisionSystem struct {
 	healthSystem interface{} // Using interface to avoid circular dependency
 	eventSystem  interface{} // Using interface to avoid circular dependency
 	scoreManager *managers.ScoreManager
+	enemySystem  interface{} // Using interface to avoid circular dependency
 	logger       common.Logger
 }
 
@@ -36,6 +38,7 @@ func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
 		healthSystem: cfg.HealthSystem,
 		eventSystem:  cfg.EventSystem,
 		scoreManager: cfg.ScoreManager,
+		enemySystem:  cfg.EnemySystem,
 		logger:       cfg.Logger,
 	}
 }

@@ -142,15 +142,15 @@ func (rm *ResourceManager) LoadAllSprites() error {
 		}
 	}
 
-	// Load enemy sprite
-	_, err = rm.LoadSprite("enemy", "sprites/enemy.png")
+	// Load enemy sprite sheet for animations
+	_, err = rm.LoadSprite("enemy_sheet", "sprites/enemy_sheet.png")
 	if err != nil {
-		rm.logger.Warn("Failed to load enemy sprite, using placeholder", "error", err)
-		_, err = rm.CreateSprite("enemy", 16, 16, color.RGBA{255, 0, 0, 255})
+		rm.logger.Warn("Failed to load enemy sprite sheet, using placeholder", "error", err)
+		_, err = rm.CreateSprite("enemy_sheet", 512, 256, color.RGBA{255, 0, 0, 255})
 		if err != nil {
 			return common.NewGameErrorWithCause(
 				common.ErrorCodeAssetLoadFailed,
-				"failed to create enemy placeholder",
+				"failed to create enemy sheet placeholder",
 				err,
 			)
 		}

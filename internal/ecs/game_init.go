@@ -127,6 +127,7 @@ func (g *ECSGame) initializeSystems() error {
 		HealthSystem: g.healthSystem,
 		EventSystem:  g.eventSystem,
 		ScoreManager: g.scoreManager,
+		EnemySystem:  g.enemySystem,
 		Logger:       g.logger,
 	})
 
