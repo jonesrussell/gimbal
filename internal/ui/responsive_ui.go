@@ -77,17 +77,79 @@ func NewResponsiveUI(font text.Face, heartSprite, ammoSprite *ebiten.Image) *Res
 
 // createResponsiveUI creates the main responsive UI structure
 func (ui *ResponsiveUI) createResponsiveUI() {
-	// Root container with anchor layout for responsive positioning
-	root := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+	// Main HUD row at top left
+	hudRow := widget.NewContainer(
 		widget.ContainerOpts.BackgroundImage(
-			image.NewNineSliceColor(color.RGBA{0, 0, 0, 0}),
+			image.NewNineSliceColor(color.NRGBA{0, 0, 0, 180}), // semi-transparent black
 		),
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
+			widget.RowLayoutOpts.Spacing(24),
+			widget.RowLayoutOpts.Padding(widget.Insets{Top: 12, Left: 16, Right: 16, Bottom: 12}),
+		)),
 	)
 
-	// Create HUD container
-	ui.hudContainer = ui.createHUDContainer()
-	root.AddChild(ui.hudContainer)
+	// Lives: icon + value
+	livesContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
+			widget.RowLayoutOpts.Spacing(4),
+		)),
+	)
+	livesIcon := widget.NewGraphic(
+		widget.GraphicOpts.Image(ui.heartSprite),
+		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.MinSize(24, 24)),
+	)
+	ui.livesText = widget.NewText(
+		widget.TextOpts.Text("x3", ui.font, colornames.White),
+		widget.TextOpts.WidgetOpts(widget.WidgetOpts.MinSize(32, 24)),
+	)
+	livesContainer.AddChild(livesIcon)
+	livesContainer.AddChild(ui.livesText)
+
+	// Score
+	ui.scoreText = widget.NewText(
+		widget.TextOpts.Text("Score: 0", ui.font, colornames.White),
+		widget.TextOpts.WidgetOpts(widget.WidgetOpts.MinSize(120, 24)),
+	)
+
+	// Ammo: icon + value (or icons)
+	ammoContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
+			widget.RowLayoutOpts.Spacing(4),
+		)),
+	)
+	// Use up to 10 ammo icons, or a single icon + value for infinite
+	ui.ammoIcons = ui.ammoIcons[:0]
+	if ui.ammoSprite != nil {
+		for i := 0; i < ui.currentAmmo && i < 10; i++ {
+			ammoIcon := widget.NewGraphic(
+				widget.GraphicOpts.Image(ui.ammoSprite),
+				widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.MinSize(16, 16)),
+			)
+			ammoContainer.AddChild(ammoIcon)
+			ui.ammoIcons = append(ui.ammoIcons, ammoIcon)
+		}
+	} else {
+		// fallback: text
+		ammoText := widget.NewText(
+			widget.TextOpts.Text("Ammo: ∞", ui.font, colornames.White),
+			widget.TextOpts.WidgetOpts(widget.WidgetOpts.MinSize(60, 24)),
+		)
+		ammoContainer.AddChild(ammoText)
+	}
+
+	// Add all sections to the HUD row
+	hudRow.AddChild(livesContainer)
+	hudRow.AddChild(ui.scoreText)
+	hudRow.AddChild(ammoContainer)
+
+	// Root container with anchor layout, HUD row anchored top left
+	root := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+	)
+	root.AddChild(hudRow)
 
 	ui.ui = &ebitenui.UI{Container: root}
 }
