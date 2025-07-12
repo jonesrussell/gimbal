@@ -10,14 +10,14 @@ import (
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
-	"github.com/jonesrussell/gimbal/internal/ecs/ui_ebitenui"
 )
 
-// NewECSGame creates a new ECS-based game instance
+// NewECSGame creates a new ECS-based game instance with dependency-injected UI
 func NewECSGame(
 	config *common.GameConfig,
 	logger common.Logger,
 	inputHandler common.GameInputHandler,
+	uiFactory UIFactory,
 ) (*ECSGame, error) {
 	if config == nil {
 		return nil, common.NewGameError(common.ErrorCodeConfigMissing, "config cannot be nil")
@@ -55,6 +55,15 @@ func NewECSGame(
 	if err := game.loadAssets(); err != nil {
 		return nil, common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to load assets", err)
 	}
+
+	// Create UI through factory (dependency injection)
+	font := game.resourceManager.GetDefaultFont()
+	heartSprite, _ := game.resourceManager.GetSprite("heart")
+	uiConfig := UIConfig{
+		Font:  font,
+		Theme: heartSprite,
+	}
+	game.ui = uiFactory.CreateGameUI(uiConfig)
 
 	// Create entities
 	if err := game.createEntities(); err != nil {
@@ -131,14 +140,6 @@ func (g *ECSGame) initializeSystems() error {
 		EnemySystem:  g.enemySystem,
 		Logger:       g.logger,
 	})
-
-	// 2025: Initialize EbitenUI responsive design system
-	heartSprite, _ := g.resourceManager.GetSprite("heart")
-	ammoSprite, _ := g.resourceManager.GetSprite("ammo")
-
-	g.responsiveUI = ui_ebitenui.NewResponsiveUI(font, heartSprite, ammoSprite)
-
-	g.logger.Debug("2025 EbitenUI responsive design system initialized")
 
 	return nil
 }
