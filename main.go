@@ -66,7 +66,7 @@ func run() error {
 	)
 
 	// Run game with Ebiten
-	ebiten.SetWindowSize(1280, 960) // 2x scale of 640x480
+	ebiten.SetWindowSize(1280, 720) // 1:1 scale, pixel-perfect native resolution
 	ebiten.SetWindowTitle("Gimbal - ECS Version")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetTPS(60)

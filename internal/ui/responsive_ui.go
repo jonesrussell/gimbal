@@ -24,10 +24,11 @@ type ResponsiveUI struct {
 	ammoContainer   *widget.Container
 
 	// Widgets
-	livesText *widget.Text
-	scoreText *widget.Text
-	healthBar *widget.ProgressBar
-	ammoIcons []*widget.Graphic
+	livesText  *widget.Text
+	scoreText  *widget.Text
+	healthBar  *widget.ProgressBar
+	ammoIcons  []*widget.Graphic
+	heartIcons []*widget.Graphic // Track heart icons separately
 
 	// Resources
 	font        text.Face
@@ -119,7 +120,7 @@ func (ui *ResponsiveUI) createLivesDisplay() *widget.Container {
 	container := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(10),
+			widget.RowLayoutOpts.Spacing(5), // Reduced spacing
 		)),
 		widget.ContainerOpts.WidgetOpts(
 			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
@@ -143,8 +144,8 @@ func (ui *ResponsiveUI) createLivesDisplay() *widget.Container {
 	)
 	container.AddChild(ui.livesText)
 
-	// Heart icons (responsive sizing)
-	ui.updateLivesIcons(container)
+	// Don't call updateLivesIcons here - let it be called by UpdateLives
+	// ui.updateLivesIcons(container)
 
 	return container
 }
@@ -273,8 +274,17 @@ func (ui *ResponsiveUI) createAmmoCounter() *widget.Container {
 
 // updateLivesIcons updates the heart icons based on current lives
 func (ui *ResponsiveUI) updateLivesIcons(container *widget.Container) {
-	// For now, just add heart icons without removing existing ones
-	// This is a simplified approach that works with EbitenUI
+	// Debug logging
+	fmt.Printf("updateLivesIcons called: currentLives=%d, existing hearts=%d\n", ui.currentLives, len(ui.heartIcons))
+
+	// Remove existing heart icons
+	for i, heartIcon := range ui.heartIcons {
+		fmt.Printf("Removing heart icon %d\n", i)
+		container.RemoveChild(heartIcon)
+	}
+	ui.heartIcons = ui.heartIcons[:0] // Clear the slice
+
+	// Add new heart icons
 	for i := 0; i < ui.currentLives; i++ {
 		heartIcon := widget.NewGraphic(
 			widget.GraphicOpts.Image(ui.heartSprite),
@@ -285,14 +295,20 @@ func (ui *ResponsiveUI) updateLivesIcons(container *widget.Container) {
 			),
 		)
 		container.AddChild(heartIcon)
+		ui.heartIcons = append(ui.heartIcons, heartIcon)
+		fmt.Printf("Added heart icon %d\n", i)
 	}
+
+	fmt.Printf("Final heart count: %d\n", len(ui.heartIcons))
 }
 
 // updateAmmoIcons updates the ammo icons based on current ammo
 func (ui *ResponsiveUI) updateAmmoIcons(container *widget.Container) {
-	// For now, just add ammo icons without removing existing ones
-	// This is a simplified approach that works with EbitenUI
-	ui.ammoIcons = make([]*widget.Graphic, 0, ui.currentAmmo)
+	// Remove existing ammo icons
+	for _, ammoIcon := range ui.ammoIcons {
+		container.RemoveChild(ammoIcon)
+	}
+	ui.ammoIcons = ui.ammoIcons[:0] // Clear the slice
 
 	// Use ammo sprite if available, otherwise use heart sprite or create a simple colored image
 	var ammoIconImage *ebiten.Image
@@ -322,9 +338,12 @@ func (ui *ResponsiveUI) updateAmmoIcons(container *widget.Container) {
 
 // UpdateLives updates the lives display
 func (ui *ResponsiveUI) UpdateLives(lives int) {
+	fmt.Printf("UpdateLives called: currentLives=%d, newLives=%d\n", ui.currentLives, lives)
 	if ui.currentLives != lives {
 		ui.currentLives = lives
 		ui.updateLivesIcons(ui.livesContainer)
+	} else {
+		fmt.Printf("UpdateLives: no change, skipping update\n")
 	}
 }
 

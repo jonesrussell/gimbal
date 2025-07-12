@@ -1,8 +1,8 @@
 package config
 
 const (
-	DefaultScreenWidth  = 640
-	DefaultScreenHeight = 480
+	DefaultScreenWidth  = 1280
+	DefaultScreenHeight = 720
 	DefaultPlayerSize   = 48 // Reduced for better gameplay balance
 	DefaultNumStars     = 100
 	DefaultSpeed        = 0.04
