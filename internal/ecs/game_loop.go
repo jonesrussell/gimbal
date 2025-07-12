@@ -47,6 +47,9 @@ func (g *ECSGame) updatePlayingScene() error {
 	// Update ECS systems
 	g.updateECSSystems()
 
+	// 2025: Update responsive HUD animations
+	g.responsiveHUD.Update(1.0 / 60.0) // Assuming 60fps
+
 	// Handle player movement events
 	g.handlePlayerMovementEvents(inputAngle)
 
