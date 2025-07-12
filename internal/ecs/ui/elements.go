@@ -83,9 +83,9 @@ type IconElement struct {
 type IconSize float64
 
 const (
-	SmallIcon  IconSize = 24
-	MediumIcon IconSize = 32
-	LargeIcon  IconSize = 48
+	SmallIcon  IconSize = 24 // Reduced for UI elements
+	MediumIcon IconSize = 32 // Reduced for UI elements
+	LargeIcon  IconSize = 48 // Reduced for UI elements
 )
 
 // NewIcon creates a new icon element
