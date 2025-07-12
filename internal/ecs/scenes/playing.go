@@ -13,6 +13,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	"github.com/jonesrussell/gimbal/internal/ecs/resources"
+	"github.com/jonesrussell/gimbal/internal/ecs/ui"
 )
 
 type PlayingScene struct {
@@ -21,6 +22,7 @@ type PlayingScene struct {
 	font         v2text.Face
 	scoreManager *managers.ScoreManager
 	resourceMgr  *resources.ResourceManager
+	uiRenderer   *ui.UIRenderer
 }
 
 func NewPlayingScene(
@@ -29,12 +31,20 @@ func NewPlayingScene(
 	scoreManager *managers.ScoreManager,
 	resourceMgr *resources.ResourceManager,
 ) *PlayingScene {
-	return &PlayingScene{
+	scene := &PlayingScene{
 		manager:      manager,
 		font:         font,
 		scoreManager: scoreManager,
 		resourceMgr:  resourceMgr,
 	}
+
+	// Initialize UI renderer with default theme
+	scene.uiRenderer = ui.NewUIRenderer(nil, ui.DefaultTheme)
+
+	// Set up theme fonts
+	ui.DefaultTheme.SetFonts(font, font, font)
+
+	return scene
 }
 
 func (s *PlayingScene) Update() error {
@@ -73,17 +83,25 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 
 // drawGameContent draws the main game content (separated for screen shake)
 func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
+	// Set the screen for the UI renderer
+	s.uiRenderer.SetScreen(screen)
+
+	// Set up heart sprite for lives display
+	if heartSprite, exists := s.resourceMgr.GetSprite("heart"); exists {
+		s.uiRenderer.SetHeartSprite(heartSprite)
+	}
+
+	// Enable debug mode if configured
+	s.uiRenderer.SetDebug(s.manager.config.Debug)
+
 	// Run render system through wrapper
 	renderWrapper := core.NewRenderSystemWrapper(screen)
 	if err := renderWrapper.Update(s.manager.world); err != nil {
 		s.manager.logger.Error("Render system failed", "error", err)
 	}
 
-	// Draw lives display
-	s.drawLivesDisplay(screen)
-
-	// Draw score display
-	s.drawScore(screen)
+	// Draw UI elements using the new renderer
+	s.drawUIElements()
 
 	// Draw debug info if enabled
 	if s.manager.config.Debug {
@@ -91,28 +109,8 @@ func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
 	}
 }
 
-func (s *PlayingScene) drawScore(screen *ebiten.Image) {
-	score := s.scoreManager.GetScore()
-	scoreText := fmt.Sprintf("Score: %d", score)
-
-	op := &v2text.DrawOptions{}
-	// Position: top-right, 150px from right, 30px from top
-	w := screen.Bounds().Dx()
-	op.GeoM.Translate(float64(w-150), 30)
-	op.ColorScale.SetR(1)
-	op.ColorScale.SetG(1)
-	op.ColorScale.SetB(1)
-	op.ColorScale.SetA(1)
-	v2text.Draw(screen, scoreText, s.font, op)
-}
-
-// TriggerScreenShake triggers a screen shake effect
-func (s *PlayingScene) TriggerScreenShake() {
-	s.screenShake = 1.0 // Set shake intensity
-}
-
-// drawLivesDisplay renders the player's remaining lives in the top-left corner
-func (s *PlayingScene) drawLivesDisplay(screen *ebiten.Image) {
+// drawUIElements draws all UI elements using the new renderer system
+func (s *PlayingScene) drawUIElements() {
 	// Get health system from scene manager
 	healthSystem := s.manager.GetHealthSystem()
 	if healthSystem == nil {
@@ -131,106 +129,23 @@ func (s *PlayingScene) drawLivesDisplay(screen *ebiten.Image) {
 			"maximum_lives", maximum,
 		)
 
-		// Get heart sprite from resource manager
-		heartSprite, exists := s.resourceMgr.GetSprite("heart")
-		if !exists {
-			// Fallback to text if sprite not found
-			s.drawLivesText(screen, current, maximum)
-			return
-		}
-
-		// Draw heart sprites
-		s.drawLivesSprites(screen, heartSprite, current, maximum)
+		// Draw lives display using UI renderer
+		livesDisplay := ui.NewLivesDisplay(current, maximum)
+		s.uiRenderer.Draw(livesDisplay, ui.TopLeft(20, 20))
 	}
+
+	// Draw score display using UI renderer
+	score := s.scoreManager.GetScore()
+	scoreDisplay := ui.NewScoreDisplay(score)
+
+	// Get screen width for proper top-right positioning
+	screenWidth := s.uiRenderer.GetScreenWidth()
+	s.uiRenderer.Draw(scoreDisplay, ui.TopRightRelative(screenWidth, 150, 20))
 }
 
-// drawLivesText draws lives as text (fallback method)
-func (s *PlayingScene) drawLivesText(screen *ebiten.Image, current, maximum int) {
-	// Create lives text with heart emojis
-	livesText := "Lives: "
-	for i := 0; i < maximum; i++ {
-		if i < current {
-			livesText += "❤️"
-		} else {
-			livesText += "🖤" // Empty heart
-		}
-	}
-
-	// Draw the text in the top-left corner
-	op := &v2text.DrawOptions{}
-	op.GeoM.Translate(20, 30)
-	op.ColorScale.SetR(1)
-	op.ColorScale.SetG(1)
-	op.ColorScale.SetB(1)
-	op.ColorScale.SetA(1)
-	v2text.Draw(screen, livesText, s.font, op)
-}
-
-// drawLivesSprites draws lives as heart sprites
-func (s *PlayingScene) drawLivesSprites(screen, heartSprite *ebiten.Image, current, maximum int) {
-	// Draw "Lives:" text first
-	label := "Lives: "
-	op := &v2text.DrawOptions{}
-	op.GeoM.Translate(20, 30)
-	op.ColorScale.SetR(1)
-	op.ColorScale.SetG(1)
-	op.ColorScale.SetB(1)
-	op.ColorScale.SetA(1)
-	v2text.Draw(screen, label, s.font, op)
-
-	// Measure the actual text width using text/v2
-	labelWidth, _ := v2text.Measure(label, s.font, 0)
-
-	heartSize := 96 // Desired heart sprite size in pixels (increased from 32)
-	spacing := 16   // Space between hearts (increased from 8)
-
-	// Get original sprite size
-	origW, origH := heartSprite.Bounds().Dx(), heartSprite.Bounds().Dy()
-	scaleX := float64(heartSize) / float64(origW)
-	scaleY := float64(heartSize) / float64(origH)
-
-	// Debug logging
-	s.manager.logger.Debug("Heart positioning",
-		"label_width", labelWidth,
-		"heart_size", heartSize,
-		"orig_sprite_size", fmt.Sprintf("%dx%d", origW, origH),
-		"scale", fmt.Sprintf("%.3fx%.3f", scaleX, scaleY),
-	)
-
-	// Draw heart sprites with proper spacing
-	heartX := 20 + labelWidth
-	for i := 0; i < maximum; i++ {
-		heartOp := &ebiten.DrawImageOptions{}
-		x := heartX + float64(i*(heartSize+spacing))
-		y := float64(30 - heartSize/2) // Center vertically with text
-		heartOp.GeoM.Translate(x, y)
-		heartOp.GeoM.Scale(scaleX, scaleY)
-
-		// Debug logging for each heart
-		s.manager.logger.Debug("Drawing heart",
-			"heart_index", i,
-			"current_lives", current,
-			"max_lives", maximum,
-			"position", fmt.Sprintf("(%.1f, %.1f)", x, y),
-			"is_full", i < current,
-		)
-
-		if i < current {
-			// Full heart
-			heartOp.ColorScale.SetR(1)
-			heartOp.ColorScale.SetG(0)
-			heartOp.ColorScale.SetB(0)
-			heartOp.ColorScale.SetA(1)
-		} else {
-			// Empty heart (grayed out)
-			heartOp.ColorScale.SetR(0.5)
-			heartOp.ColorScale.SetG(0.5)
-			heartOp.ColorScale.SetB(0.5)
-			heartOp.ColorScale.SetA(0.5)
-		}
-
-		screen.DrawImage(heartSprite, heartOp)
-	}
+// TriggerScreenShake triggers a screen shake effect
+func (s *PlayingScene) TriggerScreenShake() {
+	s.screenShake = 1.0 // Set shake intensity
 }
 
 // drawDebugInfo renders debug information
