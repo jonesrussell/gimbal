@@ -104,7 +104,7 @@ tasks:
   install:tools:
     desc: Install dev tools
     cmds:
-      - go install github.com/cosmtrek/air@latest
+      - go install github.com/air-verse/air@latest
       - go install github.com/hajimehoshi/wasmserve@latest
       - go install go.uber.org/mock/mockgen@latest
 
@@ -154,20 +154,6 @@ tasks:
       - task: lint:all
       - task: tests:coverage
       - task: builds:all
-
-  validate:project:
-    desc: Validate project structure
-    cmds:
-      - |
-        if [ ! -f go.mod ]; then
-          echo "go.mod not found"
-          exit 1
-        fi
-      - |
-        if [ ! -f main.go ]; then
-          echo "main.go not found"
-          exit 1
-        fi
 
   help:
     desc: Show available tasks
