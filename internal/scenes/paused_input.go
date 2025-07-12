@@ -22,43 +22,56 @@ func (s *PausedScene) updateSelectionAnimation() {
 	}
 }
 
-// handleInput processes pause-specific input (ESC key)
+// PauseCommand defines the interface for pause menu input commands
+// (Single method, single responsibility)
+type PauseCommand interface {
+	Execute(s *PausedScene)
+}
+
+// escHeldCommand does nothing while ESC is held down
+type escHeldCommand struct{}
+
+func (c *escHeldCommand) Execute(s *PausedScene) {}
+
+// escReleasedCommand marks the scene as ready to unpause
+type escReleasedCommand struct{}
+
+func (c *escReleasedCommand) Execute(s *PausedScene) {
+	s.escWasPressed = false
+	s.canUnpause = true
+}
+
+// resumeCommand resumes the game from pause
+type resumeCommand struct{}
+
+func (c *resumeCommand) Execute(s *PausedScene) {
+	if s.manager.onResume != nil {
+		s.manager.onResume()
+	}
+	s.manager.SwitchScene(ScenePlaying)
+}
+
+// handleInput processes pause-specific input (ESC key) using the Command pattern
 func (s *PausedScene) handleInput() {
 	currentEscPressed := ebiten.IsKeyPressed(ebiten.KeyEscape)
 	escJustPressed := inpututil.IsKeyJustPressed(ebiten.KeyEscape)
 
-	// If ESC was pressed when we entered, wait for it to be released
+	var cmd PauseCommand
+
 	if s.escWasPressed && currentEscPressed {
-		return // ESC is still held down from the pause action
-	}
-
-	// ESC has been released (or wasn't pressed when we entered)
-	if s.escWasPressed && !currentEscPressed {
-		s.escWasPressed = false
-		s.canUnpause = true
-		return // Don't process input this frame, just mark as ready
-	}
-
-	// Now we can check for new ESC presses
-	if s.canUnpause && escJustPressed {
-		// Call resume callback to unpause game state
-		if s.manager.onResume != nil {
-			s.manager.onResume()
-		}
-
-		s.manager.SwitchScene(ScenePlaying)
-	}
-
-	// If we entered without ESC pressed, we can unpause immediately
-	if !s.escWasPressed {
+		cmd = &escHeldCommand{} // ESC is still held down from the pause action
+	} else if s.escWasPressed && !currentEscPressed {
+		cmd = &escReleasedCommand{} // ESC has been released
+	} else if s.canUnpause && escJustPressed {
+		cmd = &resumeCommand{} // Resume from pause
+	} else if !s.escWasPressed {
 		s.canUnpause = true
 		if escJustPressed {
-			// Call resume callback to unpause game state
-			if s.manager.onResume != nil {
-				s.manager.onResume()
-			}
-
-			s.manager.SwitchScene(ScenePlaying)
+			cmd = &resumeCommand{}
 		}
+	}
+
+	if cmd != nil {
+		cmd.Execute(s)
 	}
 }
