@@ -35,21 +35,6 @@ func (cs *CollisionSystem) getPlayerEntity() (donburi.Entity, *donburi.Entry) {
 	return playerEntity, playerEntry
 }
 
-// getEnemyEntities returns all valid enemy entities
-func (cs *CollisionSystem) getEnemyEntities() []donburi.Entity {
-	enemies := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.EnemyTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
-		enemies = append(enemies, entry.Entity())
-	})
-	return enemies
-}
-
 // checkPlayerEnemyCollisions checks for collisions between player and enemies
 func (cs *CollisionSystem) checkPlayerEnemyCollisions(ctx context.Context) error {
 	// Check for cancellation
@@ -66,7 +51,10 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions(ctx context.Context) error
 	playerPos := core.Position.Get(playerEntry)
 	playerSize := core.Size.Get(playerEntry)
 
-	enemies := cs.getEnemyEntities()
+	enemies, err := cs.getEnemyEntities(ctx)
+	if err != nil {
+		return err
+	}
 	return cs.checkCollisionsWithEnemies(ctx, PlayerCollisionData{
 		Entity: playerEntity,
 		Entry:  playerEntry,
