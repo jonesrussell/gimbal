@@ -109,7 +109,10 @@ func (c *Container) initializeInputHandler() error {
 
 // initializeGame creates the ECS game instance
 func (c *Container) initializeGame() error {
-	game, err := ecs.NewECSGame(c.config, c.logger, c.inputHandler)
+	// Create UI factory
+	uiFactory := &ecs.EbitenUIFactory{}
+
+	game, err := ecs.NewECSGame(c.config, c.logger, c.inputHandler, uiFactory)
 	if err != nil {
 		return err
 	}
