@@ -10,7 +10,6 @@ import (
 	gamepkg "github.com/jonesrussell/gimbal/internal/game"
 	"github.com/jonesrussell/gimbal/internal/input"
 	"github.com/jonesrussell/gimbal/internal/logger"
-	"github.com/jonesrussell/gimbal/internal/ui"
 )
 
 // Container manages all application dependencies and their lifecycle
@@ -111,10 +110,7 @@ func (c *Container) initializeInputHandler() error {
 
 // initializeGame creates the ECS game instance
 func (c *Container) initializeGame(ctx context.Context) error {
-	// Create UI factory
-	uiFactory := &ui.EbitenUIFactory{}
-
-	game, err := gamepkg.NewECSGame(ctx, c.config, c.logger, c.inputHandler, uiFactory)
+	game, err := gamepkg.NewECSGame(ctx, c.config, c.logger, c.inputHandler)
 	if err != nil {
 		return err
 	}

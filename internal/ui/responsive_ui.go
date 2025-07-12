@@ -124,48 +124,45 @@ func (ui *ResponsiveUI) clearContainer(container *widget.Container, widgets []*w
 }
 
 // UpdateLives updates the lives display
-func (ui *ResponsiveUI) UpdateLives(lives int) error {
+func (ui *ResponsiveUI) UpdateLives(lives int) {
 	newState := *ui.state
 	newState.Lives = lives
 	if err := newState.Validate(); err != nil {
-		return err
+		return // Optionally log
 	}
 
 	if ui.state.Lives != lives {
 		ui.state.Lives = lives
 		ui.livesText.Label = ui.hudBuilder.BuildLivesText(lives).Label
 	}
-	return nil
 }
 
 // UpdateScore updates the score display
-func (ui *ResponsiveUI) UpdateScore(score int) error {
+func (ui *ResponsiveUI) UpdateScore(score int) {
 	newState := *ui.state
 	newState.Score = score
 	if err := newState.Validate(); err != nil {
-		return err
+		return // Optionally log
 	}
 
 	if ui.state.Score != score {
 		ui.state.Score = score
 		ui.scoreText.Label = ui.hudBuilder.BuildScoreText(score).Label
 	}
-	return nil
 }
 
 // UpdateAmmo updates the ammo display
-func (ui *ResponsiveUI) UpdateAmmo(ammo int) error {
+func (ui *ResponsiveUI) UpdateAmmo(ammo int) {
 	newState := *ui.state
 	newState.Ammo = ammo
 	if err := newState.Validate(); err != nil {
-		return err
+		return // Optionally log
 	}
 
 	if ui.state.Ammo != ammo {
 		ui.state.Ammo = ammo
 		ui.rebuildAmmoDisplay()
 	}
-	return nil
 }
 
 // UpdateResponsiveLayout updates the layout based on screen dimensions
@@ -174,8 +171,9 @@ func (ui *ResponsiveUI) UpdateResponsiveLayout(width, height int) {
 }
 
 // Update updates the UI system
-func (ui *ResponsiveUI) Update() {
+func (ui *ResponsiveUI) Update() error {
 	ui.ui.Update()
+	return nil
 }
 
 // Draw renders the UI
@@ -191,4 +189,22 @@ func (ui *ResponsiveUI) GetDeviceClass() string {
 // GetScreenDimensions returns the current screen dimensions
 func (ui *ResponsiveUI) GetScreenDimensions() (width, height int) {
 	return ui.layout.GetDimensions()
+}
+
+func (ui *ResponsiveUI) SetDeviceClass(deviceClass string) {
+	// Map deviceClass string to a width for layout.Update
+	switch deviceClass {
+	case DeviceMobile:
+		ui.layout.Update(MobileBreakpoint-1, 600)
+	case DeviceTablet:
+		ui.layout.Update(TabletBreakpoint-1, 800)
+	case DeviceUltrawide:
+		ui.layout.Update(UltrawideBreakpoint+1, 1080)
+	default:
+		ui.layout.Update(1280, 720)
+	}
+}
+
+func (ui *ResponsiveUI) ShowPauseMenu(visible bool) {
+	// TODO: Implement pause menu display logic if needed
 }
