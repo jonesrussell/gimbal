@@ -3,9 +3,9 @@ module github.com/jonesrussell/gimbal
 go 1.24
 
 require (
+	github.com/ebitenui/ebitenui v0.6.2
 	github.com/hajimehoshi/ebiten/v2 v2.8.8
 	github.com/yohamta/donburi v1.15.7
-	github.com/yohamta/ganim8/v2 v2.1.29
 	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	golang.org/x/image v0.29.0
@@ -42,10 +42,8 @@ require (
 
 require (
 	github.com/ebitengine/purego v0.8.4 // indirect
-	github.com/ebitenui/ebitenui v0.6.2 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
-	github.com/stretchr/testify v1.10.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
