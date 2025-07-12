@@ -6,6 +6,7 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	"github.com/jonesrussell/gimbal/internal/ecs/resources"
 )
@@ -45,16 +46,17 @@ type Scene interface {
 }
 
 type SceneManager struct {
-	currentScene Scene
-	scenes       map[SceneType]Scene
-	world        donburi.World
-	config       *common.GameConfig
-	logger       common.Logger
-	inputHandler common.GameInputHandler
-	onResume     func()      // Callback to unpause game state
-	healthSystem interface{} // Health system interface for scenes to access
-	font         text.Face
-	resourceMgr  *resources.ResourceManager
+	currentScene  Scene
+	scenes        map[SceneType]Scene
+	world         donburi.World
+	config        *common.GameConfig
+	logger        common.Logger
+	inputHandler  common.GameInputHandler
+	onResume      func()      // Callback to unpause game state
+	healthSystem  interface{} // Health system interface for scenes to access
+	font          text.Face
+	resourceMgr   *resources.ResourceManager
+	debugRenderer *debug.DebugRenderer
 }
 
 func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
@@ -67,6 +69,10 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 		font:         cfg.Font,
 		resourceMgr:  cfg.ResourceMgr,
 	}
+
+	// Initialize debug renderer
+	sceneMgr.debugRenderer = debug.NewDebugRenderer(cfg.Config, cfg.Logger)
+	sceneMgr.debugRenderer.SetFont(cfg.Font)
 
 	// Register all scenes
 	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
@@ -87,6 +93,21 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 }
 
 func (sceneMgr *SceneManager) Update() error {
+	// Handle debug controls
+	if sceneMgr.inputHandler != nil {
+		if handler, ok := sceneMgr.inputHandler.(interface {
+			IsDebugTogglePressed() bool
+			IsDebugLevelCyclePressed() bool
+		}); ok {
+			if handler.IsDebugTogglePressed() {
+				sceneMgr.debugRenderer.Toggle()
+			}
+			if handler.IsDebugLevelCyclePressed() {
+				sceneMgr.debugRenderer.CycleLevel()
+			}
+		}
+	}
+
 	if sceneMgr.currentScene == nil {
 		return nil // No scene set yet, nothing to update
 	}
@@ -98,6 +119,9 @@ func (sceneMgr *SceneManager) Draw(screen *ebiten.Image) {
 		return // No scene set yet, nothing to draw
 	}
 	sceneMgr.currentScene.Draw(screen)
+
+	// Draw debug overlay on top of everything
+	sceneMgr.debugRenderer.Render(screen, sceneMgr.world)
 }
 
 func (sceneMgr *SceneManager) SetInitialScene(sceneType SceneType) error {
@@ -167,4 +191,9 @@ func (sceneMgr *SceneManager) GetHealthSystem() interface{} {
 // GetResourceManager returns the resource manager
 func (sceneMgr *SceneManager) GetResourceManager() *resources.ResourceManager {
 	return sceneMgr.resourceMgr
+}
+
+// GetDebugRenderer returns the debug renderer
+func (sceneMgr *SceneManager) GetDebugRenderer() *debug.DebugRenderer {
+	return sceneMgr.debugRenderer
 }
