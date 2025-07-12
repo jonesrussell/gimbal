@@ -37,41 +37,52 @@ func (cs *CollisionSystem) getProjectileEntities(ctx context.Context) ([]donburi
 	return projectiles, nil
 }
 
-func (cs *CollisionSystem) processProjectileEnemyCollisions(ctx context.Context, projectiles, enemies []donburi.Entity) error {
+func (cs *CollisionSystem) processProjectileEnemyCollisions(
+	ctx context.Context, projectiles, enemies []donburi.Entity,
+) error {
 	for _, projectileEntity := range projectiles {
-		// Check for cancellation
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+		if err := cs.checkSingleProjectileCollisions(ctx, projectileEntity, enemies); err != nil {
+			return err
 		}
+	}
+	return nil
+}
 
-		projectileEntry := cs.world.Entry(projectileEntity)
-		if !projectileEntry.Valid() {
+func (cs *CollisionSystem) checkSingleProjectileCollisions(
+	ctx context.Context, projectileEntity donburi.Entity, enemies []donburi.Entity,
+) error {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	projectileEntry := cs.world.Entry(projectileEntity)
+	if !projectileEntry.Valid() {
+		return nil
+	}
+
+	projectilePos := core.Position.Get(projectileEntry)
+	projectileSize := core.Size.Get(projectileEntry)
+
+	for _, enemyEntity := range enemies {
+		enemyEntry := cs.world.Entry(enemyEntity)
+		if !enemyEntry.Valid() {
 			continue
 		}
 
-		projectilePos := core.Position.Get(projectileEntry)
-		projectileSize := core.Size.Get(projectileEntry)
+		enemyPos := core.Position.Get(enemyEntry)
+		enemySize := core.Size.Get(enemyEntry)
 
-		for _, enemyEntity := range enemies {
-			enemyEntry := cs.world.Entry(enemyEntity)
-			if !enemyEntry.Valid() {
-				continue
+		// Check collision
+		if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
+			if err := cs.handleProjectileEnemyCollision(
+				ctx, projectileEntity, enemyEntity, projectileEntry, enemyEntry,
+			); err != nil {
+				return err
 			}
-
-			enemyPos := core.Position.Get(enemyEntry)
-			enemySize := core.Size.Get(enemyEntry)
-
-			// Check collision
-			if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
-				if err := cs.handleProjectileEnemyCollision(
-					ctx, projectileEntity, enemyEntity, projectileEntry, enemyEntry,
-				); err != nil {
-					return err
-				}
-				break // Projectile can only hit one enemy
-			}
+			return nil // Projectile can only hit one enemy
 		}
 	}
 	return nil

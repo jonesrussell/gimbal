@@ -131,8 +131,7 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 
 	// Update systems without error returns
 	enemyUpdateFunc := func() error {
-		g.enemySystem.Update(deltaTime)
-		return nil
+		return g.enemySystem.Update(ctx, deltaTime)
 	}
 	if err := g.updateSystemWithTiming("enemy", enemyUpdateFunc); err != nil {
 		return err

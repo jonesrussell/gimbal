@@ -48,19 +48,27 @@ func NewEnemySystem(
 	return es
 }
 
-func (es *EnemySystem) Update(deltaTime float64) {
+func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	es.spawnTimer += deltaTime
 	if es.spawnTimer >= es.spawnInterval {
-		es.spawnEnemy()
+		es.spawnEnemy(ctx)
 		es.spawnTimer = 0
 	}
 	es.updateEnemies()
+	return nil
 }
 
-func (es *EnemySystem) spawnEnemy() {
+func (es *EnemySystem) spawnEnemy(ctx context.Context) {
 	// Load enemy sprite if not already loaded
 	if es.enemySprite == nil {
-		enemySprite, exists := es.resourceMgr.GetSprite(context.Background(), "enemy")
+		enemySprite, exists := es.resourceMgr.GetSprite(ctx, "enemy")
 		if !exists {
 			es.logger.Warn("[ENEMY_SPAWN] Enemy sprite not found, using placeholder")
 			// Create a placeholder sprite

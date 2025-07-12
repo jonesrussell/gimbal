@@ -69,7 +69,7 @@ func (s *TitleScreenScene) Draw(screen *ebiten.Image) {
 		"Resolution: %dx%d | TPS: %.1f",
 		s.manager.config.ScreenSize.Width,
 		s.manager.config.ScreenSize.Height,
-		ebiten.CurrentTPS(),
+		ebiten.ActualTPS(),
 	)
 	drawCenteredTextWithOptions(screen, TextDrawOptions{
 		Text:  debugText,
