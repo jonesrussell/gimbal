@@ -1,6 +1,24 @@
 package common
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
+type GameUI interface {
+	Update() error
+	Draw(screen *ebiten.Image)
+	UpdateScore(score int)
+	UpdateLives(lives int)
+	ShowPauseMenu(visible bool)
+	SetDeviceClass(deviceClass string)
+}
+
+type UIData struct {
+	Score       int
+	Lives       int
+	IsPaused    bool
+	DeviceClass string
+}
 
 // Logger represents a logging interface
 type Logger interface {

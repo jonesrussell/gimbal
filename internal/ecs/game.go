@@ -10,7 +10,6 @@ import (
 	scenes "github.com/jonesrussell/gimbal/internal/ecs/scenes"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
-	"github.com/jonesrussell/gimbal/internal/ecs/ui_ebitenui"
 )
 
 // ECSGame represents the main game state using ECS
@@ -41,7 +40,7 @@ type ECSGame struct {
 	healthSystem    *health.HealthSystem
 
 	// 2025: EbitenUI responsive design system
-	responsiveUI *ui_ebitenui.ResponsiveUI
+	ui common.GameUI
 
 	// Entity references
 	playerEntity donburi.Entity
@@ -60,7 +59,26 @@ func (g *ECSGame) Update() error {
 	}
 
 	// Update based on current scene
-	return g.updateCurrentScene()
+	if err := g.ui.Update(); err != nil {
+		return err
+	}
+
+	current, maximum := g.healthSystem.GetPlayerHealth()
+	healthPercent := 1.0
+	if maximum > 0 {
+		healthPercent = float64(current) / float64(maximum)
+	}
+	uiData := common.HUDData{
+		Score:  g.scoreManager.GetScore(),
+		Lives:  current,
+		Level:  g.levelManager.GetLevel(),
+		Health: healthPercent,
+	}
+	if ui, ok := g.ui.(interface{ UpdateHUD(common.HUDData) }); ok {
+		ui.UpdateHUD(uiData)
+	}
+
+	return nil
 }
 
 // Draw renders the game
@@ -70,7 +88,7 @@ func (g *ECSGame) Draw(screen *ebiten.Image) {
 
 	// 2025: Render responsive HUD overlay
 	if g.sceneManager.GetCurrentScene().GetType() == scenes.ScenePlaying {
-		g.renderResponsiveHUD(screen)
+		g.ui.Draw(screen)
 	}
 }
 
@@ -133,14 +151,4 @@ func (g *ECSGame) SetInputHandler(handler common.GameInputHandler) {
 // GetInputHandler returns the current input handler
 func (g *ECSGame) GetInputHandler() common.GameInputHandler {
 	return g.inputHandler
-}
-
-// renderResponsiveHUD renders the 2025 responsive HUD overlay
-func (g *ECSGame) renderResponsiveHUD(screen *ebiten.Image) {
-	// Update responsive UI layout
-	width, height := ebiten.WindowSize()
-	g.responsiveUI.UpdateResponsiveLayout(width, height)
-
-	// Draw the EbitenUI system
-	g.responsiveUI.Draw(screen)
 }
