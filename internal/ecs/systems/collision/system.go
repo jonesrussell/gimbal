@@ -4,6 +4,7 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
 
@@ -11,7 +12,7 @@ import (
 // to avoid argument limit lint violations
 type CollisionSystemConfig struct {
 	World        donburi.World
-	Config       *common.GameConfig
+	Config       *config.GameConfig
 	HealthSystem interface{} // Using interface to avoid circular dependency
 	EventSystem  interface{} // Using interface to avoid circular dependency
 	ScoreManager *managers.ScoreManager
@@ -22,7 +23,7 @@ type CollisionSystemConfig struct {
 // CollisionSystem manages collision detection and response
 type CollisionSystem struct {
 	world        donburi.World
-	config       *common.GameConfig
+	config       *config.GameConfig
 	healthSystem interface{} // Using interface to avoid circular dependency
 	eventSystem  interface{} // Using interface to avoid circular dependency
 	scoreManager *managers.ScoreManager
