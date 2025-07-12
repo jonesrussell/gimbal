@@ -8,6 +8,8 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/colornames"
+
+	"github.com/jonesrussell/gimbal/internal/ui/core"
 )
 
 // HUDBuilder builds HUD components
@@ -28,16 +30,16 @@ func NewHUDBuilder(font text.Face, spriteManager *SpriteManager) *HUDBuilder {
 func (hb *HUDBuilder) BuildHUD() *widget.Container {
 	return widget.NewContainer(
 		widget.ContainerOpts.BackgroundImage(
-			image.NewNineSliceColor(color.NRGBA{0, 0, 0, SemiTransparentBlack}),
+			image.NewNineSliceColor(color.NRGBA{0, 0, 0, core.SemiTransparentBlack}),
 		),
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(HUDSpacing),
+			widget.RowLayoutOpts.Spacing(core.HUDSpacing),
 			widget.RowLayoutOpts.Padding(widget.Insets{
-				Top:    HUDPaddingV,
-				Left:   HUDPadding,
-				Right:  HUDPadding,
-				Bottom: HUDPaddingV,
+				Top:    core.HUDPaddingV,
+				Left:   core.HUDPadding,
+				Right:  core.HUDPadding,
+				Bottom: core.HUDPaddingV,
 			}),
 		)),
 	)
@@ -48,7 +50,7 @@ func (hb *HUDBuilder) BuildLivesContainer() *widget.Container {
 	return widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(IconSpacing),
+			widget.RowLayoutOpts.Spacing(core.IconSpacing),
 		)),
 	)
 }
@@ -57,7 +59,7 @@ func (hb *HUDBuilder) BuildLivesContainer() *widget.Container {
 func (hb *HUDBuilder) BuildLivesIcon() *widget.Graphic {
 	return widget.NewGraphic(
 		widget.GraphicOpts.Image(hb.spriteManager.GetHeartSprite()),
-		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.MinSize(HeartIconSize, HeartIconSize)),
+		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.MinSize(core.HeartIconSize, core.HeartIconSize)),
 	)
 }
 
@@ -82,7 +84,7 @@ func (hb *HUDBuilder) BuildAmmoContainer() *widget.Container {
 	return widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionHorizontal),
-			widget.RowLayoutOpts.Spacing(IconSpacing),
+			widget.RowLayoutOpts.Spacing(core.IconSpacing),
 		)),
 	)
 }
@@ -91,7 +93,7 @@ func (hb *HUDBuilder) BuildAmmoContainer() *widget.Container {
 func (hb *HUDBuilder) BuildAmmoIcon() *widget.Graphic {
 	return widget.NewGraphic(
 		widget.GraphicOpts.Image(hb.spriteManager.GetAmmoSprite()),
-		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.MinSize(AmmoIconSize, AmmoIconSize)),
+		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.MinSize(core.AmmoIconSize, core.AmmoIconSize)),
 	)
 }
 

@@ -1,5 +1,9 @@
 package ui
 
+import (
+	"github.com/jonesrussell/gimbal/internal/ui/core"
+)
+
 // Layout handles responsive layout calculations
 type Layout struct {
 	screenWidth  int
@@ -32,13 +36,13 @@ func (l *Layout) GetDimensions() (width, height int) {
 // calculateDeviceClass determines the device class based on width
 func (l *Layout) calculateDeviceClass(width int) string {
 	switch {
-	case width < MobileBreakpoint:
-		return DeviceMobile
-	case width < TabletBreakpoint:
-		return DeviceTablet
-	case width > UltrawideBreakpoint:
-		return DeviceUltrawide
+	case width < core.MobileBreakpoint:
+		return core.DeviceMobile
+	case width < core.TabletBreakpoint:
+		return core.DeviceTablet
+	case width > core.UltrawideBreakpoint:
+		return core.DeviceUltrawide
 	default:
-		return DeviceDesktop
+		return core.DeviceDesktop
 	}
 }
