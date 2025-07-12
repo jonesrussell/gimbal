@@ -265,6 +265,55 @@ func (l *Logger) Error(msg string, fields ...any) {
 	}
 }
 
+// DebugContext logs a debug message with context
+func (l *Logger) DebugContext(ctx context.Context, msg string, fields ...any) {
+	if !l.shouldLog(msg, fields...) {
+		return
+	}
+
+	if l.useSlog {
+		l.logSlogContext(ctx, slog.LevelDebug, msg, fields...)
+	} else {
+		l.Logger.Debug(msg, toZapFields(fields...)...)
+	}
+}
+
+// InfoContext logs an info message with context
+func (l *Logger) InfoContext(ctx context.Context, msg string, fields ...any) {
+	if !l.shouldLog(msg, fields...) {
+		return
+	}
+
+	if l.useSlog {
+		l.logSlogContext(ctx, slog.LevelInfo, msg, fields...)
+	} else {
+		l.Logger.Info(msg, toZapFields(fields...)...)
+	}
+}
+
+// WarnContext logs a warning message with context
+func (l *Logger) WarnContext(ctx context.Context, msg string, fields ...any) {
+	if !l.shouldLog(msg, fields...) {
+		return
+	}
+
+	if l.useSlog {
+		l.logSlogContext(ctx, slog.LevelWarn, msg, fields...)
+	} else {
+		l.Logger.Warn(msg, toZapFields(fields...)...)
+	}
+}
+
+// ErrorContext logs an error message with context
+func (l *Logger) ErrorContext(ctx context.Context, msg string, fields ...any) {
+	// Always log errors, don't deduplicate them
+	if l.useSlog {
+		l.logSlogContext(ctx, slog.LevelError, msg, fields...)
+	} else {
+		l.Logger.Error(msg, toZapFields(fields...)...)
+	}
+}
+
 // logSlog logs using structured logging
 func (l *Logger) logSlog(level slog.Level, msg string, fields ...any) {
 	if l.slog == nil {
@@ -280,7 +329,26 @@ func (l *Logger) logSlog(level slog.Level, msg string, fields ...any) {
 		}
 	}
 
+	// Use context.Background() for now, but in a real application you might want to pass context through
 	l.slog.LogAttrs(context.Background(), level, msg, attrs...)
+}
+
+// logSlogContext logs using structured logging with context
+func (l *Logger) logSlogContext(ctx context.Context, level slog.Level, msg string, fields ...any) {
+	if l.slog == nil {
+		return
+	}
+
+	attrs := make([]slog.Attr, 0, len(fields)/2)
+	for i := 0; i < len(fields); i += 2 {
+		if i+1 < len(fields) {
+			if key, ok := fields[i].(string); ok {
+				attrs = append(attrs, slog.Any(key, fields[i+1]))
+			}
+		}
+	}
+
+	l.slog.LogAttrs(ctx, level, msg, attrs...)
 }
 
 // shouldLog determines if a message should be logged based on deduplication rules
