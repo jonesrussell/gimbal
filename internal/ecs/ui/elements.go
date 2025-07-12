@@ -27,18 +27,6 @@ type TextStyle struct {
 	Size  float64
 }
 
-// NewText creates a new text element with default styling
-func NewText(content string) *TextElement {
-	return &TextElement{
-		text: content,
-		style: TextStyle{
-			Font:  DefaultTheme.Fonts.UI,
-			Color: DefaultTheme.Colors.Text,
-			Size:  16,
-		},
-	}
-}
-
 // NewTextWithStyle creates a new text element with custom styling
 func NewTextWithStyle(content string, style TextStyle) *TextElement {
 	return &TextElement{
