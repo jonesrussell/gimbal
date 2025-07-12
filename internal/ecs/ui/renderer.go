@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"image/color"
+
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 // UIRenderer is the main UI rendering system
@@ -47,10 +50,18 @@ func (ur *UIRenderer) Draw(element UIElement, pos Position) {
 
 // drawDebugBounds draws debug bounding boxes around UI elements
 func (ur *UIRenderer) drawDebugBounds(pos Position, width, height float64) {
-	// Create a simple rectangle for debug visualization
-	// In a full implementation, you'd draw actual rectangles
-	// For now, we'll just log the bounds
-	// TODO: Implement actual debug rectangle drawing
+	if !ur.debug {
+		return
+	}
+
+	// Draw debug rectangle outline
+	ebitenutil.DrawRect(ur.screen, pos.X-1, pos.Y-1, width+2, height+2,
+		ur.theme.Colors.Debug)
+
+	// Draw corner markers for precise positioning
+	cornerSize := 3.0
+	ebitenutil.DrawRect(ur.screen, pos.X, pos.Y, cornerSize, cornerSize,
+		color.RGBA{255, 0, 0, 255}) // Red corner
 }
 
 // GetTheme returns the current theme
