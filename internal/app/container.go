@@ -18,6 +18,7 @@ type Container struct {
 
 	// Core dependencies
 	logger       common.Logger
+	appConfig    *config.AppConfig
 	config       *config.GameConfig
 	inputHandler common.GameInputHandler
 	game         *gamepkg.ECSGame
@@ -28,8 +29,10 @@ type Container struct {
 }
 
 // NewContainer creates a new application container
-func NewContainer() *Container {
-	return &Container{}
+func NewContainer(appConfig *config.AppConfig) *Container {
+	return &Container{
+		appConfig: appConfig,
+	}
 }
 
 // Initialize sets up all dependencies in the correct order
@@ -68,7 +71,14 @@ func (c *Container) Initialize(ctx context.Context) error {
 
 // initializeLogger creates and configures the logger
 func (c *Container) initializeLogger() error {
-	log, err := logger.New()
+	loggerConfig := &logger.Config{
+		LogFile:    c.appConfig.Logging.LogFile,
+		LogLevel:   c.appConfig.LogLevel,
+		ConsoleOut: c.appConfig.Logging.ConsoleOut,
+		FileOut:    c.appConfig.Logging.FileOut,
+	}
+
+	log, err := logger.NewWithConfig(loggerConfig)
 	if err != nil {
 		return err
 	}

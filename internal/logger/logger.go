@@ -3,12 +3,31 @@ package logger
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sync"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+// Config holds logger configuration
+type Config struct {
+	LogFile    string
+	LogLevel   string
+	ConsoleOut bool
+	FileOut    bool
+}
+
+// DefaultConfig returns default logger configuration
+func DefaultConfig() *Config {
+	return &Config{
+		LogFile:    "logs/gimbal.log",
+		LogLevel:   "DEBUG",
+		ConsoleOut: true,
+		FileOut:    true,
+	}
+}
 
 // syncWriter wraps an io.Writer to make it safe for concurrent use
 type syncWriter struct {
@@ -27,12 +46,24 @@ type Logger struct {
 	*zap.Logger
 	lastLogs map[string]any
 	mu       sync.RWMutex
+	file     *os.File
 }
 
-// New creates a new logger instance
+// New creates a new logger instance with default configuration
 func New() (*Logger, error) {
+	return NewWithConfig(DefaultConfig())
+}
+
+// NewWithConfig creates a new logger instance with custom configuration
+func NewWithConfig(config *Config) (*Logger, error) {
+	// Parse log level
+	level, err := zapcore.ParseLevel(config.LogLevel)
+	if err != nil {
+		level = zapcore.DebugLevel
+	}
+
 	// Create encoder for console output
-	encoderConfig := zapcore.EncoderConfig{
+	consoleEncoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "ts",
 		LevelKey:       "level",
 		NameKey:        "logger",
@@ -47,12 +78,69 @@ func New() (*Logger, error) {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	// Create core with console output
-	core := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoderConfig),
-		zapcore.AddSync(&syncWriter{Writer: os.Stdout}),
-		zapcore.DebugLevel,
-	)
+	// Create encoder for file output (JSON format for better parsing)
+	fileEncoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "timestamp",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		FunctionKey:    zapcore.OmitKey,
+		MessageKey:     "message",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+
+	var cores []zapcore.Core
+
+	// Add console core if enabled
+	if config.ConsoleOut {
+		consoleCore := zapcore.NewCore(
+			zapcore.NewConsoleEncoder(consoleEncoderConfig),
+			zapcore.AddSync(&syncWriter{Writer: os.Stdout}),
+			level,
+		)
+		cores = append(cores, consoleCore)
+	}
+
+	// Add file core if enabled
+	var logFile *os.File
+	if config.FileOut && config.LogFile != "" {
+		// Ensure log directory exists
+		logDir := filepath.Dir(config.LogFile)
+		if err := os.MkdirAll(logDir, 0o755); err != nil {
+			return nil, err
+		}
+
+		// Open log file (create if doesn't exist, append if exists)
+		logFile, err = os.OpenFile(config.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err != nil {
+			return nil, err
+		}
+
+		fileCore := zapcore.NewCore(
+			zapcore.NewJSONEncoder(fileEncoderConfig),
+			zapcore.AddSync(&syncWriter{Writer: logFile}),
+			level,
+		)
+		cores = append(cores, fileCore)
+	}
+
+	// If no cores configured, default to console
+	if len(cores) == 0 {
+		consoleCore := zapcore.NewCore(
+			zapcore.NewConsoleEncoder(consoleEncoderConfig),
+			zapcore.AddSync(&syncWriter{Writer: os.Stdout}),
+			level,
+		)
+		cores = append(cores, consoleCore)
+	}
+
+	// Create multi-core
+	core := zapcore.NewTee(cores...)
 
 	// Create logger with development options
 	zapLogger := zap.New(core,
@@ -64,10 +152,15 @@ func New() (*Logger, error) {
 	logger := &Logger{
 		Logger:   zapLogger,
 		lastLogs: make(map[string]any),
+		file:     logFile,
 	}
 
 	// Log initial message
-	logger.Info("Logger initialized")
+	logger.Info("Logger initialized",
+		"log_file", config.LogFile,
+		"log_level", config.LogLevel,
+		"console_output", config.ConsoleOut,
+		"file_output", config.FileOut)
 
 	return logger, nil
 }
@@ -217,6 +310,15 @@ func toZapFields(fields ...any) []zap.Field {
 
 // Sync ensures all buffered logs are written
 func (l *Logger) Sync() error {
-	// Ignore sync errors for stdout
+	// Sync the underlying zap logger
+	if err := l.Logger.Sync(); err != nil {
+		return err
+	}
+
+	// Close the log file if it exists
+	if l.file != nil {
+		return l.file.Close()
+	}
+
 	return nil
 }

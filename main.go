@@ -37,7 +37,7 @@ func NewApplication() (*Application, error) {
 		return nil, fmt.Errorf("configuration validation failed: %w", err)
 	}
 
-	container := app.NewContainer()
+	container := app.NewContainer(cfg)
 
 	return &Application{
 		container: container,
