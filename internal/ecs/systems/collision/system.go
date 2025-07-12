@@ -1,56 +1,56 @@
 package collision
 
 import (
+	"context"
+	"time"
+
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
-	"github.com/jonesrussell/gimbal/internal/ecs/managers"
+	"github.com/jonesrussell/gimbal/internal/ecs/contracts"
 )
 
-// CollisionSystemConfig groups all dependencies for CollisionSystem
-// to avoid argument limit lint violations
-type CollisionSystemConfig struct {
-	World        donburi.World
-	Config       *config.GameConfig
-	HealthSystem interface{} // Using interface to avoid circular dependency
-	EventSystem  interface{} // Using interface to avoid circular dependency
-	ScoreManager *managers.ScoreManager
-	EnemySystem  interface{} // Using interface to avoid circular dependency
-	Logger       common.Logger
-}
-
-// CollisionSystem manages collision detection and response
+// CollisionSystem manages collision detection and response with proper type safety
 type CollisionSystem struct {
-	world        donburi.World
-	config       *config.GameConfig
-	healthSystem interface{} // Using interface to avoid circular dependency
-	eventSystem  interface{} // Using interface to avoid circular dependency
-	scoreManager *managers.ScoreManager
-	enemySystem  interface{} // Using interface to avoid circular dependency
-	logger       common.Logger
+	world    donburi.World
+	config   *config.GameConfig
+	registry contracts.SystemRegistry
+	logger   common.Logger
 }
 
-// NewCollisionSystem creates a new collision system
-func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
+// NewCollisionSystem creates a new collision system with proper dependency injection
+func NewCollisionSystem(
+	world donburi.World,
+	config *config.GameConfig,
+	registry contracts.SystemRegistry,
+	logger common.Logger,
+) *CollisionSystem {
 	return &CollisionSystem{
-		world:        cfg.World,
-		config:       cfg.Config,
-		healthSystem: cfg.HealthSystem,
-		eventSystem:  cfg.EventSystem,
-		scoreManager: cfg.ScoreManager,
-		enemySystem:  cfg.EnemySystem,
-		logger:       cfg.Logger,
+		world:    world,
+		config:   config,
+		registry: registry,
+		logger:   logger,
 	}
 }
 
-// Update updates the collision system
-func (cs *CollisionSystem) Update() {
+// Update updates the collision system with context support
+func (cs *CollisionSystem) Update(ctx context.Context) error {
+	// Add timeout for collision detection to prevent hanging
+	ctx, cancel := context.WithTimeout(ctx, 16*time.Millisecond) // 60 FPS budget
+	defer cancel()
+
 	// Check projectile-enemy collisions
-	cs.checkProjectileEnemyCollisions()
+	if err := cs.checkProjectileEnemyCollisions(ctx); err != nil {
+		return err
+	}
 
 	// Check player-enemy collisions
-	cs.checkPlayerEnemyCollisions()
+	if err := cs.checkPlayerEnemyCollisions(ctx); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetCollisionDistance calculates the distance between two points
