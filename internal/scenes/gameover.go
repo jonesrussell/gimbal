@@ -36,7 +36,7 @@ func (s *GameOverScene) Draw(screen *ebiten.Image) {
 	config := s.manager.GetConfig()
 	centerX := float64(config.ScreenSize.Width) / 2
 	centerY := float64(config.ScreenSize.Height) / 2
-	drawCenteredTextWithOptions(screen, textDrawOptions{
+	DrawCenteredTextWithOptions(screen, TextDrawOptions{
 		Text:  "GAME OVER",
 		X:     centerX,
 		Y:     centerY - 50,
@@ -45,7 +45,7 @@ func (s *GameOverScene) Draw(screen *ebiten.Image) {
 	})
 
 	// Draw instruction text
-	drawCenteredTextWithOptions(screen, textDrawOptions{
+	DrawCenteredTextWithOptions(screen, TextDrawOptions{
 		Text:  "Press SPACE or ESC to return to menu",
 		X:     centerX,
 		Y:     centerY + 50,

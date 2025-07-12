@@ -50,7 +50,7 @@ func (s *MenuScene) Draw(screen *ebiten.Image) {
 
 // drawTitle renders the game title
 func (s *MenuScene) drawTitle(screen *ebiten.Image) {
-	drawCenteredTextWithOptions(screen, TextDrawOptions{
+	DrawCenteredTextWithOptions(screen, TextDrawOptions{
 		Text:  "GIMBAL",
 		X:     float64(s.manager.config.ScreenSize.Width) / 2,
 		Y:     titleY,
