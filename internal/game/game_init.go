@@ -20,8 +20,8 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
 	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/scenes"
-	"github.com/jonesrussell/gimbal/internal/ui"
 	uicore "github.com/jonesrussell/gimbal/internal/ui/core"
+	"github.com/jonesrussell/gimbal/internal/ui/responsive"
 )
 
 // validateGameConfig validates the provided game configuration
@@ -153,13 +153,13 @@ func (g *ECSGame) initializeUI(ctx context.Context) error {
 		ammoSprite = nil // Will use fallback in UI
 	}
 
-	uiConfig := &ui.Config{
+	uiConfig := &responsive.Config{
 		Font:        font,
 		HeartSprite: heartSprite,
 		AmmoSprite:  ammoSprite,
 	}
 
-	gameUI, err := ui.NewResponsiveUI(uiConfig)
+	gameUI, err := responsive.NewResponsiveUI(uiConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create game UI: %w", err)
 	}
