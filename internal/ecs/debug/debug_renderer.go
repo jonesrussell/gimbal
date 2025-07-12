@@ -40,11 +40,11 @@ type DebugRenderer struct {
 }
 
 // NewDebugRenderer creates a new debug renderer
-func NewDebugRenderer(config *config.GameConfig, logger common.Logger) *DebugRenderer {
+func NewDebugRenderer(gameConfig *config.GameConfig, logger common.Logger) *DebugRenderer {
 	return &DebugRenderer{
 		enabled:    false,
 		level:      DebugBasic,
-		config:     config,
+		config:     gameConfig,
 		logger:     logger,
 		hoverRange: 50.0, // Show entity info within 50 pixels of mouse
 	}

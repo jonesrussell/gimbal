@@ -54,17 +54,15 @@ type WeaponSystem struct {
 }
 
 // NewWeaponSystem creates a new weapon system
-func NewWeaponSystem(world donburi.World, config *config.GameConfig) *WeaponSystem {
+func NewWeaponSystem(world donburi.World, gameConfig *config.GameConfig) *WeaponSystem {
 	ws := &WeaponSystem{
-		world:           world,
-		config:          config,
-		fireTimer:       0,
-		fireInterval:    DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
-		lastFireTime:    time.Now(),
-		projectileSpeed: DefaultProjectileSpeed,
-		projectileSize: struct {
-			Width, Height int
-		}{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
+		world:             world,
+		config:            gameConfig,
+		fireTimer:         0,
+		fireInterval:      DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
+		lastFireTime:      time.Now(),
+		projectileSpeed:   DefaultProjectileSpeed,
+		projectileSize:    struct{ Width, Height int }{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
 		projectileSprites: make(map[int]*ebiten.Image),
 	}
 	ws.initializeProjectileSprites()
