@@ -8,13 +8,14 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // HealthSystem manages player health, invincibility, and respawning
 type HealthSystem struct {
 	world            donburi.World
-	config           *common.GameConfig
+	gameConfig       *config.GameConfig
 	eventSystem      interface{} // Using interface to avoid circular dependency
 	gameStateManager interface{} // Using interface to avoid circular dependency
 	logger           common.Logger
@@ -24,14 +25,14 @@ type HealthSystem struct {
 // NewHealthSystem creates a new health system
 func NewHealthSystem(
 	world donburi.World,
-	config *common.GameConfig,
+	gameConfig *config.GameConfig,
 	eventSystem interface{},
 	gameStateManager interface{},
 	logger common.Logger,
 ) *HealthSystem {
 	return &HealthSystem{
 		world:            world,
-		config:           config,
+		gameConfig:       gameConfig,
 		eventSystem:      eventSystem,
 		gameStateManager: gameStateManager,
 		logger:           logger,
