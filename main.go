@@ -33,7 +33,7 @@ func NewApplication() (*Application, error) {
 	}
 
 	// Validate configuration
-	if err := cfg.Validate(); err != nil {
+	if err = cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("configuration validation failed: %w", err)
 	}
 
@@ -133,7 +133,7 @@ func (a *Application) logSystemInfo(logger interface{ Info(string, ...interface{
 
 // run executes the main application logic
 func run() error {
-	app, err := NewApplication()
+	application, err := NewApplication()
 	if err != nil {
 		return err
 	}
@@ -141,19 +141,20 @@ func run() error {
 	ctx := context.Background()
 
 	// Initialize application
-	if err := app.Initialize(ctx); err != nil {
-		return err
+	initErr := application.Initialize(ctx)
+	if initErr != nil {
+		return initErr
 	}
 
 	// Ensure graceful shutdown
 	defer func() {
-		if shutdownErr := app.Shutdown(ctx); shutdownErr != nil {
+		if shutdownErr := application.Shutdown(ctx); shutdownErr != nil {
 			fmt.Fprintf(os.Stderr, "Failed to shutdown application: %v\n", shutdownErr)
 		}
 	}()
 
 	// Run the application
-	return app.Run()
+	return application.Run()
 }
 
 func main() {

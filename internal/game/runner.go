@@ -13,9 +13,9 @@ type Runner struct {
 }
 
 // NewRunner creates a new game runner
-func NewRunner(config *config.AppGameConfig, game ebiten.Game) *Runner {
+func NewRunner(cfg *config.AppGameConfig, game ebiten.Game) *Runner {
 	return &Runner{
-		config: config,
+		config: cfg,
 		game:   game,
 	}
 }
