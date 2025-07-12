@@ -12,7 +12,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
-	"github.com/jonesrussell/gimbal/internal/ecs/resources"
+	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
 type PlayingScene struct {

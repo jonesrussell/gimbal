@@ -1,4 +1,4 @@
-package ecs
+package managers
 
 import (
 	"github.com/jonesrussell/gimbal/internal/common"

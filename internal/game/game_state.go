@@ -1,9 +1,10 @@
-package ecs
+package game
 
 import (
 	"time"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/ecs/events"
 )
 
 // GameState represents the current state of the game
@@ -33,12 +34,12 @@ func NewGameState() *GameState {
 // GameStateManager manages game state and state transitions
 type GameStateManager struct {
 	state       *GameState
-	eventSystem *EventSystem
+	eventSystem *events.EventSystem
 	logger      common.Logger
 }
 
 // NewGameStateManager creates a new game state manager
-func NewGameStateManager(eventSystem *EventSystem, logger common.Logger) *GameStateManager {
+func NewGameStateManager(eventSystem *events.EventSystem, logger common.Logger) *GameStateManager {
 	return &GameStateManager{
 		state:       NewGameState(),
 		eventSystem: eventSystem,

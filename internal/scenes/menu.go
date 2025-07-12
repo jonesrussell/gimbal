@@ -7,7 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	"github.com/jonesrussell/gimbal/internal/ecs/scenes/menu"
+	"github.com/jonesrussell/gimbal/internal/scenes/menu"
 )
 
 // MenuScene manages the main menu state and rendering

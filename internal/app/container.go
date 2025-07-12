@@ -6,9 +6,10 @@ import (
 	"sync"
 
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/ecs"
+	gamepkg "github.com/jonesrussell/gimbal/internal/game"
 	"github.com/jonesrussell/gimbal/internal/input"
 	"github.com/jonesrussell/gimbal/internal/logger"
+	"github.com/jonesrussell/gimbal/internal/ui"
 )
 
 // Container manages all application dependencies and their lifecycle
@@ -19,7 +20,7 @@ type Container struct {
 	logger       common.Logger
 	config       *common.GameConfig
 	inputHandler common.GameInputHandler
-	game         *ecs.ECSGame
+	game         *gamepkg.ECSGame
 
 	// State
 	initialized bool
@@ -110,9 +111,9 @@ func (c *Container) initializeInputHandler() error {
 // initializeGame creates the ECS game instance
 func (c *Container) initializeGame() error {
 	// Create UI factory
-	uiFactory := &ecs.EbitenUIFactory{}
+	uiFactory := &ui.EbitenUIFactory{}
 
-	game, err := ecs.NewECSGame(c.config, c.logger, c.inputHandler, uiFactory)
+	game, err := gamepkg.NewECSGame(c.config, c.logger, c.inputHandler, uiFactory)
 	if err != nil {
 		return err
 	}
@@ -138,7 +139,7 @@ func (c *Container) GetConfig() *common.GameConfig {
 // GetInputHandler removed - dead code
 
 // GetGame returns the ECS game instance
-func (c *Container) GetGame() *ecs.ECSGame {
+func (c *Container) GetGame() *gamepkg.ECSGame {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.game

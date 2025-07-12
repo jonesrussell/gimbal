@@ -1,11 +1,10 @@
-package ecs
+package ui
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	textv2 "github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/ecs/ui"
 )
 
 type UIConfig struct {
@@ -28,6 +27,6 @@ func (f *EbitenUIFactory) CreateGameUI(config UIConfig) common.GameUI {
 	if !ok {
 		panic("UIConfig.Theme must be *ebiten.Image")
 	}
-	responsiveUI := ui.NewResponsiveUI(font, heartSprite, nil)
-	return ui.NewEbitenGameUI(responsiveUI)
+	responsiveUI := NewResponsiveUI(font, heartSprite, nil)
+	return NewEbitenGameUI(responsiveUI)
 }
