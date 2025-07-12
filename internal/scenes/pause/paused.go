@@ -1,4 +1,4 @@
-package scenes
+package pause
 
 import (
 	"os"
@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
+	"github.com/jonesrussell/gimbal/internal/scenes"
 	"github.com/jonesrussell/gimbal/internal/scenes/menu"
 )
 
@@ -42,7 +43,7 @@ const (
 
 // PausedScene manages the pause menu state and rendering
 type PausedScene struct {
-	manager           *SceneManager
+	manager           *scenes.SceneManager
 	menu              *menu.MenuSystem
 	overlayImage      *ebiten.Image
 	animationTime     float64
@@ -55,7 +56,7 @@ type PausedScene struct {
 }
 
 // NewPausedScene creates a new pause scene instance
-func NewPausedScene(manager *SceneManager, font text.Face) *PausedScene {
+func NewPausedScene(manager *scenes.SceneManager, font text.Face) *PausedScene {
 	scene := &PausedScene{
 		manager:           manager,
 		animationTime:     0,
@@ -67,26 +68,21 @@ func NewPausedScene(manager *SceneManager, font text.Face) *PausedScene {
 
 	options := []menu.MenuOption{
 		{Text: "Resume", Action: func() {
-			// Call resume callback to unpause game state
-			if manager.onResume != nil {
-				manager.onResume()
-			}
-
-			// Then switch scenes
-			manager.SwitchScene(ScenePlaying)
+			// Resume callback is handled by the game when switching to playing scene
+			manager.SwitchScene(scenes.ScenePlaying)
 		}},
-		{Text: "Return to Menu", Action: func() { manager.SwitchScene(SceneMenu) }},
+		{Text: "Return to Menu", Action: func() { manager.SwitchScene(scenes.SceneMenu) }},
 		{Text: "Quit", Action: func() { os.Exit(0) }},
 	}
 
 	config := menu.PausedMenuConfig()
-	config.MenuY = float64(manager.config.ScreenSize.Height) / 2
+	config.MenuY = float64(manager.GetConfig().ScreenSize.Height) / 2
 
-	scene.menu = menu.NewMenuSystem(options, &config, manager.config.ScreenSize.Width,
-		manager.config.ScreenSize.Height, font)
+	scene.menu = menu.NewMenuSystem(options, &config, manager.GetConfig().ScreenSize.Width,
+		manager.GetConfig().ScreenSize.Height, font)
 
 	// Create overlay image once (TODO: handle resizing if needed)
-	scene.overlayImage = ebiten.NewImage(manager.config.ScreenSize.Width, manager.config.ScreenSize.Height)
+	scene.overlayImage = ebiten.NewImage(manager.GetConfig().ScreenSize.Width, manager.GetConfig().ScreenSize.Height)
 	return scene
 }
 
@@ -111,7 +107,7 @@ func (s *PausedScene) Draw(screen *ebiten.Image) {
 
 // Enter is called when the scene becomes active
 func (s *PausedScene) Enter() {
-	s.manager.logger.Debug("Entering paused scene")
+	s.manager.GetLogger().Debug("Entering paused scene")
 	s.fadeIn = 0
 	s.animationTime = 0
 	s.selectionChanged = false
@@ -123,10 +119,10 @@ func (s *PausedScene) Enter() {
 
 // Exit is called when the scene becomes inactive
 func (s *PausedScene) Exit() {
-	s.manager.logger.Debug("Exiting paused scene")
+	s.manager.GetLogger().Debug("Exiting paused scene")
 }
 
 // GetType returns the scene type identifier
-func (s *PausedScene) GetType() SceneType {
-	return ScenePaused
+func (s *PausedScene) GetType() scenes.SceneType {
+	return scenes.ScenePaused
 }

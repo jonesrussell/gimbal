@@ -1,4 +1,4 @@
-package scenes
+package pause
 
 import (
 	"math"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+
+	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
 // updateFadeIn handles the fade-in animation
@@ -45,10 +47,8 @@ func (c *escReleasedCommand) Execute(s *PausedScene) {
 type resumeCommand struct{}
 
 func (c *resumeCommand) Execute(s *PausedScene) {
-	if s.manager.onResume != nil {
-		s.manager.onResume()
-	}
-	s.manager.SwitchScene(ScenePlaying)
+	// Note: Resume callback is handled in the menu action, not here
+	s.manager.SwitchScene(scenes.ScenePlaying)
 }
 
 // handleInput processes pause-specific input (ESC key) using the Command pattern

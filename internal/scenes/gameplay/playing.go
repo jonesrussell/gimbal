@@ -1,4 +1,4 @@
-package scenes
+package gameplay
 
 import (
 	"fmt"
@@ -13,10 +13,11 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
+	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
 type PlayingScene struct {
-	manager      *SceneManager
+	manager      *scenes.SceneManager
 	screenShake  float64 // Screen shake intensity (0 = no shake)
 	font         v2text.Face
 	scoreManager *managers.ScoreManager
@@ -24,7 +25,7 @@ type PlayingScene struct {
 }
 
 func NewPlayingScene(
-	manager *SceneManager,
+	manager *scenes.SceneManager,
 	font v2text.Face,
 	scoreManager *managers.ScoreManager,
 	resourceMgr *resources.ResourceManager,
@@ -56,7 +57,7 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 	// Clear screen
 	screen.Fill(color.Black)
 
-	s.manager.logger.Debug("PlayingScene.Draw called", "screen_size", screen.Bounds())
+	s.manager.GetLogger().Debug("PlayingScene.Draw called", "screen_size", screen.Bounds())
 
 	// Apply screen shake if active
 	if s.screenShake > 0 {
@@ -75,20 +76,20 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
-	s.manager.logger.Debug("drawGameContent called", "screen_size", screen.Bounds())
+	s.manager.GetLogger().Debug("drawGameContent called", "screen_size", screen.Bounds())
 
 	// Use optimized render system if available
 	if renderOptimizer := s.manager.GetRenderOptimizer(); renderOptimizer != nil {
-		renderOptimizer.OptimizedRenderSystem(s.manager.world, screen)
+		renderOptimizer.OptimizedRenderSystem(s.manager.GetWorld(), screen)
 	} else {
 		// Fallback to original render system
 		renderWrapper := core.NewRenderSystemWrapper(screen)
-		if err := renderWrapper.Update(s.manager.world); err != nil {
-			s.manager.logger.Error("Render system failed", "error", err)
+		if err := renderWrapper.Update(s.manager.GetWorld()); err != nil {
+			s.manager.GetLogger().Error("Render system failed", "error", err)
 		}
 	}
 
-	if s.manager.config.Debug {
+	if s.manager.GetConfig().Debug {
 		s.drawDebugInfo(screen)
 	}
 }
@@ -110,34 +111,34 @@ func (s *PlayingScene) drawDebugInfo(screen *ebiten.Image) {
 			filter.Contains(core.Position),
 			filter.Contains(core.Orbital),
 		),
-	).Each(s.manager.world, func(entry *donburi.Entry) {
+	).Each(s.manager.GetWorld(), func(entry *donburi.Entry) {
 		players = append(players, entry.Entity())
 	})
 
 	if len(players) > 0 {
-		playerEntry := s.manager.world.Entry(players[0])
+		playerEntry := s.manager.GetWorld().Entry(players[0])
 		if playerEntry.Valid() {
 			pos := core.Position.Get(playerEntry)
 			orb := core.Orbital.Get(playerEntry)
 
 			// Log debug info
-			s.manager.logger.Debug("Debug Info",
+			s.manager.GetLogger().Debug("Debug Info",
 				"player_pos", fmt.Sprintf("(%.1f, %.1f)", pos.X, pos.Y),
 				"player_angle", fmt.Sprintf("%.1f°", orb.OrbitalAngle),
-				"entity_count", s.manager.world.Len(),
+				"entity_count", s.manager.GetWorld().Len(),
 			)
 		}
 	}
 }
 
 func (s *PlayingScene) Enter() {
-	s.manager.logger.Debug("Entering playing scene")
+	s.manager.GetLogger().Debug("Entering playing scene")
 }
 
 func (s *PlayingScene) Exit() {
-	s.manager.logger.Debug("Exiting playing scene")
+	s.manager.GetLogger().Debug("Exiting playing scene")
 }
 
-func (s *PlayingScene) GetType() SceneType {
-	return ScenePlaying
+func (s *PlayingScene) GetType() scenes.SceneType {
+	return scenes.ScenePlaying
 }

@@ -1,4 +1,4 @@
-package scenes
+package pause
 
 import (
 	"image/color"
@@ -25,7 +25,7 @@ func (s *PausedScene) drawTitle(screen *ebiten.Image) {
 	op := &text.DrawOptions{}
 	op.GeoM.Scale(titleScale, titleScale)
 	op.GeoM.Translate(
-		float64(s.manager.config.ScreenSize.Width)/2-75, // Adjust for scaling
+		float64(s.manager.GetConfig().ScreenSize.Width)/2-75, // Adjust for scaling
 		titleY,
 	)
 	op.ColorScale.SetR(0.2)
@@ -44,8 +44,8 @@ func (s *PausedScene) drawHintText(screen *ebiten.Image) {
 	op := &text.DrawOptions{}
 	width, _ := text.Measure(hintText, s.font, 0)
 	op.GeoM.Translate(
-		float64(s.manager.config.ScreenSize.Width)/2-width/2,
-		float64(s.manager.config.ScreenSize.Height)-hintTextY,
+		float64(s.manager.GetConfig().ScreenSize.Width)/2-width/2,
+		float64(s.manager.GetConfig().ScreenSize.Height)-hintTextY,
 	)
 	op.ColorScale.SetR(0.8)
 	op.ColorScale.SetG(0.8)
