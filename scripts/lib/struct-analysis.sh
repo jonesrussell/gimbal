@@ -3,7 +3,8 @@
 # scripts/lib/struct-analysis.sh
 # Struct analysis functionality
 
-source "$(dirname "$0")/common.sh"
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/common.sh"
 
 # Analyze structs in detail
 analyze_structs() {
