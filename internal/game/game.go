@@ -69,8 +69,14 @@ func (g *ECSGame) Update() error {
 	}
 	// Handle input
 	g.inputHandler.HandleInput()
-	g.sceneManager.Update()
-	g.ui.Update()
+
+	if err := g.sceneManager.Update(); err != nil {
+		g.logger.Error("Scene manager update failed", "error", err)
+	}
+
+	if err := g.ui.Update(); err != nil {
+		g.logger.Error("UI update failed", "error", err)
+	}
 
 	// NEW: Add ECS system updates during gameplay
 	currentScene := g.sceneManager.GetCurrentScene()
