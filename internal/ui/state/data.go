@@ -1,4 +1,4 @@
-package ui
+package state
 
 // HUDData contains data for HUD updates
 type HUDData struct {

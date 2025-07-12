@@ -1,4 +1,4 @@
-package ui
+package state
 
 import (
 	"github.com/jonesrussell/gimbal/internal/ui/core"

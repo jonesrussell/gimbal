@@ -7,12 +7,13 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/ui/core"
 	"github.com/jonesrussell/gimbal/internal/ui/rendering"
+	"github.com/jonesrussell/gimbal/internal/ui/state"
 )
 
 // ResponsiveUI implements a clean, responsive UI system
 type ResponsiveUI struct {
 	ui            *ebitenui.UI
-	state         *State
+	state         *state.State
 	layout        *rendering.Layout
 	hudBuilder    *core.HUDBuilder
 	spriteManager *core.SpriteManager
@@ -39,7 +40,7 @@ func NewResponsiveUI(config *Config) (*ResponsiveUI, error) {
 	hudBuilder := core.NewHUDBuilder(config.Font, spriteManager)
 
 	ui := &ResponsiveUI{
-		state:         NewState(),
+		state:         state.NewState(),
 		layout:        rendering.NewLayout(),
 		hudBuilder:    hudBuilder,
 		spriteManager: spriteManager,
