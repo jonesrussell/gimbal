@@ -20,7 +20,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
 	weaponsys "github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
 	"github.com/jonesrussell/gimbal/internal/scenes"
-	"github.com/jonesrussell/gimbal/internal/ui"
+	"github.com/jonesrussell/gimbal/internal/ui/state"
 )
 
 // ECSGame represents the main game state using ECS
@@ -240,14 +240,14 @@ func (g *ECSGame) updateHUD() {
 		healthPercent = float64(current) / float64(maximum)
 	}
 
-	uiData := ui.HUDData{
+	uiData := state.HUDData{
 		Score:  g.scoreManager.GetScore(),
 		Lives:  current,
 		Level:  g.levelManager.GetLevel(),
 		Health: healthPercent,
 	}
 
-	if hudUI, ok := g.ui.(interface{ UpdateHUD(ui.HUDData) }); ok {
+	if hudUI, ok := g.ui.(interface{ UpdateHUD(state.HUDData) }); ok {
 		hudUI.UpdateHUD(uiData)
 	}
 }
