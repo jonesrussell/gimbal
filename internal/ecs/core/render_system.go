@@ -5,7 +5,6 @@ import (
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
-	"github.com/yohamta/ganim8/v2"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 )
@@ -29,37 +28,7 @@ func RenderEntity(entry *donburi.Entry, screen *ebiten.Image) {
 		return
 	}
 
-	// Check if entity has animation component
-	if entry.HasComponent(Animation) {
-		renderAnimatedEntity(entry, screen, pos)
-	} else {
-		renderStaticEntity(entry, screen, pos, *sprite)
-	}
-}
-
-func renderAnimatedEntity(entry *donburi.Entry, screen *ebiten.Image, pos *common.Point) {
-	animation := Animation.Get(entry)
-	if animation == nil || animation.CurrentAnimation == nil {
-		return
-	}
-
-	// Get size for scaling
-	scaleX, scaleY := 1.0, 1.0
-	if entry.HasComponent(Size) {
-		size := Size.Get(entry)
-		// Calculate scale based on target size (32x32) vs frame size (128x128)
-		scaleX = float64(size.Width) / 128.0
-		scaleY = float64(size.Height) / 128.0
-	}
-
-	// Create draw options for ganim8
-	drawOpts := ganim8.DrawOpts(pos.X, pos.Y, 0, scaleX, scaleY, 0.5, 0.5)
-
-	// Apply invincibility flashing if entity has health and is invincible
-	// Note: ganim8 doesn't support alpha directly, so we'll skip invincibility flashing for animated entities
-
-	// Draw the animation
-	animation.CurrentAnimation.Draw(screen, drawOpts)
+	renderStaticEntity(entry, screen, pos, *sprite)
 }
 
 func renderStaticEntity(entry *donburi.Entry, screen *ebiten.Image, pos *common.Point, sprite *ebiten.Image) {

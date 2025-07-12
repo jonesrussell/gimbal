@@ -20,43 +20,45 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 	// Check if already loaded
 	if resource, exists := rm.resources[name]; exists {
 		if sprite, ok := resource.Data.(*ebiten.Image); ok {
-			rm.logger.Debug("Sprite reused", "name", name)
+			rm.logger.Debug("[SPRITE_CACHE] Sprite reused from cache", "name", name, "was_processed", name == "enemy_sheet")
 			return sprite, nil
 		}
 	}
 
 	// Load from embedded assets
-	rm.logger.Debug("Attempting to load sprite from embed", "name", name, "path", path)
+	rm.logger.Debug("[SPRITE_LOAD] Attempting to load sprite from embed", "name", name, "path", path)
 
 	// List all embedded files for debugging
 	files, listErr := assets.Assets.ReadDir("sprites")
 	if listErr != nil {
-		rm.logger.Error("Failed to list embedded files", "error", listErr)
+		rm.logger.Error("[SPRITE_ERROR] Failed to list embedded files", "error", listErr)
 	} else {
-		rm.logger.Debug("Embedded files found", "files", files)
+		rm.logger.Debug("[SPRITE_FILES] Embedded files found", "files", files)
 		for _, f := range files {
-			rm.logger.Debug("Embedded file", "name", f.Name(), "is_dir", f.IsDir())
+			rm.logger.Debug("[SPRITE_FILES] Embedded file", "name", f.Name(), "is_dir", f.IsDir())
 		}
 	}
 
 	imageData, err := assets.Assets.ReadFile(path)
 	if err != nil {
-		rm.logger.Error("Failed to read sprite file from embed", "name", name, "path", path, "error", err)
+		rm.logger.Error("[SPRITE_ERROR] Failed to read sprite file from embed", "name", name, "path", path, "error", err)
 		return nil, common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to read sprite file", err)
 	}
 
-	rm.logger.Debug("Sprite file read successfully", "name", name, "size", len(imageData), "path", path)
+	rm.logger.Debug("[SPRITE_LOAD] Sprite file read successfully", "name", name, "size", len(imageData), "path", path)
 
 	// Use PNG decoder specifically for PNG files
 	img, err := png.Decode(bytes.NewReader(imageData))
 	if err != nil {
-		rm.logger.Error("Failed to decode PNG sprite", "name", name, "path", path, "error", err)
+		rm.logger.Error("[SPRITE_ERROR] Failed to decode PNG sprite", "name", name, "path", path, "error", err)
 		return nil, common.NewGameErrorWithCause(common.ErrorCodeAssetInvalid, "failed to decode sprite", err)
 	}
 
-	rm.logger.Debug("Sprite decoded successfully", "name", name, "bounds", img.Bounds())
+	rm.logger.Debug("[SPRITE_DECODE] Sprite decoded successfully", "name", name, "bounds", img.Bounds())
 
+	// Create ebiten image from decoded image
 	sprite := ebiten.NewImageFromImage(img)
+	rm.logger.Debug("[SPRITE_PROCESS] Created ebiten image from decoded sprite")
 
 	// Store in resource manager
 	rm.resources[name] = &Resource{
@@ -65,7 +67,7 @@ func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) 
 		Data: sprite,
 	}
 
-	rm.logger.Debug("Sprite loaded", "name", name, "path", path, "bounds", img.Bounds())
+	rm.logger.Debug("[SPRITE_LOAD] Sprite loaded", "name", name, "path", path, "bounds", img.Bounds())
 	return sprite, nil
 }
 
@@ -79,7 +81,7 @@ func (rm *ResourceManager) CreateSprite(
 	// Check if already created
 	if resource, exists := rm.resources[name]; exists {
 		if sprite, ok := resource.Data.(*ebiten.Image); ok {
-			rm.logger.Debug("Sprite reused", "name", name)
+			rm.logger.Debug("[SPRITE_CACHE] Sprite reused", "name", name)
 			return sprite, nil
 		}
 	}
@@ -95,7 +97,7 @@ func (rm *ResourceManager) CreateSprite(
 		Data: sprite,
 	}
 
-	rm.logger.Debug("Sprite created", "name", name, "size", fmt.Sprintf("%dx%d", width, height))
+	rm.logger.Debug("[SPRITE_CREATE] Sprite created", "name", name, "size", fmt.Sprintf("%dx%d", width, height))
 	return sprite, nil
 }
 
@@ -142,18 +144,21 @@ func (rm *ResourceManager) LoadAllSprites() error {
 		}
 	}
 
-	// Load enemy sprite sheet for animations
-	_, err = rm.LoadSprite("enemy_sheet", "sprites/enemy_sheet.png")
+	// Load enemy sprite
+	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy sprite", "path", "sprites/enemy.png")
+	_, err = rm.LoadSprite("enemy", "sprites/enemy.png")
 	if err != nil {
-		rm.logger.Warn("Failed to load enemy sprite sheet, using placeholder", "error", err)
-		_, err = rm.CreateSprite("enemy_sheet", 512, 256, color.RGBA{255, 0, 0, 255})
+		rm.logger.Warn("[SPRITE_WARN] Failed to load enemy sprite, using placeholder", "error", err)
+		_, err = rm.CreateSprite("enemy", 32, 32, color.RGBA{255, 0, 0, 255})
 		if err != nil {
 			return common.NewGameErrorWithCause(
 				common.ErrorCodeAssetLoadFailed,
-				"failed to create enemy sheet placeholder",
+				"failed to create enemy placeholder",
 				err,
 			)
 		}
+	} else {
+		rm.logger.Debug("[SPRITE_LOAD] Enemy sprite loaded successfully")
 	}
 
 	// Create star sprite
@@ -174,6 +179,6 @@ func (rm *ResourceManager) LoadAllSprites() error {
 		return common.NewGameErrorWithCause(common.ErrorCodeAssetLoadFailed, "failed to create background sprite", err)
 	}
 
-	rm.logger.Info("All sprites loaded successfully")
+	rm.logger.Info("[SPRITE_LOAD] All sprites loaded successfully")
 	return nil
 }
