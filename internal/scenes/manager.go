@@ -7,6 +7,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
@@ -48,17 +49,19 @@ type Scene interface {
 }
 
 type SceneManager struct {
-	currentScene  Scene
-	scenes        map[SceneType]Scene
-	world         donburi.World
-	config        *config.GameConfig
-	logger        common.Logger
-	inputHandler  common.GameInputHandler
-	onResume      func()      // Callback to unpause game state
-	healthSystem  interface{} // Health system interface for scenes to access
-	font          text.Face
-	resourceMgr   *resources.ResourceManager
-	debugRenderer *debug.DebugRenderer
+	currentScene    Scene
+	scenes          map[SceneType]Scene
+	world           donburi.World
+	config          *config.GameConfig
+	logger          common.Logger
+	inputHandler    common.GameInputHandler
+	onResume        func()      // Callback to unpause game state
+	healthSystem    interface{} // Health system interface for scenes to access
+	font            text.Face
+	resourceMgr     *resources.ResourceManager
+	debugRenderer   *debug.DebugRenderer
+	renderOptimizer *core.RenderOptimizer
+	imagePool       *core.ImagePool
 }
 
 func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
@@ -204,4 +207,24 @@ func (sceneMgr *SceneManager) GetResourceManager() *resources.ResourceManager {
 // GetDebugRenderer returns the debug renderer
 func (sceneMgr *SceneManager) GetDebugRenderer() *debug.DebugRenderer {
 	return sceneMgr.debugRenderer
+}
+
+// GetRenderOptimizer returns the render optimizer
+func (sceneMgr *SceneManager) GetRenderOptimizer() *core.RenderOptimizer {
+	return sceneMgr.renderOptimizer
+}
+
+// SetRenderOptimizer sets the render optimizer
+func (sceneMgr *SceneManager) SetRenderOptimizer(optimizer *core.RenderOptimizer) {
+	sceneMgr.renderOptimizer = optimizer
+}
+
+// GetImagePool returns the image pool
+func (sceneMgr *SceneManager) GetImagePool() *core.ImagePool {
+	return sceneMgr.imagePool
+}
+
+// SetImagePool sets the image pool
+func (sceneMgr *SceneManager) SetImagePool(pool *core.ImagePool) {
+	sceneMgr.imagePool = pool
 }
