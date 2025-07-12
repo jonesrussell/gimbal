@@ -156,7 +156,7 @@ func (h *Handler) IsQuitPressed() bool {
 
 // IsPausePressed checks if the pause key is pressed
 func (h *Handler) IsPausePressed() bool {
-	return inpututil.IsKeyJustPressed(ebiten.KeyP)
+	return inpututil.IsKeyJustPressed(ebiten.KeyEscape)
 }
 
 // IsShootPressed checks if the shoot key is pressed
