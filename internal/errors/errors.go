@@ -273,11 +273,12 @@ func IsGameError(err error) bool {
 
 // GetGameError extracts GameError from an error chain
 func GetGameError(err error) (*GameError, bool) {
-	var gameErr *GameError
 	if err != nil {
-		gameErr, _ = err.(*GameError)
+		if gameErr, ok := err.(*GameError); ok {
+			return gameErr, true
+		}
 	}
-	return gameErr, gameErr != nil
+	return nil, false
 }
 
 // HasErrorCode checks if an error has a specific error code

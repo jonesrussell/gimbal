@@ -1,6 +1,8 @@
 package common
 
 import (
+	"context"
+
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/jonesrussell/gimbal/internal/config"
@@ -29,6 +31,10 @@ type Logger interface {
 	Info(msg string, fields ...any)
 	Warn(msg string, fields ...any)
 	Error(msg string, fields ...any)
+	DebugContext(ctx context.Context, msg string, fields ...any)
+	InfoContext(ctx context.Context, msg string, fields ...any)
+	WarnContext(ctx context.Context, msg string, fields ...any)
+	ErrorContext(ctx context.Context, msg string, fields ...any)
 	Sync() error
 }
 
