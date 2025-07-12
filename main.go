@@ -9,7 +9,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/jonesrussell/gimbal/internal/app"
-	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/errors"
 )
 
 // ExitCode represents the program's exit status
@@ -38,8 +38,8 @@ func run() error {
 
 	// Initialize all dependencies
 	if err := container.Initialize(context.Background()); err != nil {
-		return common.NewGameErrorWithCause(
-			common.ErrorCodeSystemFailed,
+		return errors.NewGameErrorWithCause(
+			errors.ErrorCodeSystemFailed,
 			"failed to initialize application container",
 			err,
 		)
@@ -72,7 +72,7 @@ func run() error {
 	ebiten.SetTPS(60)
 
 	if runErr := ebiten.RunGame(game); runErr != nil {
-		return common.NewGameErrorWithCause(common.ErrorCodeSystemFailed, "game error", runErr)
+		return errors.NewGameErrorWithCause(errors.ErrorCodeSystemFailed, "game error", runErr)
 	}
 
 	return nil

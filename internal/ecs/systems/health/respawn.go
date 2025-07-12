@@ -17,8 +17,8 @@ func (hs *HealthSystem) respawnPlayer(playerEntity donburi.Entity) {
 
 	// Reset position to center bottom
 	center := common.Point{
-		X: float64(hs.config.ScreenSize.Width) / 2,
-		Y: float64(hs.config.ScreenSize.Height) / 2,
+		X: float64(hs.gameConfig.ScreenSize.Width) / 2,
+		Y: float64(hs.gameConfig.ScreenSize.Height) / 2,
 	}
 
 	// Update position

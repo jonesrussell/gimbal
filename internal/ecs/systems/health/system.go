@@ -15,7 +15,7 @@ import (
 // HealthSystem manages player health, invincibility, and respawning
 type HealthSystem struct {
 	world            donburi.World
-	config           *config.GameConfig
+	gameConfig       *config.GameConfig
 	eventSystem      interface{} // Using interface to avoid circular dependency
 	gameStateManager interface{} // Using interface to avoid circular dependency
 	logger           common.Logger
@@ -25,14 +25,14 @@ type HealthSystem struct {
 // NewHealthSystem creates a new health system
 func NewHealthSystem(
 	world donburi.World,
-	config *config.GameConfig,
+	gameConfig *config.GameConfig,
 	eventSystem interface{},
 	gameStateManager interface{},
 	logger common.Logger,
 ) *HealthSystem {
 	return &HealthSystem{
 		world:            world,
-		config:           config,
+		gameConfig:       gameConfig,
 		eventSystem:      eventSystem,
 		gameStateManager: gameStateManager,
 		logger:           logger,

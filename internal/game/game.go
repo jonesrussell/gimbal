@@ -79,8 +79,8 @@ func (g *ECSGame) Update() error {
 		Level:  g.levelManager.GetLevel(),
 		Health: healthPercent,
 	}
-	if ui, ok := g.ui.(interface{ UpdateHUD(ui.HUDData) }); ok {
-		ui.UpdateHUD(uiData)
+	if hudUI, ok := g.ui.(interface{ UpdateHUD(ui.HUDData) }); ok {
+		hudUI.UpdateHUD(uiData)
 	}
 
 	return nil

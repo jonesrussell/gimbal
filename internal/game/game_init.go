@@ -20,12 +20,12 @@ import (
 
 // NewECSGame creates a new ECS-based game instance with dependency-injected UI
 func NewECSGame(
-	config *config.GameConfig,
+	gameConfig *config.GameConfig,
 	logger common.Logger,
 	inputHandler common.GameInputHandler,
 	uiFactory ui.UIFactory,
 ) (*ECSGame, error) {
-	if config == nil {
+	if gameConfig == nil {
 		return nil, errors.NewGameError(errors.ErrorCodeConfigMissing, "config cannot be nil")
 	}
 	if logger == nil {
@@ -36,9 +36,9 @@ func NewECSGame(
 	}
 
 	logger.Debug("Creating new ECS game instance",
-		"screen_size", config.ScreenSize,
-		"player_size", config.PlayerSize,
-		"num_stars", config.NumStars,
+		"screen_size", gameConfig.ScreenSize,
+		"player_size", gameConfig.PlayerSize,
+		"num_stars", gameConfig.NumStars,
 	)
 
 	// Create ECS world
@@ -47,7 +47,7 @@ func NewECSGame(
 	// Create game instance
 	game := &ECSGame{
 		world:        world,
-		config:       config,
+		config:       gameConfig,
 		inputHandler: inputHandler,
 		logger:       logger,
 	}

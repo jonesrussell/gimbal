@@ -37,9 +37,9 @@ type StarFieldHelper struct {
 }
 
 // NewStarFieldHelper creates a new star field helper
-func NewStarFieldHelper(config *StarFieldConfig, screenBounds config.Size) *StarFieldHelper {
+func NewStarFieldHelper(starConfig *StarFieldConfig, screenBounds config.Size) *StarFieldHelper {
 	return &StarFieldHelper{
-		config:       config,
+		config:       starConfig,
 		center:       common.Point{X: float64(screenBounds.Width) / 2, Y: float64(screenBounds.Height) / 2},
 		screenBounds: screenBounds,
 	}

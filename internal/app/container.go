@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/config"
 	gamepkg "github.com/jonesrussell/gimbal/internal/game"
 	"github.com/jonesrussell/gimbal/internal/input"
 	"github.com/jonesrussell/gimbal/internal/logger"
@@ -18,7 +19,7 @@ type Container struct {
 
 	// Core dependencies
 	logger       common.Logger
-	config       *common.GameConfig
+	config       *config.GameConfig
 	inputHandler common.GameInputHandler
 	game         *gamepkg.ECSGame
 
@@ -78,31 +79,31 @@ func (c *Container) initializeLogger() error {
 
 // initializeConfig creates and validates the game configuration
 func (c *Container) initializeConfig() error {
-	config := common.NewConfig(
-		common.WithDebug(true), // Force debug mode
-		common.WithSpeed(common.DefaultSpeed),
-		common.WithStarSettings(common.DefaultStarSize, common.DefaultStarSpeed),
-		common.WithAngleStep(common.DefaultAngleStep),
+	gameConfig := config.NewConfig(
+		config.WithDebug(true), // Force debug mode
+		config.WithSpeed(config.DefaultSpeed),
+		config.WithStarSettings(config.DefaultStarSize, config.DefaultStarSpeed),
+		config.WithAngleStep(config.DefaultAngleStep),
 	)
 
 	// Validate configuration
-	if err := common.ValidateConfig(config); err != nil {
+	if err := config.ValidateConfig(gameConfig); err != nil {
 		return fmt.Errorf("configuration validation failed: %w", err)
 	}
 
-	c.config = config
+	c.config = gameConfig
 	c.logger.Info("Game configuration created and validated",
-		"screen_size", config.ScreenSize,
-		"player_size", config.PlayerSize,
-		"num_stars", config.NumStars,
-		"debug", config.Debug,
+		"screen_size", gameConfig.ScreenSize,
+		"player_size", gameConfig.PlayerSize,
+		"num_stars", gameConfig.NumStars,
+		"debug", gameConfig.Debug,
 	)
 	return nil
 }
 
 // initializeInputHandler creates the input handler
 func (c *Container) initializeInputHandler() error {
-	inputHandler := input.New(c.logger)
+	inputHandler := input.NewHandler()
 	c.inputHandler = inputHandler
 	c.logger.Info("Input handler created")
 	return nil
@@ -130,7 +131,7 @@ func (c *Container) GetLogger() common.Logger {
 }
 
 // GetConfig returns the game configuration
-func (c *Container) GetConfig() *common.GameConfig {
+func (c *Container) GetConfig() *config.GameConfig {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.config
