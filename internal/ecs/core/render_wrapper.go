@@ -19,7 +19,7 @@ func NewRenderSystemWrapper(screen *ebiten.Image) *RenderSystemWrapper {
 
 func (rsw *RenderSystemWrapper) Update(world donburi.World, args ...interface{}) error {
 	if rsw.screen == nil {
-		return errors.NewGameError(errors.ErrorCodeRenderingFailed, "screen is nil")
+		return errors.NewGameError(errors.RenderFailed, "screen is nil")
 	}
 	RenderSystem(world, rsw.screen)
 	return nil
