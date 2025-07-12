@@ -37,21 +37,6 @@ func (cs *CollisionSystem) getProjectileEntities(ctx context.Context) ([]donburi
 	return projectiles, nil
 }
 
-func (cs *CollisionSystem) getEnemyEntities(ctx context.Context) ([]donburi.Entity, error) {
-	enemies := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.EnemyTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-			filter.Contains(core.Health),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
-		enemies = append(enemies, entry.Entity())
-	})
-	return enemies, nil
-}
-
 func (cs *CollisionSystem) processProjectileEnemyCollisions(ctx context.Context, projectiles, enemies []donburi.Entity) error {
 	for _, projectileEntity := range projectiles {
 		// Check for cancellation
