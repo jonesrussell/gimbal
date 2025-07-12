@@ -161,7 +161,10 @@ func (c *Container) Shutdown(ctx context.Context) error {
 
 	// Shutdown in reverse order of initialization
 	if c.game != nil {
-		c.game.Cleanup()
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		c.game.Cleanup(ctx)
 		c.logger.Debug("Game cleaned up")
 	}
 

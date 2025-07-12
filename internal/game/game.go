@@ -124,12 +124,12 @@ func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 }
 
 // Cleanup cleans up resources
-func (g *ECSGame) Cleanup() {
+func (g *ECSGame) Cleanup(ctx context.Context) {
 	g.logger.Debug("Cleaning up ECS game")
 
 	// Clean up resources
 	if g.resourceManager != nil {
-		if err := g.resourceManager.Cleanup(context.Background()); err != nil {
+		if err := g.resourceManager.Cleanup(ctx); err != nil {
 			g.logger.Error("Failed to cleanup resource manager", "error", err)
 		}
 	}

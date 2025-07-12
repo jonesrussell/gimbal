@@ -134,7 +134,19 @@ func (rm *ResourceManager) GetSprite(ctx context.Context, name string) (*ebiten.
 
 // LoadAllSprites loads all required sprites for the game
 func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
+	// Check for cancellation at the start
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Load player sprite from file
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 	_, err := rm.LoadSprite(ctx, "player", "sprites/player.png")
 	if err != nil {
 		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
@@ -149,6 +161,11 @@ func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 	}
 
 	// Load heart sprite for lives display
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 	_, err = rm.LoadSprite(ctx, "heart", "sprites/heart.png")
 	if err != nil {
 		rm.logger.Warn("Failed to load heart sprite, using placeholder", "error", err)
@@ -163,6 +180,11 @@ func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 	}
 
 	// Load enemy sprite
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy sprite", "path", "sprites/enemy.png")
 	_, err = rm.LoadSprite(ctx, "enemy", "sprites/enemy.png")
 	if err != nil {
