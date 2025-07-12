@@ -1,6 +1,8 @@
 package game
 
 import (
+	"context"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 
@@ -127,7 +129,9 @@ func (g *ECSGame) Cleanup() {
 
 	// Clean up resources
 	if g.resourceManager != nil {
-		g.resourceManager.Cleanup()
+		if err := g.resourceManager.Cleanup(context.Background()); err != nil {
+			g.logger.Error("Failed to cleanup resource manager", "error", err)
+		}
 	}
 
 	// Donburi handles entity cleanup automatically

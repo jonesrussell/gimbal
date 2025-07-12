@@ -2,6 +2,7 @@ package resources
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"image/color"
 	"image/png"
@@ -14,7 +15,14 @@ import (
 )
 
 // LoadSprite loads a sprite from the embedded assets
-func (rm *ResourceManager) LoadSprite(name, path string) (*ebiten.Image, error) {
+func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*ebiten.Image, error) {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 
@@ -105,7 +113,14 @@ func (rm *ResourceManager) CreateSprite(
 }
 
 // GetSprite retrieves a loaded sprite
-func (rm *ResourceManager) GetSprite(name string) (*ebiten.Image, bool) {
+func (rm *ResourceManager) GetSprite(ctx context.Context, name string) (*ebiten.Image, bool) {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return nil, false
+	default:
+	}
+
 	rm.mutex.RLock()
 	defer rm.mutex.RUnlock()
 
@@ -118,9 +133,9 @@ func (rm *ResourceManager) GetSprite(name string) (*ebiten.Image, bool) {
 }
 
 // LoadAllSprites loads all required sprites for the game
-func (rm *ResourceManager) LoadAllSprites() error {
+func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 	// Load player sprite from file
-	_, err := rm.LoadSprite("player", "sprites/player.png")
+	_, err := rm.LoadSprite(ctx, "player", "sprites/player.png")
 	if err != nil {
 		rm.logger.Warn("Failed to load player sprite, using placeholder", "error", err)
 		_, err = rm.CreateSprite("player", 32, 32, color.RGBA{0, 255, 0, 255})
@@ -134,7 +149,7 @@ func (rm *ResourceManager) LoadAllSprites() error {
 	}
 
 	// Load heart sprite for lives display
-	_, err = rm.LoadSprite("heart", "sprites/heart.png")
+	_, err = rm.LoadSprite(ctx, "heart", "sprites/heart.png")
 	if err != nil {
 		rm.logger.Warn("Failed to load heart sprite, using placeholder", "error", err)
 		_, err = rm.CreateSprite("heart", 16, 16, color.RGBA{255, 0, 0, 255})
@@ -149,7 +164,7 @@ func (rm *ResourceManager) LoadAllSprites() error {
 
 	// Load enemy sprite
 	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy sprite", "path", "sprites/enemy.png")
-	_, err = rm.LoadSprite("enemy", "sprites/enemy.png")
+	_, err = rm.LoadSprite(ctx, "enemy", "sprites/enemy.png")
 	if err != nil {
 		rm.logger.Warn("[SPRITE_WARN] Failed to load enemy sprite, using placeholder", "error", err)
 		_, err = rm.CreateSprite("enemy", 32, 32, color.RGBA{255, 0, 0, 255})

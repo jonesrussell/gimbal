@@ -1,6 +1,7 @@
 package enemy
 
 import (
+	"context"
 	"image/color"
 	"math"
 	"math/rand"
@@ -59,7 +60,7 @@ func (es *EnemySystem) Update(deltaTime float64) {
 func (es *EnemySystem) spawnEnemy() {
 	// Load enemy sprite if not already loaded
 	if es.enemySprite == nil {
-		enemySprite, exists := es.resourceMgr.GetSprite("enemy")
+		enemySprite, exists := es.resourceMgr.GetSprite(context.Background(), "enemy")
 		if !exists {
 			es.logger.Warn("[ENEMY_SPAWN] Enemy sprite not found, using placeholder")
 			// Create a placeholder sprite

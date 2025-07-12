@@ -1,6 +1,8 @@
 package game
 
 import (
+	"context"
+
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
@@ -63,8 +65,11 @@ func NewECSGame(
 	}
 
 	// Create UI through factory (dependency injection)
-	font := game.resourceManager.GetDefaultFont()
-	heartSprite, _ := game.resourceManager.GetSprite("heart")
+	font, err := game.resourceManager.GetDefaultFont(context.Background())
+	if err != nil {
+		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", err)
+	}
+	heartSprite, _ := game.resourceManager.GetSprite(context.Background(), "heart")
 	uiConfig := ui.UIConfig{
 		Font:  font,
 		Theme: heartSprite,
@@ -105,9 +110,9 @@ func (g *ECSGame) initializeSystems() error {
 	g.logger.Debug("Health system created")
 
 	// Get font from resource manager
-	font := g.resourceManager.GetDefaultFont()
-	if font == nil {
-		return errors.NewGameError(errors.ErrorCodeAssetLoadFailed, "failed to load default font")
+	font, err := g.resourceManager.GetDefaultFont(context.Background())
+	if err != nil {
+		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to get default font", err)
 	}
 
 	// Create scene manager
@@ -153,7 +158,7 @@ func (g *ECSGame) initializeSystems() error {
 // loadAssets loads and prepares game assets
 func (g *ECSGame) loadAssets() error {
 	// Load all sprites through resource manager
-	if err := g.resourceManager.LoadAllSprites(); err != nil {
+	if err := g.resourceManager.LoadAllSprites(context.Background()); err != nil {
 		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load sprites", err)
 	}
 
@@ -164,12 +169,12 @@ func (g *ECSGame) loadAssets() error {
 // createEntities creates all game entities
 func (g *ECSGame) createEntities() error {
 	// Get sprites from resource manager
-	playerSprite, ok := g.resourceManager.GetSprite(resources.SpritePlayer)
+	playerSprite, ok := g.resourceManager.GetSprite(context.Background(), resources.SpritePlayer)
 	if !ok {
 		return errors.NewGameError(errors.ErrorCodeSpriteNotFound, "player sprite not found")
 	}
 
-	starSprite, ok := g.resourceManager.GetSprite(resources.SpriteStar)
+	starSprite, ok := g.resourceManager.GetSprite(context.Background(), resources.SpriteStar)
 	if !ok {
 		return errors.NewGameError(errors.ErrorCodeSpriteNotFound, "star sprite not found")
 	}
