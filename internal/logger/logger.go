@@ -1,7 +1,9 @@
 package logger
 
 import (
+	"context"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -18,6 +20,7 @@ type Config struct {
 	LogLevel   string `envconfig:"LOG_LEVEL" default:"DEBUG"`
 	ConsoleOut bool   `envconfig:"LOG_CONSOLE_OUT" default:"true"`
 	FileOut    bool   `envconfig:"LOG_FILE_OUT" default:"true"`
+	UseSlog    bool   `envconfig:"LOG_USE_SLOG" default:"false"` // Use structured logging with log/slog
 }
 
 // syncWriter wraps an io.Writer to make it safe for concurrent use
@@ -38,6 +41,8 @@ type Logger struct {
 	lastLogs map[string]any
 	mu       sync.RWMutex
 	file     *os.File
+	slog     *slog.Logger // Structured logger for modern Go
+	useSlog  bool
 }
 
 // NewWithConfig creates a new logger instance with custom configuration
@@ -53,6 +58,7 @@ func NewWithConfig(config *Config) (*Logger, error) {
 				LogLevel:   "DEBUG",
 				ConsoleOut: true,
 				FileOut:    true,
+				UseSlog:    false,
 			}
 		}
 	}
@@ -68,7 +74,7 @@ func NewWithConfig(config *Config) (*Logger, error) {
 	}
 
 	zapLogger := createZapLogger(cores)
-	logger := createLogger(zapLogger, logFile)
+	logger := createLogger(zapLogger, logFile, config.UseSlog)
 
 	// Log initial message
 	logger.logInitialization(config)
@@ -182,12 +188,22 @@ func createZapLogger(cores []zapcore.Core) *zap.Logger {
 }
 
 // createLogger creates the Logger wrapper
-func createLogger(zapLogger *zap.Logger, logFile *os.File) *Logger {
-	return &Logger{
+func createLogger(zapLogger *zap.Logger, logFile *os.File, useSlog bool) *Logger {
+	logger := &Logger{
 		Logger:   zapLogger,
 		lastLogs: make(map[string]any),
 		file:     logFile,
+		useSlog:  useSlog,
 	}
+
+	// Initialize structured logger if enabled
+	if useSlog {
+		logger.slog = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}))
+	}
+
+	return logger
 }
 
 // logInitialization logs the initial logger setup message
@@ -196,7 +212,8 @@ func (l *Logger) logInitialization(config *Config) {
 		"log_file", config.LogFile,
 		"log_level", config.LogLevel,
 		"console_output", config.ConsoleOut,
-		"file_output", config.FileOut)
+		"file_output", config.FileOut,
+		"use_slog", config.UseSlog)
 }
 
 // Debug logs a debug message
@@ -204,7 +221,12 @@ func (l *Logger) Debug(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Debug(msg, toZapFields(fields...)...)
+
+	if l.useSlog {
+		l.logSlog(slog.LevelDebug, msg, fields...)
+	} else {
+		l.Logger.Debug(msg, toZapFields(fields...)...)
+	}
 }
 
 // Info logs an info message
@@ -212,7 +234,12 @@ func (l *Logger) Info(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Info(msg, toZapFields(fields...)...)
+
+	if l.useSlog {
+		l.logSlog(slog.LevelInfo, msg, fields...)
+	} else {
+		l.Logger.Info(msg, toZapFields(fields...)...)
+	}
 }
 
 // Warn logs a warning message
@@ -220,13 +247,40 @@ func (l *Logger) Warn(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Warn(msg, toZapFields(fields...)...)
+
+	if l.useSlog {
+		l.logSlog(slog.LevelWarn, msg, fields...)
+	} else {
+		l.Logger.Warn(msg, toZapFields(fields...)...)
+	}
 }
 
 // Error logs an error message
 func (l *Logger) Error(msg string, fields ...any) {
 	// Always log errors, don't deduplicate them
-	l.Logger.Error(msg, toZapFields(fields...)...)
+	if l.useSlog {
+		l.logSlog(slog.LevelError, msg, fields...)
+	} else {
+		l.Logger.Error(msg, toZapFields(fields...)...)
+	}
+}
+
+// logSlog logs using structured logging
+func (l *Logger) logSlog(level slog.Level, msg string, fields ...any) {
+	if l.slog == nil {
+		return
+	}
+
+	attrs := make([]slog.Attr, 0, len(fields)/2)
+	for i := 0; i < len(fields); i += 2 {
+		if i+1 < len(fields) {
+			if key, ok := fields[i].(string); ok {
+				attrs = append(attrs, slog.Any(key, fields[i+1]))
+			}
+		}
+	}
+
+	l.slog.LogAttrs(context.Background(), level, msg, attrs...)
 }
 
 // shouldLog determines if a message should be logged based on deduplication rules
@@ -275,12 +329,17 @@ func equalValues(a, b any) bool {
 		return false
 	}
 
+	return compareByKind(va, vb)
+}
+
+// compareByKind delegates comparison based on reflect.Kind
+func compareByKind(va, vb reflect.Value) bool {
 	switch va.Kind() {
 	case reflect.Invalid, reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16,
 		reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16,
 		reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64,
 		reflect.Complex64, reflect.Complex128, reflect.String, reflect.UnsafePointer:
-		return va.Interface() == vb.Interface()
+		return comparePrimitive(va, vb)
 	case reflect.Slice, reflect.Array:
 		return equalSlicesOrArrays(va, vb)
 	case reflect.Map:
@@ -288,10 +347,15 @@ func equalValues(a, b any) bool {
 	case reflect.Struct:
 		return equalStructs(va, vb)
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Pointer:
-		return va.Interface() == vb.Interface()
+		return comparePrimitive(va, vb)
 	default:
 		return false
 	}
+}
+
+// comparePrimitive compares primitive types using direct interface comparison
+func comparePrimitive(va, vb reflect.Value) bool {
+	return va.Interface() == vb.Interface()
 }
 
 func equalSlicesOrArrays(va, vb reflect.Value) bool {

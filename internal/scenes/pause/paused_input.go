@@ -51,25 +51,55 @@ func (c *resumeCommand) Execute(s *PausedScene) {
 	s.manager.SwitchScene(scenes.ScenePlaying)
 }
 
-// handleInput processes pause-specific input (ESC key) using the Command pattern
-func (s *PausedScene) handleInput() {
-	currentEscPressed := ebiten.IsKeyPressed(ebiten.KeyEscape)
-	escJustPressed := inpututil.IsKeyJustPressed(ebiten.KeyEscape)
+// InputState represents the current state of pause input
+type InputState struct {
+	CurrentEscPressed bool
+	EscJustPressed    bool
+	CanUnpause        bool
+	EscWasPressed     bool
+}
 
-	var cmd PauseCommand
+// detectInputState determines the current input state for pause handling
+func (s *PausedScene) detectInputState() InputState {
+	return InputState{
+		CurrentEscPressed: ebiten.IsKeyPressed(ebiten.KeyEscape),
+		EscJustPressed:    inpututil.IsKeyJustPressed(ebiten.KeyEscape),
+		CanUnpause:        s.canUnpause,
+		EscWasPressed:     s.escWasPressed,
+	}
+}
 
-	if s.escWasPressed && currentEscPressed {
-		cmd = &escHeldCommand{} // ESC is still held down from the pause action
-	} else if s.escWasPressed && !currentEscPressed {
-		cmd = &escReleasedCommand{} // ESC has been released
-	} else if s.canUnpause && escJustPressed {
-		cmd = &resumeCommand{} // Resume from pause
-	} else if !s.escWasPressed {
+// selectCommand determines which command to execute based on input state
+func (s *PausedScene) selectCommand(state InputState) PauseCommand {
+	// Handle ESC key state transitions
+	if state.EscWasPressed && state.CurrentEscPressed {
+		return &escHeldCommand{} // ESC is still held down from the pause action
+	}
+
+	if state.EscWasPressed && !state.CurrentEscPressed {
+		return &escReleasedCommand{} // ESC has been released
+	}
+
+	// Handle resume conditions
+	if state.CanUnpause && state.EscJustPressed {
+		return &resumeCommand{} // Resume from pause
+	}
+
+	// Handle initial unpause setup
+	if !state.EscWasPressed {
 		s.canUnpause = true
-		if escJustPressed {
-			cmd = &resumeCommand{}
+		if state.EscJustPressed {
+			return &resumeCommand{}
 		}
 	}
+
+	return nil // No command to execute
+}
+
+// handleInput processes pause-specific input (ESC key) using the Command pattern
+func (s *PausedScene) handleInput() {
+	state := s.detectInputState()
+	cmd := s.selectCommand(state)
 
 	if cmd != nil {
 		cmd.Execute(s)

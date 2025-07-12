@@ -129,21 +129,37 @@ func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
 
 // GetMovementInput returns the current movement input as an angle
 func (h *Handler) GetMovementInput() math.Angle {
+	// Check keyboard input first
+	if keyboardInput := h.getKeyboardMovementInput(); keyboardInput != 0 {
+		return keyboardInput
+	}
+
+	// Check touch input if no keyboard input
+	return h.getTouchMovementInput()
+}
+
+// getKeyboardMovementInput handles keyboard-based movement input
+func (h *Handler) getKeyboardMovementInput() math.Angle {
 	if h.IsKeyPressed(ebiten.KeyA) || h.IsKeyPressed(ebiten.KeyLeft) {
 		return math.Angle(-PlayerMovementSpeed)
 	}
 	if h.IsKeyPressed(ebiten.KeyD) || h.IsKeyPressed(ebiten.KeyRight) {
 		return math.Angle(PlayerMovementSpeed)
 	}
+	return 0
+}
 
-	// Handle touch input
-	if h.touchState != nil && h.touchState.Duration > MinTouchDuration {
-		deltaX := h.touchState.LastPos.X - h.touchState.StartPos.X
-		if deltaX > TouchThreshold {
-			return math.Angle(PlayerMovementSpeed)
-		} else if deltaX < -TouchThreshold {
-			return math.Angle(-PlayerMovementSpeed)
-		}
+// getTouchMovementInput handles touch-based movement input
+func (h *Handler) getTouchMovementInput() math.Angle {
+	if h.touchState == nil || h.touchState.Duration <= MinTouchDuration {
+		return 0
+	}
+
+	deltaX := h.touchState.LastPos.X - h.touchState.StartPos.X
+	if deltaX > TouchThreshold {
+		return math.Angle(PlayerMovementSpeed)
+	} else if deltaX < -TouchThreshold {
+		return math.Angle(-PlayerMovementSpeed)
 	}
 
 	return 0
