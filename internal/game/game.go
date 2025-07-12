@@ -110,6 +110,9 @@ func (g *ECSGame) updateDebugInput() {
 func (g *ECSGame) updateCoreSystems() error {
 	g.inputHandler.HandleInput()
 
+	// Handle pause input
+	g.handlePauseInput()
+
 	if err := g.sceneManager.Update(); err != nil {
 		g.logger.Error("Scene manager update failed", "error", err)
 		return err
@@ -132,6 +135,9 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 	}
 
 	deltaTime := 1.0 / 60.0 // Or use actual delta time
+
+	// Handle shooting input
+	g.handleShootingInput()
 
 	systems := []struct {
 		name     string
@@ -165,6 +171,47 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 
 	g.logger.Debug("ECS systems updated", "delta", deltaTime)
 	return nil
+}
+
+// handlePauseInput processes pause input and switches to pause scene
+func (g *ECSGame) handlePauseInput() {
+	currentScene := g.sceneManager.GetCurrentScene()
+
+	// Only handle pause in playing scene
+	if currentScene == nil || currentScene.GetType() != scenes.ScenePlaying {
+		return
+	}
+
+	// Check if pause key is pressed
+	if g.inputHandler.IsPausePressed() {
+		g.logger.Debug("Pause key pressed, switching to pause scene")
+		g.sceneManager.SwitchScene(scenes.ScenePaused)
+	}
+}
+
+// handleShootingInput processes shooting input and fires weapons
+func (g *ECSGame) handleShootingInput() {
+	// Only handle shooting if we have a valid player entity
+	if g.playerEntity == 0 {
+		return
+	}
+
+	// Check if shoot key is pressed
+	if g.inputHandler.IsShootPressed() {
+		// Get player position and angle
+		playerEntry := g.world.Entry(g.playerEntity)
+		if !playerEntry.Valid() {
+			return
+		}
+
+		pos := core.Position.Get(playerEntry)
+		orbital := core.Orbital.Get(playerEntry)
+
+		// Fire weapon with player position and facing angle
+		if g.weaponSystem.FireWeapon(weaponsys.WeaponTypePrimary, *pos, orbital.FacingAngle) {
+			g.logger.Debug("Weapon fired", "position", pos, "angle", orbital.FacingAngle)
+		}
+	}
 }
 
 // updateSystemWithTiming updates a system with performance timing
