@@ -4,7 +4,7 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
-	scenes "github.com/jonesrussell/gimbal/internal/scenes"
+	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
 // setupEventSubscriptions sets up event handlers
@@ -38,11 +38,22 @@ func (g *ECSGame) setupEventSubscriptions() {
 	// Subscribe to player damage events for screen shake
 	g.eventSystem.SubscribeToPlayerDamaged(func(w donburi.World, event events.PlayerDamagedEvent) {
 		g.logger.Debug("Player damaged", "damage", event.Damage, "remaining_lives", event.RemainingLives)
+		// TODO: Re-enable after PlayingScene is moved to gameplay package
 		// Trigger screen shake if we're in the playing scene
-		if g.sceneManager.GetCurrentScene().GetType() == scenes.ScenePlaying {
-			if playingScene, ok := g.sceneManager.GetCurrentScene().(*scenes.PlayingScene); ok {
-				playingScene.TriggerScreenShake()
-			}
-		}
+		// if g.sceneManager.GetCurrentScene().GetType() == scenes.ScenePlaying {
+		// 	if playingScene, ok := g.sceneManager.GetCurrentScene().(*scenes.PlayingScene); ok {
+		// 		playingScene.TriggerScreenShake()
+		// 	}
+		// }
+	})
+
+	// Subscribe to enemy destroyed events for scoring
+	g.eventSystem.SubscribeToEnemyDestroyed(func(w donburi.World, event events.EnemyDestroyedEvent) {
+		g.scoreManager.AddScore(event.Points)
+		g.logger.Debug(
+			"Score added from enemy destruction",
+			"points", event.Points,
+			"total_score", g.scoreManager.GetScore(),
+		)
 	})
 }

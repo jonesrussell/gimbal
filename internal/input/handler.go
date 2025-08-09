@@ -96,9 +96,30 @@ func (h *Handler) updateLastEvent() {
 		h.lastEvent = common.InputEventMove
 	} else if h.touchState != nil {
 		h.lastEvent = common.InputEventTouch
+	} else if h.isAnyInputPressed() {
+		h.lastEvent = common.InputEventAny
 	} else {
 		h.lastEvent = common.InputEventNone
 	}
+}
+
+// isAnyInputPressed checks if any key or mouse button is pressed
+func (h *Handler) isAnyInputPressed() bool {
+	// Check for any key press
+	for key := ebiten.Key(0); key <= ebiten.KeyMax; key++ {
+		if inpututil.IsKeyJustPressed(key) {
+			return true
+		}
+	}
+
+	// Check for any mouse button press
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) ||
+		inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) ||
+		inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonMiddle) {
+		return true
+	}
+
+	return false
 }
 
 // IsKeyPressed checks if a specific key is currently pressed
@@ -108,21 +129,37 @@ func (h *Handler) IsKeyPressed(key ebiten.Key) bool {
 
 // GetMovementInput returns the current movement input as an angle
 func (h *Handler) GetMovementInput() math.Angle {
+	// Check keyboard input first
+	if keyboardInput := h.getKeyboardMovementInput(); keyboardInput != 0 {
+		return keyboardInput
+	}
+
+	// Check touch input if no keyboard input
+	return h.getTouchMovementInput()
+}
+
+// getKeyboardMovementInput handles keyboard-based movement input
+func (h *Handler) getKeyboardMovementInput() math.Angle {
 	if h.IsKeyPressed(ebiten.KeyA) || h.IsKeyPressed(ebiten.KeyLeft) {
 		return math.Angle(-PlayerMovementSpeed)
 	}
 	if h.IsKeyPressed(ebiten.KeyD) || h.IsKeyPressed(ebiten.KeyRight) {
 		return math.Angle(PlayerMovementSpeed)
 	}
+	return 0
+}
 
-	// Handle touch input
-	if h.touchState != nil && h.touchState.Duration > MinTouchDuration {
-		deltaX := h.touchState.LastPos.X - h.touchState.StartPos.X
-		if deltaX > TouchThreshold {
-			return math.Angle(PlayerMovementSpeed)
-		} else if deltaX < -TouchThreshold {
-			return math.Angle(-PlayerMovementSpeed)
-		}
+// getTouchMovementInput handles touch-based movement input
+func (h *Handler) getTouchMovementInput() math.Angle {
+	if h.touchState == nil || h.touchState.Duration <= MinTouchDuration {
+		return 0
+	}
+
+	deltaX := h.touchState.LastPos.X - h.touchState.StartPos.X
+	if deltaX > TouchThreshold {
+		return math.Angle(PlayerMovementSpeed)
+	} else if deltaX < -TouchThreshold {
+		return math.Angle(-PlayerMovementSpeed)
 	}
 
 	return 0
@@ -135,7 +172,7 @@ func (h *Handler) IsQuitPressed() bool {
 
 // IsPausePressed checks if the pause key is pressed
 func (h *Handler) IsPausePressed() bool {
-	return inpututil.IsKeyJustPressed(ebiten.KeyP)
+	return inpututil.IsKeyJustPressed(ebiten.KeyEscape)
 }
 
 // IsShootPressed checks if the shoot key is pressed

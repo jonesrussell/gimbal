@@ -1,13 +1,16 @@
+// Package config provides game configuration management and validation
 package config
 
 import "fmt"
 
-// ConfigValidator validates game configuration
-type ConfigValidator struct{}
+// Validator validates game configuration parameters and ensures they meet game requirements
+type Validator struct {
+	// Add any validation dependencies here
+}
 
-// NewConfigValidator creates a new configuration validator
-func NewConfigValidator() *ConfigValidator {
-	return &ConfigValidator{}
+// NewValidator creates a new configuration validator
+func NewValidator() *Validator {
+	return &Validator{}
 }
 
 // ValidationError represents a configuration validation error
@@ -15,8 +18,6 @@ type ValidationError struct {
 	Field   string
 	Message string
 }
-
-// Error() method removed - dead code
 
 // ValidationResult contains validation results
 type ValidationResult struct {
@@ -55,7 +56,7 @@ func (r *ValidationResult) Error() string {
 }
 
 // Validate validates the game configuration
-func (v *ConfigValidator) Validate(config *GameConfig) *ValidationResult {
+func (v *Validator) Validate(config *GameConfig) *ValidationResult {
 	result := NewValidationResult()
 
 	if config == nil {
@@ -63,29 +64,25 @@ func (v *ConfigValidator) Validate(config *GameConfig) *ValidationResult {
 		return result
 	}
 
-	// Validate screen size
-	v.validateScreenSize(config, result)
+	// Validate each configuration section
+	validators := []func(*GameConfig, *ValidationResult){
+		v.validateScreenSize,
+		v.validatePlayerSize,
+		v.validateRadius,
+		v.validateStarConfig,
+		v.validateSpeedValues,
+		v.validateAngleStep,
+	}
 
-	// Validate player size
-	v.validatePlayerSize(config, result)
-
-	// Validate radius
-	v.validateRadius(config, result)
-
-	// Validate star configuration
-	v.validateStarConfig(config, result)
-
-	// Validate speed values
-	v.validateSpeedValues(config, result)
-
-	// Validate angle step
-	v.validateAngleStep(config, result)
+	for _, validate := range validators {
+		validate(config, result)
+	}
 
 	return result
 }
 
 // validateScreenSize validates screen dimensions
-func (v *ConfigValidator) validateScreenSize(config *GameConfig, result *ValidationResult) {
+func (v *Validator) validateScreenSize(config *GameConfig, result *ValidationResult) {
 	if config.ScreenSize.Width <= 0 {
 		result.AddError("screen_size.width", "must be positive")
 	}
@@ -107,7 +104,7 @@ func (v *ConfigValidator) validateScreenSize(config *GameConfig, result *Validat
 }
 
 // validatePlayerSize validates player dimensions
-func (v *ConfigValidator) validatePlayerSize(config *GameConfig, result *ValidationResult) {
+func (v *Validator) validatePlayerSize(config *GameConfig, result *ValidationResult) {
 	if config.PlayerSize.Width <= 0 {
 		result.AddError("player_size.width", "must be positive")
 	}
@@ -123,7 +120,7 @@ func (v *ConfigValidator) validatePlayerSize(config *GameConfig, result *Validat
 }
 
 // validateRadius validates the orbital radius
-func (v *ConfigValidator) validateRadius(config *GameConfig, result *ValidationResult) {
+func (v *Validator) validateRadius(config *GameConfig, result *ValidationResult) {
 	if config.Radius <= 0 {
 		result.AddError("radius", "must be positive")
 		return
@@ -147,30 +144,53 @@ func (v *ConfigValidator) validateRadius(config *GameConfig, result *ValidationR
 	}
 }
 
-// validateStarConfig validates star-related configuration
-func (v *ConfigValidator) validateStarConfig(config *GameConfig, result *ValidationResult) {
+// validateStarConfig validates all star field configuration parameters
+func (v *Validator) validateStarConfig(config *GameConfig, result *ValidationResult) {
+	validators := []func(*GameConfig, *ValidationResult){
+		v.validateStarCount,
+		v.validateStarSize,
+		v.validateStarSpeed,
+		v.validateStarSpawnRadius,
+		v.validateStarScale,
+	}
+
+	for _, validate := range validators {
+		validate(config, result)
+	}
+}
+
+// validateStarCount ensures star count is within performance limits
+func (v *Validator) validateStarCount(config *GameConfig, result *ValidationResult) {
 	if config.NumStars < 0 {
 		result.AddError("num_stars", "cannot be negative")
 	}
 	if config.NumStars > 1000 {
 		result.AddError("num_stars", "maximum 1000 stars allowed")
 	}
+}
 
+// validateStarSize ensures star size is within reasonable bounds
+func (v *Validator) validateStarSize(config *GameConfig, result *ValidationResult) {
 	if config.StarSize <= 0 {
 		result.AddError("star_size", "must be positive")
 	}
 	if config.StarSize > 20 {
 		result.AddError("star_size", "maximum star size is 20")
 	}
+}
 
+// validateStarSpeed ensures star movement speed is within game balance requirements
+func (v *Validator) validateStarSpeed(config *GameConfig, result *ValidationResult) {
 	if config.StarSpeed <= 0 {
 		result.AddError("star_speed", "must be positive")
 	}
-	if config.StarSpeed > 10 {
-		result.AddError("star_speed", "maximum star speed is 10")
+	if config.StarSpeed > 500 {
+		result.AddError("star_speed", "maximum star speed is 500")
 	}
+}
 
-	// Validate star spawn radius
+// validateStarSpawnRadius ensures spawn radius values are within acceptable bounds
+func (v *Validator) validateStarSpawnRadius(config *GameConfig, result *ValidationResult) {
 	if config.StarSpawnRadiusMin < 0 {
 		result.AddError("star_spawn_radius_min", "cannot be negative")
 	}
@@ -183,8 +203,10 @@ func (v *ConfigValidator) validateStarConfig(config *GameConfig, result *Validat
 	if config.StarSpawnRadiusMax > config.Radius {
 		result.AddError("star_spawn_radius_max", "cannot exceed game radius")
 	}
+}
 
-	// Validate star scale
+// validateStarScale ensures star scale values are reasonable
+func (v *Validator) validateStarScale(config *GameConfig, result *ValidationResult) {
 	if config.StarMinScale <= 0 {
 		result.AddError("star_min_scale", "must be positive")
 	}
@@ -200,7 +222,7 @@ func (v *ConfigValidator) validateStarConfig(config *GameConfig, result *Validat
 }
 
 // validateSpeedValues validates speed-related configuration
-func (v *ConfigValidator) validateSpeedValues(config *GameConfig, result *ValidationResult) {
+func (v *Validator) validateSpeedValues(config *GameConfig, result *ValidationResult) {
 	if config.Speed <= 0 {
 		result.AddError("speed", "must be positive")
 	}
@@ -210,7 +232,7 @@ func (v *ConfigValidator) validateSpeedValues(config *GameConfig, result *Valida
 }
 
 // validateAngleStep validates angle step configuration
-func (v *ConfigValidator) validateAngleStep(config *GameConfig, result *ValidationResult) {
+func (v *Validator) validateAngleStep(config *GameConfig, result *ValidationResult) {
 	if config.AngleStep <= 0 {
 		result.AddError("angle_step", "must be positive")
 	}
@@ -221,7 +243,7 @@ func (v *ConfigValidator) validateAngleStep(config *GameConfig, result *Validati
 
 // ValidateConfig is a convenience function for quick validation
 func ValidateConfig(config *GameConfig) error {
-	validator := NewConfigValidator()
+	validator := NewValidator()
 	result := validator.Validate(config)
 	if !result.IsValid {
 		return fmt.Errorf("%s", result.Error())

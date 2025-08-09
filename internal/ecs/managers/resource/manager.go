@@ -1,8 +1,10 @@
 package resources
 
 import (
+	"context"
 	"sync"
 
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/jonesrussell/gimbal/internal/common"
@@ -31,15 +33,18 @@ type ResourceManager struct {
 	mutex       sync.RWMutex
 	logger      common.Logger
 	defaultFont text.Face
+
+	scaledCache map[string]*ebiten.Image // Cache for scaled sprites
 }
 
-// NewResourceManager creates a new resource manager
-func NewResourceManager(logger common.Logger) *ResourceManager {
+// NewResourceManager creates a new resource management system with the provided logger
+func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceManager {
 	rm := &ResourceManager{
-		resources: make(map[string]*Resource),
-		logger:    logger,
+		resources:   make(map[string]*Resource),
+		logger:      logger,
+		scaledCache: make(map[string]*ebiten.Image),
 	}
-	if err := rm.loadDefaultFont(); err != nil {
+	if err := rm.loadDefaultFont(ctx); err != nil {
 		logger.Error("failed to load default font", "error", err)
 	}
 	return rm
@@ -67,12 +72,20 @@ func (rm *ResourceManager) GetResourceInfo() map[string]interface{} {
 }
 
 // Cleanup releases all resources
-func (rm *ResourceManager) Cleanup() {
+func (rm *ResourceManager) Cleanup(ctx context.Context) error {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 
 	rm.logger.Info("Cleaning up resources", "count", len(rm.resources))
 	rm.resources = make(map[string]*Resource)
+	return nil
 }
 
 // Predefined sprite names for easy access

@@ -1,116 +1,48 @@
 package game
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
 	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/scenes"
-	"github.com/jonesrussell/gimbal/internal/ui"
+	uicore "github.com/jonesrussell/gimbal/internal/ui/core"
+	"github.com/jonesrussell/gimbal/internal/ui/responsive"
 )
 
-// NewECSGame creates a new ECS-based game instance with dependency-injected UI
-func NewECSGame(
-	gameConfig *config.GameConfig,
-	logger common.Logger,
-	inputHandler common.GameInputHandler,
-	uiFactory ui.UIFactory,
-) (*ECSGame, error) {
-	if gameConfig == nil {
-		return nil, errors.NewGameError(errors.ErrorCodeConfigMissing, "config cannot be nil")
+// validateGameConfig validates the provided game configuration
+func (g *ECSGame) validateGameConfig(cfg *config.GameConfig) error {
+	if cfg == nil {
+		return errors.NewGameError(errors.ConfigMissing, "config cannot be nil")
 	}
-	if logger == nil {
-		return nil, errors.NewGameError(errors.ErrorCodeConfigMissing, "logger cannot be nil")
-	}
-	if inputHandler == nil {
-		return nil, errors.NewGameError(errors.ErrorCodeConfigMissing, "inputHandler cannot be nil")
-	}
-
-	logger.Debug("Creating new ECS game instance",
-		"screen_size", gameConfig.ScreenSize,
-		"player_size", gameConfig.PlayerSize,
-		"num_stars", gameConfig.NumStars,
-	)
-
-	// Create ECS world
-	world := donburi.NewWorld()
-
-	// Create game instance
-	game := &ECSGame{
-		world:        world,
-		config:       gameConfig,
-		inputHandler: inputHandler,
-		logger:       logger,
-	}
-
-	// Initialize systems and managers
-	if err := game.initializeSystems(); err != nil {
-		return nil, err
-	}
-
-	// Load assets
-	if err := game.loadAssets(); err != nil {
-		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load assets", err)
-	}
-
-	// Create UI through factory (dependency injection)
-	font := game.resourceManager.GetDefaultFont()
-	heartSprite, _ := game.resourceManager.GetSprite("heart")
-	uiConfig := ui.UIConfig{
-		Font:  font,
-		Theme: heartSprite,
-	}
-	game.ui = uiFactory.CreateGameUI(uiConfig)
-
-	// Create entities
-	if err := game.createEntities(); err != nil {
-		return nil, errors.NewGameErrorWithCause(errors.ErrorCodeEntityCreationFailed, "failed to create entities", err)
-	}
-
-	// Set up event subscriptions
-	game.setupEventSubscriptions()
-
-	// Set up systems
-	game.setupSystems()
-
-	return game, nil
+	return nil
 }
 
-// initializeSystems creates all the systems and managers
-func (g *ECSGame) initializeSystems() error {
-	// Create event system
-	g.eventSystem = events.NewEventSystem(g.world)
-	g.logger.Debug("Event system created")
+// createGameEntities creates all game entities
+func (g *ECSGame) createGameEntities(ctx context.Context) error {
+	return g.createEntities(ctx)
+}
 
-	// Create resource manager
-	g.resourceManager = resources.NewResourceManager(g.logger)
-	g.logger.Debug("Resource manager created")
-
-	// Create game state managers
-	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
-	g.scoreManager = managers.NewScoreManager(10000) // Bonus life every 10,000 points
-	g.levelManager = managers.NewLevelManager(g.logger)
-
-	// Create health system (after state manager)
-	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
-	g.logger.Debug("Health system created")
-
-	// Get font from resource manager
-	font := g.resourceManager.GetDefaultFont()
-	if font == nil {
-		return errors.NewGameError(errors.ErrorCodeAssetLoadFailed, "failed to load default font")
+// setupInitialScene sets up the initial scene
+func (g *ECSGame) setupInitialScene(ctx context.Context) error {
+	font, err := g.resourceManager.GetDefaultFont(ctx)
+	if err != nil {
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to get default font", err)
 	}
-
-	// Create scene manager
 	g.sceneManager = scenes.NewSceneManager(&scenes.SceneManagerConfig{
 		World:        g.world,
 		Config:       g.config,
@@ -120,21 +52,36 @@ func (g *ECSGame) initializeSystems() error {
 		ScoreManager: g.scoreManager,
 		ResourceMgr:  g.resourceManager,
 	})
-
-	// Set resume callback to unpause game state
 	g.sceneManager.SetResumeCallback(func() {
 		g.stateManager.SetPaused(false)
 	})
-
-	// Set health system for scenes to access
 	g.sceneManager.SetHealthSystem(g.healthSystem)
-
-	// Set initial scene
-	if err := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeSystemFailed, "failed to set initial scene", err)
+	g.sceneManager.SetRenderOptimizer(g.renderOptimizer)
+	g.sceneManager.SetImagePool(g.imagePool)
+	if sceneErr := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); sceneErr != nil {
+		return errors.NewGameErrorWithCause(errors.SystemInitFailed, "failed to set initial scene", sceneErr)
 	}
+	return nil
+}
 
-	// Create combat systems
+// createCoreSystems creates core ECS systems
+func (g *ECSGame) createCoreSystems(ctx context.Context) error {
+	g.eventSystem = events.NewEventSystem(g.world)
+	g.logger.Debug("Event system created")
+	g.resourceManager = resources.NewResourceManager(ctx, g.logger)
+	g.logger.Debug("Resource manager created")
+	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
+	g.scoreManager = managers.NewScoreManager(10000)
+	g.levelManager = managers.NewLevelManager(g.logger)
+	return nil
+}
+
+// createGameplaySystems creates gameplay ECS systems
+func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
+	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
+	g.logger.Debug("Health system created")
+	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.logger, g.inputHandler)
+	g.logger.Debug("Movement system created")
 	g.enemySystem = enemy.NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
 	g.weaponSystem = weapon.NewWeaponSystem(g.world, g.config)
 	g.collisionSystem = collision.NewCollisionSystem(&collision.CollisionSystemConfig{
@@ -146,15 +93,139 @@ func (g *ECSGame) initializeSystems() error {
 		EnemySystem:  g.enemySystem,
 		Logger:       g.logger,
 	})
-
 	return nil
 }
 
+// registerAllSystems registers and initializes all systems
+func (g *ECSGame) registerAllSystems(ctx context.Context) error {
+	g.renderOptimizer = core.NewRenderOptimizer(g.config)
+	g.imagePool = core.NewImagePool(g.logger)
+	g.perfMonitor = debug.NewPerformanceMonitor(g.logger)
+
+	// Initialize rendering debugger with default font
+	font, err := g.resourceManager.GetDefaultFont(ctx)
+	if err != nil {
+		g.logger.Warn("Failed to get font for debugger, debug overlay disabled", "error", err)
+	} else {
+		g.renderDebugger = debug.NewRenderingDebugger(font, g.logger)
+		g.logger.Debug("Rendering debugger initialized")
+	}
+
+	g.logger.Debug("Performance optimizations initialized")
+	return nil
+}
+
+// initializeSystems initializes all game systems
+func (g *ECSGame) initializeSystems(ctx context.Context) error {
+	if err := g.validateGameConfig(g.config); err != nil {
+		return err
+	}
+	if err := g.createCoreSystems(ctx); err != nil {
+		return err
+	}
+	if err := g.createGameplaySystems(ctx); err != nil {
+		return err
+	}
+	if err := g.registerAllSystems(ctx); err != nil {
+		return err
+	}
+	if err := g.loadAssets(ctx); err != nil {
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to load assets", err)
+	}
+	return nil
+}
+
+// initializeUI sets up the game UI
+func (g *ECSGame) initializeUI(ctx context.Context) error {
+	font, err := g.resourceManager.GetDefaultFont(ctx)
+	if err != nil {
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to get default font", err)
+	}
+
+	heartSprite, err := g.resourceManager.GetUISprite(ctx, "heart", uicore.HeartIconSize)
+	if err != nil {
+		return fmt.Errorf("failed to load heart sprite: %w", err)
+	}
+
+	ammoSprite, err := g.resourceManager.GetUISprite(ctx, "ammo", uicore.AmmoIconSize)
+	if err != nil {
+		g.logger.Warn("Failed to load ammo sprite, using fallback", "error", err)
+		ammoSprite = nil // Will use fallback in UI
+	}
+
+	uiConfig := &responsive.Config{
+		Font:        font,
+		HeartSprite: heartSprite,
+		AmmoSprite:  ammoSprite,
+	}
+
+	gameUI, err := responsive.NewResponsiveUI(uiConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create game UI: %w", err)
+	}
+	g.ui = gameUI
+	return nil
+}
+
+// finalizeInitialization completes the game initialization
+func (g *ECSGame) finalizeInitialization(ctx context.Context) error {
+	err := g.createGameEntities(ctx)
+	if err != nil {
+		return errors.NewGameErrorWithCause(errors.EntityInvalid, "failed to create entities", err)
+	}
+
+	err = g.setupInitialScene(ctx)
+	if err != nil {
+		return err
+	}
+
+	g.setupEventSubscriptions()
+	g.setupSystems()
+	return nil
+}
+
+// NewECSGame creates a new ECS-based game instance with dependency-injected UI
+func NewECSGame(
+	ctx context.Context,
+	gameConfig *config.GameConfig,
+	logger common.Logger,
+	inputHandler common.GameInputHandler,
+) (*ECSGame, error) {
+	logger.Debug("Creating new ECS game instance",
+		"screen_size", gameConfig.ScreenSize,
+		"player_size", gameConfig.PlayerSize,
+		"num_stars", gameConfig.NumStars,
+	)
+
+	// Create ECS world
+	world := donburi.NewWorld()
+	game := &ECSGame{
+		world:        world,
+		config:       gameConfig,
+		inputHandler: inputHandler,
+		logger:       logger,
+	}
+
+	if err := game.initializeSystems(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := game.initializeUI(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := game.finalizeInitialization(ctx); err != nil {
+		return nil, err
+	}
+
+	return game, nil
+}
+
 // loadAssets loads and prepares game assets
-func (g *ECSGame) loadAssets() error {
+func (g *ECSGame) loadAssets(ctx context.Context) error {
 	// Load all sprites through resource manager
-	if err := g.resourceManager.LoadAllSprites(); err != nil {
-		return errors.NewGameErrorWithCause(errors.ErrorCodeAssetLoadFailed, "failed to load sprites", err)
+	if err := g.resourceManager.LoadAllSprites(ctx); err != nil {
+		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to load sprites", err)
 	}
 
 	g.logger.Debug("Assets loaded successfully", "resource_count", g.resourceManager.GetResourceCount())
@@ -162,16 +233,16 @@ func (g *ECSGame) loadAssets() error {
 }
 
 // createEntities creates all game entities
-func (g *ECSGame) createEntities() error {
+func (g *ECSGame) createEntities(ctx context.Context) error {
 	// Get sprites from resource manager
-	playerSprite, ok := g.resourceManager.GetSprite(resources.SpritePlayer)
+	playerSprite, ok := g.resourceManager.GetSprite(ctx, resources.SpritePlayer)
 	if !ok {
-		return errors.NewGameError(errors.ErrorCodeSpriteNotFound, "player sprite not found")
+		return errors.NewGameError(errors.AssetNotFound, "player sprite not found")
 	}
 
-	starSprite, ok := g.resourceManager.GetSprite(resources.SpriteStar)
+	starSprite, ok := g.resourceManager.GetSprite(ctx, resources.SpriteStar)
 	if !ok {
-		return errors.NewGameError(errors.ErrorCodeSpriteNotFound, "star sprite not found")
+		return errors.NewGameError(errors.AssetNotFound, "star sprite not found")
 	}
 
 	// Create player

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
@@ -48,17 +49,19 @@ type Scene interface {
 }
 
 type SceneManager struct {
-	currentScene  Scene
-	scenes        map[SceneType]Scene
-	world         donburi.World
-	config        *config.GameConfig
-	logger        common.Logger
-	inputHandler  common.GameInputHandler
-	onResume      func()      // Callback to unpause game state
-	healthSystem  interface{} // Health system interface for scenes to access
-	font          text.Face
-	resourceMgr   *resources.ResourceManager
-	debugRenderer *debug.DebugRenderer
+	currentScene    Scene
+	scenes          map[SceneType]Scene
+	world           donburi.World
+	config          *config.GameConfig
+	logger          common.Logger
+	inputHandler    common.GameInputHandler
+	onResume        func()      // Callback to unpause game state
+	healthSystem    interface{} // Health system interface for scenes to access
+	font            text.Face
+	resourceMgr     *resources.ResourceManager
+	debugRenderer   *debug.DebugRenderer
+	renderOptimizer *core.RenderOptimizer
+	imagePool       *core.ImagePool
 }
 
 func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
@@ -76,13 +79,30 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 	sceneMgr.debugRenderer = debug.NewDebugRenderer(cfg.Config, cfg.Logger)
 	sceneMgr.debugRenderer.SetFont(cfg.Font)
 
-	// Register all scenes
-	sceneMgr.scenes[SceneStudioIntro] = NewStudioIntroScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[SceneTitleScreen] = NewTitleScreenScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[SceneMenu] = NewMenuScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[ScenePlaying] = NewPlayingScene(sceneMgr, cfg.Font, cfg.ScoreManager, cfg.ResourceMgr)
-	sceneMgr.scenes[ScenePaused] = NewPausedScene(sceneMgr, cfg.Font)
-	sceneMgr.scenes[SceneGameOver] = NewGameOverScene(sceneMgr, cfg.Font)
+	// Register all scenes using factory functions
+	sceneMgr.registerScenes(cfg)
+
+	return sceneMgr
+}
+
+// registerScenes registers all scenes using the scene registry
+func (sceneMgr *SceneManager) registerScenes(cfg *SceneManagerConfig) {
+	sceneMgr.registerGameScenes(cfg)
+	sceneMgr.registerMenuScenes(cfg)
+}
+
+// registerGameScenes registers the main game scenes
+func (sceneMgr *SceneManager) registerGameScenes(cfg *SceneManagerConfig) {
+	sceneMgr.registerScene(SceneStudioIntro, "STUDIO INTRO", cfg)
+	sceneMgr.registerScene(SceneTitleScreen, "TITLE SCREEN", cfg)
+	sceneMgr.registerScene(ScenePlaying, "PLAYING", cfg)
+	sceneMgr.registerScene(ScenePaused, "PAUSED", cfg)
+	sceneMgr.registerScene(SceneGameOver, "GAME OVER", cfg)
+}
+
+// registerMenuScenes registers the menu scenes
+func (sceneMgr *SceneManager) registerMenuScenes(cfg *SceneManagerConfig) {
+	sceneMgr.registerScene(SceneMenu, "MENU", cfg)
 	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
 		sceneMgr,
 		"CREDITS\nGimbal Studios\n2025",
@@ -90,8 +110,20 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 		cfg.Font,
 	)
 	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, cfg.Font)
+}
 
-	return sceneMgr
+// registerScene registers a single scene using the registry
+func (sceneMgr *SceneManager) registerScene(sceneType SceneType, fallbackName string, cfg *SceneManagerConfig) {
+	if scene, exists := CreateScene(sceneType, sceneMgr, cfg.Font, cfg.ScoreManager, cfg.ResourceMgr); exists {
+		sceneMgr.scenes[sceneType] = scene
+	} else {
+		sceneMgr.scenes[sceneType] = NewSimpleTextScene(
+			sceneMgr,
+			fallbackName+"\n(Not Registered)",
+			sceneType,
+			cfg.Font,
+		)
+	}
 }
 
 func (sceneMgr *SceneManager) Update() error {
@@ -134,7 +166,7 @@ func (sceneMgr *SceneManager) SetInitialScene(sceneType SceneType) error {
 		return nil
 	} else {
 		sceneMgr.logger.Error("Scene not found for initial scene", "scene_type", sceneType)
-		return errors.NewGameError(errors.ErrorCodeSceneNotFound, "initial scene not found")
+		return errors.NewGameError(errors.SceneNotFound, "initial scene not found")
 	}
 }
 
@@ -149,6 +181,12 @@ func (sceneMgr *SceneManager) SwitchScene(sceneType SceneType) {
 			sceneMgr.logger.Debug("Setting initial scene", "scene_type", sceneType)
 		}
 		sceneMgr.currentScene = scene
+		if sceneType == ScenePlaying {
+			sceneMgr.logger.Debug("Entering gameplay scene",
+				"player_entity", sceneMgr.world, // Replace with actual player entity if accessible
+				"health_system", sceneMgr.healthSystem != nil,
+				"resource_mgr", sceneMgr.resourceMgr != nil)
+		}
 		sceneMgr.currentScene.Enter()
 	} else {
 		sceneMgr.logger.Error("Scene not found", "scene_type", sceneType)
@@ -198,4 +236,24 @@ func (sceneMgr *SceneManager) GetResourceManager() *resources.ResourceManager {
 // GetDebugRenderer returns the debug renderer
 func (sceneMgr *SceneManager) GetDebugRenderer() *debug.DebugRenderer {
 	return sceneMgr.debugRenderer
+}
+
+// GetRenderOptimizer returns the render optimizer
+func (sceneMgr *SceneManager) GetRenderOptimizer() *core.RenderOptimizer {
+	return sceneMgr.renderOptimizer
+}
+
+// SetRenderOptimizer sets the render optimizer
+func (sceneMgr *SceneManager) SetRenderOptimizer(optimizer *core.RenderOptimizer) {
+	sceneMgr.renderOptimizer = optimizer
+}
+
+// GetImagePool returns the image pool
+func (sceneMgr *SceneManager) GetImagePool() *core.ImagePool {
+	return sceneMgr.imagePool
+}
+
+// SetImagePool sets the image pool
+func (sceneMgr *SceneManager) SetImagePool(pool *core.ImagePool) {
+	sceneMgr.imagePool = pool
 }

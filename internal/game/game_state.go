@@ -18,7 +18,7 @@ type GameState struct {
 	PlayerSpeed float64
 }
 
-// NewGameState creates a new game state
+// NewGameState creates a new game state instance with default values
 func NewGameState() *GameState {
 	now := time.Now()
 	return &GameState{
@@ -38,7 +38,7 @@ type GameStateManager struct {
 	logger      common.Logger
 }
 
-// NewGameStateManager creates a new game state manager
+// NewGameStateManager creates a new game state management system with the provided dependencies
 func NewGameStateManager(eventSystem *events.EventSystem, logger common.Logger) *GameStateManager {
 	return &GameStateManager{
 		state:       NewGameState(),

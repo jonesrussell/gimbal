@@ -13,8 +13,8 @@ type TextDrawOptions struct {
 	Font  text.Face
 }
 
-// drawCenteredTextWithOptions draws text with options struct
-func drawCenteredTextWithOptions(screen *ebiten.Image, opts TextDrawOptions) {
+// DrawCenteredTextWithOptions draws text with options struct
+func DrawCenteredTextWithOptions(screen *ebiten.Image, opts TextDrawOptions) {
 	width, height := text.Measure(opts.Text, opts.Font, 0)
 	drawOp := &text.DrawOptions{}
 	drawOp.GeoM.Translate(float64(int(opts.X)-int(width)/2), float64(int(opts.Y)+int(height)/2))
