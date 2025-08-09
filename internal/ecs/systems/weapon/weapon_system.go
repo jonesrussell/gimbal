@@ -55,11 +55,14 @@ type WeaponSystem struct {
 
 // NewWeaponSystem creates a new weapon management system with the provided configuration
 func NewWeaponSystem(world donburi.World, gameConfig *config.GameConfig) *WeaponSystem {
+	// Convert frame-based interval to time-based interval (10 frames at 60fps = 0.167 seconds)
+	fireIntervalSeconds := float64(DefaultWeaponFireIntervalFrames) / 60.0
+	
 	ws := &WeaponSystem{
 		world:             world,
 		config:            gameConfig,
 		fireTimer:         0,
-		fireInterval:      DefaultWeaponFireIntervalFrames, // Fire every 10 frames (6 shots per second at 60fps)
+		fireInterval:      fireIntervalSeconds, // Convert to seconds
 		lastFireTime:      time.Now(),
 		projectileSpeed:   DefaultProjectileSpeed,
 		projectileSize:    struct{ Width, Height int }{Width: DefaultProjectileSize, Height: DefaultProjectileSize},
@@ -80,6 +83,8 @@ func (ws *WeaponSystem) Update(deltaTime float64) {
 // FireWeapon fires a weapon if enough time has passed
 func (ws *WeaponSystem) FireWeapon(weaponType int, playerPos common.Point, playerAngle gameMath.Angle) bool {
 	if ws.fireTimer < ws.fireInterval {
+		// Debug logging for timing issues
+		// fmt.Printf("Fire blocked: timer=%.3f, interval=%.3f\n", ws.fireTimer, ws.fireInterval)
 		return false
 	}
 
@@ -209,6 +214,11 @@ func (ws *WeaponSystem) isOffScreen(pos common.Point) bool {
 // GetFireInterval returns the current fire interval
 func (ws *WeaponSystem) GetFireInterval() float64 {
 	return ws.fireInterval
+}
+
+// GetFireTimer returns the current fire timer value
+func (ws *WeaponSystem) GetFireTimer() float64 {
+	return ws.fireTimer
 }
 
 // SetFireInterval sets the fire interval
