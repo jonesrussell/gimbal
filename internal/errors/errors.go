@@ -1,20 +1,26 @@
 package errors
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"time"
+)
 
 // GameError represents a game-specific error with code, message, and cause
 type GameError struct {
-	Code    string
-	Message string
-	Cause   error
+	Code      ErrorCode
+	Message   string
+	Cause     error
+	Timestamp time.Time
+	Context   map[string]interface{}
 }
 
 // Error implements the error interface
 func (e *GameError) Error() string {
 	if e.Cause != nil {
-		return fmt.Sprintf("%s: %s (caused by: %v)", e.Code, e.Message, e.Cause)
+		return fmt.Sprintf("[%s] %s: %v", e.Code, e.Message, e.Cause)
 	}
-	return fmt.Sprintf("%s: %s", e.Code, e.Message)
+	return fmt.Sprintf("[%s] %s", e.Code, e.Message)
 }
 
 // Unwrap returns the underlying cause error
@@ -22,114 +28,263 @@ func (e *GameError) Unwrap() error {
 	return e.Cause
 }
 
-// NewGameError creates a new GameError
-func NewGameError(code, message string) *GameError {
+// WithContext adds context information to the error
+func (e *GameError) WithContext(key string, value interface{}) *GameError {
+	if e.Context == nil {
+		e.Context = make(map[string]interface{})
+	}
+	e.Context[key] = value
+	return e
+}
+
+// WithContextMap adds multiple context values to the error
+func (e *GameError) WithContextMap(ctx map[string]interface{}) *GameError {
+	if e.Context == nil {
+		e.Context = make(map[string]interface{})
+	}
+	for k, v := range ctx {
+		e.Context[k] = v
+	}
+	return e
+}
+
+// NewGameError creates a new game error with the specified code and message
+func NewGameError(code ErrorCode, message string) *GameError {
 	return &GameError{
-		Code:    code,
-		Message: message,
+		Code:      code,
+		Message:   message,
+		Timestamp: time.Now(),
+		Context:   make(map[string]interface{}),
 	}
 }
 
-// NewGameErrorWithCause creates a new GameError with a cause
-func NewGameErrorWithCause(code, message string, cause error) *GameError {
+// NewGameErrorWithCause creates a new game error with the specified code, message, and underlying cause
+func NewGameErrorWithCause(code ErrorCode, message string, cause error) *GameError {
 	return &GameError{
-		Code:    code,
-		Message: message,
-		Cause:   cause,
+		Code:      code,
+		Message:   message,
+		Cause:     cause,
+		Timestamp: time.Now(),
+		Context:   make(map[string]interface{}),
 	}
+}
+
+// Wrap wraps an existing error with game error context
+func Wrap(err error, code ErrorCode, message string) *GameError {
+	return NewGameErrorWithCause(code, message, err)
+}
+
+// Wrapf wraps an existing error with formatted message
+func Wrapf(err error, code ErrorCode, format string, args ...interface{}) *GameError {
+	return NewGameErrorWithCause(code, fmt.Sprintf(format, args...), err)
+}
+
+// FromContext creates an error from context cancellation
+func FromContext(ctx context.Context, code ErrorCode, message string) *GameError {
+	err := NewGameError(code, message)
+	if ctx.Err() != nil {
+		err.Cause = ctx.Err()
+	}
+	return err
 }
 
 // Predefined error constants
-var (
+const (
 	// Asset errors
-	ErrAssetNotFound   = NewGameError("ASSET_NOT_FOUND", "asset not found")
-	ErrAssetLoadFailed = NewGameError("ASSET_LOAD_FAILED", "failed to load asset")
-	ErrAssetInvalid    = NewGameError("ASSET_INVALID", "asset is invalid or corrupted")
+	ErrAssetNotFound    = "ASSET_NOT_FOUND"
+	ErrAssetLoadFailed  = "ASSET_LOAD_FAILED"
+	ErrAssetInvalid     = "ASSET_INVALID"
+	ErrAssetCorrupted   = "ASSET_CORRUPTED"
+	ErrAssetUnsupported = "ASSET_UNSUPPORTED"
 
 	// Entity errors
-	ErrEntityInvalid        = NewGameError("ENTITY_INVALID", "entity is invalid")
-	ErrEntityNotFound       = NewGameError("ENTITY_NOT_FOUND", "entity not found")
-	ErrEntityCreationFailed = NewGameError("ENTITY_CREATION_FAILED", "failed to create entity")
+	ErrEntityNotFound  = "ENTITY_NOT_FOUND"
+	ErrEntityInvalid   = "ENTITY_INVALID"
+	ErrEntityDestroyed = "ENTITY_DESTROYED"
+	ErrEntityExists    = "ENTITY_EXISTS"
 
 	// Component errors
-	ErrComponentNotFound = NewGameError("COMPONENT_NOT_FOUND", "component not found")
-	ErrComponentInvalid  = NewGameError("COMPONENT_INVALID", "component is invalid")
+	ErrComponentMissing = "COMPONENT_MISSING"
+	ErrComponentInvalid = "COMPONENT_INVALID"
 
 	// System errors
-	ErrSystemFailed   = NewGameError("SYSTEM_FAILED", "system execution failed")
-	ErrSystemNotFound = NewGameError("SYSTEM_NOT_FOUND", "system not found")
+	ErrSystemInitFailed    = "SYSTEM_INIT_FAILED"
+	ErrSystemUpdateFailed  = "SYSTEM_UPDATE_FAILED"
+	ErrSystemCleanupFailed = "SYSTEM_CLEANUP_FAILED"
 
 	// Configuration errors
-	ErrConfigInvalid = NewGameError("CONFIG_INVALID", "configuration is invalid")
-	ErrConfigMissing = NewGameError("CONFIG_MISSING", "required configuration missing")
+	ErrConfigInvalid    = "CONFIG_INVALID"
+	ErrConfigMissing    = "CONFIG_MISSING"
+	ErrConfigValidation = "CONFIG_VALIDATION"
 
 	// Input errors
-	ErrInputInvalid      = NewGameError("INPUT_INVALID", "input is invalid")
-	ErrInputNotSupported = NewGameError("INPUT_NOT_SUPPORTED", "input not supported")
+	ErrInputInvalid     = "INPUT_INVALID"
+	ErrInputUnsupported = "INPUT_UNSUPPORTED"
+	ErrInputTimeout     = "INPUT_TIMEOUT"
 
 	// Resource errors
-	ErrResourceNotFound   = NewGameError("RESOURCE_NOT_FOUND", "resource not found")
-	ErrResourceLoadFailed = NewGameError("RESOURCE_LOAD_FAILED", "failed to load resource")
-	ErrResourceInvalid    = NewGameError("RESOURCE_INVALID", "resource is invalid")
+	ErrResourceNotFound   = "RESOURCE_NOT_FOUND"
+	ErrResourceLoadFailed = "RESOURCE_LOAD_FAILED"
+	ErrResourceExhausted  = "RESOURCE_EXHAUSTED"
+	ErrResourceLocked     = "RESOURCE_LOCKED"
 
 	// Game state errors
-	ErrGameStateInvalid          = NewGameError("GAME_STATE_INVALID", "game state is invalid")
-	ErrGameStateTransitionFailed = NewGameError("GAME_STATE_TRANSITION_FAILED", "failed to transition game state")
+	ErrStateInvalid    = "STATE_INVALID"
+	ErrStateTransition = "STATE_TRANSITION"
+	ErrStateCorrupted  = "STATE_CORRUPTED"
 
 	// Rendering errors
-	ErrRenderingFailed = NewGameError("RENDERING_FAILED", "rendering failed")
-	ErrSpriteNotFound  = NewGameError("SPRITE_NOT_FOUND", "sprite not found")
+	ErrRenderFailed      = "RENDER_FAILED"
+	ErrRenderUnsupported = "RENDER_UNSUPPORTED"
+	ErrRenderTimeout     = "RENDER_TIMEOUT"
 
 	// Validation errors
-	ErrValidationFailed = NewGameError("VALIDATION_FAILED", "validation failed")
-	ErrValueOutOfRange  = NewGameError("VALUE_OUT_OF_RANGE", "value is out of valid range")
+	ErrValidationFailed  = "VALIDATION_FAILED"
+	ErrValidationTimeout = "VALIDATION_TIMEOUT"
+
+	// Scene errors
+	ErrSceneNotFound   = "SCENE_NOT_FOUND"
+	ErrSceneTransition = "SCENE_TRANSITION"
+	ErrSceneLoadFailed = "SCENE_LOAD_FAILED"
 )
 
 // Error codes for easy reference
+type ErrorCode string
+
 const (
 	// Asset error codes
-	ErrorCodeAssetNotFound   = "ASSET_NOT_FOUND"
-	ErrorCodeAssetLoadFailed = "ASSET_LOAD_FAILED"
-	ErrorCodeAssetInvalid    = "ASSET_INVALID"
+	AssetNotFound    ErrorCode = "ASSET_NOT_FOUND"
+	AssetLoadFailed  ErrorCode = "ASSET_LOAD_FAILED"
+	AssetInvalid     ErrorCode = "ASSET_INVALID"
+	AssetCorrupted   ErrorCode = "ASSET_CORRUPTED"
+	AssetUnsupported ErrorCode = "ASSET_UNSUPPORTED"
 
 	// Entity error codes
-	ErrorCodeEntityInvalid        = "ENTITY_INVALID"
-	ErrorCodeEntityNotFound       = "ENTITY_NOT_FOUND"
-	ErrorCodeEntityCreationFailed = "ENTITY_CREATION_FAILED"
+	EntityNotFound  ErrorCode = "ENTITY_NOT_FOUND"
+	EntityInvalid   ErrorCode = "ENTITY_INVALID"
+	EntityDestroyed ErrorCode = "ENTITY_DESTROYED"
+	EntityExists    ErrorCode = "ENTITY_EXISTS"
 
 	// Component error codes
-	ErrorCodeComponentNotFound = "COMPONENT_NOT_FOUND"
-	ErrorCodeComponentInvalid  = "COMPONENT_INVALID"
+	ComponentMissing ErrorCode = "COMPONENT_MISSING"
+	ComponentInvalid ErrorCode = "COMPONENT_INVALID"
 
 	// System error codes
-	ErrorCodeSystemFailed   = "SYSTEM_FAILED"
-	ErrorCodeSystemNotFound = "SYSTEM_NOT_FOUND"
+	SystemInitFailed    ErrorCode = "SYSTEM_INIT_FAILED"
+	SystemUpdateFailed  ErrorCode = "SYSTEM_UPDATE_FAILED"
+	SystemCleanupFailed ErrorCode = "SYSTEM_CLEANUP_FAILED"
 
 	// Configuration error codes
-	ErrorCodeConfigInvalid = "CONFIG_INVALID"
-	ErrorCodeConfigMissing = "CONFIG_MISSING"
+	ConfigInvalid    ErrorCode = "CONFIG_INVALID"
+	ConfigMissing    ErrorCode = "CONFIG_MISSING"
+	ConfigValidation ErrorCode = "CONFIG_VALIDATION"
 
 	// Input error codes
-	ErrorCodeInputInvalid      = "INPUT_INVALID"
-	ErrorCodeInputNotSupported = "INPUT_NOT_SUPPORTED"
+	InputInvalid     ErrorCode = "INPUT_INVALID"
+	InputUnsupported ErrorCode = "INPUT_UNSUPPORTED"
+	InputTimeout     ErrorCode = "INPUT_TIMEOUT"
 
 	// Resource error codes
-	ErrorCodeResourceNotFound   = "RESOURCE_NOT_FOUND"
-	ErrorCodeResourceLoadFailed = "RESOURCE_LOAD_FAILED"
-	ErrorCodeResourceInvalid    = "RESOURCE_INVALID"
+	ResourceNotFound   ErrorCode = "RESOURCE_NOT_FOUND"
+	ResourceLoadFailed ErrorCode = "RESOURCE_LOAD_FAILED"
+	ResourceExhausted  ErrorCode = "RESOURCE_EXHAUSTED"
+	ResourceLocked     ErrorCode = "RESOURCE_LOCKED"
 
 	// Game state error codes
-	ErrorCodeGameStateInvalid          = "GAME_STATE_INVALID"
-	ErrorCodeGameStateTransitionFailed = "GAME_STATE_TRANSITION_FAILED"
+	StateInvalid    ErrorCode = "STATE_INVALID"
+	StateTransition ErrorCode = "STATE_TRANSITION"
+	StateCorrupted  ErrorCode = "STATE_CORRUPTED"
 
 	// Rendering error codes
-	ErrorCodeRenderingFailed = "RENDERING_FAILED"
-	ErrorCodeSpriteNotFound  = "SPRITE_NOT_FOUND"
+	RenderFailed      ErrorCode = "RENDER_FAILED"
+	RenderUnsupported ErrorCode = "RENDER_UNSUPPORTED"
+	RenderTimeout     ErrorCode = "RENDER_TIMEOUT"
 
 	// Validation error codes
-	ErrorCodeValidationFailed = "VALIDATION_FAILED"
-	ErrorCodeValueOutOfRange  = "VALUE_OUT_OF_RANGE"
+	ValidationFailed  ErrorCode = "VALIDATION_FAILED"
+	ValidationTimeout ErrorCode = "VALIDATION_TIMEOUT"
 
 	// Scene error codes
-	ErrorCodeSceneNotFound = "SCENE_NOT_FOUND"
+	SceneNotFound   ErrorCode = "SCENE_NOT_FOUND"
+	SceneTransition ErrorCode = "SCENE_TRANSITION"
+	SceneLoadFailed ErrorCode = "SCENE_LOAD_FAILED"
 )
+
+// ErrorBuilder provides a fluent interface for building errors
+type ErrorBuilder struct {
+	code    ErrorCode
+	message string
+	cause   error
+	context map[string]interface{}
+}
+
+// NewErrorBuilder creates a new error builder
+func NewErrorBuilder(code ErrorCode, message string) *ErrorBuilder {
+	return &ErrorBuilder{
+		code:    code,
+		message: message,
+		context: make(map[string]interface{}),
+	}
+}
+
+// WithCause sets the underlying cause error
+func (b *ErrorBuilder) WithCause(cause error) *ErrorBuilder {
+	b.cause = cause
+	return b
+}
+
+// WithContext adds context information
+func (b *ErrorBuilder) WithContext(key string, value interface{}) *ErrorBuilder {
+	if b.context == nil {
+		b.context = make(map[string]interface{})
+	}
+	b.context[key] = value
+	return b
+}
+
+// WithContextMap adds multiple context values
+func (b *ErrorBuilder) WithContextMap(ctx map[string]interface{}) *ErrorBuilder {
+	if b.context == nil {
+		b.context = make(map[string]interface{})
+	}
+	for k, v := range ctx {
+		b.context[k] = v
+	}
+	return b
+}
+
+// Build creates the final error
+func (b *ErrorBuilder) Build() *GameError {
+	err := &GameError{
+		Code:      b.code,
+		Message:   b.message,
+		Cause:     b.cause,
+		Timestamp: time.Now(),
+		Context:   b.context,
+	}
+	return err
+}
+
+// IsGameError checks if an error is a GameError
+func IsGameError(err error) bool {
+	_, ok := err.(*GameError)
+	return ok
+}
+
+// GetGameError extracts GameError from an error chain
+func GetGameError(err error) (*GameError, bool) {
+	if err != nil {
+		if gameErr, ok := err.(*GameError); ok {
+			return gameErr, true
+		}
+	}
+	return nil, false
+}
+
+// HasErrorCode checks if an error has a specific error code
+func HasErrorCode(err error, code ErrorCode) bool {
+	if gameErr, ok := GetGameError(err); ok {
+		return gameErr.Code == code
+	}
+	return false
+}

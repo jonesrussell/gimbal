@@ -1,10 +1,16 @@
 package collision
 
 import (
+	"context"
+	"time"
+
 	"github.com/yohamta/donburi"
+	"github.com/yohamta/donburi/filter"
+	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
 
@@ -13,25 +19,25 @@ import (
 type CollisionSystemConfig struct {
 	World        donburi.World
 	Config       *config.GameConfig
-	HealthSystem interface{} // Using interface to avoid circular dependency
-	EventSystem  interface{} // Using interface to avoid circular dependency
+	HealthSystem HealthSystemInterface
+	EventSystem  EventSystemInterface
 	ScoreManager *managers.ScoreManager
-	EnemySystem  interface{} // Using interface to avoid circular dependency
+	EnemySystem  EnemySystemInterface
 	Logger       common.Logger
 }
 
-// CollisionSystem manages collision detection and response
+// CollisionSystem manages collision detection and response with proper type safety
 type CollisionSystem struct {
 	world        donburi.World
 	config       *config.GameConfig
-	healthSystem interface{} // Using interface to avoid circular dependency
-	eventSystem  interface{} // Using interface to avoid circular dependency
+	healthSystem HealthSystemInterface
+	eventSystem  EventSystemInterface
 	scoreManager *managers.ScoreManager
-	enemySystem  interface{} // Using interface to avoid circular dependency
+	enemySystem  EnemySystemInterface
 	logger       common.Logger
 }
 
-// NewCollisionSystem creates a new collision system
+// NewCollisionSystem creates a new collision detection system with the provided configuration
 func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
 	return &CollisionSystem{
 		world:        cfg.World,
@@ -44,13 +50,23 @@ func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
 	}
 }
 
-// Update updates the collision system
-func (cs *CollisionSystem) Update() {
+// Update updates the collision system with context support
+func (cs *CollisionSystem) Update(ctx context.Context) error {
+	// Add timeout for collision detection to prevent hanging
+	ctx, cancel := context.WithTimeout(ctx, 16*time.Millisecond) // 60 FPS budget
+	defer cancel()
+
 	// Check projectile-enemy collisions
-	cs.checkProjectileEnemyCollisions()
+	if err := cs.checkProjectileEnemyCollisions(ctx); err != nil {
+		return err
+	}
 
 	// Check player-enemy collisions
-	cs.checkPlayerEnemyCollisions()
+	if err := cs.checkPlayerEnemyCollisions(ctx); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetCollisionDistance calculates the distance between two points
@@ -64,4 +80,27 @@ func (cs *CollisionSystem) GetCollisionDistance(pos1, pos2 common.Point) float64
 func (cs *CollisionSystem) IsWithinRange(pos1, pos2 common.Point, maxDistance float64) bool {
 	distance := cs.GetCollisionDistance(pos1, pos2)
 	return distance <= maxDistance*maxDistance // Compare squared distances
+}
+
+// getEnemyEntities returns all valid enemy entities with health
+func (cs *CollisionSystem) getEnemyEntities(ctx context.Context) ([]donburi.Entity, error) {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	enemies := make([]donburi.Entity, 0)
+	query.NewQuery(
+		filter.And(
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
+			filter.Contains(core.Health),
+		),
+	).Each(cs.world, func(entry *donburi.Entry) {
+		enemies = append(enemies, entry.Entity())
+	})
+	return enemies, nil
 }

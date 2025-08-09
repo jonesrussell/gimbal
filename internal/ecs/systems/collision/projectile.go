@@ -1,6 +1,8 @@
 package collision
 
 import (
+	"context"
+
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
@@ -9,8 +11,19 @@ import (
 )
 
 // checkProjectileEnemyCollisions checks for collisions between projectiles and enemies
-func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
-	// Get all projectiles
+func (cs *CollisionSystem) checkProjectileEnemyCollisions(ctx context.Context) error {
+	projectiles, err := cs.getProjectileEntities(ctx)
+	if err != nil {
+		return err
+	}
+	enemies, err := cs.getEnemyEntities(ctx)
+	if err != nil {
+		return err
+	}
+	return cs.processProjectileEnemyCollisions(ctx, projectiles, enemies)
+}
+
+func (cs *CollisionSystem) getProjectileEntities(ctx context.Context) ([]donburi.Entity, error) {
 	projectiles := make([]donburi.Entity, 0)
 	query.NewQuery(
 		filter.And(
@@ -21,54 +34,66 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions() {
 	).Each(cs.world, func(entry *donburi.Entry) {
 		projectiles = append(projectiles, entry.Entity())
 	})
+	return projectiles, nil
+}
 
-	// Get all enemies
-	enemies := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.EnemyTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-			filter.Contains(core.Health),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
-		enemies = append(enemies, entry.Entity())
-	})
-
-	// Check each projectile against each enemy
+func (cs *CollisionSystem) processProjectileEnemyCollisions(
+	ctx context.Context, projectiles, enemies []donburi.Entity,
+) error {
 	for _, projectileEntity := range projectiles {
-		projectileEntry := cs.world.Entry(projectileEntity)
-		if !projectileEntry.Valid() {
+		if err := cs.checkSingleProjectileCollisions(ctx, projectileEntity, enemies); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cs *CollisionSystem) checkSingleProjectileCollisions(
+	ctx context.Context, projectileEntity donburi.Entity, enemies []donburi.Entity,
+) error {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	projectileEntry := cs.world.Entry(projectileEntity)
+	if !projectileEntry.Valid() {
+		return nil
+	}
+
+	projectilePos := core.Position.Get(projectileEntry)
+	projectileSize := core.Size.Get(projectileEntry)
+
+	for _, enemyEntity := range enemies {
+		enemyEntry := cs.world.Entry(enemyEntity)
+		if !enemyEntry.Valid() {
 			continue
 		}
 
-		projectilePos := core.Position.Get(projectileEntry)
-		projectileSize := core.Size.Get(projectileEntry)
+		enemyPos := core.Position.Get(enemyEntry)
+		enemySize := core.Size.Get(enemyEntry)
 
-		for _, enemyEntity := range enemies {
-			enemyEntry := cs.world.Entry(enemyEntity)
-			if !enemyEntry.Valid() {
-				continue
+		// Check collision
+		if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
+			if err := cs.handleProjectileEnemyCollision(
+				ctx, projectileEntity, enemyEntity, projectileEntry, enemyEntry,
+			); err != nil {
+				return err
 			}
-
-			enemyPos := core.Position.Get(enemyEntry)
-			enemySize := core.Size.Get(enemyEntry)
-
-			// Check collision
-			if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
-				// Handle collision
-				cs.handleProjectileEnemyCollision(projectileEntity, enemyEntity, projectileEntry, enemyEntry)
-				break // Projectile can only hit one enemy
-			}
+			return nil // Projectile can only hit one enemy
 		}
 	}
+	return nil
 }
 
 // handleProjectileEnemyCollision handles collision between a projectile and an enemy
 func (cs *CollisionSystem) handleProjectileEnemyCollision(
+	ctx context.Context,
 	projectileEntity, enemyEntity donburi.Entity,
 	projectileEntry, enemyEntry *donburi.Entry,
-) {
+) error {
 	// Get projectile and enemy data
 	projectilePos := core.Position.Get(projectileEntry)
 	projectileSize := core.Size.Get(projectileEntry)
@@ -91,12 +116,17 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 
 		// Remove enemy if health reaches 0
 		if enemyHealthData.Current <= 0 {
-			// Award points for destroying enemy
-			cs.scoreManager.AddScore(10) // 10 points per enemy
-			cs.logger.Debug("Enemy destroyed, points awarded", "points", 10, "total_score", cs.scoreManager.GetScore())
+			// Remove enemy entity and get points
+			points := cs.enemySystem.DestroyEnemy(enemyEntity)
 
-			// Remove enemy entity
-			cs.world.Remove(enemyEntity)
+			// Emit enemy destroyed event (includes points)
+			if err := cs.eventSystem.EmitEnemyDestroyed(ctx, enemyEntity, points); err != nil {
+				cs.logger.Error("Failed to emit enemy destroyed event", "error", err)
+			}
+
+			cs.logger.Debug("Enemy destroyed", "points", points)
 		}
 	}
+
+	return nil
 }

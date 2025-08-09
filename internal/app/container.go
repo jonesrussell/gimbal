@@ -10,7 +10,6 @@ import (
 	gamepkg "github.com/jonesrussell/gimbal/internal/game"
 	"github.com/jonesrussell/gimbal/internal/input"
 	"github.com/jonesrussell/gimbal/internal/logger"
-	"github.com/jonesrussell/gimbal/internal/ui"
 )
 
 // Container manages all application dependencies and their lifecycle
@@ -19,6 +18,7 @@ type Container struct {
 
 	// Core dependencies
 	logger       common.Logger
+	appConfig    *config.AppConfig
 	config       *config.GameConfig
 	inputHandler common.GameInputHandler
 	game         *gamepkg.ECSGame
@@ -28,9 +28,11 @@ type Container struct {
 	shutdown    bool
 }
 
-// NewContainer creates a new application container
-func NewContainer() *Container {
-	return &Container{}
+// NewContainer creates a new application dependency container with the provided configuration
+func NewContainer(appConfig *config.AppConfig) *Container {
+	return &Container{
+		appConfig: appConfig,
+	}
 }
 
 // Initialize sets up all dependencies in the correct order
@@ -58,7 +60,7 @@ func (c *Container) Initialize(ctx context.Context) error {
 	}
 
 	// Step 4: Initialize game
-	if err := c.initializeGame(); err != nil {
+	if err := c.initializeGame(ctx); err != nil {
 		return fmt.Errorf("failed to initialize game: %w", err)
 	}
 
@@ -69,7 +71,14 @@ func (c *Container) Initialize(ctx context.Context) error {
 
 // initializeLogger creates and configures the logger
 func (c *Container) initializeLogger() error {
-	log, err := logger.New()
+	loggerConfig := &logger.Config{
+		LogFile:    c.appConfig.Logging.LogFile,
+		LogLevel:   c.appConfig.LogLevel,
+		ConsoleOut: c.appConfig.Logging.ConsoleOut,
+		FileOut:    c.appConfig.Logging.FileOut,
+	}
+
+	log, err := logger.NewWithConfig(loggerConfig)
 	if err != nil {
 		return err
 	}
@@ -110,11 +119,8 @@ func (c *Container) initializeInputHandler() error {
 }
 
 // initializeGame creates the ECS game instance
-func (c *Container) initializeGame() error {
-	// Create UI factory
-	uiFactory := &ui.EbitenUIFactory{}
-
-	game, err := gamepkg.NewECSGame(c.config, c.logger, c.inputHandler, uiFactory)
+func (c *Container) initializeGame(ctx context.Context) error {
+	game, err := gamepkg.NewECSGame(ctx, c.config, c.logger, c.inputHandler)
 	if err != nil {
 		return err
 	}
@@ -128,13 +134,6 @@ func (c *Container) GetLogger() common.Logger {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.logger
-}
-
-// GetConfig returns the game configuration
-func (c *Container) GetConfig() *config.GameConfig {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.config
 }
 
 // GetInputHandler removed - dead code
@@ -161,7 +160,10 @@ func (c *Container) Shutdown(ctx context.Context) error {
 
 	// Shutdown in reverse order of initialization
 	if c.game != nil {
-		c.game.Cleanup()
+		if ctx == nil {
+			return fmt.Errorf("context must not be nil in Shutdown")
+		}
+		c.game.Cleanup(ctx)
 		c.logger.Debug("Game cleaned up")
 	}
 

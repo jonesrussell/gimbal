@@ -34,12 +34,12 @@ func (s *SimpleTextScene) Update() error {
 
 func (s *SimpleTextScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
-	drawCenteredTextWithOptions(
+	DrawCenteredTextWithOptions(
 		screen,
 		TextDrawOptions{
 			Text:  s.text,
-			X:     float64(s.manager.config.ScreenSize.Width) / 2,
-			Y:     float64(s.manager.config.ScreenSize.Height) / 2,
+			X:     float64(s.manager.GetConfig().ScreenSize.Width) / 2,
+			Y:     float64(s.manager.GetConfig().ScreenSize.Height) / 2,
 			Alpha: 1.0,
 			Font:  s.font,
 		},

@@ -1,6 +1,7 @@
 package enemy
 
 import (
+	"context"
 	"image/color"
 	"math"
 	"math/rand"
@@ -29,6 +30,7 @@ type EnemySystem struct {
 	enemySprite *ebiten.Image
 }
 
+// NewEnemySystem creates a new enemy management system with the provided dependencies
 func NewEnemySystem(
 	world donburi.World,
 	gameConfig *config.GameConfig,
@@ -47,19 +49,27 @@ func NewEnemySystem(
 	return es
 }
 
-func (es *EnemySystem) Update(deltaTime float64) {
+func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	es.spawnTimer += deltaTime
 	if es.spawnTimer >= es.spawnInterval {
-		es.spawnEnemy()
+		es.spawnEnemy(ctx)
 		es.spawnTimer = 0
 	}
 	es.updateEnemies()
+	return nil
 }
 
-func (es *EnemySystem) spawnEnemy() {
+func (es *EnemySystem) spawnEnemy(ctx context.Context) {
 	// Load enemy sprite if not already loaded
 	if es.enemySprite == nil {
-		enemySprite, exists := es.resourceMgr.GetSprite("enemy")
+		enemySprite, exists := es.resourceMgr.GetSprite(ctx, "enemy")
 		if !exists {
 			es.logger.Warn("[ENEMY_SPAWN] Enemy sprite not found, using placeholder")
 			// Create a placeholder sprite
@@ -129,4 +139,19 @@ func (es *EnemySystem) updateEnemies() {
 			es.world.Remove(entry.Entity())
 		}
 	})
+}
+
+// DestroyEnemy destroys an enemy entity and returns points
+func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
+	entry := es.world.Entry(entity)
+	if !entry.Valid() {
+		return 0
+	}
+
+	// Remove the entity from the world
+	es.world.Remove(entity)
+
+	// Return points for destroying the enemy
+	// This could be made configurable based on enemy type
+	return 100
 }
