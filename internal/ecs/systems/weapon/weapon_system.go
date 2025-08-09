@@ -57,7 +57,7 @@ type WeaponSystem struct {
 func NewWeaponSystem(world donburi.World, gameConfig *config.GameConfig) *WeaponSystem {
 	// Convert frame-based interval to time-based interval (10 frames at 60fps = 0.167 seconds)
 	fireIntervalSeconds := float64(DefaultWeaponFireIntervalFrames) / 60.0
-	
+
 	ws := &WeaponSystem{
 		world:             world,
 		config:            gameConfig,
