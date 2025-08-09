@@ -193,6 +193,7 @@ func (g *ECSGame) handlePauseInput() {
 func (g *ECSGame) handleShootingInput() {
 	// Only handle shooting if we have a valid player entity
 	if g.playerEntity == 0 {
+		g.logger.Debug("No player entity found, skipping shooting input")
 		return
 	}
 
@@ -201,15 +202,23 @@ func (g *ECSGame) handleShootingInput() {
 		// Get player position and angle
 		playerEntry := g.world.Entry(g.playerEntity)
 		if !playerEntry.Valid() {
+			g.logger.Debug("Player entity invalid, skipping shooting input")
 			return
 		}
 
 		pos := core.Position.Get(playerEntry)
 		orbital := core.Orbital.Get(playerEntry)
 
+		if pos == nil || orbital == nil {
+			g.logger.Debug("Player position or orbital data missing, skipping shooting input")
+			return
+		}
+
 		// Fire weapon with player position and facing angle
 		if g.weaponSystem.FireWeapon(weaponsys.WeaponTypePrimary, *pos, orbital.FacingAngle) {
 			g.logger.Debug("Weapon fired", "position", pos, "angle", orbital.FacingAngle)
+		} else {
+			g.logger.Debug("Weapon fire blocked by timing", "fire_timer", g.weaponSystem.GetFireTimer(), "fire_interval", g.weaponSystem.GetFireInterval())
 		}
 	}
 }
