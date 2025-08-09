@@ -53,19 +53,38 @@ func NewEnemySystem(
 		world:               world,
 		gameConfig:          gameConfig,
 		spawnTimer:          0,
-		spawnInterval:       60, // Spawn every 60 frames (1 second at 60fps)
+		spawnInterval:       1.0, // Spawn every 1 second
 		resourceMgr:         resourceMgr,
 		logger:              logger,
 		enemySprites:        make(map[core.EnemyType]*ebiten.Image),
 		currentWave:         1,
 		enemiesInWave:       5,
 		waveTimer:           0,
-		waveInterval:        300, // 5 seconds between waves
+		waveInterval:        5.0, // 5 seconds between waves
 		difficultyLevel:     1,
 		spawnRateMultiplier: 1.0,
 	}
 
+	// Start the first wave immediately
+	es.startFirstWave()
+
 	return es
+}
+
+// startFirstWave initializes the first wave
+func (es *EnemySystem) startFirstWave() {
+	es.currentWave = 1
+	es.enemiesSpawned = 0
+	es.waveTimer = 0
+	es.difficultyLevel = 1
+	es.spawnRateMultiplier = 1.0
+	es.enemiesInWave = 5
+	es.spawnInterval = 1.0 // 1 second
+
+	es.logger.Info("Starting first wave",
+		"wave", es.currentWave,
+		"enemies", es.enemiesInWave,
+		"difficulty", es.difficultyLevel)
 }
 
 func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
@@ -85,10 +104,17 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	}
 
 	// Spawn enemies based on current wave and difficulty
+	// Start spawning immediately (don't wait for first wave timer)
 	if es.spawnTimer >= es.spawnInterval && es.enemiesSpawned < es.enemiesInWave {
 		es.spawnEnemy(ctx)
 		es.spawnTimer = 0
 		es.enemiesSpawned++
+		es.logger.Debug("[ENEMY_SPAWN] Enemy spawned",
+			"enemies_spawned", es.enemiesSpawned,
+			"enemies_in_wave", es.enemiesInWave,
+			"wave", es.currentWave,
+			"spawn_timer", es.spawnTimer,
+			"spawn_interval", es.spawnInterval)
 	}
 
 	es.updateEnemies(deltaTime)
@@ -105,8 +131,8 @@ func (es *EnemySystem) startNewWave() {
 	es.spawnRateMultiplier = 1.0 + float64(es.difficultyLevel-1)*0.2
 	es.enemiesInWave = 5 + es.currentWave*2
 
-	// Adjust spawn interval based on difficulty
-	es.spawnInterval = 60 / es.spawnRateMultiplier
+	// Adjust spawn interval based on difficulty (in seconds)
+	es.spawnInterval = 1.0 / es.spawnRateMultiplier
 
 	es.logger.Info("Starting new wave",
 		"wave", es.currentWave,
