@@ -209,6 +209,19 @@ func (ui *ResponsiveUI) SetDeviceClass(deviceClass string) {
 	}
 }
 
+// ShowPauseMenu shows or hides the pause menu
 func (ui *ResponsiveUI) ShowPauseMenu(visible bool) {
 	// TODO: Implement pause menu display logic if needed
+}
+
+// UpdateHUD updates the HUD with new data from the game
+func (ui *ResponsiveUI) UpdateHUD(data state.HUDData) {
+	// Update lives
+	ui.UpdateLives(data.Lives)
+
+	// Update score
+	ui.UpdateScore(data.Score)
+
+	// TODO: Update level if needed
+	// TODO: Update health if needed
 }
