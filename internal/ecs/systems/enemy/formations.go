@@ -25,14 +25,24 @@ type FormationData struct {
 	Angle    float64 // Direction of movement
 }
 
+// FormationParams contains parameters for calculating a formation
+type FormationParams struct {
+	FormationType FormationType
+	EnemyCount    int
+	CenterX       float64
+	CenterY       float64
+	BaseAngle     float64 // Base rotation angle for the formation
+	SpawnRadius   float64 // Distance from center to spawn
+}
+
 // CalculateFormation calculates spawn positions and angles for a formation
-func CalculateFormation(
-	formationType FormationType,
-	enemyCount int,
-	centerX, centerY float64,
-	baseAngle float64, // Base rotation angle for the formation
-	spawnRadius float64, // Distance from center to spawn
-) []FormationData {
+func CalculateFormation(params FormationParams) []FormationData {
+	formationType := params.FormationType
+	enemyCount := params.EnemyCount
+	centerX := params.CenterX
+	centerY := params.CenterY
+	baseAngle := params.BaseAngle
+	spawnRadius := params.SpawnRadius
 	positions := make([]FormationData, enemyCount)
 
 	switch formationType {
@@ -109,7 +119,15 @@ func CalculateFormation(
 
 	default:
 		// Default to circle if unknown
-		return CalculateFormation(FormationCircle, enemyCount, centerX, centerY, baseAngle, spawnRadius)
+		circleParams := FormationParams{
+			FormationType: FormationCircle,
+			EnemyCount:    enemyCount,
+			CenterX:       centerX,
+			CenterY:       centerY,
+			BaseAngle:     baseAngle,
+			SpawnRadius:   spawnRadius,
+		}
+		return CalculateFormation(circleParams)
 	}
 
 	return positions
