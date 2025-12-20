@@ -2,7 +2,6 @@ package collision
 
 import (
 	"context"
-	"time"
 
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
@@ -53,7 +52,8 @@ func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
 // Update updates the collision system with context support
 func (cs *CollisionSystem) Update(ctx context.Context) error {
 	// Add timeout for collision detection to prevent hanging
-	ctx, cancel := context.WithTimeout(ctx, 16*time.Millisecond) // 60 FPS budget
+	// Using half the frame budget to leave room for other systems
+	ctx, cancel := context.WithTimeout(ctx, config.CollisionTimeout)
 	defer cancel()
 
 	// Check projectile-enemy collisions
