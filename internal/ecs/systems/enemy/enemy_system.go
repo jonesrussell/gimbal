@@ -3,7 +3,7 @@ package enemy
 import (
 	"context"
 	"image/color"
-	"math"
+	stdmath "math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -19,12 +19,14 @@ import (
 
 // Enemy system constants
 const (
-	// DefaultSpawnIntervalSeconds is the time between enemy spawns
+	// DefaultSpawnIntervalSeconds is the time between enemy spawns (legacy, now used for wave delays)
 	DefaultSpawnIntervalSeconds = 1.0
 	// DefaultEnemySpeed is the movement speed of enemies
 	DefaultEnemySpeed = 2.0
 	// DefaultEnemySize is the size of enemy sprites
 	DefaultEnemySize = 32
+	// BossSpawnDelay is the delay after last wave before boss spawns
+	BossSpawnDelay = 2.0
 )
 
 // EnemySystem manages enemy spawning, movement, and behavior
@@ -36,8 +38,15 @@ type EnemySystem struct {
 	resourceMgr   *resources.ResourceManager
 	logger        common.Logger
 
-	// Simple enemy sprite
-	enemySprite *ebiten.Image
+	// Wave management
+	waveManager *WaveManager
+
+	// Boss spawning
+	bossSpawnTimer float64
+	bossSpawned    bool
+
+	// Enemy sprites cache
+	enemySprites map[EnemyType]*ebiten.Image
 }
 
 // NewEnemySystem creates a new enemy management system with the provided dependencies
@@ -51,10 +60,14 @@ func NewEnemySystem(
 		world:         world,
 		gameConfig:    gameConfig,
 		spawnTimer:    0,
-		spawnInterval: DefaultSpawnIntervalSeconds, // Spawn every 1 second
+		spawnInterval: DefaultSpawnIntervalSeconds,
 		resourceMgr:   resourceMgr,
 		logger:        logger,
+		enemySprites:  make(map[EnemyType]*ebiten.Image),
 	}
+
+	// Initialize wave manager
+	es.waveManager = NewWaveManager(world, logger)
 
 	return es
 }
@@ -67,63 +80,180 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	default:
 	}
 
-	es.spawnTimer += deltaTime
-	if es.spawnTimer >= es.spawnInterval {
-		es.spawnEnemy(ctx)
-		es.spawnTimer = 0
+	// Update wave manager
+	es.waveManager.Update(deltaTime)
+
+	// Check if we need to start a new wave
+	if es.waveManager.GetCurrentWave() == nil && es.waveManager.HasMoreWaves() {
+		es.waveManager.StartNextWave()
 	}
+
+	// Spawn enemies from current wave
+	if es.waveManager.ShouldSpawnEnemy(deltaTime) {
+		wave := es.waveManager.GetCurrentWave()
+		if wave != nil {
+			es.spawnWaveEnemy(ctx, wave)
+			es.waveManager.MarkEnemySpawned()
+		}
+	}
+
+	// Check if wave is complete and start next
+	if es.waveManager.IsWaveComplete() {
+		es.waveManager.CompleteWave()
+		if es.waveManager.HasMoreWaves() {
+			es.waveManager.StartNextWave()
+		} else {
+			// All waves complete, start boss spawn timer
+			if !es.bossSpawned {
+				es.bossSpawnTimer += deltaTime
+				if es.bossSpawnTimer >= BossSpawnDelay {
+					es.SpawnBoss(ctx)
+					es.bossSpawned = true
+				}
+			}
+		}
+	}
+
+	// Update enemy movement (including boss)
 	es.updateEnemies()
+	es.UpdateBossMovement(deltaTime)
+
 	return nil
 }
 
-func (es *EnemySystem) spawnEnemy(ctx context.Context) {
-	// Load enemy sprite if not already loaded
-	if es.enemySprite == nil {
-		enemySprite, exists := es.resourceMgr.GetSprite(ctx, "enemy")
-		if !exists {
-			es.logger.Warn("[ENEMY_SPAWN] Enemy sprite not found, using placeholder")
-			// Create a placeholder sprite
-			enemySprite = ebiten.NewImage(32, 32)
-			enemySprite.Fill(color.RGBA{255, 0, 0, 255})
-		} else {
-			es.logger.Debug("[ENEMY_SPAWN] Enemy sprite loaded successfully", "bounds", enemySprite.Bounds())
-		}
-		es.enemySprite = enemySprite
-	}
+// spawnWaveEnemy spawns a single enemy from the current wave
+func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
+	enemyType := es.waveManager.GetNextEnemyType()
+	enemyData := GetEnemyTypeData(enemyType)
 
-	es.logger.Debug("[ENEMY_SPAWN] Spawning enemy")
-
-	// Spawn at screen center (Gyruss-style)
+	// Get formation data
 	centerX := float64(es.gameConfig.ScreenSize.Width) / 2
 	centerY := float64(es.gameConfig.ScreenSize.Height) / 2
-	spawnPos := common.Point{X: centerX, Y: centerY}
+	spawnRadius := GetSpawnRadius(es.gameConfig)
+
+	// Calculate base angle for formation (random rotation)
+	baseAngle := rand.Float64() * 2 * stdmath.Pi //nolint:gosec
+
+	// Get formation positions
+	formationData := CalculateFormation(
+		wave.Config.FormationType,
+		wave.Config.EnemyCount,
+		centerX, centerY,
+		baseAngle,
+		spawnRadius,
+	)
+
+	// Spawn enemy at the appropriate position in formation
+	enemyIndex := wave.EnemiesSpawned
+	if enemyIndex < len(formationData) {
+		formData := formationData[enemyIndex]
+		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, enemyData)
+	} else {
+		// Fallback: spawn at center with random angle
+		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, enemyData)
+	}
+}
+
+// spawnEnemyAt spawns an enemy at a specific position with specific movement
+func (es *EnemySystem) spawnEnemyAt(
+	ctx context.Context,
+	position common.Point,
+	angle float64,
+	enemyType EnemyType,
+	enemyData EnemyTypeData,
+) {
+	// Get or create sprite
+	sprite := es.getEnemySprite(ctx, enemyType, enemyData)
 
 	entity := es.world.Create(
 		core.EnemyTag, core.Position, core.Sprite, core.Movement,
 		core.Size, core.Health,
 	)
 	entry := es.world.Entry(entity)
-	core.Position.SetValue(entry, spawnPos)
 
-	// Set sprite to the enemy sprite
-	core.Sprite.SetValue(entry, es.enemySprite)
-	core.Size.SetValue(entry, config.Size{Width: DefaultEnemySize, Height: DefaultEnemySize})
-	core.Health.SetValue(entry, core.HealthData{Current: 1, Maximum: 1, InvincibilityDuration: 0})
+	// Set position
+	core.Position.SetValue(entry, position)
 
-	// Calculate random angle for outward movement
-	angle := rand.Float64() * 2 * math.Pi //nolint:gosec // Game logic randomness is acceptable
-	speed := DefaultEnemySpeed
+	// Set sprite
+	core.Sprite.SetValue(entry, sprite)
 
-	// Move outward from center toward player orbital ring
+	// Set size
+	core.Size.SetValue(entry, config.Size{Width: enemyData.Size, Height: enemyData.Size})
+
+	// Set health
+	core.Health.SetValue(entry, core.NewHealthData(enemyData.Health, enemyData.Health))
+
+	// Set movement based on type
+	switch enemyData.MovementType {
+	case "spiral":
+		// Spiral movement: start with angle, then spiral outward
+		es.setSpiralMovement(entry, angle, enemyData.Speed)
+	case "orbital":
+		// Orbital movement (for boss, handled separately)
+		// This shouldn't be called for regular enemies
+		es.setOutwardMovement(entry, angle, enemyData.Speed)
+	default:
+		// Default: outward movement
+		es.setOutwardMovement(entry, angle, enemyData.Speed)
+	}
+
+	es.logger.Debug("Enemy spawned", "type", enemyType, "position", position, "angle", angle)
+}
+
+// setOutwardMovement sets simple outward movement
+func (es *EnemySystem) setOutwardMovement(entry *donburi.Entry, angle float64, speed float64) {
 	velocity := common.Point{
-		X: math.Cos(angle) * speed,
-		Y: math.Sin(angle) * speed,
+		X: stdmath.Cos(angle) * speed,
+		Y: stdmath.Sin(angle) * speed,
 	}
 
 	core.Movement.SetValue(entry, core.MovementData{
 		Velocity: velocity,
 		MaxSpeed: speed,
 	})
+}
+
+// setSpiralMovement sets spiral movement pattern
+func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle float64, speed float64) {
+	// For now, use outward movement with slight variation
+	// TODO: Implement actual spiral pattern with time-based angle change
+	velocity := common.Point{
+		X: stdmath.Cos(baseAngle) * speed,
+		Y: stdmath.Sin(baseAngle) * speed,
+	}
+
+	core.Movement.SetValue(entry, core.MovementData{
+		Velocity: velocity,
+		MaxSpeed: speed,
+	})
+}
+
+// getEnemySprite gets or creates the sprite for an enemy type
+func (es *EnemySystem) getEnemySprite(ctx context.Context, enemyType EnemyType, enemyData EnemyTypeData) *ebiten.Image {
+	// Check cache
+	if sprite, ok := es.enemySprites[enemyType]; ok {
+		return sprite
+	}
+
+	// Try to load sprite
+	sprite, exists := es.resourceMgr.GetSprite(ctx, enemyData.SpriteName)
+	if !exists {
+		es.logger.Warn("Enemy sprite not found, using placeholder", "type", enemyType, "sprite", enemyData.SpriteName)
+		// Create placeholder with different colors
+		sprite = ebiten.NewImage(enemyData.Size, enemyData.Size)
+		switch enemyType {
+		case EnemyTypeHeavy:
+			sprite.Fill(color.RGBA{255, 165, 0, 255}) // Orange
+		case EnemyTypeBoss:
+			sprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
+		default:
+			sprite.Fill(color.RGBA{255, 0, 0, 255}) // Red
+		}
+	}
+
+	// Cache sprite
+	es.enemySprites[enemyType] = sprite
+	return sprite
 }
 
 func (es *EnemySystem) updateEnemies() {
@@ -142,8 +272,8 @@ func (es *EnemySystem) updateEnemies() {
 		// Remove enemies when they move too far from center (Gyruss-style)
 		centerX := float64(es.gameConfig.ScreenSize.Width) / 2
 		centerY := float64(es.gameConfig.ScreenSize.Height) / 2
-		distanceFromCenter := math.Sqrt((pos.X-centerX)*(pos.X-centerX) + (pos.Y-centerY)*(pos.Y-centerY))
-		maxDistance := math.Max(float64(es.gameConfig.ScreenSize.Width), float64(es.gameConfig.ScreenSize.Height)) * 0.8
+		distanceFromCenter := stdmath.Sqrt((pos.X-centerX)*(pos.X-centerX) + (pos.Y-centerY)*(pos.Y-centerY))
+		maxDistance := stdmath.Max(float64(es.gameConfig.ScreenSize.Width), float64(es.gameConfig.ScreenSize.Height)) * 0.8
 
 		if distanceFromCenter > maxDistance {
 			es.world.Remove(entry.Entity())
@@ -151,17 +281,66 @@ func (es *EnemySystem) updateEnemies() {
 	})
 }
 
-// DestroyEnemy destroys an enemy entity and returns points
+// DestroyEnemy destroys an enemy entity and returns points based on type
 func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
 	entry := es.world.Entry(entity)
 	if !entry.Valid() {
 		return 0
 	}
 
+	// Determine enemy type from health (heuristic)
+	health := core.Health.Get(entry)
+	points := 100 // Default
+
+	if health != nil {
+		if health.Maximum >= 10 {
+			points = GetEnemyTypeData(EnemyTypeBoss).Points
+		} else if health.Maximum >= 2 {
+			points = GetEnemyTypeData(EnemyTypeHeavy).Points
+		} else {
+			points = GetEnemyTypeData(EnemyTypeBasic).Points
+		}
+	}
+
+	// Mark enemy killed in wave manager
+	es.waveManager.MarkEnemyKilled()
+
 	// Remove the entity from the world
 	es.world.Remove(entity)
 
-	// Return points for destroying the enemy
-	// This could be made configurable based on enemy type
-	return 100
+	return points
+}
+
+// Reset resets the enemy system for a new level
+func (es *EnemySystem) Reset() {
+	es.waveManager.Reset()
+	es.bossSpawned = false
+	es.bossSpawnTimer = 0
+	es.spawnTimer = 0
+}
+
+// IsBossActive checks if there's an active boss
+func (es *EnemySystem) IsBossActive() bool {
+	if es.bossSpawned {
+		// Check if boss still exists
+		count := 0
+		query.NewQuery(
+			filter.And(
+				filter.Contains(core.EnemyTag),
+				filter.Contains(core.Orbital),
+			),
+		).Each(es.world, func(entry *donburi.Entry) {
+			health := core.Health.Get(entry)
+			if health != nil && health.Maximum >= 10 {
+				count++
+			}
+		})
+		return count > 0
+	}
+	return false
+}
+
+// WasBossSpawned returns true if boss was spawned (even if now killed)
+func (es *EnemySystem) WasBossSpawned() bool {
+	return es.bossSpawned
 }

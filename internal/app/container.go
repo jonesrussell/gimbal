@@ -173,4 +173,3 @@ func (c *Container) Shutdown(ctx context.Context) error {
 	c.logger.Info("Application container shutdown complete")
 	return nil
 }
-

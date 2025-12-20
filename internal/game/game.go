@@ -173,8 +173,26 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 		return err
 	}
 
+	// Check for level completion (boss killed)
+	g.checkLevelCompletion()
+
 	g.logger.Debug("ECS systems updated", "delta", deltaTime)
 	return nil
+}
+
+// checkLevelCompletion checks if the boss is killed and advances the level
+func (g *ECSGame) checkLevelCompletion() {
+	// Check if boss was spawned but is now killed
+	if g.enemySystem.WasBossSpawned() && !g.enemySystem.IsBossActive() {
+		// Boss was killed, level complete!
+		g.logger.Debug("Level complete - boss defeated")
+		g.levelManager.IncrementLevel()
+
+		// Reset enemy system for next level
+		g.enemySystem.Reset()
+
+		// TODO: Add level complete event/UI notification
+	}
 }
 
 // handlePauseInput processes pause input and switches to pause scene
