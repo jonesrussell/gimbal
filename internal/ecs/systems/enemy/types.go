@@ -12,15 +12,30 @@ const (
 	EnemyTypeBoss
 )
 
+// MovementPattern represents the movement behavior pattern for enemies
+type MovementPattern int
+
+const (
+	// MovementPatternNormal is standard outward movement
+	MovementPatternNormal MovementPattern = iota
+	// MovementPatternZigzag oscillates side-to-side while moving outward
+	MovementPatternZigzag
+	// MovementPatternAccelerating starts slow and speeds up
+	MovementPatternAccelerating
+	// MovementPatternPulsing moves in bursts (fast-slow-fast)
+	MovementPatternPulsing
+)
+
 // EnemyTypeData contains configuration for each enemy type
 type EnemyTypeData struct {
-	Type         EnemyType
-	Health       int
-	Speed        float64
-	Size         int
-	Points       int
-	SpriteName   string
-	MovementType string // "outward", "spiral", "orbital"
+	Type           EnemyType
+	Health         int
+	Speed          float64
+	Size           int
+	Points         int
+	SpriteName     string
+	MovementType   string // "outward", "spiral", "orbital"
+	MovementPattern MovementPattern // Movement behavior pattern
 }
 
 // GetEnemyTypeData returns the configuration for an enemy type
