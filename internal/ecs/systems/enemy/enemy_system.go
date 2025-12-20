@@ -17,6 +17,16 @@ import (
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
+// Enemy system constants
+const (
+	// DefaultSpawnIntervalSeconds is the time between enemy spawns
+	DefaultSpawnIntervalSeconds = 1.0
+	// DefaultEnemySpeed is the movement speed of enemies
+	DefaultEnemySpeed = 2.0
+	// DefaultEnemySize is the size of enemy sprites
+	DefaultEnemySize = 32
+)
+
 // EnemySystem manages enemy spawning, movement, and behavior
 type EnemySystem struct {
 	world         donburi.World
@@ -41,7 +51,7 @@ func NewEnemySystem(
 		world:         world,
 		gameConfig:    gameConfig,
 		spawnTimer:    0,
-		spawnInterval: 60, // Spawn every 60 frames (1 second at 60fps)
+		spawnInterval: DefaultSpawnIntervalSeconds, // Spawn every 1 second
 		resourceMgr:   resourceMgr,
 		logger:        logger,
 	}
@@ -97,12 +107,12 @@ func (es *EnemySystem) spawnEnemy(ctx context.Context) {
 
 	// Set sprite to the enemy sprite
 	core.Sprite.SetValue(entry, es.enemySprite)
-	core.Size.SetValue(entry, config.Size{Width: 32, Height: 32})
+	core.Size.SetValue(entry, config.Size{Width: DefaultEnemySize, Height: DefaultEnemySize})
 	core.Health.SetValue(entry, core.HealthData{Current: 1, Maximum: 1, InvincibilityDuration: 0})
 
 	// Calculate random angle for outward movement
 	angle := rand.Float64() * 2 * math.Pi //nolint:gosec // Game logic randomness is acceptable
-	speed := 2.0
+	speed := DefaultEnemySpeed
 
 	// Move outward from center toward player orbital ring
 	velocity := common.Point{
