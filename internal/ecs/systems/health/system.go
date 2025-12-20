@@ -246,8 +246,17 @@ func (hs *HealthSystem) DamagePlayer(entity donburi.Entity, damage int) {
 }
 
 func (hs *HealthSystem) IsPlayerInvincible() bool {
-	// Implement as needed, or return false if not used
-	return false
+	var invincible bool
+	query.NewQuery(
+		filter.And(
+			filter.Contains(core.PlayerTag),
+			filter.Contains(core.Health),
+		),
+	).Each(hs.world, func(entry *donburi.Entry) {
+		health := core.Health.Get(entry)
+		invincible = health.IsInvincible
+	})
+	return invincible
 }
 
 // GetPlayerHealth returns the current and maximum health of the player

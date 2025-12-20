@@ -9,6 +9,11 @@ import (
 	"github.com/jonesrussell/gimbal/internal/math"
 )
 
+// Re-export timing constants for use by other packages
+const (
+	DefaultInvincibilityDuration = config.DefaultInvincibilityDuration
+)
+
 // Component tags for different entity types
 var (
 	// PlayerTag marks an entity as a player
@@ -73,6 +78,6 @@ func NewHealthData(current, maximum int) HealthData {
 		Maximum:               maximum,
 		InvincibilityTime:     0,
 		IsInvincible:          false,
-		InvincibilityDuration: 2.0, // 2 seconds of invincibility
+		InvincibilityDuration: DefaultInvincibilityDuration,
 	}
 }

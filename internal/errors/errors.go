@@ -88,67 +88,7 @@ func FromContext(ctx context.Context, code ErrorCode, message string) *GameError
 	return err
 }
 
-// Predefined error constants
-const (
-	// Asset errors
-	ErrAssetNotFound    = "ASSET_NOT_FOUND"
-	ErrAssetLoadFailed  = "ASSET_LOAD_FAILED"
-	ErrAssetInvalid     = "ASSET_INVALID"
-	ErrAssetCorrupted   = "ASSET_CORRUPTED"
-	ErrAssetUnsupported = "ASSET_UNSUPPORTED"
-
-	// Entity errors
-	ErrEntityNotFound  = "ENTITY_NOT_FOUND"
-	ErrEntityInvalid   = "ENTITY_INVALID"
-	ErrEntityDestroyed = "ENTITY_DESTROYED"
-	ErrEntityExists    = "ENTITY_EXISTS"
-
-	// Component errors
-	ErrComponentMissing = "COMPONENT_MISSING"
-	ErrComponentInvalid = "COMPONENT_INVALID"
-
-	// System errors
-	ErrSystemInitFailed    = "SYSTEM_INIT_FAILED"
-	ErrSystemUpdateFailed  = "SYSTEM_UPDATE_FAILED"
-	ErrSystemCleanupFailed = "SYSTEM_CLEANUP_FAILED"
-
-	// Configuration errors
-	ErrConfigInvalid    = "CONFIG_INVALID"
-	ErrConfigMissing    = "CONFIG_MISSING"
-	ErrConfigValidation = "CONFIG_VALIDATION"
-
-	// Input errors
-	ErrInputInvalid     = "INPUT_INVALID"
-	ErrInputUnsupported = "INPUT_UNSUPPORTED"
-	ErrInputTimeout     = "INPUT_TIMEOUT"
-
-	// Resource errors
-	ErrResourceNotFound   = "RESOURCE_NOT_FOUND"
-	ErrResourceLoadFailed = "RESOURCE_LOAD_FAILED"
-	ErrResourceExhausted  = "RESOURCE_EXHAUSTED"
-	ErrResourceLocked     = "RESOURCE_LOCKED"
-
-	// Game state errors
-	ErrStateInvalid    = "STATE_INVALID"
-	ErrStateTransition = "STATE_TRANSITION"
-	ErrStateCorrupted  = "STATE_CORRUPTED"
-
-	// Rendering errors
-	ErrRenderFailed      = "RENDER_FAILED"
-	ErrRenderUnsupported = "RENDER_UNSUPPORTED"
-	ErrRenderTimeout     = "RENDER_TIMEOUT"
-
-	// Validation errors
-	ErrValidationFailed  = "VALIDATION_FAILED"
-	ErrValidationTimeout = "VALIDATION_TIMEOUT"
-
-	// Scene errors
-	ErrSceneNotFound   = "SCENE_NOT_FOUND"
-	ErrSceneTransition = "SCENE_TRANSITION"
-	ErrSceneLoadFailed = "SCENE_LOAD_FAILED"
-)
-
-// Error codes for easy reference
+// ErrorCode represents a typed error code for better type safety
 type ErrorCode string
 
 const (

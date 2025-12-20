@@ -56,12 +56,6 @@ type StarFieldSettings struct {
 // GameOption is a function that modifies a GameConfig
 type GameOption func(*GameConfig)
 
-// WithScreenSize removed - dead code
-
-// WithPlayerSize removed - dead code
-
-// WithNumStars removed - dead code
-
 // WithDebug enables debug mode
 func WithDebug(debug bool) GameOption {
 	return func(c *GameConfig) {
@@ -83,8 +77,6 @@ func WithStarSettings(size, speed float64) GameOption {
 		c.StarSpeed = speed
 	}
 }
-
-// WithStarFieldSettings removed - dead code
 
 // WithAngleStep sets the angle step for player rotation
 func WithAngleStep(step float64) GameOption {
