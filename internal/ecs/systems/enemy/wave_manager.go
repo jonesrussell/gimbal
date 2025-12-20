@@ -121,7 +121,10 @@ func (wm *WaveManager) StartNextWave() *WaveConfig {
 		LastSpawnTime:  -1, // Start spawning immediately
 	}
 
-	wm.logger.Debug("Wave started", "wave", wm.waveIndex+1, "formation", config.FormationType, "count", config.EnemyCount)
+	wm.logger.Debug("Wave started",
+		"wave", wm.waveIndex+1,
+		"formation", config.FormationType,
+		"count", config.EnemyCount)
 
 	return &config
 }
@@ -194,7 +197,8 @@ func (wm *WaveManager) GetNextEnemyType() EnemyType {
 
 	// If multiple types, randomly select one
 	if len(wm.currentWave.Config.EnemyTypes) > 1 {
-		idx := rand.Intn(len(wm.currentWave.Config.EnemyTypes)) //nolint:gosec
+		//nolint:gosec // Game logic randomness is acceptable
+		idx := rand.Intn(len(wm.currentWave.Config.EnemyTypes))
 		return wm.currentWave.Config.EnemyTypes[idx]
 	}
 

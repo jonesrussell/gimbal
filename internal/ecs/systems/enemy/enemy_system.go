@@ -98,27 +98,35 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	}
 
 	// Check if wave is complete and start next
-	if es.waveManager.IsWaveComplete() {
-		es.waveManager.CompleteWave()
-		if es.waveManager.HasMoreWaves() {
-			es.waveManager.StartNextWave()
-		} else {
-			// All waves complete, start boss spawn timer
-			if !es.bossSpawned {
-				es.bossSpawnTimer += deltaTime
-				if es.bossSpawnTimer >= BossSpawnDelay {
-					es.SpawnBoss(ctx)
-					es.bossSpawned = true
-				}
-			}
-		}
-	}
+	es.handleWaveCompletion(ctx, deltaTime)
 
 	// Update enemy movement (including boss)
 	es.updateEnemies()
 	es.UpdateBossMovement(deltaTime)
 
 	return nil
+}
+
+// handleWaveCompletion handles wave completion and boss spawning
+func (es *EnemySystem) handleWaveCompletion(ctx context.Context, deltaTime float64) {
+	if !es.waveManager.IsWaveComplete() {
+		return
+	}
+
+	es.waveManager.CompleteWave()
+	if es.waveManager.HasMoreWaves() {
+		es.waveManager.StartNextWave()
+		return
+	}
+
+	// All waves complete, start boss spawn timer
+	if !es.bossSpawned {
+		es.bossSpawnTimer += deltaTime
+		if es.bossSpawnTimer >= BossSpawnDelay {
+			es.SpawnBoss(ctx)
+			es.bossSpawned = true
+		}
+	}
 }
 
 // spawnWaveEnemy spawns a single enemy from the current wave
@@ -132,16 +140,19 @@ func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
 	spawnRadius := GetSpawnRadius(es.gameConfig)
 
 	// Calculate base angle for formation (random rotation)
-	baseAngle := rand.Float64() * 2 * stdmath.Pi //nolint:gosec
+	//nolint:gosec // Game logic randomness is acceptable
+	baseAngle := rand.Float64() * 2 * stdmath.Pi
 
 	// Get formation positions
-	formationData := CalculateFormation(
-		wave.Config.FormationType,
-		wave.Config.EnemyCount,
-		centerX, centerY,
-		baseAngle,
-		spawnRadius,
-	)
+	formationParams := FormationParams{
+		FormationType: wave.Config.FormationType,
+		EnemyCount:    wave.Config.EnemyCount,
+		CenterX:       centerX,
+		CenterY:       centerY,
+		BaseAngle:     baseAngle,
+		SpawnRadius:   spawnRadius,
+	}
+	formationData := CalculateFormation(formationParams)
 
 	// Spawn enemy at the appropriate position in formation
 	enemyIndex := wave.EnemiesSpawned
@@ -201,7 +212,7 @@ func (es *EnemySystem) spawnEnemyAt(
 }
 
 // setOutwardMovement sets simple outward movement
-func (es *EnemySystem) setOutwardMovement(entry *donburi.Entry, angle float64, speed float64) {
+func (es *EnemySystem) setOutwardMovement(entry *donburi.Entry, angle, speed float64) {
 	velocity := common.Point{
 		X: stdmath.Cos(angle) * speed,
 		Y: stdmath.Sin(angle) * speed,
@@ -214,7 +225,7 @@ func (es *EnemySystem) setOutwardMovement(entry *donburi.Entry, angle float64, s
 }
 
 // setSpiralMovement sets spiral movement pattern
-func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle float64, speed float64) {
+func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed float64) {
 	// For now, use outward movement with slight variation
 	// TODO: Implement actual spiral pattern with time-based angle change
 	velocity := common.Point{
@@ -273,7 +284,9 @@ func (es *EnemySystem) updateEnemies() {
 		centerX := float64(es.gameConfig.ScreenSize.Width) / 2
 		centerY := float64(es.gameConfig.ScreenSize.Height) / 2
 		distanceFromCenter := stdmath.Sqrt((pos.X-centerX)*(pos.X-centerX) + (pos.Y-centerY)*(pos.Y-centerY))
-		maxDistance := stdmath.Max(float64(es.gameConfig.ScreenSize.Width), float64(es.gameConfig.ScreenSize.Height)) * 0.8
+		screenWidth := float64(es.gameConfig.ScreenSize.Width)
+		screenHeight := float64(es.gameConfig.ScreenSize.Height)
+		maxDistance := stdmath.Max(screenWidth, screenHeight) * 0.8
 
 		if distanceFromCenter > maxDistance {
 			es.world.Remove(entry.Entity())
