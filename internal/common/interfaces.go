@@ -152,6 +152,12 @@ type RenderSystem interface {
 	DrawDebug(screen *ebiten.Image)
 }
 
+// HealthProvider provides access to player health information
+// This interface enables type-safe health system access across packages
+type HealthProvider interface {
+	GetPlayerHealth() (current, maximum int)
+}
+
 // Result represents a value that can either be a success or an error
 type Result[T any] struct {
 	value T

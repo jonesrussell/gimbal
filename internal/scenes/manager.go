@@ -55,8 +55,8 @@ type SceneManager struct {
 	config          *config.GameConfig
 	logger          common.Logger
 	inputHandler    common.GameInputHandler
-	onResume        func()      // Callback to unpause game state
-	healthSystem    interface{} // Health system interface for scenes to access
+	onResume        func()                // Callback to unpause game state
+	healthSystem    common.HealthProvider // Health system interface for scenes to access
 	font            text.Face
 	resourceMgr     *resources.ResourceManager
 	debugRenderer   *debug.DebugRenderer
@@ -219,12 +219,12 @@ func (sceneMgr *SceneManager) SetResumeCallback(callback func()) {
 }
 
 // SetHealthSystem sets the health system for scenes to access
-func (sceneMgr *SceneManager) SetHealthSystem(healthSystem interface{}) {
+func (sceneMgr *SceneManager) SetHealthSystem(healthSystem common.HealthProvider) {
 	sceneMgr.healthSystem = healthSystem
 }
 
 // GetHealthSystem returns the health system
-func (sceneMgr *SceneManager) GetHealthSystem() interface{} {
+func (sceneMgr *SceneManager) GetHealthSystem() common.HealthProvider {
 	return sceneMgr.healthSystem
 }
 

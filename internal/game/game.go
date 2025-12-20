@@ -30,6 +30,10 @@ type ECSGame struct {
 	inputHandler common.GameInputHandler
 	logger       common.Logger
 
+	// Context for game lifecycle
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	// Event system
 	eventSystem *events.EventSystem
 
@@ -82,7 +86,7 @@ func (g *ECSGame) updatePerformanceMonitoring() {
 // updateDebugLogging handles periodic debug logging
 func (g *ECSGame) updateDebugLogging() {
 	g.frameCount++
-	if g.frameCount%60 == 0 {
+	if g.frameCount%config.DebugLogInterval == 0 {
 		g.logger.Debug("Game loop running",
 			"frame", g.frameCount,
 			"scene", g.sceneManager.GetCurrentScene(),
@@ -134,7 +138,7 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 		return nil
 	}
 
-	deltaTime := 1.0 / 60.0 // Or use actual delta time
+	deltaTime := config.DeltaTime
 
 	// Handle shooting input
 	g.handleShootingInput()
@@ -234,7 +238,7 @@ func (g *ECSGame) updateSystemWithTiming(systemName string, updateFn func() erro
 		return err
 	}
 
-	if dur > 5*time.Millisecond {
+	if dur > config.SlowSystemThreshold {
 		g.logger.Warn("Slow system update", "system", systemName, "duration", dur)
 	}
 
@@ -278,7 +282,11 @@ func (g *ECSGame) Update() error {
 		return err
 	}
 
-	ctx := context.Background()
+	// Use the game's context for proper lifecycle management
+	ctx := g.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if err := g.updateGameplaySystems(ctx); err != nil {
 		return err
 	}
@@ -314,6 +322,11 @@ func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 // Cleanup cleans up resources
 func (g *ECSGame) Cleanup(ctx context.Context) {
 	g.logger.Debug("Cleaning up ECS game")
+
+	// Cancel the game context to signal shutdown to all systems
+	if g.cancel != nil {
+		g.cancel()
+	}
 
 	// Clean up resources
 	if g.resourceManager != nil {
