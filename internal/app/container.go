@@ -136,16 +136,12 @@ func (c *Container) GetLogger() common.Logger {
 	return c.logger
 }
 
-// GetInputHandler removed - dead code
-
 // GetGame returns the ECS game instance
 func (c *Container) GetGame() *gamepkg.ECSGame {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.game
 }
-
-// IsInitialized removed - dead code
 
 // Shutdown gracefully shuts down all dependencies
 func (c *Container) Shutdown(ctx context.Context) error {
@@ -178,4 +174,3 @@ func (c *Container) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// SetInputHandler removed - dead code

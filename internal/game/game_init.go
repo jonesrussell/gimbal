@@ -199,11 +199,17 @@ func NewECSGame(
 
 	// Create ECS world
 	world := donburi.NewWorld()
+
+	// Create game context for lifecycle management
+	gameCtx, cancel := context.WithCancel(ctx)
+
 	game := &ECSGame{
 		world:        world,
 		config:       gameConfig,
 		inputHandler: inputHandler,
 		logger:       logger,
+		ctx:          gameCtx,
+		cancel:       cancel,
 	}
 
 	if err := game.initializeSystems(ctx); err != nil {
