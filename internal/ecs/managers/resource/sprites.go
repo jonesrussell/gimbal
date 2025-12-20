@@ -31,7 +31,7 @@ func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*
 	return rm.loadAndCacheSprite(ctx, name, path)
 }
 
-// checkContext verifies context is not cancelled
+// checkContext verifies context is not canceled
 func (rm *ResourceManager) checkContext(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
@@ -116,20 +116,6 @@ func (rm *ResourceManager) cacheSprite(name string, sprite *ebiten.Image) {
 		Name: name,
 		Type: ResourceSprite,
 		Data: sprite,
-	}
-}
-
-// debugListEmbeddedFiles lists embedded files for debugging (optional helper)
-func (rm *ResourceManager) debugListEmbeddedFiles() {
-	files, err := assets.Assets.ReadDir("sprites")
-	if err != nil {
-		rm.logger.Error("[SPRITE_ERROR] Failed to list embedded files", "error", err)
-		return
-	}
-
-	rm.logger.Debug("[SPRITE_FILES] Embedded files found", "count", len(files))
-	for _, f := range files {
-		rm.logger.Debug("[SPRITE_FILES] Embedded file", "name", f.Name(), "is_dir", f.IsDir())
 	}
 }
 
