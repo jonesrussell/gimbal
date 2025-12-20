@@ -37,97 +37,95 @@ type FormationParams struct {
 
 // CalculateFormation calculates spawn positions and angles for a formation
 func CalculateFormation(params FormationParams) []FormationData {
-	formationType := params.FormationType
-	enemyCount := params.EnemyCount
-	centerX := params.CenterX
-	centerY := params.CenterY
-	baseAngle := params.BaseAngle
-	spawnRadius := params.SpawnRadius
-	positions := make([]FormationData, enemyCount)
-
-	switch formationType {
+	switch params.FormationType {
 	case FormationLine:
-		// Line formation: enemies spawn in a line, all move in same direction
-		lineLength := float64(enemyCount-1) * 20.0 // 20 pixels between enemies
-		startX := centerX - lineLength/2
-		startY := centerY
-
-		// Perpendicular angle for line orientation
-		lineAngle := baseAngle + stdmath.Pi/2
-
-		for i := 0; i < enemyCount; i++ {
-			offsetX := float64(i) * 20.0
-			posX := startX + offsetX*stdmath.Cos(lineAngle)
-			posY := startY + offsetX*stdmath.Sin(lineAngle)
-
-			positions[i] = FormationData{
-				Position: common.Point{X: posX, Y: posY},
-				Angle:    baseAngle, // All move in same direction
-			}
-		}
-
+		return calculateLineFormation(params)
 	case FormationCircle:
-		// Circle formation: enemies spawn evenly around a circle
-		angleStep := 2 * stdmath.Pi / float64(enemyCount)
-
-		for i := 0; i < enemyCount; i++ {
-			angle := float64(i)*angleStep + baseAngle
-			posX := centerX + stdmath.Cos(angle)*spawnRadius
-			posY := centerY + stdmath.Sin(angle)*spawnRadius
-
-			// Each enemy moves outward radially from center
-			positions[i] = FormationData{
-				Position: common.Point{X: posX, Y: posY},
-				Angle:    angle, // Move outward in their spawn direction
-			}
-		}
-
+		return calculateCircleFormation(params)
 	case FormationV:
-		// V-formation: enemies spawn in a V shape
-		midPoint := enemyCount / 2
-		vAngle := stdmath.Pi / 6 // 30 degrees for V spread
-		vSpacing := 25.0
-
-		for i := 0; i < enemyCount; i++ {
-			var offsetX, offsetY float64
-
-			if i < midPoint {
-				// Left side of V
-				sideAngle := baseAngle - vAngle
-				offsetX = float64(midPoint-i) * vSpacing * stdmath.Cos(sideAngle)
-				offsetY = float64(midPoint-i) * vSpacing * stdmath.Sin(sideAngle)
-			} else if i > midPoint {
-				// Right side of V
-				sideAngle := baseAngle + vAngle
-				offsetX = float64(i-midPoint) * vSpacing * stdmath.Cos(sideAngle)
-				offsetY = float64(i-midPoint) * vSpacing * stdmath.Sin(sideAngle)
-			} else {
-				// Center point
-				offsetX = 0
-				offsetY = 0
-			}
-
-			posX := centerX + offsetX
-			posY := centerY + offsetY
-
-			// All move in base direction, maintaining V shape
-			positions[i] = FormationData{
-				Position: common.Point{X: posX, Y: posY},
-				Angle:    baseAngle,
-			}
-		}
-
+		return calculateVFormation(params)
 	default:
 		// Default to circle if unknown
-		circleParams := FormationParams{
-			FormationType: FormationCircle,
-			EnemyCount:    enemyCount,
-			CenterX:       centerX,
-			CenterY:       centerY,
-			BaseAngle:     baseAngle,
-			SpawnRadius:   spawnRadius,
+		params.FormationType = FormationCircle
+		return calculateCircleFormation(params)
+	}
+}
+
+// calculateLineFormation calculates positions for a line formation
+func calculateLineFormation(params FormationParams) []FormationData {
+	positions := make([]FormationData, params.EnemyCount)
+	lineLength := float64(params.EnemyCount-1) * 20.0 // 20 pixels between enemies
+	startX := params.CenterX - lineLength/2
+	startY := params.CenterY
+
+	// Perpendicular angle for line orientation
+	lineAngle := params.BaseAngle + stdmath.Pi/2
+
+	for i := 0; i < params.EnemyCount; i++ {
+		offsetX := float64(i) * 20.0
+		posX := startX + offsetX*stdmath.Cos(lineAngle)
+		posY := startY + offsetX*stdmath.Sin(lineAngle)
+
+		positions[i] = FormationData{
+			Position: common.Point{X: posX, Y: posY},
+			Angle:    params.BaseAngle, // All move in same direction
 		}
-		return CalculateFormation(circleParams)
+	}
+
+	return positions
+}
+
+// calculateCircleFormation calculates positions for a circle formation
+func calculateCircleFormation(params FormationParams) []FormationData {
+	positions := make([]FormationData, params.EnemyCount)
+	angleStep := 2 * stdmath.Pi / float64(params.EnemyCount)
+
+	for i := 0; i < params.EnemyCount; i++ {
+		angle := float64(i)*angleStep + params.BaseAngle
+		posX := params.CenterX + stdmath.Cos(angle)*params.SpawnRadius
+		posY := params.CenterY + stdmath.Sin(angle)*params.SpawnRadius
+
+		// Each enemy moves outward radially from center
+		positions[i] = FormationData{
+			Position: common.Point{X: posX, Y: posY},
+			Angle:    angle, // Move outward in their spawn direction
+		}
+	}
+
+	return positions
+}
+
+// calculateVFormation calculates positions for a V-formation
+func calculateVFormation(params FormationParams) []FormationData {
+	positions := make([]FormationData, params.EnemyCount)
+	midPoint := params.EnemyCount / 2
+	vAngle := stdmath.Pi / 6 // 30 degrees for V spread
+	vSpacing := 25.0
+
+	for i := 0; i < params.EnemyCount; i++ {
+		var offsetX, offsetY float64
+
+		if i < midPoint {
+			// Left side of V
+			sideAngle := params.BaseAngle - vAngle
+			offsetX = float64(midPoint-i) * vSpacing * stdmath.Cos(sideAngle)
+			offsetY = float64(midPoint-i) * vSpacing * stdmath.Sin(sideAngle)
+		} else if i > midPoint {
+			// Right side of V
+			sideAngle := params.BaseAngle + vAngle
+			offsetX = float64(i-midPoint) * vSpacing * stdmath.Cos(sideAngle)
+			offsetY = float64(i-midPoint) * vSpacing * stdmath.Sin(sideAngle)
+		}
+		// else: center point (offsetX, offsetY remain 0)
+
+		posX := params.CenterX + offsetX
+		posY := params.CenterY + offsetY
+
+		// All move in base direction, maintaining V shape
+		positions[i] = FormationData{
+			Position: common.Point{X: posX, Y: posY},
+			Angle:    params.BaseAngle,
+		}
 	}
 
 	return positions
