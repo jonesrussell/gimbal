@@ -240,7 +240,9 @@ func (g *ECSGame) handleShootingInput() {
 		if g.weaponSystem.FireWeapon(weaponsys.WeaponTypePrimary, *pos, orbital.FacingAngle) {
 			g.logger.Debug("Weapon fired", "position", pos, "angle", orbital.FacingAngle)
 		} else {
-			g.logger.Debug("Weapon fire blocked by timing", "fire_timer", g.weaponSystem.GetFireTimer(), "fire_interval", g.weaponSystem.GetFireInterval())
+			g.logger.Debug("Weapon fire blocked by timing",
+				"fire_timer", g.weaponSystem.GetFireTimer(),
+				"fire_interval", g.weaponSystem.GetFireInterval())
 		}
 	}
 }
