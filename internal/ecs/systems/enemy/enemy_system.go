@@ -486,3 +486,8 @@ func (es *EnemySystem) IsBossActive() bool {
 func (es *EnemySystem) WasBossSpawned() bool {
 	return es.bossSpawned
 }
+
+// GetWaveManager returns the wave manager
+func (es *EnemySystem) GetWaveManager() *WaveManager {
+	return es.waveManager
+}
