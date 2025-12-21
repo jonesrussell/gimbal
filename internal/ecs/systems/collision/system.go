@@ -56,8 +56,13 @@ func (cs *CollisionSystem) Update(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, config.CollisionTimeout)
 	defer cancel()
 
-	// Check projectile-enemy collisions
+	// Check projectile-enemy collisions (player shots hitting enemies)
 	if err := cs.checkProjectileEnemyCollisions(ctx); err != nil {
+		return err
+	}
+
+	// Check enemy projectile-player collisions (enemy shots hitting player)
+	if err := cs.checkEnemyProjectilePlayerCollisions(ctx); err != nil {
 		return err
 	}
 

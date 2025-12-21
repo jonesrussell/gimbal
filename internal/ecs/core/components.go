@@ -22,8 +22,10 @@ var (
 	StarTag = donburi.NewTag()
 	// EnemyTag marks an entity as an enemy
 	EnemyTag = donburi.NewTag()
-	// ProjectileTag marks an entity as a projectile
+	// ProjectileTag marks an entity as a player projectile
 	ProjectileTag = donburi.NewTag()
+	// EnemyProjectileTag marks an entity as an enemy projectile
+	EnemyProjectileTag = donburi.NewTag()
 )
 
 // Components
