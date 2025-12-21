@@ -83,8 +83,10 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	// Update wave manager
 	es.waveManager.Update(deltaTime)
 
-	// Check if we need to start a new wave
-	if es.waveManager.GetCurrentWave() == nil && es.waveManager.HasMoreWaves() {
+	// Check if we need to start a new wave (but not if we're waiting for inter-wave delay)
+	if es.waveManager.GetCurrentWave() == nil &&
+		es.waveManager.HasMoreWaves() &&
+		!es.waveManager.IsWaiting() {
 		es.waveManager.StartNextWave()
 	}
 
@@ -214,7 +216,12 @@ func (es *EnemySystem) spawnEnemyAt(
 		es.setOutwardMovement(entry, angle, enemyData.Speed, enemyData.MovementPattern)
 	}
 
-	es.logger.Debug("Enemy spawned", "type", enemyType, "position", position, "angle", angle)
+	es.logger.Debug("Enemy spawned",
+		"type", enemyType.String(),
+		"sprite", enemyData.SpriteName,
+		"health", enemyData.Health,
+		"position", position,
+		"angle", angle)
 }
 
 // setOutwardMovement sets simple outward movement with optional pattern
@@ -261,13 +268,18 @@ func (es *EnemySystem) getEnemySprite(
 ) *ebiten.Image {
 	// Check cache
 	if sprite, ok := es.enemySprites[enemyType]; ok {
+		es.logger.Debug("[ENEMY_SPRITE] Using cached sprite",
+			"type", enemyType.String(),
+			"sprite_name", enemyData.SpriteName)
 		return sprite
 	}
 
 	// Try to load sprite (full size, will be scaled during rendering)
 	sprite, exists := es.resourceMgr.GetSprite(ctx, enemyData.SpriteName)
 	if !exists {
-		es.logger.Warn("Enemy sprite not found, using placeholder", "type", enemyType, "sprite", enemyData.SpriteName)
+		es.logger.Warn("Enemy sprite not found, using placeholder",
+			"type", enemyType.String(),
+			"sprite", enemyData.SpriteName)
 		// Create placeholder with different colors
 		sprite = ebiten.NewImage(enemyData.Size, enemyData.Size)
 		switch enemyType {
@@ -278,6 +290,10 @@ func (es *EnemySystem) getEnemySprite(
 		default:
 			sprite.Fill(color.RGBA{255, 0, 0, 255}) // Red
 		}
+	} else {
+		es.logger.Debug("[ENEMY_SPRITE] Loaded sprite from resource manager",
+			"type", enemyType.String(),
+			"sprite_name", enemyData.SpriteName)
 	}
 
 	// Cache sprite
