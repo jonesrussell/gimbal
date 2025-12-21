@@ -2,10 +2,8 @@ package managers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/errors"
 )
@@ -13,54 +11,39 @@ import (
 // LoadPlayerConfig loads player configuration from embedded assets
 // Returns an error if the file is missing or invalid (no fallback)
 func LoadPlayerConfig(ctx context.Context, logger common.Logger) (*PlayerConfig, error) {
-	// Check for cancellation
-	if err := common.CheckContextCancellation(ctx); err != nil {
-		return nil, err
+	// Validation function for player config
+	validator := func(config PlayerConfig) error {
+		if config.Health <= 0 {
+			return errors.NewGameError(
+				errors.AssetInvalid,
+				fmt.Sprintf("invalid player health: %d (must be > 0)", config.Health),
+			)
+		}
+		if config.Size <= 0 {
+			return errors.NewGameError(
+				errors.AssetInvalid,
+				fmt.Sprintf("invalid player size: %d (must be > 0)", config.Size),
+			)
+		}
+		if config.SpriteName == "" {
+			return errors.NewGameError(
+				errors.AssetInvalid,
+				"player sprite_name is required",
+			)
+		}
+		if config.InvincibilityDuration <= 0 {
+			return errors.NewGameError(
+				errors.AssetInvalid,
+				fmt.Sprintf("invalid invincibility_duration: %f (must be > 0)", config.InvincibilityDuration),
+			)
+		}
+		return nil
 	}
 
-	// Load from embedded assets
-	data, err := assets.Assets.ReadFile("entities/player.json")
+	// Load and validate using generic loader
+	config, err := common.LoadAndValidateJSON(ctx, "entities/player.json", validator)
 	if err != nil {
-		return nil, errors.NewGameErrorWithCause(
-			errors.AssetNotFound,
-			"failed to read player.json from embedded assets",
-			err,
-		)
-	}
-
-	var config PlayerConfig
-	if unmarshalErr := json.Unmarshal(data, &config); unmarshalErr != nil {
-		return nil, errors.NewGameErrorWithCause(
-			errors.AssetInvalid,
-			"failed to parse player.json",
-			unmarshalErr,
-		)
-	}
-
-	// Validate required fields
-	if config.Health <= 0 {
-		return nil, errors.NewGameError(
-			errors.AssetInvalid,
-			fmt.Sprintf("invalid player health: %d (must be > 0)", config.Health),
-		)
-	}
-	if config.Size <= 0 {
-		return nil, errors.NewGameError(
-			errors.AssetInvalid,
-			fmt.Sprintf("invalid player size: %d (must be > 0)", config.Size),
-		)
-	}
-	if config.SpriteName == "" {
-		return nil, errors.NewGameError(
-			errors.AssetInvalid,
-			"player sprite_name is required",
-		)
-	}
-	if config.InvincibilityDuration <= 0 {
-		return nil, errors.NewGameError(
-			errors.AssetInvalid,
-			fmt.Sprintf("invalid invincibility_duration: %f (must be > 0)", config.InvincibilityDuration),
-		)
+		return nil, err
 	}
 
 	if logger != nil {
@@ -73,45 +56,28 @@ func LoadPlayerConfig(ctx context.Context, logger common.Logger) (*PlayerConfig,
 // LoadEnemyConfigs loads all enemy type configurations from embedded assets
 // Returns an error if the file is missing or invalid (no fallback)
 func LoadEnemyConfigs(ctx context.Context, logger common.Logger) (*EnemyConfigs, error) {
-	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
-	// Load from embedded assets
-	data, err := assets.Assets.ReadFile("entities/enemies.json")
-	if err != nil {
-		return nil, errors.NewGameErrorWithCause(
-			errors.AssetNotFound,
-			"failed to read enemies.json from embedded assets",
-			err,
-		)
-	}
-
-	var configs EnemyConfigs
-	if unmarshalErr := json.Unmarshal(data, &configs); unmarshalErr != nil {
-		return nil, errors.NewGameErrorWithCause(
-			errors.AssetInvalid,
-			"failed to parse enemies.json",
-			unmarshalErr,
-		)
-	}
-
-	// Validate required fields
-	if len(configs.EnemyTypes) == 0 {
-		return nil, errors.NewGameError(
-			errors.AssetInvalid,
-			"enemies.json must contain at least one enemy type",
-		)
-	}
-
-	// Validate each enemy type
-	for i := range configs.EnemyTypes {
-		if validateErr := validateEnemyType(&configs.EnemyTypes[i], i); validateErr != nil {
-			return nil, validateErr
+	// Validation function for enemy configs
+	validator := func(configs EnemyConfigs) error {
+		if len(configs.EnemyTypes) == 0 {
+			return errors.NewGameError(
+				errors.AssetInvalid,
+				"enemies.json must contain at least one enemy type",
+			)
 		}
+
+		// Validate each enemy type
+		for i := range configs.EnemyTypes {
+			if validateErr := validateEnemyType(&configs.EnemyTypes[i], i); validateErr != nil {
+				return validateErr
+			}
+		}
+		return nil
+	}
+
+	// Load and validate using generic loader
+	configs, err := common.LoadAndValidateJSON(ctx, "entities/enemies.json", validator)
+	if err != nil {
+		return nil, err
 	}
 
 	if logger != nil {
