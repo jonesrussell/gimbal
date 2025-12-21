@@ -1,7 +1,6 @@
 package game
 
 import (
-	"context"
 	"fmt"
 	"image/color"
 
@@ -124,17 +123,13 @@ func (g *ECSGame) drawActiveWaveDebugInfo(
 		g.drawDebugText(screen, "Status: Active", x, y)
 	}
 	y += lineHeight
-	g.drawDebugText(screen, fmt.Sprintf("Timer: %.1fs", currentWave.WaveTimer), x, y)
+	g.drawDebugText(screen, fmt.Sprintf("Timer: %.1fs", currentWave.WaveTimer.Seconds()), x, y)
 }
 
 // drawDebugText draws text with a semi-transparent background
 func (g *ECSGame) drawDebugText(screen *ebiten.Image, text string, x, y float64) {
-	ctx := g.ctx
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	fontFace, err := g.resourceManager.GetDefaultFont(ctx)
+	// Context is always initialized in NewECSGame, so no nil check needed
+	fontFace, err := g.resourceManager.GetDefaultFont(g.ctx)
 	if err != nil {
 		return
 	}

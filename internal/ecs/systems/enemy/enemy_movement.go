@@ -1,6 +1,8 @@
 package enemy
 
 import (
+	"time"
+
 	stdmath "math"
 
 	"github.com/yohamta/donburi"
@@ -22,8 +24,8 @@ func (es *EnemySystem) updateEnemies(deltaTime float64) {
 		pos := core.Position.Get(entry)
 		mov := core.Movement.Get(entry)
 
-		// Update pattern time
-		mov.PatternTime += deltaTime
+		// Update pattern time (convert deltaTime from seconds to time.Duration)
+		mov.PatternTime += time.Duration(deltaTime * float64(time.Second))
 
 		// Apply movement pattern
 		velocity := es.applyMovementPattern(*mov)
@@ -54,7 +56,6 @@ func (es *EnemySystem) updateEnemies(deltaTime float64) {
 // applyMovementPattern applies the movement pattern to calculate velocity
 func (es *EnemySystem) applyMovementPattern(mov core.MovementData) common.Point {
 	pattern := MovementPattern(mov.Pattern)
-
 	switch pattern {
 	case MovementPatternZigzag:
 		return es.calculateZigzagVelocity(mov)
@@ -78,7 +79,9 @@ func (es *EnemySystem) calculateZigzagVelocity(mov core.MovementData) common.Poi
 	perpendicularAngle := mov.BaseAngle + stdmath.Pi/2
 
 	// Oscillate perpendicular to movement direction
-	oscillation := stdmath.Sin(mov.PatternTime*zigzagFreq*2*stdmath.Pi) * zigzagAmplitude
+	// Convert PatternTime from time.Duration to seconds for calculation
+	patternTimeSeconds := mov.PatternTime.Seconds()
+	oscillation := stdmath.Sin(patternTimeSeconds*zigzagFreq*2*stdmath.Pi) * zigzagAmplitude
 
 	// Base velocity
 	baseVelX := stdmath.Cos(mov.BaseAngle) * mov.BaseSpeed
@@ -98,7 +101,9 @@ func (es *EnemySystem) calculateZigzagVelocity(mov core.MovementData) common.Poi
 func (es *EnemySystem) calculateAcceleratingVelocity(mov core.MovementData) common.Point {
 	// Acceleration factor (0 to 1, where 1 is max speed)
 	accelTime := 2.0 // seconds to reach max speed
-	accelFactor := stdmath.Min(1.0, mov.PatternTime/accelTime)
+	// Convert PatternTime from time.Duration to seconds for calculation
+	patternTimeSeconds := mov.PatternTime.Seconds()
+	accelFactor := stdmath.Min(1.0, patternTimeSeconds/accelTime)
 
 	// Start at 30% speed, accelerate to 100%
 	speedMultiplier := 0.3 + (accelFactor * 0.7)
@@ -114,7 +119,9 @@ func (es *EnemySystem) calculateAcceleratingVelocity(mov core.MovementData) comm
 func (es *EnemySystem) calculatePulsingVelocity(mov core.MovementData) common.Point {
 	// Pulse frequency (how often it pulses)
 	pulseFreq := 2.0 // pulses per second
-	pulsePhase := mov.PatternTime * pulseFreq * 2 * stdmath.Pi
+	// Convert PatternTime from time.Duration to seconds for calculation
+	patternTimeSeconds := mov.PatternTime.Seconds()
+	pulsePhase := patternTimeSeconds * pulseFreq * 2 * stdmath.Pi
 
 	// Use sine wave to create smooth pulsing (0.5 to 1.0 speed multiplier)
 	speedMultiplier := 0.5 + 0.5*stdmath.Sin(pulsePhase)

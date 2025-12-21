@@ -59,7 +59,7 @@ func CreatePlayer(
 		Maximum:               playerConfig.Health,
 		InvincibilityTime:     0,
 		IsInvincible:          false,
-		InvincibilityDuration: playerConfig.InvincibilityDuration,
+		InvincibilityDuration: playerConfig.GetInvincibilityDuration(),
 	}
 	Health.SetValue(entry, healthData)
 

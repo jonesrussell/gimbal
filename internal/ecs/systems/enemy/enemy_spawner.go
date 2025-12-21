@@ -121,7 +121,7 @@ func (es *EnemySystem) setOutwardMovement(entry *donburi.Entry, angle, speed flo
 	core.Movement.SetValue(entry, core.MovementData{
 		Velocity:    velocity,
 		MaxSpeed:    speed,
-		Pattern:     int(pattern),
+		Pattern:     core.MovementPattern(pattern),
 		PatternTime: 0,
 		BaseAngle:   angle,
 		BaseSpeed:   speed,
@@ -140,7 +140,7 @@ func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed 
 	core.Movement.SetValue(entry, core.MovementData{
 		Velocity:    velocity,
 		MaxSpeed:    speed,
-		Pattern:     int(pattern),
+		Pattern:     core.MovementPattern(pattern),
 		PatternTime: 0,
 		BaseAngle:   baseAngle,
 		BaseSpeed:   speed,

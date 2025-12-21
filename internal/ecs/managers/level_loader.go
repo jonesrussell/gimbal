@@ -75,8 +75,56 @@ func loadLevelFromFile(filePath string, logger common.Logger) (LevelConfig, erro
 		level.Difficulty = DefaultDifficultySettings()
 	}
 
+	// Validate enum values in waves
+	for i := range level.Waves {
+		if err := validateWaveConfig(&level.Waves[i], i); err != nil {
+			return level, fmt.Errorf("wave %d: %w", i, err)
+		}
+	}
+
+	// Validate boss config if enabled
+	if level.Boss.Enabled {
+		if err := validateBossConfig(&level.Boss); err != nil {
+			return level, fmt.Errorf("boss config: %w", err)
+		}
+	}
+
 	return level, nil
 }
+
+// validateWaveConfig validates enum values in a wave config
+func validateWaveConfig(wave *WaveConfig, index int) error {
+	// Validate FormationType (0-6)
+	if wave.FormationType < 0 || wave.FormationType > 6 {
+		return fmt.Errorf("invalid formation_type: %d (must be 0-6)", wave.FormationType)
+	}
+
+	// Validate EnemyTypes
+	for j, et := range wave.EnemyTypes {
+		if et < 0 || et > 2 {
+			return fmt.Errorf("invalid enemy_type at index %d: %d (must be 0-2)", j, et)
+		}
+	}
+
+	// Validate MovementPattern (0-3)
+	if wave.MovementPattern < 0 || wave.MovementPattern > 3 {
+		return fmt.Errorf("invalid movement_pattern: %d (must be 0-3)", wave.MovementPattern)
+	}
+
+	return nil
+}
+
+// validateBossConfig validates enum values in boss config
+func validateBossConfig(boss *BossConfig) error {
+	// Validate EnemyType (should be 2 for Boss)
+	if boss.EnemyType < 0 || boss.EnemyType > 2 {
+		return fmt.Errorf("invalid enemy_type: %d (must be 0-2)", boss.EnemyType)
+	}
+	return nil
+}
+
+// Note: Enum conversion functions are in game/game_level.go (convertWaveConfigs)
+// to avoid import cycles between managers and enemy packages
 
 // processLevelFiles processes directory entries and loads levels
 func processLevelFiles(entries []os.DirEntry, dirPath string, logger common.Logger) []LevelConfig {

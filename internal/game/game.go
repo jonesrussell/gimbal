@@ -89,11 +89,8 @@ func (g *ECSGame) Update() error {
 	}
 
 	// Use the game's context for proper lifecycle management
-	ctx := g.ctx
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if err := g.updateGameplaySystems(ctx); err != nil {
+	// Context is always initialized in NewECSGame, so no nil check needed
+	if err := g.updateGameplaySystems(g.ctx); err != nil {
 		return err
 	}
 

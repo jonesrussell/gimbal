@@ -16,6 +16,16 @@ import (
 
 var _ collision.HealthSystemInterface = (*HealthSystem)(nil)
 
+// EventSystemForHealth defines the interface for event system interactions needed by health system
+type EventSystemForHealth interface {
+	EmitGameOver()
+}
+
+// GameStateManagerForHealth defines the interface for game state manager interactions needed by health system
+type GameStateManagerForHealth interface {
+	SetGameOver(gameOver bool)
+}
+
 // HealthSystem manages player health, invincibility, and respawning
 // Restore original fields: world, gameConfig, eventSystem, gameStateManager, logger, lastUpdate
 // Remove registry/context fields and methods
@@ -23,8 +33,8 @@ var _ collision.HealthSystemInterface = (*HealthSystem)(nil)
 type HealthSystem struct {
 	world            donburi.World
 	config           *config.GameConfig
-	eventSystem      interface{}
-	gameStateManager interface{}
+	eventSystem      EventSystemForHealth
+	gameStateManager GameStateManagerForHealth
 	logger           common.Logger
 	lastUpdate       time.Time
 }
@@ -33,8 +43,8 @@ type HealthSystem struct {
 func NewHealthSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	eventSystem interface{},
-	gameStateManager interface{},
+	eventSystem EventSystemForHealth,
+	gameStateManager GameStateManagerForHealth,
 	logger common.Logger,
 ) *HealthSystem {
 	return &HealthSystem{
@@ -55,7 +65,7 @@ func (hs *HealthSystem) Update(ctx context.Context) error {
 	}
 
 	now := time.Now()
-	deltaTime := now.Sub(hs.lastUpdate).Seconds()
+	deltaTime := now.Sub(hs.lastUpdate)
 	hs.lastUpdate = now
 
 	// Update invincibility timers for all entities with health
