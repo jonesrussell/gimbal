@@ -102,4 +102,3 @@ func (g *ECSGame) updateSystemWithTiming(systemName string, updateFn func() erro
 
 	return nil
 }
-

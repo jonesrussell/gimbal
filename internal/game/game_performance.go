@@ -45,4 +45,3 @@ func (g *ECSGame) endPerformanceMonitoring() {
 		g.perfMonitor.EndFrame()
 	}
 }
-

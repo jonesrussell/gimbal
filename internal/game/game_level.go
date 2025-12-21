@@ -96,4 +96,3 @@ func (g *ECSGame) handleLevelComplete() {
 
 	// TODO: Add level complete event/UI notification
 }
-
