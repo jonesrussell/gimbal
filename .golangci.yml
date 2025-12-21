@@ -1,49 +1,49 @@
-# golangci-lint v2 configuration for Go 1.24+ (2025) - Streamlined for Fyne Desktop App
+# golangci-lint v2 configuration for Go 1.25+ (2025) - Streamlined for Fyne Desktop App
 version: "2"
 
 run:
-  go: "1.24"
+  go: "1.25"
   modules-download-mode: readonly
   allow-parallel-runners: true
 
 linters:
   enable:
-  # Existing linters
-  - bodyclose
-  - contextcheck
-  - dupl  # Added: Useful for detecting duplicate UI patterns
-  - errorlint
-  - forcetypeassert
-  - funlen
-  - gocognit
-  - goconst
-  - gocritic
-  - gocyclo
-  - goheader
-  - goprintffuncname
-  - gosec  # Enabled: Security linter with relaxed settings for desktop apps
-  - lll
-  - misspell
-  - nakedret
-  - nestif
-  - nilerr
-  - nolintlint
-  - prealloc
-  - predeclared
-  - rowserrcheck
-  - sqlclosecheck
-  # - tagliatelle  # Tag casing linter is optional for this project
-  - testifylint
-  - testpackage
-  - thelper
-  - unconvert
-  # - unparam  # Disabled: Too strict for internal desktop app code
-  - whitespace
-  - wrapcheck
-  # ADD THESE for file/function size management:
-  - maintidx      # Maintainability index - flags overly complex files
-  - cyclop        # Cyclomatic complexity per package/file
-  - revive        # Configurable replacement for golint
+    # Existing linters
+    - bodyclose
+    - contextcheck
+    - dupl # Added: Useful for detecting duplicate UI patterns
+    - errorlint
+    - forcetypeassert
+    - funlen
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - goheader
+    - goprintffuncname
+    - gosec # Enabled: Security linter with relaxed settings for desktop apps
+    - lll
+    - misspell
+    - nakedret
+    - nestif
+    - nilerr
+    - nolintlint
+    - prealloc
+    - predeclared
+    - rowserrcheck
+    - sqlclosecheck
+    # - tagliatelle  # Tag casing linter is optional for this project
+    - testifylint
+    - testpackage
+    - thelper
+    - unconvert
+    # - unparam  # Disabled: Too strict for internal desktop app code
+    - whitespace
+    - wrapcheck
+    # ADD THESE for file/function size management:
+    - maintidx # Maintainability index - flags overly complex files
+    - cyclop # Cyclomatic complexity per package/file
+    - revive # Configurable replacement for golint
 
   settings:
     errcheck:
@@ -61,13 +61,13 @@ linters:
 
     gocritic:
       disabled-checks:
-      - ifElseChain
-      - singleCaseSwitch
+        - ifElseChain
+        - singleCaseSwitch
       enabled-tags:
-      - diagnostic
-      - style
-      - performance
-      - experimental
+        - diagnostic
+        - style
+        - performance
+        - experimental
       settings:
         captLocal:
           paramsOnly: true
@@ -86,41 +86,36 @@ linters:
 
     # RESTORE: Strict limits for better code quality
     gocyclo:
-      min-complexity: 15  # Restore to stricter limit
-
-    funlen:
-      max-func-lines: 50  # Restore to stricter limit
-      max-statements: 40  # Max statements per function
+      min-complexity: 15 # Restore to stricter limit
 
     # ADD: File-level complexity limits
     maintidx:
-      under: 20  # Maintainability index threshold (lower = more complex)
-      
-    cyclop:
-      max-complexity: 15     # Per function
-      package-average: 10    # Average across package
-      skip-tests: true
+      under: 20 # Maintainability index threshold (lower = more complex)
 
-    # ADD: Function parameter limits  
+    cyclop:
+      max-complexity: 15 # Per function
+      package-average: 10 # Average across package
+
+    # ADD: Function parameter limits
     revive:
       rules:
         - name: function-length
-          arguments: [50, 0]  # Max 50 statements per function
+          arguments: [50, 0] # Max 50 statements per function
         - name: argument-limit
-          arguments: [5]      # Max 5 parameters per function
+          arguments: [5] # Max 5 parameters per function
         - name: cognitive-complexity
-          arguments: [15]     # Cognitive complexity limit
+          arguments: [15] # Cognitive complexity limit
         - name: line-length-limit
-          arguments: [120]    # Max line length
+          arguments: [120] # Max line length
 
     gosec:
-      severity: low  # Relaxed: Desktop apps have different security concerns
+      severity: low # Relaxed: Desktop apps have different security concerns
       confidence: low
       # NOTE: gosec is advisory for desktop apps; not all warnings are blockers
 
     govet:
       disable:
-      - fieldalignment # Can be too strict for Fx dependency structs
+        - fieldalignment # Can be too strict for Fx dependency structs
       enable-all: true
       settings:
         shadow:
@@ -137,15 +132,15 @@ linters:
       max-func-lines: 30
 
     nestif:
-      min-complexity: 6  # Increased: UI conditional logic often requires nesting
+      min-complexity: 6 # Increased: UI conditional logic often requires nesting
 
     nilnil:
       checked-types:
-      - ptr
-      - func
-      - iface
-      - map
-      - chan
+        - ptr
+        - func
+        - iface
+        - map
+        - chan
 
     nolintlint:
       require-explanation: true
@@ -162,11 +157,11 @@ linters:
 
     reassign:
       patterns:
-      - '.*'
+        - ".*"
 
     staticcheck:
       checks:
-      - all
+        - all
 
     # unparam settings removed since linter is disabled
 
@@ -178,161 +173,161 @@ linters:
 
     wrapcheck:
       ignore-sigs:
-      - .Errorf(
-      - errors.New(
-      - errors.Unwrap(
-      - .Wrap(
-      - .Wrapf(
-      - response.Success(
-      - response.ErrorResponse(
-      - .JSON(
-      - .BuildErrorResponse(
-      - .AJAXError(
-      - .HTMLFormError(
-      - .Redirect(
+        - .Errorf(
+        - errors.New(
+        - errors.Unwrap(
+        - .Wrap(
+        - .Wrapf(
+        - response.Success(
+        - response.ErrorResponse(
+        - .JSON(
+        - .BuildErrorResponse(
+        - .AJAXError(
+        - .HTMLFormError(
+        - .Redirect(
 
   exclusions:
     generated: lax
     presets:
-    - comments
-    - common-false-positives
-    - legacy
-    - std-error-handling
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     paths:
-    - third_party$
-    - builtin$
-    - examples$
-    - test/integration/
-    - test/mocks/
+      - third_party$
+      - builtin$
+      - examples$
+      - test/integration/
+      - test/mocks/
     rules:
-    # Exclude complexity/length linters for Fyne UI and main app files
-    - path: internal/ui/.*\.go
-      linters:
-      - funlen
-      - gocyclo
-      - gocognit
-      - cyclop
-      - maintidx
-    - path: main\.go
-      linters:
-      - funlen
-      - gocyclo
-      - gocognit
-      - cyclop
-      - maintidx
-    # Exclude wrapcheck and errorlint for UI/event code
-    - path: internal/ui/.*\.go
-      linters:
-      - wrapcheck
-      - errorlint
-    - path: main\.go
-      linters:
-      - wrapcheck
-      - errorlint
-    # Exclude wrapcheck for internal packages (not exposed as library)
-    - path: internal/.*\.go
-      linters:
-      - wrapcheck
-      - errorlint
-    # Exclude funlen for test files (tests can be longer)
-    - path: _test\.go
-      linters:
-      - funlen
-      - gocyclo
-      - cyclop
-      - maintidx
-      - gocognit
-    # Exclude wrapcheck for test files (tests often don't need error wrapping)
-    - path: _test\.go
-      linters:
-      - wrapcheck
-      - errorlint
-    # Exclude certain rules for generated code
-    - path: _templ\.go
-      linters:
-      - gocritic
-      - nolintlint
-      - exhaustruct
-      - varnamelen
-      - wsl
-    # Exclude wire.go (dependency injection generated code)
-    - path: wire\.go
-      linters:
-      - funlen
-      - gocyclo
-      - gocognit
-      - cyclop
-      - maintidx
-      - wrapcheck
-      - errorlint
-      - gocritic
-      - nolintlint
-      - varnamelen
-      - exhaustruct
-      - wsl
-    # Exclude generated wire code
-    - path: wire_gen\.go
-      linters:
-      - funlen
-      - gocyclo
-      - gocognit
-      - cyclop
-      - maintidx
-      - wrapcheck
-      - errorlint
-      - gocritic
-      - nolintlint
-      - varnamelen
-      - exhaustruct
-      - wsl
-    # Exclude mock files
-    - path: mocks\.go
-      linters:
-      - funlen
-      - gocyclo
-      - gocognit
-      - cyclop
-      - maintidx
-      - wrapcheck
-      - errorlint
-      - gocritic
-      - nolintlint
-      - varnamelen
-      - exhaustruct
-      - wsl
-    # Exclude some rules for integration tests
-    - path: test/integration/
-      linters:
-      - funlen
-      - wrapcheck
-      - gocritic
-      - gocyclo
-      - cyclop
-      - maintidx
-    # Exclude some rules for mock files
-    - path: test/mocks/
-      linters:
-      - funlen
-      - wrapcheck
-      - gocritic
-      - nolintlint
-      - varnamelen
-      - exhaustruct
-    # ADD: File size exclusions for specific cases
-    - path: internal/ecs/game\.go
-      linters: [maintidx, cyclop, funlen]  # TEMPORARY during refactor
-    - path: .*_generated\.go
-      linters: [maintidx, cyclop, funlen, revive]
-    - path: .*\.pb\.go  # Protocol buffer files
-      linters: [maintidx, cyclop, funlen, revive]
+      # Exclude complexity/length linters for Fyne UI and main app files
+      - path: internal/ui/.*\.go
+        linters:
+          - funlen
+          - gocyclo
+          - gocognit
+          - cyclop
+          - maintidx
+      - path: main\.go
+        linters:
+          - funlen
+          - gocyclo
+          - gocognit
+          - cyclop
+          - maintidx
+      # Exclude wrapcheck and errorlint for UI/event code
+      - path: internal/ui/.*\.go
+        linters:
+          - wrapcheck
+          - errorlint
+      - path: main\.go
+        linters:
+          - wrapcheck
+          - errorlint
+      # Exclude wrapcheck for internal packages (not exposed as library)
+      - path: internal/.*\.go
+        linters:
+          - wrapcheck
+          - errorlint
+      # Exclude funlen for test files (tests can be longer)
+      - path: _test\.go
+        linters:
+          - funlen
+          - gocyclo
+          - cyclop
+          - maintidx
+          - gocognit
+      # Exclude wrapcheck for test files (tests often don't need error wrapping)
+      - path: _test\.go
+        linters:
+          - wrapcheck
+          - errorlint
+      # Exclude certain rules for generated code
+      - path: _templ\.go
+        linters:
+          - gocritic
+          - nolintlint
+          - exhaustruct
+          - varnamelen
+          - wsl
+      # Exclude wire.go (dependency injection generated code)
+      - path: wire\.go
+        linters:
+          - funlen
+          - gocyclo
+          - gocognit
+          - cyclop
+          - maintidx
+          - wrapcheck
+          - errorlint
+          - gocritic
+          - nolintlint
+          - varnamelen
+          - exhaustruct
+          - wsl
+      # Exclude generated wire code
+      - path: wire_gen\.go
+        linters:
+          - funlen
+          - gocyclo
+          - gocognit
+          - cyclop
+          - maintidx
+          - wrapcheck
+          - errorlint
+          - gocritic
+          - nolintlint
+          - varnamelen
+          - exhaustruct
+          - wsl
+      # Exclude mock files
+      - path: mocks\.go
+        linters:
+          - funlen
+          - gocyclo
+          - gocognit
+          - cyclop
+          - maintidx
+          - wrapcheck
+          - errorlint
+          - gocritic
+          - nolintlint
+          - varnamelen
+          - exhaustruct
+          - wsl
+      # Exclude some rules for integration tests
+      - path: test/integration/
+        linters:
+          - funlen
+          - wrapcheck
+          - gocritic
+          - gocyclo
+          - cyclop
+          - maintidx
+      # Exclude some rules for mock files
+      - path: test/mocks/
+        linters:
+          - funlen
+          - wrapcheck
+          - gocritic
+          - nolintlint
+          - varnamelen
+          - exhaustruct
+      # ADD: File size exclusions for specific cases
+      - path: internal/ecs/game\.go
+        linters: [maintidx, cyclop, funlen] # TEMPORARY during refactor
+      - path: .*_generated\.go
+        linters: [maintidx, cyclop, funlen, revive]
+      - path: .*\.pb\.go # Protocol buffer files
+        linters: [maintidx, cyclop, funlen, revive]
 
 formatters:
   enable:
-    - goimports     # Enforces proper import organization
-    - gofumpt       # Stricter formatting than gofmt
+    - goimports # Enforces proper import organization
+    - gofumpt # Stricter formatting than gofmt
   exclusions:
     generated: lax
     paths:
-    - third_party$
-    - builtin$
-    - examples$
+      - third_party$
+      - builtin$
+      - examples$
