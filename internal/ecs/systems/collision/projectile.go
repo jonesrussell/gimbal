@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/yohamta/donburi"
-	"github.com/yohamta/donburi/filter"
-	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
@@ -25,16 +23,11 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions(ctx context.Context) e
 }
 
 func (cs *CollisionSystem) getProjectileEntities(ctx context.Context) ([]donburi.Entity, error) {
-	projectiles := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.ProjectileTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
+	entries := core.GetProjectileEntries(cs.world)
+	projectiles := make([]donburi.Entity, 0, len(entries))
+	for _, entry := range entries {
 		projectiles = append(projectiles, entry.Entity())
-	})
+	}
 	return projectiles, nil
 }
 
@@ -175,15 +168,10 @@ func (cs *CollisionSystem) checkEnemyProjectilePlayerCollisions(ctx context.Cont
 
 // getEnemyProjectileEntities returns all enemy projectile entities
 func (cs *CollisionSystem) getEnemyProjectileEntities() []donburi.Entity {
-	projectiles := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.EnemyProjectileTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
+	entries := core.GetEnemyProjectileEntries(cs.world)
+	projectiles := make([]donburi.Entity, 0, len(entries))
+	for _, entry := range entries {
 		projectiles = append(projectiles, entry.Entity())
-	})
+	}
 	return projectiles
 }
