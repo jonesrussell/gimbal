@@ -155,4 +155,3 @@ func LoadEnemyConfigs(ctx context.Context, logger common.Logger) (*EnemyConfigs,
 
 	return &configs, nil
 }
-

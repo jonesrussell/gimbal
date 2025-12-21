@@ -55,8 +55,8 @@ type SceneManager struct {
 	config          *config.GameConfig
 	logger          common.Logger
 	inputHandler    common.GameInputHandler
-	onResume        func()                // Callback to unpause game state
-	healthSystem    common.HealthProvider // Health system interface for scenes to access
+	onResume        func()                 // Callback to unpause game state
+	healthSystem    common.HealthProvider  // Health system interface for scenes to access
 	levelManager    *managers.LevelManager // Level manager for accessing level configs
 	font            text.Face
 	resourceMgr     *resources.ResourceManager
