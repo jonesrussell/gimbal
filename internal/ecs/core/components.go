@@ -22,8 +22,10 @@ var (
 	StarTag = donburi.NewTag()
 	// EnemyTag marks an entity as an enemy
 	EnemyTag = donburi.NewTag()
-	// ProjectileTag marks an entity as a projectile
+	// ProjectileTag marks an entity as a player projectile
 	ProjectileTag = donburi.NewTag()
+	// EnemyProjectileTag marks an entity as an enemy projectile
+	EnemyProjectileTag = donburi.NewTag()
 )
 
 // Components
@@ -50,8 +52,12 @@ var (
 
 // MovementData represents movement information
 type MovementData struct {
-	Velocity common.Point
-	MaxSpeed float64
+	Velocity    common.Point
+	MaxSpeed    float64
+	Pattern     int     // Movement pattern type (0=normal, 1=zigzag, 2=accelerating, 3=pulsing)
+	PatternTime float64 // Time accumulator for pattern-based movement
+	BaseAngle   float64 // Base angle for pattern calculations
+	BaseSpeed   float64 // Base speed for pattern calculations
 }
 
 // OrbitalData represents orbital movement information

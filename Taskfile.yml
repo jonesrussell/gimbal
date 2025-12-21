@@ -1,6 +1,6 @@
 # https://taskfile.dev
 
-version: '3'
+version: "3"
 
 includes:
   builds:
@@ -56,7 +56,7 @@ tasks:
         fi
       - wasmserve -http=":4242" -allow-origin='*' -tags .
 
-  lint:all:
+  lint:
     desc: Lint, vet, and format code
     cmds:
       - go fmt ./...

@@ -101,7 +101,7 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	es.handleWaveCompletion(ctx, deltaTime)
 
 	// Update enemy movement (including boss)
-	es.updateEnemies()
+	es.updateEnemies(deltaTime)
 	es.UpdateBossMovement(deltaTime)
 
 	return nil
@@ -134,6 +134,9 @@ func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
 	enemyType := es.waveManager.GetNextEnemyType()
 	enemyData := GetEnemyTypeData(enemyType)
 
+	// Override movement pattern with wave's pattern
+	enemyData.MovementPattern = wave.Config.MovementPattern
+
 	// Get formation data
 	centerX := float64(es.gameConfig.ScreenSize.Width) / 2
 	centerY := float64(es.gameConfig.ScreenSize.Height) / 2
@@ -158,10 +161,10 @@ func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
 	enemyIndex := wave.EnemiesSpawned
 	if enemyIndex < len(formationData) {
 		formData := formationData[enemyIndex]
-		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, enemyData)
+		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, &enemyData)
 	} else {
 		// Fallback: spawn at center with random angle
-		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, enemyData)
+		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, &enemyData)
 	}
 }
 
@@ -171,7 +174,7 @@ func (es *EnemySystem) spawnEnemyAt(
 	position common.Point,
 	angle float64,
 	enemyType EnemyType,
-	enemyData EnemyTypeData,
+	enemyData *EnemyTypeData,
 ) {
 	// Get or create sprite
 	sprite := es.getEnemySprite(ctx, enemyType, enemyData)
@@ -194,38 +197,42 @@ func (es *EnemySystem) spawnEnemyAt(
 	// Set health
 	core.Health.SetValue(entry, core.NewHealthData(enemyData.Health, enemyData.Health))
 
-	// Set movement based on type
+	// Set movement based on type and pattern
 	switch enemyData.MovementType {
 	case "spiral":
 		// Spiral movement: start with angle, then spiral outward
-		es.setSpiralMovement(entry, angle, enemyData.Speed)
+		es.setSpiralMovement(entry, angle, enemyData.Speed, enemyData.MovementPattern)
 	case "orbital":
 		// Orbital movement (for boss, handled separately)
 		// This shouldn't be called for regular enemies
-		es.setOutwardMovement(entry, angle, enemyData.Speed)
+		es.setOutwardMovement(entry, angle, enemyData.Speed, enemyData.MovementPattern)
 	default:
 		// Default: outward movement
-		es.setOutwardMovement(entry, angle, enemyData.Speed)
+		es.setOutwardMovement(entry, angle, enemyData.Speed, enemyData.MovementPattern)
 	}
 
 	es.logger.Debug("Enemy spawned", "type", enemyType, "position", position, "angle", angle)
 }
 
-// setOutwardMovement sets simple outward movement
-func (es *EnemySystem) setOutwardMovement(entry *donburi.Entry, angle, speed float64) {
+// setOutwardMovement sets simple outward movement with optional pattern
+func (es *EnemySystem) setOutwardMovement(entry *donburi.Entry, angle, speed float64, pattern MovementPattern) {
 	velocity := common.Point{
 		X: stdmath.Cos(angle) * speed,
 		Y: stdmath.Sin(angle) * speed,
 	}
 
 	core.Movement.SetValue(entry, core.MovementData{
-		Velocity: velocity,
-		MaxSpeed: speed,
+		Velocity:    velocity,
+		MaxSpeed:    speed,
+		Pattern:     int(pattern),
+		PatternTime: 0,
+		BaseAngle:   angle,
+		BaseSpeed:   speed,
 	})
 }
 
 // setSpiralMovement sets spiral movement pattern
-func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed float64) {
+func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed float64, pattern MovementPattern) {
 	// For now, use outward movement with slight variation
 	// TODO: Implement actual spiral pattern with time-based angle change
 	velocity := common.Point{
@@ -234,19 +241,27 @@ func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed 
 	}
 
 	core.Movement.SetValue(entry, core.MovementData{
-		Velocity: velocity,
-		MaxSpeed: speed,
+		Velocity:    velocity,
+		MaxSpeed:    speed,
+		Pattern:     int(pattern),
+		PatternTime: 0,
+		BaseAngle:   baseAngle,
+		BaseSpeed:   speed,
 	})
 }
 
 // getEnemySprite gets or creates the sprite for an enemy type
-func (es *EnemySystem) getEnemySprite(ctx context.Context, enemyType EnemyType, enemyData EnemyTypeData) *ebiten.Image {
+func (es *EnemySystem) getEnemySprite(
+	ctx context.Context,
+	enemyType EnemyType,
+	enemyData *EnemyTypeData,
+) *ebiten.Image {
 	// Check cache
 	if sprite, ok := es.enemySprites[enemyType]; ok {
 		return sprite
 	}
 
-	// Try to load sprite
+	// Try to load sprite (full size, will be scaled during rendering)
 	sprite, exists := es.resourceMgr.GetSprite(ctx, enemyData.SpriteName)
 	if !exists {
 		es.logger.Warn("Enemy sprite not found, using placeholder", "type", enemyType, "sprite", enemyData.SpriteName)
@@ -267,7 +282,7 @@ func (es *EnemySystem) getEnemySprite(ctx context.Context, enemyType EnemyType, 
 	return sprite
 }
 
-func (es *EnemySystem) updateEnemies() {
+func (es *EnemySystem) updateEnemies(deltaTime float64) {
 	query.NewQuery(
 		filter.And(
 			filter.Contains(core.EnemyTag),
@@ -277,8 +292,21 @@ func (es *EnemySystem) updateEnemies() {
 	).Each(es.world, func(entry *donburi.Entry) {
 		pos := core.Position.Get(entry)
 		mov := core.Movement.Get(entry)
-		pos.X += mov.Velocity.X
-		pos.Y += mov.Velocity.Y
+
+		// Update pattern time
+		mov.PatternTime += deltaTime
+
+		// Apply movement pattern
+		velocity := es.applyMovementPattern(*mov)
+
+		// Velocity is in pixels per frame (at 60fps), scale by deltaTime
+		// deltaTime is typically 1/60 seconds, so multiply by 60 to get frame-equivalent
+		frameScale := deltaTime * 60.0
+		pos.X += velocity.X * frameScale
+		pos.Y += velocity.Y * frameScale
+
+		// Update movement component with new pattern time
+		core.Movement.SetValue(entry, *mov)
 
 		// Remove enemies when they move too far from center (Gyruss-style)
 		centerX := float64(es.gameConfig.ScreenSize.Width) / 2
@@ -292,6 +320,81 @@ func (es *EnemySystem) updateEnemies() {
 			es.world.Remove(entry.Entity())
 		}
 	})
+}
+
+// applyMovementPattern applies the movement pattern to calculate velocity
+func (es *EnemySystem) applyMovementPattern(mov core.MovementData) common.Point {
+	pattern := MovementPattern(mov.Pattern)
+
+	switch pattern {
+	case MovementPatternZigzag:
+		return es.calculateZigzagVelocity(mov)
+	case MovementPatternAccelerating:
+		return es.calculateAcceleratingVelocity(mov)
+	case MovementPatternPulsing:
+		return es.calculatePulsingVelocity(mov)
+	default:
+		// Normal movement
+		return mov.Velocity
+	}
+}
+
+// calculateZigzagVelocity calculates zigzag movement (oscillates side-to-side)
+func (es *EnemySystem) calculateZigzagVelocity(mov core.MovementData) common.Point {
+	// Zigzag frequency (how fast it oscillates)
+	zigzagFreq := 3.0      // oscillations per second
+	zigzagAmplitude := 0.3 // how much it deviates
+
+	// Calculate perpendicular angle (90 degrees to base direction)
+	perpendicularAngle := mov.BaseAngle + stdmath.Pi/2
+
+	// Oscillate perpendicular to movement direction
+	oscillation := stdmath.Sin(mov.PatternTime*zigzagFreq*2*stdmath.Pi) * zigzagAmplitude
+
+	// Base velocity
+	baseVelX := stdmath.Cos(mov.BaseAngle) * mov.BaseSpeed
+	baseVelY := stdmath.Sin(mov.BaseAngle) * mov.BaseSpeed
+
+	// Add perpendicular oscillation
+	perpendicularX := stdmath.Cos(perpendicularAngle) * oscillation * mov.BaseSpeed
+	perpendicularY := stdmath.Sin(perpendicularAngle) * oscillation * mov.BaseSpeed
+
+	return common.Point{
+		X: baseVelX + perpendicularX,
+		Y: baseVelY + perpendicularY,
+	}
+}
+
+// calculateAcceleratingVelocity calculates accelerating movement (starts slow, speeds up)
+func (es *EnemySystem) calculateAcceleratingVelocity(mov core.MovementData) common.Point {
+	// Acceleration factor (0 to 1, where 1 is max speed)
+	accelTime := 2.0 // seconds to reach max speed
+	accelFactor := stdmath.Min(1.0, mov.PatternTime/accelTime)
+
+	// Start at 30% speed, accelerate to 100%
+	speedMultiplier := 0.3 + (accelFactor * 0.7)
+	currentSpeed := mov.BaseSpeed * speedMultiplier
+
+	return common.Point{
+		X: stdmath.Cos(mov.BaseAngle) * currentSpeed,
+		Y: stdmath.Sin(mov.BaseAngle) * currentSpeed,
+	}
+}
+
+// calculatePulsingVelocity calculates pulsing movement (fast-slow-fast bursts)
+func (es *EnemySystem) calculatePulsingVelocity(mov core.MovementData) common.Point {
+	// Pulse frequency (how often it pulses)
+	pulseFreq := 2.0 // pulses per second
+	pulsePhase := mov.PatternTime * pulseFreq * 2 * stdmath.Pi
+
+	// Use sine wave to create smooth pulsing (0.5 to 1.0 speed multiplier)
+	speedMultiplier := 0.5 + 0.5*stdmath.Sin(pulsePhase)
+	currentSpeed := mov.BaseSpeed * speedMultiplier
+
+	return common.Point{
+		X: stdmath.Cos(mov.BaseAngle) * currentSpeed,
+		Y: stdmath.Sin(mov.BaseAngle) * currentSpeed,
+	}
 }
 
 // DestroyEnemy destroys an enemy entity and returns points based on type
