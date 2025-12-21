@@ -103,12 +103,12 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 	// Convert enemy configs to map[EnemyType]EnemyTypeData
 	enemyConfigMap := make(map[enemy.EnemyType]enemy.EnemyTypeData)
 	for _, enemyConfig := range enemyConfigs.EnemyTypes {
-		enemyType, err := enemy.GetEnemyTypeFromString(enemyConfig.Type)
-		if err != nil {
-			return fmt.Errorf("invalid enemy type '%s': %w", enemyConfig.Type, err)
+		enemyType, typeErr := enemy.GetEnemyTypeFromString(enemyConfig.Type)
+		if typeErr != nil {
+			return fmt.Errorf("invalid enemy type '%s': %w", enemyConfig.Type, typeErr)
 		}
-		enemyData, err := enemy.ConvertEnemyTypeConfig(enemyConfig, enemyType)
-		if err != nil {
+		enemyData, convertErr := enemy.ConvertEnemyTypeConfig(enemyConfig, enemyType)
+		if convertErr != nil {
 			return fmt.Errorf("failed to convert enemy config for type '%s': %w", enemyConfig.Type, err)
 		}
 		enemyConfigMap[enemyType] = enemyData
@@ -309,7 +309,10 @@ func (g *ECSGame) createEntities(ctx context.Context) error {
 		return errors.NewGameError(errors.ConfigMissing, "player config not loaded")
 	}
 	g.playerEntity = core.CreatePlayer(g.world, playerSprite, g.config, g.playerConfig)
-	g.logger.Debug("Player entity created", "entity_id", g.playerEntity, "health", g.playerConfig.Health, "size", g.playerConfig.Size)
+	g.logger.Debug("Player entity created",
+		"entity_id", g.playerEntity,
+		"health", g.playerConfig.Health,
+		"size", g.playerConfig.Size)
 
 	// Create star field
 	g.starEntities = core.CreateStarField(g.world, starSprite, g.config)

@@ -31,11 +31,11 @@ func LoadPlayerConfig(ctx context.Context, logger common.Logger) (*PlayerConfig,
 	}
 
 	var config PlayerConfig
-	if err := json.Unmarshal(data, &config); err != nil {
+	if unmarshalErr := json.Unmarshal(data, &config); unmarshalErr != nil {
 		return nil, errors.NewGameErrorWithCause(
 			errors.AssetInvalid,
 			"failed to parse player.json",
-			err,
+			unmarshalErr,
 		)
 	}
 
@@ -93,11 +93,11 @@ func LoadEnemyConfigs(ctx context.Context, logger common.Logger) (*EnemyConfigs,
 	}
 
 	var configs EnemyConfigs
-	if err := json.Unmarshal(data, &configs); err != nil {
+	if unmarshalErr := json.Unmarshal(data, &configs); unmarshalErr != nil {
 		return nil, errors.NewGameErrorWithCause(
 			errors.AssetInvalid,
 			"failed to parse enemies.json",
-			err,
+			unmarshalErr,
 		)
 	}
 
