@@ -403,7 +403,7 @@ func (g *ECSGame) GetInputHandler() common.GameInputHandler {
 	return g.inputHandler
 }
 
-// drawWaveDebugInfo draws wave information at the top of the screen
+// drawWaveDebugInfo draws wave information at the bottom of the screen
 func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 	if g.enemySystem == nil {
 		return
@@ -414,16 +414,22 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 		return
 	}
 
+	screenHeight := float64(g.config.ScreenSize.Height)
+	lineHeight := 20.0
+	x := 10.0
+
 	currentWave := waveManager.GetCurrentWave()
 	if currentWave == nil {
 		// No active wave - show waiting status
+		var statusText string
 		if waveManager.IsWaiting() {
-			g.drawDebugText(screen, "Wave: Waiting for next wave...", 10, 10)
+			statusText = "Wave: Waiting for next wave..."
 		} else if !waveManager.HasMoreWaves() {
-			g.drawDebugText(screen, "Wave: All waves complete", 10, 10)
+			statusText = "Wave: All waves complete"
 		} else {
-			g.drawDebugText(screen, "Wave: Starting...", 10, 10)
+			statusText = "Wave: Starting..."
 		}
+		g.drawDebugText(screen, statusText, x, screenHeight-10)
 		return
 	}
 
@@ -439,29 +445,33 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 		progress = 0
 	}
 
-	// Draw wave information
-	y := 10.0
-	g.drawDebugText(screen, fmt.Sprintf("Wave %d/%d", currentWave.WaveIndex+1, waveManager.GetWaveCount()), 10, y)
-	y += 20
-	g.drawDebugText(screen, fmt.Sprintf("Formation: %s", formationName), 10, y)
-	y += 20
-	g.drawDebugText(screen, fmt.Sprintf("Enemies: %d/%d (%.0f%%)", currentWave.EnemiesKilled, currentWave.Config.EnemyCount, progress), 10, y)
-	y += 20
-	g.drawDebugText(screen, fmt.Sprintf("Spawned: %d", currentWave.EnemiesSpawned), 10, y)
-	y += 20
-	g.drawDebugText(screen, fmt.Sprintf("Types: %s", enemyTypesStr), 10, y)
-	y += 20
-	g.drawDebugText(screen, fmt.Sprintf("Pattern: %s", g.formatMovementPattern(currentWave.Config.MovementPattern)), 10, y)
-	y += 20
+	// Calculate number of lines to determine starting Y position
+	numLines := 8 // Wave, Formation, Enemies, Spawned, Types, Pattern, Status, Timer
+	startY := screenHeight - float64(numLines)*lineHeight - 10
+
+	// Draw wave information from bottom up
+	y := startY
+	g.drawDebugText(screen, fmt.Sprintf("Wave %d/%d", currentWave.WaveIndex+1, waveManager.GetWaveCount()), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Formation: %s", formationName), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Enemies: %d/%d (%.0f%%)", currentWave.EnemiesKilled, currentWave.Config.EnemyCount, progress), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Spawned: %d", currentWave.EnemiesSpawned), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Types: %s", enemyTypesStr), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Pattern: %s", g.formatMovementPattern(currentWave.Config.MovementPattern)), x, y)
+	y += lineHeight
 	if currentWave.IsSpawning {
-		g.drawDebugText(screen, "Status: Spawning", 10, y)
+		g.drawDebugText(screen, "Status: Spawning", x, y)
 	} else if currentWave.IsComplete {
-		g.drawDebugText(screen, "Status: Complete", 10, y)
+		g.drawDebugText(screen, "Status: Complete", x, y)
 	} else {
-		g.drawDebugText(screen, "Status: Active", 10, y)
+		g.drawDebugText(screen, "Status: Active", x, y)
 	}
-	y += 20
-	g.drawDebugText(screen, fmt.Sprintf("Timer: %.1fs", currentWave.WaveTimer), 10, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Timer: %.1fs", currentWave.WaveTimer), x, y)
 }
 
 // drawDebugText draws text with a semi-transparent background
