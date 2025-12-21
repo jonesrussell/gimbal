@@ -251,7 +251,11 @@ func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed 
 }
 
 // getEnemySprite gets or creates the sprite for an enemy type
-func (es *EnemySystem) getEnemySprite(ctx context.Context, enemyType EnemyType, enemyData *EnemyTypeData) *ebiten.Image {
+func (es *EnemySystem) getEnemySprite(
+	ctx context.Context,
+	enemyType EnemyType,
+	enemyData *EnemyTypeData,
+) *ebiten.Image {
 	// Check cache
 	if sprite, ok := es.enemySprites[enemyType]; ok {
 		return sprite

@@ -62,15 +62,34 @@ func NewWaveManager(world donburi.World, logger common.Logger) *WaveManager {
 // generateDefaultWaves creates default wave configurations
 func (wm *WaveManager) generateDefaultWaves() []WaveConfig {
 	return []WaveConfig{
-		wm.createWave(FormationLine, 6, []EnemyType{EnemyTypeBasic}, 0.25, 0.0, MovementPatternNormal),
-		wm.createWave(FormationCircle, 10, []EnemyType{EnemyTypeBasic}, 0.1, 1.5, MovementPatternNormal),
-		wm.createWave(FormationV, 9, []EnemyType{EnemyTypeBasic, EnemyTypeHeavy}, 0.18, 1.5, MovementPatternZigzag),
-		wm.createWave(FormationDiamond, 8, []EnemyType{EnemyTypeHeavy}, 0.2, 1.5, MovementPatternAccelerating),
-		wm.createWave(FormationSpiral, 12, []EnemyType{EnemyTypeBasic, EnemyTypeHeavy}, 0.12, 1.5, MovementPatternPulsing),
-		wm.createWave(FormationDiagonal, 10, []EnemyType{EnemyTypeHeavy, EnemyTypeBasic}, 0.15, 1.5, MovementPatternNormal),
-		wm.createWave(FormationRandom, 14, []EnemyType{EnemyTypeBasic, EnemyTypeHeavy}, 0.1, 1.5, MovementPatternZigzag),
-		wm.createWave(FormationCircle, 12, []EnemyType{EnemyTypeHeavy, EnemyTypeBasic}, 0.12, 1.5, MovementPatternAccelerating),
+		wm.createWave(FormationLine, 6, []EnemyType{EnemyTypeBasic},
+			waveParams{0.25, 0.0, MovementPatternNormal}),
+		wm.createWave(FormationCircle, 10, []EnemyType{EnemyTypeBasic},
+			waveParams{0.1, 1.5, MovementPatternNormal}),
+		wm.createWave(FormationV, 9, []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
+			waveParams{0.18, 1.5, MovementPatternZigzag}),
+		wm.createWave(FormationDiamond, 8, []EnemyType{EnemyTypeHeavy},
+			waveParams{0.2, 1.5, MovementPatternAccelerating}),
+		wm.createWave(FormationSpiral, 12,
+			[]EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
+			waveParams{0.12, 1.5, MovementPatternPulsing}),
+		wm.createWave(FormationDiagonal, 10,
+			[]EnemyType{EnemyTypeHeavy, EnemyTypeBasic},
+			waveParams{0.15, 1.5, MovementPatternNormal}),
+		wm.createWave(FormationRandom, 14,
+			[]EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
+			waveParams{0.1, 1.5, MovementPatternZigzag}),
+		wm.createWave(FormationCircle, 12,
+			[]EnemyType{EnemyTypeHeavy, EnemyTypeBasic},
+			waveParams{0.12, 1.5, MovementPatternAccelerating}),
 	}
+}
+
+// waveParams holds parameters for creating a wave
+type waveParams struct {
+	spawnDelay     float64
+	interWaveDelay float64
+	pattern        MovementPattern
 }
 
 // createWave creates a wave configuration with the given parameters
@@ -78,17 +97,16 @@ func (wm *WaveManager) createWave(
 	formation FormationType,
 	count int,
 	types []EnemyType,
-	spawnDelay, interWaveDelay float64,
-	pattern MovementPattern,
+	params waveParams,
 ) WaveConfig {
 	return WaveConfig{
 		FormationType:   formation,
 		EnemyCount:      count,
 		EnemyTypes:      types,
-		SpawnDelay:      spawnDelay,
+		SpawnDelay:      params.spawnDelay,
 		Timeout:         12.0,
-		InterWaveDelay:  interWaveDelay,
-		MovementPattern: pattern,
+		InterWaveDelay:  params.interWaveDelay,
+		MovementPattern: params.pattern,
 	}
 }
 
