@@ -50,8 +50,12 @@ var (
 
 // MovementData represents movement information
 type MovementData struct {
-	Velocity common.Point
-	MaxSpeed float64
+	Velocity    common.Point
+	MaxSpeed    float64
+	Pattern     int     // Movement pattern type (0=normal, 1=zigzag, 2=accelerating, 3=pulsing)
+	PatternTime float64 // Time accumulator for pattern-based movement
+	BaseAngle   float64 // Base angle for pattern calculations
+	BaseSpeed   float64 // Base speed for pattern calculations
 }
 
 // OrbitalData represents orbital movement information

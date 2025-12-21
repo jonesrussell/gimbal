@@ -13,11 +13,13 @@ import (
 
 // WaveConfig defines the configuration for a wave
 type WaveConfig struct {
-	FormationType FormationType
-	EnemyCount    int
-	EnemyTypes    []EnemyType // Types of enemies in this wave
-	SpawnDelay    float64     // Delay between individual enemy spawns
-	Timeout       float64     // Time before wave auto-completes (0 = no timeout)
+	FormationType   FormationType
+	EnemyCount      int
+	EnemyTypes      []EnemyType     // Types of enemies in this wave
+	SpawnDelay      float64         // Delay between individual enemy spawns
+	Timeout         float64         // Time before wave auto-completes (0 = no timeout)
+	InterWaveDelay  float64         // Delay before starting this wave (default 1.5s)
+	MovementPattern MovementPattern // Movement pattern for enemies in this wave
 }
 
 // WaveState tracks the current state of a wave
@@ -34,11 +36,13 @@ type WaveState struct {
 
 // WaveManager manages wave spawning and completion
 type WaveManager struct {
-	world       donburi.World
-	currentWave *WaveState
-	waves       []WaveConfig
-	waveIndex   int
-	logger      common.Logger
+	world          donburi.World
+	currentWave    *WaveState
+	waves          []WaveConfig
+	waveIndex      int
+	logger         common.Logger
+	interWaveTimer float64
+	isWaiting      bool
 }
 
 // NewWaveManager creates a new wave manager
@@ -58,55 +62,112 @@ func NewWaveManager(world donburi.World, logger common.Logger) *WaveManager {
 // generateDefaultWaves creates default wave configurations
 func (wm *WaveManager) generateDefaultWaves() []WaveConfig {
 	waves := []WaveConfig{
-		// Wave 1: Line formation, basic enemies
+		// Wave 1: Line formation, basic enemies, slow intro
 		{
-			FormationType: FormationLine,
-			EnemyCount:    5,
-			EnemyTypes:    []EnemyType{EnemyTypeBasic},
-			SpawnDelay:    0.2,
-			Timeout:       30.0,
+			FormationType:   FormationLine,
+			EnemyCount:      6,
+			EnemyTypes:      []EnemyType{EnemyTypeBasic},
+			SpawnDelay:      0.25,
+			Timeout:         12.0,
+			InterWaveDelay:  0.0, // First wave starts immediately
+			MovementPattern: MovementPatternNormal,
 		},
-		// Wave 2: Circle formation, basic enemies
+		// Wave 2: Circle formation, basic enemies, fast spawn
 		{
-			FormationType: FormationCircle,
-			EnemyCount:    8,
-			EnemyTypes:    []EnemyType{EnemyTypeBasic},
-			SpawnDelay:    0.15,
-			Timeout:       30.0,
+			FormationType:   FormationCircle,
+			EnemyCount:      10,
+			EnemyTypes:      []EnemyType{EnemyTypeBasic},
+			SpawnDelay:      0.1,
+			Timeout:         12.0,
+			InterWaveDelay:  1.5,
+			MovementPattern: MovementPatternNormal,
 		},
-		// Wave 3: V-formation, mix of basic and heavy
+		// Wave 3: V-formation, mixed enemies, zigzag movement
 		{
-			FormationType: FormationV,
-			EnemyCount:    8,
-			EnemyTypes:    []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
-			SpawnDelay:    0.2,
-			Timeout:       30.0,
+			FormationType:   FormationV,
+			EnemyCount:      9,
+			EnemyTypes:      []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
+			SpawnDelay:      0.18,
+			Timeout:         12.0,
+			InterWaveDelay:  1.5,
+			MovementPattern: MovementPatternZigzag,
 		},
-		// Wave 4: Circle with more enemies
+		// Wave 4: Diamond formation, heavy enemies, accelerating
 		{
-			FormationType: FormationCircle,
-			EnemyCount:    10,
-			EnemyTypes:    []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
-			SpawnDelay:    0.15,
-			Timeout:       30.0,
+			FormationType:   FormationDiamond,
+			EnemyCount:      8,
+			EnemyTypes:      []EnemyType{EnemyTypeHeavy},
+			SpawnDelay:      0.2,
+			Timeout:         12.0,
+			InterWaveDelay:  1.5,
+			MovementPattern: MovementPatternAccelerating,
 		},
-		// Wave 5: Line with heavy enemies
+		// Wave 5: Spiral formation, mixed, pulsing movement
 		{
-			FormationType: FormationLine,
-			EnemyCount:    6,
-			EnemyTypes:    []EnemyType{EnemyTypeHeavy},
-			SpawnDelay:    0.25,
-			Timeout:       30.0,
+			FormationType:   FormationSpiral,
+			EnemyCount:      12,
+			EnemyTypes:      []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
+			SpawnDelay:      0.12,
+			Timeout:         12.0,
+			InterWaveDelay:  1.5,
+			MovementPattern: MovementPatternPulsing,
+		},
+		// Wave 6: Diagonal formation, heavy focus, faster speed
+		{
+			FormationType:   FormationDiagonal,
+			EnemyCount:      10,
+			EnemyTypes:      []EnemyType{EnemyTypeHeavy, EnemyTypeBasic},
+			SpawnDelay:      0.15,
+			Timeout:         12.0,
+			InterWaveDelay:  1.5,
+			MovementPattern: MovementPatternNormal,
+		},
+		// Wave 7: Random formation, all types, chaotic
+		{
+			FormationType:   FormationRandom,
+			EnemyCount:      14,
+			EnemyTypes:      []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
+			SpawnDelay:      0.1,
+			Timeout:         12.0,
+			InterWaveDelay:  1.5,
+			MovementPattern: MovementPatternZigzag,
+		},
+		// Wave 8: Circle formation, heavy wave before boss
+		{
+			FormationType:   FormationCircle,
+			EnemyCount:      12,
+			EnemyTypes:      []EnemyType{EnemyTypeHeavy, EnemyTypeBasic},
+			SpawnDelay:      0.12,
+			Timeout:         12.0,
+			InterWaveDelay:  1.5,
+			MovementPattern: MovementPatternAccelerating,
 		},
 	}
 
 	return waves
 }
 
-// StartNextWave starts the next wave
+// StartNextWave starts the next wave (with inter-wave delay)
 func (wm *WaveManager) StartNextWave() *WaveConfig {
 	if wm.waveIndex >= len(wm.waves) {
 		return nil // All waves complete
+	}
+
+	// Check if we need to wait before starting the wave
+	delay := wm.getInterWaveDelay()
+	if delay > 0 {
+		wm.isWaiting = true
+		wm.interWaveTimer = 0
+		return nil // Will start after delay
+	}
+
+	return wm.startWaveInternal()
+}
+
+// startWaveInternal actually starts the wave (internal helper)
+func (wm *WaveManager) startWaveInternal() *WaveConfig {
+	if wm.waveIndex >= len(wm.waves) {
+		return nil
 	}
 
 	config := wm.waves[wm.waveIndex]
@@ -129,8 +190,33 @@ func (wm *WaveManager) StartNextWave() *WaveConfig {
 	return &config
 }
 
+// getInterWaveDelay returns the delay before starting the next wave
+func (wm *WaveManager) getInterWaveDelay() float64 {
+	if wm.waveIndex >= len(wm.waves) {
+		return 0
+	}
+	config := wm.waves[wm.waveIndex]
+	// If InterWaveDelay is explicitly set (including 0), use it
+	// Otherwise default to 1.5 seconds
+	// Since we always set InterWaveDelay in wave configs, just return it
+	return config.InterWaveDelay
+}
+
 // Update updates the wave state
 func (wm *WaveManager) Update(deltaTime float64) {
+	// Handle inter-wave delay
+	if wm.isWaiting {
+		wm.interWaveTimer += deltaTime
+		if wm.interWaveTimer >= wm.getInterWaveDelay() {
+			wm.isWaiting = false
+			wm.interWaveTimer = 0
+			if wm.waveIndex < len(wm.waves) {
+				wm.startWaveInternal()
+			}
+		}
+		return
+	}
+
 	if wm.currentWave == nil {
 		return
 	}
@@ -141,7 +227,7 @@ func (wm *WaveManager) Update(deltaTime float64) {
 
 	wm.currentWave.WaveTimer += deltaTime
 
-	// Check timeout
+	// Check timeout (reduced from 30s to 12s)
 	if wm.currentWave.Config.Timeout > 0 && wm.currentWave.WaveTimer >= wm.currentWave.Config.Timeout {
 		wm.currentWave.IsComplete = true
 		wm.logger.Debug("Wave completed by timeout", "wave", wm.currentWave.WaveIndex+1)
@@ -251,6 +337,8 @@ func (wm *WaveManager) HasMoreWaves() bool {
 func (wm *WaveManager) Reset() {
 	wm.waveIndex = 0
 	wm.currentWave = nil
+	wm.interWaveTimer = 0
+	wm.isWaiting = false
 }
 
 // GetWaveCount returns the total number of waves
