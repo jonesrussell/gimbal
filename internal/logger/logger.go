@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sync"
 
 	"github.com/kelseyhightower/envconfig"
@@ -258,114 +257,6 @@ func (l *Logger) WarnContext(ctx context.Context, msg string, fields ...any) {
 func (l *Logger) ErrorContext(ctx context.Context, msg string, fields ...any) {
 	// Always log errors, don't deduplicate them
 	l.Logger.Error(msg, toZapFields(fields...)...)
-}
-
-// shouldLog determines if a message should be logged based on deduplication rules
-func (l *Logger) shouldLog(msg string, fields ...any) bool {
-	// Don't deduplicate if there are no fields
-	if len(fields) == 0 {
-		return true
-	}
-
-	// Create a key from the message and first field value
-	key := msg
-	if len(fields) >= 2 {
-		if str, ok := fields[0].(string); ok {
-			key += ":" + str
-		}
-	}
-
-	// Get the current value
-	currentValue := fields
-
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	// Check if this is a duplicate
-	if lastValue, exists := l.lastLogs[key]; exists {
-		if equalValues(lastValue, currentValue) {
-			return false
-		}
-	}
-
-	// Update the last logged value
-	l.lastLogs[key] = currentValue
-	return true
-}
-
-// equalValues compares two values for equality
-func equalValues(a, b any) bool {
-	if a == nil || b == nil {
-		return a == b
-	}
-
-	va := reflect.ValueOf(a)
-	vb := reflect.ValueOf(b)
-
-	if va.Type() != vb.Type() {
-		return false
-	}
-
-	return compareByKind(va, vb)
-}
-
-// compareByKind delegates comparison based on reflect.Kind
-func compareByKind(va, vb reflect.Value) bool {
-	switch va.Kind() {
-	case reflect.Invalid, reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16,
-		reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16,
-		reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64,
-		reflect.Complex64, reflect.Complex128, reflect.String, reflect.UnsafePointer:
-		return comparePrimitive(va, vb)
-	case reflect.Slice, reflect.Array:
-		return equalSlicesOrArrays(va, vb)
-	case reflect.Map:
-		return equalMaps(va, vb)
-	case reflect.Struct:
-		return equalStructs(va, vb)
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Pointer:
-		return comparePrimitive(va, vb)
-	default:
-		return false
-	}
-}
-
-// comparePrimitive compares primitive types using direct interface comparison
-func comparePrimitive(va, vb reflect.Value) bool {
-	return va.Interface() == vb.Interface()
-}
-
-func equalSlicesOrArrays(va, vb reflect.Value) bool {
-	if va.Len() != vb.Len() {
-		return false
-	}
-	for i := 0; i < va.Len(); i++ {
-		if !equalValues(va.Index(i).Interface(), vb.Index(i).Interface()) {
-			return false
-		}
-	}
-	return true
-}
-
-func equalMaps(va, vb reflect.Value) bool {
-	if va.Len() != vb.Len() {
-		return false
-	}
-	for _, k := range va.MapKeys() {
-		if !equalValues(va.MapIndex(k).Interface(), vb.MapIndex(k).Interface()) {
-			return false
-		}
-	}
-	return true
-}
-
-func equalStructs(va, vb reflect.Value) bool {
-	for i := 0; i < va.NumField(); i++ {
-		if !equalValues(va.Field(i).Interface(), vb.Field(i).Interface()) {
-			return false
-		}
-	}
-	return true
 }
 
 // toZapFields converts interface slice to zap.Field slice
