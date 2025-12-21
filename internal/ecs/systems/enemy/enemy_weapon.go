@@ -26,6 +26,7 @@ type EnemyWeaponSystem struct {
 	config           *config.GameConfig
 	logger           common.Logger
 	projectileSprite *ebiten.Image
+	enemySystem      *EnemySystem // Reference to enemy system for getting enemy type data
 
 	// Track fire timers per enemy entity
 	enemyFireTimers map[donburi.Entity]float64
@@ -36,11 +37,13 @@ func NewEnemyWeaponSystem(
 	world donburi.World,
 	gameConfig *config.GameConfig,
 	logger common.Logger,
+	enemySystem *EnemySystem,
 ) *EnemyWeaponSystem {
 	ews := &EnemyWeaponSystem{
 		world:           world,
 		config:          gameConfig,
 		logger:          logger,
+		enemySystem:     enemySystem,
 		enemyFireTimers: make(map[donburi.Entity]float64),
 	}
 	ews.initializeProjectileSprite()
@@ -100,22 +103,10 @@ func (ews *EnemyWeaponSystem) updateEnemyShooting(deltaTime float64, playerPos c
 		enemyPos := core.Position.Get(entry)
 
 		// Get enemy type from component (preferred) or fall back to health heuristic
-		var enemyData EnemyTypeData
-		if entry.HasComponent(core.EnemyTypeID) {
-			typeID := core.EnemyTypeID.Get(entry)
-			enemyData = GetEnemyTypeData(EnemyType(*typeID))
-		} else if entry.HasComponent(core.Health) {
-			// Fallback for legacy entities without EnemyTypeID
-			health := core.Health.Get(entry)
-			if health.Maximum >= 10 {
-				enemyData = GetEnemyTypeData(EnemyTypeBoss)
-			} else if health.Maximum >= 2 {
-				enemyData = GetEnemyTypeData(EnemyTypeHeavy)
-			} else {
-				enemyData = GetEnemyTypeData(EnemyTypeBasic)
-			}
-		} else {
-			enemyData = GetEnemyTypeData(EnemyTypeBasic)
+		enemyData, err := ews.getEnemyTypeDataForWeapon(entry)
+		if err != nil {
+			ews.logger.Warn("Failed to get enemy type data for weapon", "error", err)
+			return // Skip this enemy
 		}
 
 		// Skip if enemy can't shoot
@@ -139,6 +130,26 @@ func (ews *EnemyWeaponSystem) updateEnemyShooting(deltaTime float64, playerPos c
 			ews.enemyFireTimers[entity] = 0
 		}
 	})
+}
+
+// getEnemyTypeDataForWeapon gets enemy type data from entry
+func (ews *EnemyWeaponSystem) getEnemyTypeDataForWeapon(entry *donburi.Entry) (EnemyTypeData, error) {
+	if entry.HasComponent(core.EnemyTypeID) {
+		typeID := core.EnemyTypeID.Get(entry)
+		return ews.enemySystem.GetEnemyTypeData(EnemyType(*typeID))
+	}
+	if entry.HasComponent(core.Health) {
+		// Fallback for legacy entities without EnemyTypeID
+		health := core.Health.Get(entry)
+		if health.Maximum >= 10 {
+			return ews.enemySystem.GetEnemyTypeData(EnemyTypeBoss)
+		}
+		if health.Maximum >= 2 {
+			return ews.enemySystem.GetEnemyTypeData(EnemyTypeHeavy)
+		}
+		return ews.enemySystem.GetEnemyTypeData(EnemyTypeBasic)
+	}
+	return ews.enemySystem.GetEnemyTypeData(EnemyTypeBasic)
 }
 
 // fireAtPlayer creates a projectile aimed at the player

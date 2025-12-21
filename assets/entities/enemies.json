@@ -1,0 +1,43 @@
+{
+    "enemy_types": [
+        {
+            "type": "basic",
+            "health": 1,
+            "speed": 2.0,
+            "size": 32,
+            "points": 100,
+            "sprite_name": "enemy",
+            "movement_type": "outward",
+            "movement_pattern": 0,
+            "can_shoot": true,
+            "fire_rate": 0.5,
+            "projectile_speed": 4.0
+        },
+        {
+            "type": "heavy",
+            "health": 2,
+            "speed": 1.5,
+            "size": 32,
+            "points": 200,
+            "sprite_name": "enemy_heavy",
+            "movement_type": "spiral",
+            "movement_pattern": 0,
+            "can_shoot": true,
+            "fire_rate": 1.0,
+            "projectile_speed": 5.0
+        },
+        {
+            "type": "boss",
+            "health": 10,
+            "speed": 1.0,
+            "size": 64,
+            "points": 1000,
+            "sprite_name": "enemy_boss",
+            "movement_type": "orbital",
+            "movement_pattern": 0,
+            "can_shoot": true,
+            "fire_rate": 2.0,
+            "projectile_speed": 6.0
+        }
+    ]
+}

@@ -2,6 +2,7 @@ package enemy
 
 import (
 	"context"
+	"fmt"
 	"image/color"
 	stdmath "math"
 	"math/rand"
@@ -49,6 +50,9 @@ type EnemySystem struct {
 
 	// Enemy sprites cache
 	enemySprites map[EnemyType]*ebiten.Image
+
+	// Enemy configurations loaded from JSON
+	enemyConfigs map[EnemyType]EnemyTypeData
 }
 
 // NewEnemySystem creates a new enemy management system with the provided dependencies
@@ -66,12 +70,30 @@ func NewEnemySystem(
 		resourceMgr:   resourceMgr,
 		logger:        logger,
 		enemySprites:  make(map[EnemyType]*ebiten.Image),
+		enemyConfigs:  make(map[EnemyType]EnemyTypeData),
 	}
 
 	// Initialize wave manager
 	es.waveManager = NewWaveManager(world, logger)
 
 	return es
+}
+
+// LoadEnemyConfigs loads enemy type configurations into the system
+// This must be called after NewEnemySystem and before using the system
+func (es *EnemySystem) LoadEnemyConfigs(configs map[EnemyType]EnemyTypeData) {
+	es.enemyConfigs = configs
+	es.logger.Debug("Enemy configs loaded into EnemySystem", "count", len(configs))
+}
+
+// GetEnemyTypeData returns the configuration for an enemy type from loaded configs
+// Returns an error if the enemy type is not found in loaded configs
+func (es *EnemySystem) GetEnemyTypeData(enemyType EnemyType) (EnemyTypeData, error) {
+	enemyConfig, ok := es.enemyConfigs[enemyType]
+	if !ok {
+		return EnemyTypeData{}, fmt.Errorf("enemy type %d not found in loaded configs", enemyType)
+	}
+	return enemyConfig, nil
 }
 
 func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
@@ -85,10 +107,11 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	// Update wave manager
 	es.waveManager.Update(deltaTime)
 
-	// Check if we need to start a new wave (but not if we're waiting for inter-wave delay)
+	// Check if we need to start a new wave (but not if we're waiting for level start or inter-wave delay)
 	if es.waveManager.GetCurrentWave() == nil &&
 		es.waveManager.HasMoreWaves() &&
-		!es.waveManager.IsWaiting() {
+		!es.waveManager.IsWaiting() &&
+		!es.waveManager.IsWaitingForLevelStart() {
 		es.waveManager.StartNextWave()
 	}
 
@@ -164,7 +187,11 @@ func (es *EnemySystem) handleBossSpawning(ctx context.Context, deltaTime float64
 // spawnWaveEnemy spawns a single enemy from the current wave
 func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
 	enemyType := es.waveManager.GetNextEnemyType()
-	enemyData := GetEnemyTypeData(enemyType)
+	enemyData, err := es.GetEnemyTypeData(enemyType)
+	if err != nil {
+		es.logger.Error("Failed to get enemy type data", "type", enemyType, "error", err)
+		return // Skip this enemy type
+	}
 
 	// Override movement pattern with wave's pattern
 	enemyData.MovementPattern = wave.Config.MovementPattern
@@ -472,7 +499,12 @@ func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
 		enemyType = EnemyTypeBasic
 	}
 
-	points := GetEnemyTypeData(enemyType).Points
+	enemyData, err := es.GetEnemyTypeData(enemyType)
+	if err != nil {
+		es.logger.Error("Failed to get enemy type data for points", "type", enemyType, "error", err)
+		return 0 // Skip scoring
+	}
+	points := enemyData.Points
 
 	// Mark enemy killed in wave manager
 	es.waveManager.MarkEnemyKilled()
