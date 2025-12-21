@@ -14,6 +14,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
@@ -44,6 +45,7 @@ type EnemySystem struct {
 	// Boss spawning
 	bossSpawnTimer float64
 	bossSpawned    bool
+	bossConfig     *managers.BossConfig // Current level's boss configuration
 
 	// Enemy sprites cache
 	enemySprites map[EnemyType]*ebiten.Image
@@ -83,8 +85,10 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	// Update wave manager
 	es.waveManager.Update(deltaTime)
 
-	// Check if we need to start a new wave
-	if es.waveManager.GetCurrentWave() == nil && es.waveManager.HasMoreWaves() {
+	// Check if we need to start a new wave (but not if we're waiting for inter-wave delay)
+	if es.waveManager.GetCurrentWave() == nil &&
+		es.waveManager.HasMoreWaves() &&
+		!es.waveManager.IsWaiting() {
 		es.waveManager.StartNextWave()
 	}
 
@@ -100,6 +104,9 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	// Check if wave is complete and start next
 	es.handleWaveCompletion(ctx, deltaTime)
 
+	// Handle boss spawning after all waves are complete
+	es.handleBossSpawning(ctx, deltaTime)
+
 	// Update enemy movement (including boss)
 	es.updateEnemies(deltaTime)
 	es.UpdateBossMovement(deltaTime)
@@ -107,7 +114,7 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	return nil
 }
 
-// handleWaveCompletion handles wave completion and boss spawning
+// handleWaveCompletion handles wave completion and advances to next wave
 func (es *EnemySystem) handleWaveCompletion(ctx context.Context, deltaTime float64) {
 	if !es.waveManager.IsWaveComplete() {
 		return
@@ -119,13 +126,38 @@ func (es *EnemySystem) handleWaveCompletion(ctx context.Context, deltaTime float
 		return
 	}
 
-	// All waves complete, start boss spawn timer
-	if !es.bossSpawned {
-		es.bossSpawnTimer += deltaTime
-		if es.bossSpawnTimer >= BossSpawnDelay {
-			es.SpawnBoss(ctx)
-			es.bossSpawned = true
-		}
+	// All waves complete - boss will be handled in handleBossSpawning
+	if es.bossConfig != nil && es.bossConfig.Enabled && !es.bossSpawned {
+		es.logger.Debug("All waves complete, boss will spawn soon", "spawn_delay", es.bossConfig.SpawnDelay)
+	}
+}
+
+// handleBossSpawning handles boss spawn timer and spawning
+func (es *EnemySystem) handleBossSpawning(ctx context.Context, deltaTime float64) {
+	// Only spawn boss if all waves are complete and boss hasn't been spawned yet
+	if es.waveManager.HasMoreWaves() {
+		return // Still have waves to complete
+	}
+
+	if es.bossSpawned {
+		return // Boss already spawned
+	}
+
+	if es.bossConfig == nil || !es.bossConfig.Enabled {
+		return // No boss configured for this level
+	}
+
+	// Increment boss spawn timer
+	es.bossSpawnTimer += deltaTime
+	spawnDelay := es.bossConfig.SpawnDelay
+	if spawnDelay <= 0 {
+		spawnDelay = BossSpawnDelay // Fallback to default
+	}
+
+	if es.bossSpawnTimer >= spawnDelay {
+		es.SpawnBoss(ctx)
+		es.bossSpawned = true
+		es.logger.Debug("Boss spawned", "delay", es.bossSpawnTimer)
 	}
 }
 
@@ -181,7 +213,7 @@ func (es *EnemySystem) spawnEnemyAt(
 
 	entity := es.world.Create(
 		core.EnemyTag, core.Position, core.Sprite, core.Movement,
-		core.Size, core.Health,
+		core.Size, core.Health, core.EnemyTypeID,
 	)
 	entry := es.world.Entry(entity)
 
@@ -197,6 +229,9 @@ func (es *EnemySystem) spawnEnemyAt(
 	// Set health
 	core.Health.SetValue(entry, core.NewHealthData(enemyData.Health, enemyData.Health))
 
+	// Set enemy type for proper identification (avoids health-based heuristics)
+	core.EnemyTypeID.SetValue(entry, int(enemyType))
+
 	// Set movement based on type and pattern
 	switch enemyData.MovementType {
 	case "spiral":
@@ -211,7 +246,12 @@ func (es *EnemySystem) spawnEnemyAt(
 		es.setOutwardMovement(entry, angle, enemyData.Speed, enemyData.MovementPattern)
 	}
 
-	es.logger.Debug("Enemy spawned", "type", enemyType, "position", position, "angle", angle)
+	es.logger.Debug("Enemy spawned",
+		"type", enemyType.String(),
+		"sprite", enemyData.SpriteName,
+		"health", enemyData.Health,
+		"position", position,
+		"angle", angle)
 }
 
 // setOutwardMovement sets simple outward movement with optional pattern
@@ -258,13 +298,18 @@ func (es *EnemySystem) getEnemySprite(
 ) *ebiten.Image {
 	// Check cache
 	if sprite, ok := es.enemySprites[enemyType]; ok {
+		es.logger.Debug("[ENEMY_SPRITE] Using cached sprite",
+			"type", enemyType.String(),
+			"sprite_name", enemyData.SpriteName)
 		return sprite
 	}
 
 	// Try to load sprite (full size, will be scaled during rendering)
 	sprite, exists := es.resourceMgr.GetSprite(ctx, enemyData.SpriteName)
 	if !exists {
-		es.logger.Warn("Enemy sprite not found, using placeholder", "type", enemyType, "sprite", enemyData.SpriteName)
+		es.logger.Warn("Enemy sprite not found, using placeholder",
+			"type", enemyType.String(),
+			"sprite", enemyData.SpriteName)
 		// Create placeholder with different colors
 		sprite = ebiten.NewImage(enemyData.Size, enemyData.Size)
 		switch enemyType {
@@ -275,6 +320,10 @@ func (es *EnemySystem) getEnemySprite(
 		default:
 			sprite.Fill(color.RGBA{255, 0, 0, 255}) // Red
 		}
+	} else {
+		es.logger.Debug("[ENEMY_SPRITE] Loaded sprite from resource manager",
+			"type", enemyType.String(),
+			"sprite_name", enemyData.SpriteName)
 	}
 
 	// Cache sprite
@@ -404,19 +453,26 @@ func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
 		return 0
 	}
 
-	// Determine enemy type from health (heuristic)
-	health := core.Health.Get(entry)
-	points := 100 // Default
-
-	if health != nil {
+	// Get enemy type from component (preferred) or fall back to health heuristic
+	var enemyType EnemyType
+	if entry.HasComponent(core.EnemyTypeID) {
+		typeID := core.EnemyTypeID.Get(entry)
+		enemyType = EnemyType(*typeID)
+	} else if entry.HasComponent(core.Health) {
+		// Fallback for legacy entities without EnemyTypeID
+		health := core.Health.Get(entry)
 		if health.Maximum >= 10 {
-			points = GetEnemyTypeData(EnemyTypeBoss).Points
+			enemyType = EnemyTypeBoss
 		} else if health.Maximum >= 2 {
-			points = GetEnemyTypeData(EnemyTypeHeavy).Points
+			enemyType = EnemyTypeHeavy
 		} else {
-			points = GetEnemyTypeData(EnemyTypeBasic).Points
+			enemyType = EnemyTypeBasic
 		}
+	} else {
+		enemyType = EnemyTypeBasic
 	}
+
+	points := GetEnemyTypeData(enemyType).Points
 
 	// Mark enemy killed in wave manager
 	es.waveManager.MarkEnemyKilled()
@@ -427,27 +483,46 @@ func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
 	return points
 }
 
+// LoadLevelConfig loads the waves and boss configuration for a level
+func (es *EnemySystem) LoadLevelConfig(waves []WaveConfig, bossConfig *managers.BossConfig) {
+	es.waveManager.LoadWaves(waves)
+	es.bossConfig = bossConfig
+	es.bossSpawned = false
+	es.bossSpawnTimer = 0
+
+	bossHealth := 0
+	if bossConfig != nil {
+		bossHealth = bossConfig.Health
+	}
+
+	es.logger.Debug("Level config loaded",
+		"waves", len(waves),
+		"boss_enabled", bossConfig != nil && bossConfig.Enabled,
+		"boss_health", bossHealth)
+}
+
 // Reset resets the enemy system for a new level
 func (es *EnemySystem) Reset() {
 	es.waveManager.Reset()
 	es.bossSpawned = false
 	es.bossSpawnTimer = 0
 	es.spawnTimer = 0
+	// Note: bossConfig is not reset here as it should be set via LoadLevelConfig
 }
 
 // IsBossActive checks if there's an active boss
 func (es *EnemySystem) IsBossActive() bool {
 	if es.bossSpawned {
-		// Check if boss still exists
+		// Check if boss still exists using EnemyTypeID component
 		count := 0
 		query.NewQuery(
 			filter.And(
 				filter.Contains(core.EnemyTag),
-				filter.Contains(core.Orbital),
+				filter.Contains(core.EnemyTypeID),
 			),
 		).Each(es.world, func(entry *donburi.Entry) {
-			health := core.Health.Get(entry)
-			if health != nil && health.Maximum >= 10 {
+			typeID := core.EnemyTypeID.Get(entry)
+			if EnemyType(*typeID) == EnemyTypeBoss {
 				count++
 			}
 		})
@@ -459,4 +534,9 @@ func (es *EnemySystem) IsBossActive() bool {
 // WasBossSpawned returns true if boss was spawned (even if now killed)
 func (es *EnemySystem) WasBossSpawned() bool {
 	return es.bossSpawned
+}
+
+// GetWaveManager returns the wave manager
+func (es *EnemySystem) GetWaveManager() *WaveManager {
+	return es.waveManager
 }

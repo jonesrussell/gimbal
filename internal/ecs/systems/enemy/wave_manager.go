@@ -47,78 +47,34 @@ type WaveManager struct {
 
 // NewWaveManager creates a new wave manager
 func NewWaveManager(world donburi.World, logger common.Logger) *WaveManager {
-	wm := &WaveManager{
+	return &WaveManager{
 		world:     world,
 		waveIndex: 0,
 		logger:    logger,
-	}
-
-	// Initialize default waves
-	wm.waves = wm.generateDefaultWaves()
-
-	return wm
-}
-
-// generateDefaultWaves creates default wave configurations
-func (wm *WaveManager) generateDefaultWaves() []WaveConfig {
-	return []WaveConfig{
-		wm.createWave(FormationLine, 6, []EnemyType{EnemyTypeBasic},
-			waveParams{0.25, 0.0, MovementPatternNormal}),
-		wm.createWave(FormationCircle, 10, []EnemyType{EnemyTypeBasic},
-			waveParams{0.1, 1.5, MovementPatternNormal}),
-		wm.createWave(FormationV, 9, []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
-			waveParams{0.18, 1.5, MovementPatternZigzag}),
-		wm.createWave(FormationDiamond, 8, []EnemyType{EnemyTypeHeavy},
-			waveParams{0.2, 1.5, MovementPatternAccelerating}),
-		wm.createWave(FormationSpiral, 12,
-			[]EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
-			waveParams{0.12, 1.5, MovementPatternPulsing}),
-		wm.createWave(FormationDiagonal, 10,
-			[]EnemyType{EnemyTypeHeavy, EnemyTypeBasic},
-			waveParams{0.15, 1.5, MovementPatternNormal}),
-		wm.createWave(FormationRandom, 14,
-			[]EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
-			waveParams{0.1, 1.5, MovementPatternZigzag}),
-		wm.createWave(FormationCircle, 12,
-			[]EnemyType{EnemyTypeHeavy, EnemyTypeBasic},
-			waveParams{0.12, 1.5, MovementPatternAccelerating}),
+		waves:     []WaveConfig{}, // Start with empty waves, will be loaded from level config
 	}
 }
 
-// waveParams holds parameters for creating a wave
-type waveParams struct {
-	spawnDelay     float64
-	interWaveDelay float64
-	pattern        MovementPattern
-}
-
-// createWave creates a wave configuration with the given parameters
-func (wm *WaveManager) createWave(
-	formation FormationType,
-	count int,
-	types []EnemyType,
-	params waveParams,
-) WaveConfig {
-	return WaveConfig{
-		FormationType:   formation,
-		EnemyCount:      count,
-		EnemyTypes:      types,
-		SpawnDelay:      params.spawnDelay,
-		Timeout:         12.0,
-		InterWaveDelay:  params.interWaveDelay,
-		MovementPattern: params.pattern,
-	}
+// LoadWaves loads wave configurations for the current level
+func (wm *WaveManager) LoadWaves(waves []WaveConfig) {
+	wm.waves = waves
+	wm.Reset() // Reset to start of new wave sequence
+	wm.logger.Debug("Waves loaded", "count", len(waves))
 }
 
 // StartNextWave starts the next wave (with inter-wave delay)
 func (wm *WaveManager) StartNextWave() *WaveConfig {
 	if wm.waveIndex >= len(wm.waves) {
+		wm.logger.Debug("All waves complete", "total_waves", len(wm.waves))
 		return nil // All waves complete
 	}
 
 	// Check if we need to wait before starting the wave
 	delay := wm.getInterWaveDelay()
 	if delay > 0 {
+		wm.logger.Debug("Starting inter-wave delay",
+			"wave", wm.waveIndex+1,
+			"delay", delay)
 		wm.isWaiting = true
 		wm.interWaveTimer = 0
 		return nil // Will start after delay
@@ -170,7 +126,12 @@ func (wm *WaveManager) Update(deltaTime float64) {
 	// Handle inter-wave delay
 	if wm.isWaiting {
 		wm.interWaveTimer += deltaTime
-		if wm.interWaveTimer >= wm.getInterWaveDelay() {
+		targetDelay := wm.getInterWaveDelay()
+		if wm.interWaveTimer >= targetDelay {
+			wm.logger.Debug("Inter-wave delay complete, starting next wave",
+				"waited", wm.interWaveTimer,
+				"target", targetDelay,
+				"next_wave", wm.waveIndex+1)
 			wm.isWaiting = false
 			wm.interWaveTimer = 0
 			if wm.waveIndex < len(wm.waves) {
@@ -282,8 +243,12 @@ func (wm *WaveManager) IsWaveComplete() bool {
 func (wm *WaveManager) CompleteWave() {
 	if wm.currentWave != nil {
 		wm.currentWave.IsComplete = true
+		wm.logger.Debug("Wave marked complete",
+			"wave", wm.currentWave.WaveIndex+1,
+			"next_wave_index", wm.waveIndex+1)
 	}
 	wm.waveIndex++
+	wm.currentWave = nil
 }
 
 // GetCurrentWave returns the current wave state
@@ -312,4 +277,9 @@ func (wm *WaveManager) GetWaveCount() int {
 // GetCurrentWaveIndex returns the current wave index (0-based)
 func (wm *WaveManager) GetCurrentWaveIndex() int {
 	return wm.waveIndex
+}
+
+// IsWaiting returns true if the wave manager is waiting for inter-wave delay
+func (wm *WaveManager) IsWaiting() bool {
+	return wm.isWaiting
 }
