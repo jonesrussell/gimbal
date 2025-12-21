@@ -28,10 +28,15 @@ func (e *GameError) Unwrap() error {
 	return e.Cause
 }
 
+// newContextMap creates a new context map
+func newContextMap() map[string]interface{} {
+	return make(map[string]interface{})
+}
+
 // WithContext adds context information to the error
 func (e *GameError) WithContext(key string, value interface{}) *GameError {
 	if e.Context == nil {
-		e.Context = make(map[string]interface{})
+		e.Context = newContextMap()
 	}
 	e.Context[key] = value
 	return e
@@ -40,7 +45,7 @@ func (e *GameError) WithContext(key string, value interface{}) *GameError {
 // WithContextMap adds multiple context values to the error
 func (e *GameError) WithContextMap(ctx map[string]interface{}) *GameError {
 	if e.Context == nil {
-		e.Context = make(map[string]interface{})
+		e.Context = newContextMap()
 	}
 	for k, v := range ctx {
 		e.Context[k] = v
@@ -54,7 +59,7 @@ func NewGameError(code ErrorCode, message string) *GameError {
 		Code:      code,
 		Message:   message,
 		Timestamp: time.Now(),
-		Context:   make(map[string]interface{}),
+		Context:   newContextMap(),
 	}
 }
 
@@ -65,7 +70,7 @@ func NewGameErrorWithCause(code ErrorCode, message string, cause error) *GameErr
 		Message:   message,
 		Cause:     cause,
 		Timestamp: time.Now(),
-		Context:   make(map[string]interface{}),
+		Context:   newContextMap(),
 	}
 }
 
@@ -163,7 +168,7 @@ func NewErrorBuilder(code ErrorCode, message string) *ErrorBuilder {
 	return &ErrorBuilder{
 		code:    code,
 		message: message,
-		context: make(map[string]interface{}),
+		context: newContextMap(),
 	}
 }
 
@@ -176,7 +181,7 @@ func (b *ErrorBuilder) WithCause(cause error) *ErrorBuilder {
 // WithContext adds context information
 func (b *ErrorBuilder) WithContext(key string, value interface{}) *ErrorBuilder {
 	if b.context == nil {
-		b.context = make(map[string]interface{})
+		b.context = newContextMap()
 	}
 	b.context[key] = value
 	return b
@@ -185,7 +190,7 @@ func (b *ErrorBuilder) WithContext(key string, value interface{}) *ErrorBuilder 
 // WithContextMap adds multiple context values
 func (b *ErrorBuilder) WithContextMap(ctx map[string]interface{}) *ErrorBuilder {
 	if b.context == nil {
-		b.context = make(map[string]interface{})
+		b.context = newContextMap()
 	}
 	for k, v := range ctx {
 		b.context[k] = v
