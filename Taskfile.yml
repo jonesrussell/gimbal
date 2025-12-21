@@ -23,6 +23,7 @@ vars:
   ITCH_PATH: gimbal
   DEV_LOG_LEVEL: '{{.LOG_LEVEL | default "DEBUG"}}'
   PROD_LOG_LEVEL: '{{.LOG_LEVEL | default "INFO"}}'
+  DEBUG: '{{.DEBUG | default "true"}}'
 
 tasks:
   default:
@@ -34,7 +35,7 @@ tasks:
     desc: Run in development mode (debug, pprof)
     aliases: [dev]
     cmds:
-      - LOG_LEVEL={{.DEV_LOG_LEVEL}} go run -tags dev .
+      - DEBUG={{.DEBUG}} LOG_LEVEL={{.DEV_LOG_LEVEL}} go run -tags dev . {{.CLI_ARGS}}
 
   dev:hot:
     desc: Run with hot reloading (Air)
