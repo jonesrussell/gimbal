@@ -8,16 +8,15 @@ import (
 	"golang.org/x/image/font/opentype"
 
 	"github.com/jonesrussell/gimbal/assets"
+	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/errors"
 )
 
 // loadDefaultFont loads the default game font
 func (rm *ResourceManager) loadDefaultFont(ctx context.Context) error {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
 	}
 
 	fontBytes, err := assets.Assets.ReadFile("fonts/PressStart2P.ttf")
@@ -46,10 +45,8 @@ func (rm *ResourceManager) loadDefaultFont(ctx context.Context) error {
 // GetDefaultFont returns the default game font
 func (rm *ResourceManager) GetDefaultFont(ctx context.Context) (text.Face, error) {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return nil, err
 	}
 
 	if rm.defaultFont == nil {

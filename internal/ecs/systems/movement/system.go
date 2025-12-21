@@ -41,6 +41,11 @@ func NewMovementSystem(
 
 // Update updates positions of all relevant entities (player, stars, etc.)
 func (ms *MovementSystem) Update(ctx context.Context, deltaTime float64) error {
+	// Check for cancellation
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
+	}
+
 	// Update player orbital movement based on input
 	ms.updatePlayerMovement(deltaTime)
 

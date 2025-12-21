@@ -7,6 +7,7 @@ import (
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
+	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -52,10 +53,8 @@ func (cs *CollisionSystem) checkSingleProjectileCollisions(
 	ctx context.Context, projectileEntity donburi.Entity, enemies []donburi.Entity,
 ) error {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
 	}
 
 	projectileEntry := cs.world.Entry(projectileEntity)
@@ -134,10 +133,8 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 // checkEnemyProjectilePlayerCollisions checks for collisions between enemy projectiles and player
 func (cs *CollisionSystem) checkEnemyProjectilePlayerCollisions(ctx context.Context) error {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
 	}
 
 	// Get player entity

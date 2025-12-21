@@ -38,10 +38,8 @@ func (cs *CollisionSystem) getPlayerEntity() (donburi.Entity, *donburi.Entry) {
 // checkPlayerEnemyCollisions checks for collisions between player and enemies
 func (cs *CollisionSystem) checkPlayerEnemyCollisions(ctx context.Context) error {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
 	}
 
 	playerEntity, playerEntry := cs.getPlayerEntity()

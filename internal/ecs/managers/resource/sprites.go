@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/jonesrussell/gimbal/assets"
+	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/ui/core"
 )
@@ -17,7 +18,7 @@ import (
 // LoadSprite loads a sprite from embedded assets with simplified logic
 func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*ebiten.Image, error) {
 	// Check context cancellation
-	if err := rm.checkContext(ctx); err != nil {
+	if err := common.CheckContextCancellation(ctx); err != nil {
 		return nil, err
 	}
 
@@ -29,16 +30,6 @@ func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*
 
 	// Load and decode sprite
 	return rm.loadAndCacheSprite(ctx, name, path)
-}
-
-// checkContext verifies context is not canceled
-func (rm *ResourceManager) checkContext(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		return nil
-	}
 }
 
 // getCachedSprite retrieves sprite from cache if exists
@@ -152,10 +143,8 @@ func (rm *ResourceManager) CreateSprite(
 // GetSprite retrieves a loaded sprite
 func (rm *ResourceManager) GetSprite(ctx context.Context, name string) (*ebiten.Image, bool) {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
+	if err := common.CheckContextCancellation(ctx); err != nil {
 		return nil, false
-	default:
 	}
 
 	rm.mutex.RLock()
@@ -178,10 +167,8 @@ type SpriteLoadConfig struct {
 }
 
 func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, config SpriteLoadConfig) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
 	}
 
 	_, err := rm.LoadSprite(ctx, config.Name, config.Path)
@@ -288,10 +275,8 @@ func (rm *ResourceManager) createUISprites(ctx context.Context) error {
 // LoadAllSprites loads all required sprites for the game
 func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 	// Check for cancellation at the start
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
 	}
 
 	// Load different sprite types
