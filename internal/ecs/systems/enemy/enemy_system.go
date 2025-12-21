@@ -2,6 +2,7 @@ package enemy
 
 import (
 	"context"
+	"fmt"
 	"image/color"
 	stdmath "math"
 	"math/rand"
@@ -49,6 +50,9 @@ type EnemySystem struct {
 
 	// Enemy sprites cache
 	enemySprites map[EnemyType]*ebiten.Image
+
+	// Enemy configurations loaded from JSON
+	enemyConfigs map[EnemyType]EnemyTypeData
 }
 
 // NewEnemySystem creates a new enemy management system with the provided dependencies
@@ -66,12 +70,30 @@ func NewEnemySystem(
 		resourceMgr:   resourceMgr,
 		logger:        logger,
 		enemySprites:  make(map[EnemyType]*ebiten.Image),
+		enemyConfigs:  make(map[EnemyType]EnemyTypeData),
 	}
 
 	// Initialize wave manager
 	es.waveManager = NewWaveManager(world, logger)
 
 	return es
+}
+
+// LoadEnemyConfigs loads enemy type configurations into the system
+// This must be called after NewEnemySystem and before using the system
+func (es *EnemySystem) LoadEnemyConfigs(configs map[EnemyType]EnemyTypeData) {
+	es.enemyConfigs = configs
+	es.logger.Debug("Enemy configs loaded into EnemySystem", "count", len(configs))
+}
+
+// GetEnemyTypeData returns the configuration for an enemy type from loaded configs
+// Returns an error if the enemy type is not found in loaded configs
+func (es *EnemySystem) GetEnemyTypeData(enemyType EnemyType) (EnemyTypeData, error) {
+	config, ok := es.enemyConfigs[enemyType]
+	if !ok {
+		return EnemyTypeData{}, fmt.Errorf("enemy type %d not found in loaded configs", enemyType)
+	}
+	return config, nil
 }
 
 func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
@@ -165,7 +187,11 @@ func (es *EnemySystem) handleBossSpawning(ctx context.Context, deltaTime float64
 // spawnWaveEnemy spawns a single enemy from the current wave
 func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
 	enemyType := es.waveManager.GetNextEnemyType()
-	enemyData := GetEnemyTypeData(enemyType)
+	enemyData, err := es.GetEnemyTypeData(enemyType)
+	if err != nil {
+		es.logger.Error("Failed to get enemy type data", "type", enemyType, "error", err)
+		return // Skip this enemy type
+	}
 
 	// Override movement pattern with wave's pattern
 	enemyData.MovementPattern = wave.Config.MovementPattern
@@ -194,10 +220,10 @@ func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
 	enemyIndex := wave.EnemiesSpawned
 	if enemyIndex < len(formationData) {
 		formData := formationData[enemyIndex]
-		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, &enemyData)
+		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, enemyData)
 	} else {
 		// Fallback: spawn at center with random angle
-		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, &enemyData)
+		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, enemyData)
 	}
 }
 
@@ -207,7 +233,7 @@ func (es *EnemySystem) spawnEnemyAt(
 	position common.Point,
 	angle float64,
 	enemyType EnemyType,
-	enemyData *EnemyTypeData,
+	enemyData EnemyTypeData,
 ) {
 	// Get or create sprite
 	sprite := es.getEnemySprite(ctx, enemyType, enemyData)
@@ -295,7 +321,7 @@ func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed 
 func (es *EnemySystem) getEnemySprite(
 	ctx context.Context,
 	enemyType EnemyType,
-	enemyData *EnemyTypeData,
+	enemyData EnemyTypeData,
 ) *ebiten.Image {
 	// Check cache
 	if sprite, ok := es.enemySprites[enemyType]; ok {
@@ -473,7 +499,12 @@ func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
 		enemyType = EnemyTypeBasic
 	}
 
-	points := GetEnemyTypeData(enemyType).Points
+	enemyData, err := es.GetEnemyTypeData(enemyType)
+	if err != nil {
+		es.logger.Error("Failed to get enemy type data for points", "type", enemyType, "error", err)
+		return 0 // Skip scoring
+	}
+	points := enemyData.Points
 
 	// Mark enemy killed in wave manager
 	es.waveManager.MarkEnemyKilled()

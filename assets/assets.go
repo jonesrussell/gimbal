@@ -3,5 +3,5 @@ package assets
 
 import "embed"
 
-//go:embed sprites/* fonts/*
+//go:embed sprites/* fonts/* entities/*
 var Assets embed.FS

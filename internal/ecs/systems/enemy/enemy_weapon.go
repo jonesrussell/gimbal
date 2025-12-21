@@ -26,6 +26,7 @@ type EnemyWeaponSystem struct {
 	config           *config.GameConfig
 	logger           common.Logger
 	projectileSprite *ebiten.Image
+	enemySystem      *EnemySystem // Reference to enemy system for getting enemy type data
 
 	// Track fire timers per enemy entity
 	enemyFireTimers map[donburi.Entity]float64
@@ -36,11 +37,13 @@ func NewEnemyWeaponSystem(
 	world donburi.World,
 	gameConfig *config.GameConfig,
 	logger common.Logger,
+	enemySystem *EnemySystem,
 ) *EnemyWeaponSystem {
 	ews := &EnemyWeaponSystem{
 		world:           world,
 		config:          gameConfig,
 		logger:          logger,
+		enemySystem:     enemySystem,
 		enemyFireTimers: make(map[donburi.Entity]float64),
 	}
 	ews.initializeProjectileSprite()
@@ -101,21 +104,26 @@ func (ews *EnemyWeaponSystem) updateEnemyShooting(deltaTime float64, playerPos c
 
 		// Get enemy type from component (preferred) or fall back to health heuristic
 		var enemyData EnemyTypeData
+		var err error
 		if entry.HasComponent(core.EnemyTypeID) {
 			typeID := core.EnemyTypeID.Get(entry)
-			enemyData = GetEnemyTypeData(EnemyType(*typeID))
+			enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyType(*typeID))
 		} else if entry.HasComponent(core.Health) {
 			// Fallback for legacy entities without EnemyTypeID
 			health := core.Health.Get(entry)
 			if health.Maximum >= 10 {
-				enemyData = GetEnemyTypeData(EnemyTypeBoss)
+				enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyTypeBoss)
 			} else if health.Maximum >= 2 {
-				enemyData = GetEnemyTypeData(EnemyTypeHeavy)
+				enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyTypeHeavy)
 			} else {
-				enemyData = GetEnemyTypeData(EnemyTypeBasic)
+				enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyTypeBasic)
 			}
 		} else {
-			enemyData = GetEnemyTypeData(EnemyTypeBasic)
+			enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyTypeBasic)
+		}
+		if err != nil {
+			ews.logger.Warn("Failed to get enemy type data for weapon", "error", err)
+			return // Skip this enemy
 		}
 
 		// Skip if enemy can't shoot

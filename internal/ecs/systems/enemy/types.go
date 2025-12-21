@@ -1,5 +1,11 @@
 package enemy
 
+import (
+	"fmt"
+
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
+)
+
 // EnemyType represents the type of enemy
 type EnemyType int
 
@@ -55,52 +61,48 @@ type EnemyTypeData struct {
 	ProjectileSpeed float64         // Speed of enemy projectiles
 }
 
-// GetEnemyTypeData returns the configuration for an enemy type
-func GetEnemyTypeData(enemyType EnemyType) EnemyTypeData {
-	switch enemyType {
-	case EnemyTypeBasic:
-		return EnemyTypeData{
-			Type:            EnemyTypeBasic,
-			Health:          1,
-			Speed:           2.0,
-			Size:            32,
-			Points:          100,
-			SpriteName:      "enemy",
-			MovementType:    "outward",
-			MovementPattern: MovementPatternNormal,
-			CanShoot:        true,
-			FireRate:        0.5, // Shoots every 2 seconds
-			ProjectileSpeed: 4.0,
-		}
-	case EnemyTypeHeavy:
-		return EnemyTypeData{
-			Type:            EnemyTypeHeavy,
-			Health:          2,
-			Speed:           1.5,
-			Size:            32,
-			Points:          200,
-			SpriteName:      "enemy_heavy",
-			MovementType:    "spiral",
-			MovementPattern: MovementPatternNormal,
-			CanShoot:        true,
-			FireRate:        1.0, // Shoots every second
-			ProjectileSpeed: 5.0,
-		}
-	case EnemyTypeBoss:
-		return EnemyTypeData{
-			Type:            EnemyTypeBoss,
-			Health:          10,
-			Speed:           1.0,
-			Size:            64,
-			Points:          1000,
-			SpriteName:      "enemy_boss",
-			MovementType:    "orbital",
-			MovementPattern: MovementPatternNormal,
-			CanShoot:        true,
-			FireRate:        2.0, // Shoots twice per second
-			ProjectileSpeed: 6.0,
-		}
+// ConvertEnemyTypeConfig converts a managers.EnemyTypeConfig to enemy.EnemyTypeData
+func ConvertEnemyTypeConfig(config managers.EnemyTypeConfig, enemyType EnemyType) (EnemyTypeData, error) {
+	// Convert movement pattern from int to MovementPattern
+	var movementPattern MovementPattern
+	switch config.MovementPattern {
+	case 0:
+		movementPattern = MovementPatternNormal
+	case 1:
+		movementPattern = MovementPatternZigzag
+	case 2:
+		movementPattern = MovementPatternAccelerating
+	case 3:
+		movementPattern = MovementPatternPulsing
 	default:
-		return GetEnemyTypeData(EnemyTypeBasic)
+		return EnemyTypeData{}, fmt.Errorf("invalid movement_pattern: %d (must be 0-3)", config.MovementPattern)
+	}
+
+	return EnemyTypeData{
+		Type:            enemyType,
+		Health:          config.Health,
+		Speed:           config.Speed,
+		Size:            config.Size,
+		Points:          config.Points,
+		SpriteName:      config.SpriteName,
+		MovementType:    config.MovementType,
+		MovementPattern: movementPattern,
+		CanShoot:        config.CanShoot,
+		FireRate:        config.FireRate,
+		ProjectileSpeed: config.ProjectileSpeed,
+	}, nil
+}
+
+// GetEnemyTypeFromString converts a string type name to EnemyType
+func GetEnemyTypeFromString(typeStr string) (EnemyType, error) {
+	switch typeStr {
+	case "basic":
+		return EnemyTypeBasic, nil
+	case "heavy":
+		return EnemyTypeHeavy, nil
+	case "boss":
+		return EnemyTypeBoss, nil
+	default:
+		return EnemyTypeBasic, fmt.Errorf("unknown enemy type: %s", typeStr)
 	}
 }

@@ -87,11 +87,43 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 
 // createGameplaySystems creates gameplay ECS systems
 func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
+	// Load entity configurations from JSON (no fallback - errors if missing)
+	playerConfig, err := managers.LoadPlayerConfig(ctx, g.logger)
+	if err != nil {
+		return fmt.Errorf("failed to load player config: %w", err)
+	}
+	g.playerConfig = playerConfig
+	g.logger.Debug("Player config loaded", "health", playerConfig.Health, "size", playerConfig.Size)
+
+	enemyConfigs, err := managers.LoadEnemyConfigs(ctx, g.logger)
+	if err != nil {
+		return fmt.Errorf("failed to load enemy configs: %w", err)
+	}
+
+	// Convert enemy configs to map[EnemyType]EnemyTypeData
+	enemyConfigMap := make(map[enemy.EnemyType]enemy.EnemyTypeData)
+	for _, enemyConfig := range enemyConfigs.EnemyTypes {
+		enemyType, err := enemy.GetEnemyTypeFromString(enemyConfig.Type)
+		if err != nil {
+			return fmt.Errorf("invalid enemy type '%s': %w", enemyConfig.Type, err)
+		}
+		enemyData, err := enemy.ConvertEnemyTypeConfig(enemyConfig, enemyType)
+		if err != nil {
+			return fmt.Errorf("failed to convert enemy config for type '%s': %w", enemyConfig.Type, err)
+		}
+		enemyConfigMap[enemyType] = enemyData
+	}
+	g.logger.Debug("Enemy configs loaded and converted", "count", len(enemyConfigMap))
+
 	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
 	g.logger.Debug("Health system created")
 	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.logger, g.inputHandler)
 	g.logger.Debug("Movement system created")
 	g.enemySystem = enemy.NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
+
+	// Load enemy configs into enemy system
+	g.enemySystem.LoadEnemyConfigs(enemyConfigMap)
+	g.logger.Debug("Enemy configs loaded into enemy system")
 
 	// Load initial level configuration into enemy system
 	levelConfig := g.levelManager.GetCurrentLevelConfig()
@@ -103,7 +135,7 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 			"waves", len(levelConfig.Waves))
 	}
 
-	g.enemyWeaponSystem = enemy.NewEnemyWeaponSystem(g.world, g.config, g.logger)
+	g.enemyWeaponSystem = enemy.NewEnemyWeaponSystem(g.world, g.config, g.logger, g.enemySystem)
 	g.logger.Debug("Enemy weapon system created")
 	g.weaponSystem = weapon.NewWeaponSystem(g.world, g.config)
 	g.collisionSystem = collision.NewCollisionSystem(&collision.CollisionSystemConfig{
@@ -272,9 +304,12 @@ func (g *ECSGame) createEntities(ctx context.Context) error {
 		return errors.NewGameError(errors.AssetNotFound, "star sprite not found")
 	}
 
-	// Create player
-	g.playerEntity = core.CreatePlayer(g.world, playerSprite, g.config)
-	g.logger.Debug("Player entity created", "entity_id", g.playerEntity)
+	// Create player with config from JSON
+	if g.playerConfig == nil {
+		return errors.NewGameError(errors.ConfigMissing, "player config not loaded")
+	}
+	g.playerEntity = core.CreatePlayer(g.world, playerSprite, g.config, g.playerConfig)
+	g.logger.Debug("Player entity created", "entity_id", g.playerEntity, "health", g.playerConfig.Health, "size", g.playerConfig.Size)
 
 	// Create star field
 	g.starEntities = core.CreateStarField(g.world, starSprite, g.config)
