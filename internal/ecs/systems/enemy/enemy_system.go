@@ -89,11 +89,11 @@ func (es *EnemySystem) LoadEnemyConfigs(configs map[EnemyType]EnemyTypeData) {
 // GetEnemyTypeData returns the configuration for an enemy type from loaded configs
 // Returns an error if the enemy type is not found in loaded configs
 func (es *EnemySystem) GetEnemyTypeData(enemyType EnemyType) (EnemyTypeData, error) {
-	config, ok := es.enemyConfigs[enemyType]
+	enemyConfig, ok := es.enemyConfigs[enemyType]
 	if !ok {
 		return EnemyTypeData{}, fmt.Errorf("enemy type %d not found in loaded configs", enemyType)
 	}
-	return config, nil
+	return enemyConfig, nil
 }
 
 func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
@@ -220,10 +220,10 @@ func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
 	enemyIndex := wave.EnemiesSpawned
 	if enemyIndex < len(formationData) {
 		formData := formationData[enemyIndex]
-		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, enemyData)
+		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, &enemyData)
 	} else {
 		// Fallback: spawn at center with random angle
-		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, enemyData)
+		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, &enemyData)
 	}
 }
 
@@ -233,7 +233,7 @@ func (es *EnemySystem) spawnEnemyAt(
 	position common.Point,
 	angle float64,
 	enemyType EnemyType,
-	enemyData EnemyTypeData,
+	enemyData *EnemyTypeData,
 ) {
 	// Get or create sprite
 	sprite := es.getEnemySprite(ctx, enemyType, enemyData)
@@ -321,7 +321,7 @@ func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed 
 func (es *EnemySystem) getEnemySprite(
 	ctx context.Context,
 	enemyType EnemyType,
-	enemyData EnemyTypeData,
+	enemyData *EnemyTypeData,
 ) *ebiten.Image {
 	// Check cache
 	if sprite, ok := es.enemySprites[enemyType]; ok {

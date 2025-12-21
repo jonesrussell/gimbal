@@ -77,7 +77,7 @@ func DefaultDifficultySettings() DifficultySettings {
 func DefaultBossConfig() BossConfig {
 	return BossConfig{
 		Enabled:         true,
-		EnemyType:       2, // EnemyTypeBoss = 2
+		EnemyType:       2,
 		Health:          10,
 		SpawnDelay:      2.0,
 		MovementType:    "orbital",

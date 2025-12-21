@@ -14,7 +14,12 @@ import (
 )
 
 // CreatePlayer creates a player entity with orbital movement
-func CreatePlayer(w donburi.World, sprite *ebiten.Image, gameConfig *config.GameConfig, playerConfig *managers.PlayerConfig) donburi.Entity {
+func CreatePlayer(
+	w donburi.World,
+	sprite *ebiten.Image,
+	gameConfig *config.GameConfig,
+	playerConfig *managers.PlayerConfig,
+) donburi.Entity {
 	entity := w.Create(PlayerTag, Position, Sprite, Orbital, Size, Angle, Health)
 	entry := w.Entry(entity)
 

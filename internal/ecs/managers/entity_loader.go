@@ -110,42 +110,9 @@ func LoadEnemyConfigs(ctx context.Context, logger common.Logger) (*EnemyConfigs,
 	}
 
 	// Validate each enemy type
-	for i, enemyType := range configs.EnemyTypes {
-		if enemyType.Type == "" {
-			return nil, errors.NewGameError(
-				errors.AssetInvalid,
-				fmt.Sprintf("enemy type at index %d has empty type field", i),
-			)
-		}
-		if enemyType.Health <= 0 {
-			return nil, errors.NewGameError(
-				errors.AssetInvalid,
-				fmt.Sprintf("enemy type '%s' has invalid health: %d (must be > 0)", enemyType.Type, enemyType.Health),
-			)
-		}
-		if enemyType.Speed <= 0 {
-			return nil, errors.NewGameError(
-				errors.AssetInvalid,
-				fmt.Sprintf("enemy type '%s' has invalid speed: %f (must be > 0)", enemyType.Type, enemyType.Speed),
-			)
-		}
-		if enemyType.Size <= 0 {
-			return nil, errors.NewGameError(
-				errors.AssetInvalid,
-				fmt.Sprintf("enemy type '%s' has invalid size: %d (must be > 0)", enemyType.Type, enemyType.Size),
-			)
-		}
-		if enemyType.SpriteName == "" {
-			return nil, errors.NewGameError(
-				errors.AssetInvalid,
-				fmt.Sprintf("enemy type '%s' has empty sprite_name", enemyType.Type),
-			)
-		}
-		if enemyType.MovementType == "" {
-			return nil, errors.NewGameError(
-				errors.AssetInvalid,
-				fmt.Sprintf("enemy type '%s' has empty movement_type", enemyType.Type),
-			)
+	for i := range configs.EnemyTypes {
+		if validateErr := validateEnemyType(&configs.EnemyTypes[i], i); validateErr != nil {
+			return nil, validateErr
 		}
 	}
 
@@ -154,4 +121,45 @@ func LoadEnemyConfigs(ctx context.Context, logger common.Logger) (*EnemyConfigs,
 	}
 
 	return &configs, nil
+}
+
+// validateEnemyType validates a single enemy type configuration
+func validateEnemyType(enemyType *EnemyTypeConfig, index int) error {
+	if enemyType.Type == "" {
+		return errors.NewGameError(
+			errors.AssetInvalid,
+			fmt.Sprintf("enemy type at index %d has empty type field", index),
+		)
+	}
+	if enemyType.Health <= 0 {
+		return errors.NewGameError(
+			errors.AssetInvalid,
+			fmt.Sprintf("enemy type '%s' has invalid health: %d (must be > 0)", enemyType.Type, enemyType.Health),
+		)
+	}
+	if enemyType.Speed <= 0 {
+		return errors.NewGameError(
+			errors.AssetInvalid,
+			fmt.Sprintf("enemy type '%s' has invalid speed: %f (must be > 0)", enemyType.Type, enemyType.Speed),
+		)
+	}
+	if enemyType.Size <= 0 {
+		return errors.NewGameError(
+			errors.AssetInvalid,
+			fmt.Sprintf("enemy type '%s' has invalid size: %d (must be > 0)", enemyType.Type, enemyType.Size),
+		)
+	}
+	if enemyType.SpriteName == "" {
+		return errors.NewGameError(
+			errors.AssetInvalid,
+			fmt.Sprintf("enemy type '%s' has empty sprite_name", enemyType.Type),
+		)
+	}
+	if enemyType.MovementType == "" {
+		return errors.NewGameError(
+			errors.AssetInvalid,
+			fmt.Sprintf("enemy type '%s' has empty movement_type", enemyType.Type),
+		)
+	}
+	return nil
 }

@@ -28,19 +28,7 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	// Load boss sprite if not already loaded
 	// IMPORTANT: Use getBossSprite, not getEnemySprite, to ensure correct sprite
 	bossSprite := es.getBossSprite(ctx)
-
-	// Final verification: ensure sprite is not nil
-	if bossSprite == nil {
-		es.logger.Error("[BOSS_SPRITE] CRITICAL: Boss sprite is nil in SpawnBoss, creating emergency fallback")
-		bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
-		if err != nil {
-			es.logger.Error("[BOSS_SPRITE] Failed to get boss data for fallback", "error", err)
-			bossSprite = ebiten.NewImage(64, 64) // Default size
-		} else {
-			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
-		}
-		bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
-	}
+	bossSprite = es.ensureBossSprite(bossSprite)
 
 	centerX := float64(es.gameConfig.ScreenSize.Width) / 2
 	centerY := float64(es.gameConfig.ScreenSize.Height) / 2
@@ -63,6 +51,71 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	core.Sprite.SetValue(entry, bossSprite)
 
 	// Verify sprite was set correctly and log pointer address for debugging
+	es.verifyBossSprite(ctx, entry, entity)
+
+	// Setup boss entity components
+	if err := es.setupBossEntity(entry, centerX, centerY); err != nil {
+		es.logger.Error("[BOSS_SPRITE] Failed to setup boss entity", "error", err)
+		return donburi.Null
+	}
+
+	es.logBossSpawned(entry, spawnX, spawnY, initialAngle, entity)
+	return entity
+}
+
+// ensureBossSprite ensures boss sprite is not nil
+func (es *EnemySystem) ensureBossSprite(bossSprite *ebiten.Image) *ebiten.Image {
+	if bossSprite != nil {
+		return bossSprite
+	}
+
+	es.logger.Error("[BOSS_SPRITE] CRITICAL: Boss sprite is nil in SpawnBoss, creating emergency fallback")
+	bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+	if err != nil {
+		es.logger.Error("[BOSS_SPRITE] Failed to get boss data for fallback", "error", err)
+		bossSprite = ebiten.NewImage(64, 64) // Default size
+	} else {
+		bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
+	}
+	bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
+	return bossSprite
+}
+
+// logBossSpawned logs boss spawn information
+func (es *EnemySystem) logBossSpawned(
+	entry *donburi.Entry,
+	spawnX, spawnY, initialAngle float64,
+	entity donburi.Entity,
+) {
+	finalSprite := core.Sprite.Get(entry)
+	spriteInfo := "nil"
+	if finalSprite != nil && *finalSprite != nil {
+		bounds := (*finalSprite).Bounds()
+		spriteInfo = fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy())
+	}
+
+	bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+	if err != nil {
+		es.logger.Error("[BOSS_SPRITE] Failed to get boss data for logging", "error", err)
+		return
+	}
+	bossHealth := bossData.Health
+	if es.bossConfig != nil && es.bossConfig.Health > 0 {
+		bossHealth = es.bossConfig.Health
+	}
+
+	es.logger.Debug("Boss spawned",
+		"type", EnemyTypeBoss.String(),
+		"sprite_name", "enemy_boss",
+		"sprite_size", spriteInfo,
+		"health", bossHealth,
+		"position", common.Point{X: spawnX, Y: spawnY},
+		"angle", initialAngle,
+		"entity", entity)
+}
+
+// verifyBossSprite verifies and logs sprite details
+func (es *EnemySystem) verifyBossSprite(ctx context.Context, entry *donburi.Entry, entity donburi.Entity) {
 	if setSprite := core.Sprite.Get(entry); setSprite != nil && *setSprite != nil {
 		bounds := (*setSprite).Bounds()
 		// Get player sprite for comparison
@@ -80,12 +133,14 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	} else {
 		es.logger.Error("[BOSS_SPRITE] Failed to set boss sprite - sprite is nil")
 	}
+}
 
+// setupBossEntity sets up boss entity components
+func (es *EnemySystem) setupBossEntity(entry *donburi.Entry, centerX, centerY float64) error {
 	// Use boss config if available, otherwise use loaded boss data
 	bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
 	if err != nil {
-		es.logger.Error("[BOSS_SPRITE] Failed to get boss type data", "error", err)
-		return donburi.Null
+		return fmt.Errorf("failed to get boss type data: %w", err)
 	}
 	bossSize := bossData.Size
 	bossHealth := bossData.Health
@@ -120,24 +175,7 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	// Set initial angle
 	core.Angle.SetValue(entry, 0)
 
-	// Verify final sprite
-	finalSprite := core.Sprite.Get(entry)
-	spriteInfo := "nil"
-	if finalSprite != nil && *finalSprite != nil {
-		bounds := (*finalSprite).Bounds()
-		spriteInfo = fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy())
-	}
-
-	es.logger.Debug("Boss spawned",
-		"type", EnemyTypeBoss.String(),
-		"sprite_name", "enemy_boss",
-		"sprite_size", spriteInfo,
-		"health", bossHealth,
-		"position", common.Point{X: spawnX, Y: spawnY},
-		"angle", initialAngle,
-		"entity", entity)
-
-	return entity
+	return nil
 }
 
 // getBossSprite loads or creates the boss sprite (with caching)
@@ -149,6 +187,22 @@ func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
 	}
 
 	// Try to load boss sprite from resource manager
+	bossSprite := es.tryLoadBossSprite(ctx)
+	bossSprite = es.verifyBossSpriteNotPlayer(ctx, bossSprite)
+
+	// Verify sprite is not nil before caching
+	if bossSprite == nil {
+		bossSprite = es.createBossPlaceholder()
+	}
+
+	// Cache the sprite
+	es.enemySprites[EnemyTypeBoss] = bossSprite
+	es.logger.Debug("[BOSS_SPRITE] Boss sprite cached", "final_size", bossSprite.Bounds())
+	return bossSprite
+}
+
+// tryLoadBossSprite tries to load boss sprite from resource manager
+func (es *EnemySystem) tryLoadBossSprite(ctx context.Context) *ebiten.Image {
 	es.logger.Debug("[BOSS_SPRITE] Loading boss sprite from resource manager", "sprite_name", "enemy_boss")
 	bossSprite, exists := es.resourceMgr.GetSprite(ctx, "enemy_boss")
 	if !exists || bossSprite == nil {
@@ -157,66 +211,61 @@ func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
 		bossSprite, exists = es.resourceMgr.GetSprite(ctx, "boss")
 		if !exists || bossSprite == nil {
 			es.logger.Warn("[BOSS_SPRITE] Boss sprite not found in resource manager, creating placeholder")
-			// Create a larger placeholder sprite (purple to distinguish from regular enemies)
-			bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
-			if err != nil {
-				es.logger.Error("[BOSS_SPRITE] Failed to get boss data for placeholder", "error", err)
-				bossSprite = ebiten.NewImage(64, 64) // Default size
-			} else {
-				bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
-			}
-			bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
-			es.logger.Debug("[BOSS_SPRITE] Created purple placeholder", "size", bossData.Size)
-		} else {
-			bounds := bossSprite.Bounds()
-			es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'boss'",
-				"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()))
+			return nil
 		}
-	} else {
 		bounds := bossSprite.Bounds()
-		es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'enemy_boss'",
+		es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'boss'",
 			"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()))
-
-		// CRITICAL: Verify we didn't accidentally get the player sprite
-		// Compare with player sprite to ensure they're different
-		playerSprite, playerExists := es.resourceMgr.GetSprite(ctx, "player")
-		if playerExists && playerSprite != nil {
-			// Check if they're the same pointer (same sprite object)
-			if bossSprite == playerSprite {
-				es.logger.Error("[BOSS_SPRITE] CRITICAL ERROR: Boss sprite is the same as player sprite! This is wrong!")
-				// Force create a proper boss sprite
-				bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
-				if err != nil {
-					es.logger.Error("[BOSS_SPRITE] Failed to get boss data for replacement", "error", err)
-					bossSprite = ebiten.NewImage(64, 64) // Default size
-				} else {
-					bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
-				}
-				bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
-				es.logger.Warn("[BOSS_SPRITE] Created replacement boss sprite to fix player sprite issue", "size", bossData.Size)
-			} else {
-				es.logger.Debug("[BOSS_SPRITE] Verified boss sprite is different from player sprite")
-			}
-		}
+		return bossSprite
 	}
 
-	// Verify sprite is not nil before caching
-	if bossSprite == nil {
-		es.logger.Error("[BOSS_SPRITE] Boss sprite is nil after all attempts, creating fallback")
-		bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
-		if err != nil {
-			es.logger.Error("[BOSS_SPRITE] Failed to get boss data for fallback", "error", err)
-			bossSprite = ebiten.NewImage(64, 64) // Default size
-		} else {
-			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
-		}
-		bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
-	}
-
-	// Cache the sprite
-	es.enemySprites[EnemyTypeBoss] = bossSprite
-	es.logger.Debug("[BOSS_SPRITE] Boss sprite cached", "final_size", bossSprite.Bounds())
+	bounds := bossSprite.Bounds()
+	es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'enemy_boss'",
+		"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()))
 	return bossSprite
+}
+
+// verifyBossSpriteNotPlayer verifies that boss sprite is not the same as player sprite
+func (es *EnemySystem) verifyBossSpriteNotPlayer(ctx context.Context, bossSprite *ebiten.Image) *ebiten.Image {
+	if bossSprite == nil {
+		return nil
+	}
+
+	playerSprite, playerExists := es.resourceMgr.GetSprite(ctx, "player")
+	if !playerExists || playerSprite == nil {
+		return bossSprite
+	}
+
+	// Check if they're the same pointer (same sprite object)
+	if bossSprite == playerSprite {
+		es.logger.Error(
+			"[BOSS_SPRITE] CRITICAL ERROR: Boss sprite is the same as player sprite! This is wrong!",
+		)
+		// Force create a proper boss sprite
+		return es.createBossPlaceholder()
+	}
+
+	es.logger.Debug("[BOSS_SPRITE] Verified boss sprite is different from player sprite")
+	return bossSprite
+}
+
+// createBossPlaceholder creates a fallback placeholder sprite
+func (es *EnemySystem) createBossPlaceholder() *ebiten.Image {
+	es.logger.Error("[BOSS_SPRITE] Boss sprite is nil after all attempts, creating fallback")
+	bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+	if err != nil {
+		es.logger.Error("[BOSS_SPRITE] Failed to get boss data for fallback", "error", err)
+		return es.createDefaultBossSprite(64)
+	}
+	return es.createDefaultBossSprite(bossData.Size)
+}
+
+// createDefaultBossSprite creates a default purple boss sprite
+func (es *EnemySystem) createDefaultBossSprite(size int) *ebiten.Image {
+	sprite := ebiten.NewImage(size, size)
+	sprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
+	es.logger.Debug("[BOSS_SPRITE] Created purple placeholder", "size", size)
+	return sprite
 }
 
 // UpdateBossMovement updates the boss's orbital movement

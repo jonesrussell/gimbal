@@ -103,24 +103,7 @@ func (ews *EnemyWeaponSystem) updateEnemyShooting(deltaTime float64, playerPos c
 		enemyPos := core.Position.Get(entry)
 
 		// Get enemy type from component (preferred) or fall back to health heuristic
-		var enemyData EnemyTypeData
-		var err error
-		if entry.HasComponent(core.EnemyTypeID) {
-			typeID := core.EnemyTypeID.Get(entry)
-			enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyType(*typeID))
-		} else if entry.HasComponent(core.Health) {
-			// Fallback for legacy entities without EnemyTypeID
-			health := core.Health.Get(entry)
-			if health.Maximum >= 10 {
-				enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyTypeBoss)
-			} else if health.Maximum >= 2 {
-				enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyTypeHeavy)
-			} else {
-				enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyTypeBasic)
-			}
-		} else {
-			enemyData, err = ews.enemySystem.GetEnemyTypeData(EnemyTypeBasic)
-		}
+		enemyData, err := ews.getEnemyTypeDataForWeapon(entry)
 		if err != nil {
 			ews.logger.Warn("Failed to get enemy type data for weapon", "error", err)
 			return // Skip this enemy
@@ -147,6 +130,26 @@ func (ews *EnemyWeaponSystem) updateEnemyShooting(deltaTime float64, playerPos c
 			ews.enemyFireTimers[entity] = 0
 		}
 	})
+}
+
+// getEnemyTypeDataForWeapon gets enemy type data from entry
+func (ews *EnemyWeaponSystem) getEnemyTypeDataForWeapon(entry *donburi.Entry) (EnemyTypeData, error) {
+	if entry.HasComponent(core.EnemyTypeID) {
+		typeID := core.EnemyTypeID.Get(entry)
+		return ews.enemySystem.GetEnemyTypeData(EnemyType(*typeID))
+	}
+	if entry.HasComponent(core.Health) {
+		// Fallback for legacy entities without EnemyTypeID
+		health := core.Health.Get(entry)
+		if health.Maximum >= 10 {
+			return ews.enemySystem.GetEnemyTypeData(EnemyTypeBoss)
+		}
+		if health.Maximum >= 2 {
+			return ews.enemySystem.GetEnemyTypeData(EnemyTypeHeavy)
+		}
+		return ews.enemySystem.GetEnemyTypeData(EnemyTypeBasic)
+	}
+	return ews.enemySystem.GetEnemyTypeData(EnemyTypeBasic)
 }
 
 // fireAtPlayer creates a projectile aimed at the player
