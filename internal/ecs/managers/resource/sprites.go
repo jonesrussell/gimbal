@@ -186,69 +186,52 @@ func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, config Sp
 	return nil
 }
 
-func (rm *ResourceManager) loadPlayerSprites(ctx context.Context) error {
-	return rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
-		Name:           "player",
-		Path:           "sprites/player.png",
-		FallbackWidth:  32,
-		FallbackHeight: 32,
-		FallbackColor:  color.RGBA{0, 255, 0, 255},
-	})
-}
-
-func (rm *ResourceManager) loadHeartSprites(ctx context.Context) error {
-	return rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
-		Name:           "heart",
-		Path:           "sprites/heart.png",
-		FallbackWidth:  16,
-		FallbackHeight: 16,
-		FallbackColor:  color.RGBA{255, 0, 0, 255},
-	})
-}
-
-func (rm *ResourceManager) loadEnemySprites(ctx context.Context) error {
-	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy sprite", "path", "sprites/enemy.png")
-	err := rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
-		Name:           "enemy",
-		Path:           "sprites/enemy.png",
-		FallbackWidth:  32,
-		FallbackHeight: 32,
-		FallbackColor:  color.RGBA{255, 0, 0, 255},
-	})
-	if err == nil {
-		rm.logger.Debug("[SPRITE_LOAD] Enemy sprite loaded successfully")
+// loadGameSprites loads all game sprite types using a configuration-driven approach
+func (rm *ResourceManager) loadGameSprites(ctx context.Context) error {
+	spriteConfigs := []SpriteLoadConfig{
+		{
+			Name:           "player",
+			Path:           "sprites/player.png",
+			FallbackWidth:  32,
+			FallbackHeight: 32,
+			FallbackColor:  color.RGBA{0, 255, 0, 255}, // Green fallback
+		},
+		{
+			Name:           "heart",
+			Path:           "sprites/heart.png",
+			FallbackWidth:  16,
+			FallbackHeight: 16,
+			FallbackColor:  color.RGBA{255, 0, 0, 255}, // Red fallback
+		},
+		{
+			Name:           "enemy",
+			Path:           "sprites/enemy.png",
+			FallbackWidth:  32,
+			FallbackHeight: 32,
+			FallbackColor:  color.RGBA{255, 0, 0, 255}, // Red fallback
+		},
+		{
+			Name:           "enemy_heavy",
+			Path:           "sprites/enemy_heavy.png",
+			FallbackWidth:  32,
+			FallbackHeight: 32,
+			FallbackColor:  color.RGBA{255, 165, 0, 255}, // Orange fallback
+		},
+		{
+			Name:           "enemy_boss",
+			Path:           "sprites/enemy_boss.png",
+			FallbackWidth:  64,
+			FallbackHeight: 64,
+			FallbackColor:  color.RGBA{128, 0, 128, 255}, // Purple fallback
+		},
 	}
-	return err
-}
 
-func (rm *ResourceManager) loadEnemyHeavySprites(ctx context.Context) error {
-	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy_heavy sprite", "path", "sprites/enemy_heavy.png")
-	err := rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
-		Name:           "enemy_heavy",
-		Path:           "sprites/enemy_heavy.png",
-		FallbackWidth:  32,
-		FallbackHeight: 32,
-		FallbackColor:  color.RGBA{255, 165, 0, 255}, // Orange fallback
-	})
-	if err == nil {
-		rm.logger.Debug("[SPRITE_LOAD] Enemy heavy sprite loaded successfully")
+	for _, cfg := range spriteConfigs {
+		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
+			return err
+		}
 	}
-	return err
-}
-
-func (rm *ResourceManager) loadEnemyBossSprites(ctx context.Context) error {
-	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy_boss sprite", "path", "sprites/enemy_boss.png")
-	err := rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
-		Name:           "enemy_boss",
-		Path:           "sprites/enemy_boss.png",
-		FallbackWidth:  64,
-		FallbackHeight: 64,
-		FallbackColor:  color.RGBA{128, 0, 128, 255}, // Purple fallback
-	})
-	if err == nil {
-		rm.logger.Debug("[SPRITE_LOAD] Enemy boss sprite loaded successfully")
-	}
-	return err
+	return nil
 }
 
 // createUISprites creates UI-related sprites
@@ -279,22 +262,12 @@ func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 		return err
 	}
 
-	// Load different sprite types
-	if err := rm.loadPlayerSprites(ctx); err != nil {
+	// Load game sprites (player, enemies, heart)
+	if err := rm.loadGameSprites(ctx); err != nil {
 		return err
 	}
-	if err := rm.loadHeartSprites(ctx); err != nil {
-		return err
-	}
-	if err := rm.loadEnemySprites(ctx); err != nil {
-		return err
-	}
-	if err := rm.loadEnemyHeavySprites(ctx); err != nil {
-		return err
-	}
-	if err := rm.loadEnemyBossSprites(ctx); err != nil {
-		return err
-	}
+
+	// Create UI sprites (star, button, background)
 	if err := rm.createUISprites(ctx); err != nil {
 		return err
 	}
