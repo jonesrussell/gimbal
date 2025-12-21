@@ -1,6 +1,8 @@
 package core
 
 import (
+	"time"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 
@@ -9,8 +11,12 @@ import (
 	"github.com/jonesrussell/gimbal/internal/math"
 )
 
+// MovementPattern represents movement behavior patterns
+// This is a type alias to avoid import cycles - it should match enemy.MovementPattern
+type MovementPattern int
+
 // Re-export timing constants for use by other packages
-const (
+var (
 	DefaultInvincibilityDuration = config.DefaultInvincibilityDuration
 )
 
@@ -56,10 +62,10 @@ var (
 type MovementData struct {
 	Velocity    common.Point
 	MaxSpeed    float64
-	Pattern     int     // Movement pattern type (0=normal, 1=zigzag, 2=accelerating, 3=pulsing)
-	PatternTime float64 // Time accumulator for pattern-based movement
-	BaseAngle   float64 // Base angle for pattern calculations
-	BaseSpeed   float64 // Base speed for pattern calculations
+	Pattern     MovementPattern // Movement pattern type (should match enemy.MovementPattern)
+	PatternTime time.Duration   // Time accumulator for pattern-based movement
+	BaseAngle   float64         // Base angle for pattern calculations
+	BaseSpeed   float64         // Base speed for pattern calculations
 }
 
 // OrbitalData represents orbital movement information
@@ -72,11 +78,11 @@ type OrbitalData struct {
 
 // HealthData represents health and invincibility information
 type HealthData struct {
-	Current               int     // Current health/lives
-	Maximum               int     // Maximum health/lives
-	InvincibilityTime     float64 // Time remaining for invincibility (seconds)
-	IsInvincible          bool    // Whether entity is currently invincible
-	InvincibilityDuration float64 // Duration of invincibility when hit (seconds)
+	Current               int           // Current health/lives
+	Maximum               int           // Maximum health/lives
+	InvincibilityTime     time.Duration // Time remaining for invincibility
+	IsInvincible          bool          // Whether entity is currently invincible
+	InvincibilityDuration time.Duration // Duration of invincibility when hit
 }
 
 // NewHealthData creates a new health data with default invincibility duration

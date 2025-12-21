@@ -23,8 +23,8 @@ const (
 
 // Health and combat constants
 const (
-	// DefaultInvincibilityDuration is the default duration of invincibility after being hit (in seconds)
-	DefaultInvincibilityDuration = 2.0
+	// DefaultInvincibilityDuration is the default duration of invincibility after being hit
+	DefaultInvincibilityDuration = 2 * time.Second
 
 	// DefaultPlayerHealth is the default starting health for the player
 	DefaultPlayerHealth = 3

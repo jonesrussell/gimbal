@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
@@ -194,8 +195,9 @@ func (ro *RenderOptimizer) renderBatch(screen *ebiten.Image, batch *RenderBatch)
 		if entry.HasComponent(Health) {
 			health := Health.Get(entry)
 			if health.IsInvincible {
-				flashRate := 0.2
-				flashPhase := int((health.InvincibilityDuration - health.InvincibilityTime) / flashRate)
+				flashRate := 0.2 * float64(time.Second) // Convert to time.Duration
+				remainingTime := health.InvincibilityDuration - health.InvincibilityTime
+				flashPhase := int(remainingTime / time.Duration(flashRate))
 				if flashPhase%2 == 0 {
 					op.ColorScale.SetR(1)
 					op.ColorScale.SetG(1)

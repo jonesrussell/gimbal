@@ -1,11 +1,18 @@
 package managers
 
+import "time"
+
 // PlayerConfig defines player entity configuration
 type PlayerConfig struct {
 	Health                int     `json:"health"`
 	Size                  int     `json:"size"`
 	SpriteName            string  `json:"sprite_name"`
-	InvincibilityDuration float64 `json:"invincibility_duration"`
+	InvincibilityDuration float64 `json:"invincibility_duration"` // Duration in seconds (JSON)
+}
+
+// GetInvincibilityDuration returns the invincibility duration as time.Duration
+func (pc *PlayerConfig) GetInvincibilityDuration() time.Duration {
+	return time.Duration(pc.InvincibilityDuration * float64(time.Second))
 }
 
 // EnemyTypeConfig defines configuration for a single enemy type (JSON representation)

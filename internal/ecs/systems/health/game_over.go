@@ -51,15 +51,11 @@ func (hs *HealthSystem) areAllPlayersDead(players []donburi.Entity) bool {
 
 // triggerGameOver triggers game over state and events
 func (hs *HealthSystem) triggerGameOver(reason string) {
-	if gameStateManager, ok := hs.gameStateManager.(interface {
-		SetGameOver(bool)
-	}); ok {
-		gameStateManager.SetGameOver(true)
+	if hs.gameStateManager != nil {
+		hs.gameStateManager.SetGameOver(true)
 	}
-	if eventSystem, ok := hs.eventSystem.(interface {
-		EmitGameOver()
-	}); ok {
-		eventSystem.EmitGameOver()
+	if hs.eventSystem != nil {
+		hs.eventSystem.EmitGameOver()
 	}
 	hs.logger.Debug("Game over", "reason", reason)
 }

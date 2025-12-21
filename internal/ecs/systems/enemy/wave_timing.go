@@ -1,7 +1,9 @@
 package enemy
 
+import "time"
+
 // handleLevelStartDelay handles level start delay
-func (wm *WaveManager) handleLevelStartDelay(deltaTime float64) bool {
+func (wm *WaveManager) handleLevelStartDelay(deltaTime time.Duration) bool {
 	wm.levelStartTimer += deltaTime
 	if wm.levelStartTimer >= wm.levelStartDelay {
 		wm.logger.Debug("Level start delay complete, starting first wave",
@@ -19,7 +21,7 @@ func (wm *WaveManager) handleLevelStartDelay(deltaTime float64) bool {
 }
 
 // handleInterWaveDelay handles inter-wave delay
-func (wm *WaveManager) handleInterWaveDelay(deltaTime float64) bool {
+func (wm *WaveManager) handleInterWaveDelay(deltaTime time.Duration) bool {
 	wm.interWaveTimer += deltaTime
 	targetDelay := wm.getInterWaveDelay()
 	if wm.interWaveTimer >= targetDelay {
@@ -38,15 +40,13 @@ func (wm *WaveManager) handleInterWaveDelay(deltaTime float64) bool {
 }
 
 // getInterWaveDelay returns the delay before starting the next wave
-func (wm *WaveManager) getInterWaveDelay() float64 {
+func (wm *WaveManager) getInterWaveDelay() time.Duration {
 	if wm.waveIndex >= len(wm.waves) {
 		return 0
 	}
 	config := wm.waves[wm.waveIndex]
-	// If InterWaveDelay is explicitly set (including 0), use it
-	// Otherwise default to 1.5 seconds
-	// Since we always set InterWaveDelay in wave configs, just return it
-	return config.InterWaveDelay
+	// Convert float64 seconds to time.Duration
+	return time.Duration(config.InterWaveDelay * float64(time.Second))
 }
 
 // ShouldSpawnEnemy checks if it's time to spawn the next enemy
@@ -65,6 +65,7 @@ func (wm *WaveManager) ShouldSpawnEnemy(deltaTime float64) bool {
 		return true // First enemy spawns immediately
 	}
 
+	spawnDelayDuration := time.Duration(wm.currentWave.Config.SpawnDelay * float64(time.Second))
 	timeSinceLastSpawn := wm.currentWave.WaveTimer - wm.currentWave.LastSpawnTime
-	return timeSinceLastSpawn >= wm.currentWave.Config.SpawnDelay
+	return timeSinceLastSpawn >= spawnDelayDuration
 }

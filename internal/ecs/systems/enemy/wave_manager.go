@@ -2,6 +2,7 @@ package enemy
 
 import (
 	"math/rand"
+	"time"
 
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
@@ -28,10 +29,10 @@ type WaveState struct {
 	Config         WaveConfig
 	EnemiesSpawned int
 	EnemiesKilled  int
-	WaveTimer      float64
+	WaveTimer      time.Duration
 	IsComplete     bool
 	IsSpawning     bool
-	LastSpawnTime  float64
+	LastSpawnTime  time.Duration
 }
 
 // WaveManager manages wave spawning and completion
@@ -41,11 +42,11 @@ type WaveManager struct {
 	waves                  []WaveConfig
 	waveIndex              int
 	logger                 common.Logger
-	interWaveTimer         float64
+	interWaveTimer         time.Duration
 	isWaiting              bool
-	levelStartDelay        float64 // Delay before starting first wave of level
-	levelStartTimer        float64 // Timer for level start delay
-	isWaitingForLevelStart bool    // True if waiting for level start delay
+	levelStartDelay        time.Duration // Delay before starting first wave of level
+	levelStartTimer        time.Duration // Timer for level start delay
+	isWaitingForLevelStart bool           // True if waiting for level start delay
 }
 
 // NewWaveManager creates a new wave manager
@@ -61,15 +62,15 @@ func NewWaveManager(world donburi.World, logger common.Logger) *WaveManager {
 // LoadWaves loads wave configurations for the current level
 func (wm *WaveManager) LoadWaves(waves []WaveConfig) {
 	wm.waves = waves
-	wm.Reset()               // Reset to start of new wave sequence
-	wm.levelStartDelay = 3.5 // Default delay: 3.5 seconds (allows time for title display)
+	wm.Reset()                                    // Reset to start of new wave sequence
+	wm.levelStartDelay = 3500 * time.Millisecond // Default delay: 3.5 seconds (allows time for title display)
 	wm.levelStartTimer = 0
 	wm.isWaitingForLevelStart = true
 	wm.logger.Debug("Waves loaded", "count", len(waves), "start_delay", wm.levelStartDelay)
 }
 
 // SetLevelStartDelay sets the delay before starting the first wave
-func (wm *WaveManager) SetLevelStartDelay(delay float64) {
+func (wm *WaveManager) SetLevelStartDelay(delay time.Duration) {
 	wm.levelStartDelay = delay
 	wm.levelStartTimer = 0
 	wm.isWaitingForLevelStart = true
@@ -111,7 +112,7 @@ func (wm *WaveManager) startWaveInternal() *WaveConfig {
 		WaveTimer:      0,
 		IsComplete:     false,
 		IsSpawning:     true,
-		LastSpawnTime:  -1, // Start spawning immediately
+		LastSpawnTime:  -1 * time.Second, // Start spawning immediately (negative indicates first spawn)
 	}
 
 	wm.logger.Debug("Wave started",
@@ -124,16 +125,18 @@ func (wm *WaveManager) startWaveInternal() *WaveConfig {
 
 // Update updates the wave state
 func (wm *WaveManager) Update(deltaTime float64) {
+	deltaDuration := time.Duration(deltaTime * float64(time.Second))
+
 	// Handle level start delay (before first wave)
 	if wm.isWaitingForLevelStart {
-		if wm.handleLevelStartDelay(deltaTime) {
+		if wm.handleLevelStartDelay(deltaDuration) {
 			return
 		}
 	}
 
 	// Handle inter-wave delay
 	if wm.isWaiting {
-		if wm.handleInterWaveDelay(deltaTime) {
+		if wm.handleInterWaveDelay(deltaDuration) {
 			return
 		}
 	}
@@ -146,14 +149,15 @@ func (wm *WaveManager) Update(deltaTime float64) {
 		return
 	}
 
-	wm.currentWave.WaveTimer += deltaTime
+	wm.currentWave.WaveTimer += deltaDuration
 	wm.checkWaveCompletion()
 }
 
 // checkWaveCompletion checks if current wave is complete
 func (wm *WaveManager) checkWaveCompletion() {
 	// Check timeout (reduced from 30s to 12s)
-	if wm.currentWave.Config.Timeout > 0 && wm.currentWave.WaveTimer >= wm.currentWave.Config.Timeout {
+	timeoutDuration := time.Duration(wm.currentWave.Config.Timeout * float64(time.Second))
+	if wm.currentWave.Config.Timeout > 0 && wm.currentWave.WaveTimer >= timeoutDuration {
 		wm.currentWave.IsComplete = true
 		wm.logger.Debug("Wave completed by timeout", "wave", wm.currentWave.WaveIndex+1)
 		return
