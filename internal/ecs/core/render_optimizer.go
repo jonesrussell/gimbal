@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
@@ -100,8 +102,9 @@ func (ro *RenderOptimizer) isOffScreen(pos common.Point, sprite *ebiten.Image) b
 
 // createBatchKey creates a unique key for batching based on sprite and rendering properties
 func (ro *RenderOptimizer) createBatchKey(entry *donburi.Entry, sprite *ebiten.Image) string {
-	// Base key is sprite bounds
-	key := sprite.Bounds().String()
+	// Base key includes sprite pointer to ensure different sprites get different batches
+	// This is critical - entities with the same sprite bounds but different sprites must be in different batches
+	key := fmt.Sprintf("%p_%s", sprite, sprite.Bounds().String())
 
 	// Add scale information
 	if entry.HasComponent(Scale) {
