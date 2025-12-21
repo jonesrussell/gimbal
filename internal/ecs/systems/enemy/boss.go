@@ -69,7 +69,12 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	// Set initial angle
 	core.Angle.SetValue(entry, 0)
 
-	es.logger.Debug("Boss spawned", "position", common.Point{X: spawnX, Y: spawnY})
+	es.logger.Debug("Enemy spawned",
+		"type", EnemyTypeBoss.String(),
+		"sprite", "enemy_boss",
+		"health", bossData.Health,
+		"position", common.Point{X: spawnX, Y: spawnY},
+		"angle", initialAngle)
 
 	return entity
 }

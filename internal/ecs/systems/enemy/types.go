@@ -12,6 +12,20 @@ const (
 	EnemyTypeBoss
 )
 
+// String returns a human-readable string representation of the enemy type
+func (et EnemyType) String() string {
+	switch et {
+	case EnemyTypeBasic:
+		return "Basic"
+	case EnemyTypeHeavy:
+		return "Heavy"
+	case EnemyTypeBoss:
+		return "Boss"
+	default:
+		return "Unknown"
+	}
+}
+
 // MovementPattern represents the movement behavior pattern for enemies
 type MovementPattern int
 

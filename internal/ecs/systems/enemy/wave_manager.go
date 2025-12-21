@@ -113,12 +113,16 @@ func (wm *WaveManager) createWave(
 // StartNextWave starts the next wave (with inter-wave delay)
 func (wm *WaveManager) StartNextWave() *WaveConfig {
 	if wm.waveIndex >= len(wm.waves) {
+		wm.logger.Debug("All waves complete", "total_waves", len(wm.waves))
 		return nil // All waves complete
 	}
 
 	// Check if we need to wait before starting the wave
 	delay := wm.getInterWaveDelay()
 	if delay > 0 {
+		wm.logger.Debug("Starting inter-wave delay",
+			"wave", wm.waveIndex+1,
+			"delay", delay)
 		wm.isWaiting = true
 		wm.interWaveTimer = 0
 		return nil // Will start after delay
@@ -170,7 +174,12 @@ func (wm *WaveManager) Update(deltaTime float64) {
 	// Handle inter-wave delay
 	if wm.isWaiting {
 		wm.interWaveTimer += deltaTime
-		if wm.interWaveTimer >= wm.getInterWaveDelay() {
+		targetDelay := wm.getInterWaveDelay()
+		if wm.interWaveTimer >= targetDelay {
+			wm.logger.Debug("Inter-wave delay complete, starting next wave",
+				"waited", wm.interWaveTimer,
+				"target", targetDelay,
+				"next_wave", wm.waveIndex+1)
 			wm.isWaiting = false
 			wm.interWaveTimer = 0
 			if wm.waveIndex < len(wm.waves) {
@@ -282,8 +291,12 @@ func (wm *WaveManager) IsWaveComplete() bool {
 func (wm *WaveManager) CompleteWave() {
 	if wm.currentWave != nil {
 		wm.currentWave.IsComplete = true
+		wm.logger.Debug("Wave marked complete",
+			"wave", wm.currentWave.WaveIndex+1,
+			"next_wave_index", wm.waveIndex+1)
 	}
 	wm.waveIndex++
+	wm.currentWave = nil
 }
 
 // GetCurrentWave returns the current wave state
@@ -312,4 +325,9 @@ func (wm *WaveManager) GetWaveCount() int {
 // GetCurrentWaveIndex returns the current wave index (0-based)
 func (wm *WaveManager) GetCurrentWaveIndex() int {
 	return wm.waveIndex
+}
+
+// IsWaiting returns true if the wave manager is waiting for inter-wave delay
+func (wm *WaveManager) IsWaiting() bool {
+	return wm.isWaiting
 }
