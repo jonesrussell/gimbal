@@ -254,7 +254,8 @@ func (g *ECSGame) checkLevelCompletion() {
 
 	if canComplete {
 		// Level complete!
-		g.logger.Debug("Level complete", "level", g.levelManager.GetLevel())
+		currentLevel := g.levelManager.GetLevel()
+		g.logger.Debug("Level complete", "level", currentLevel)
 		g.levelManager.IncrementLevel()
 
 		// Load next level's configuration
@@ -265,6 +266,13 @@ func (g *ECSGame) checkLevelCompletion() {
 			g.logger.Debug("Next level config loaded",
 				"level", nextLevelConfig.LevelNumber,
 				"waves", len(nextLevelConfig.Waves))
+
+			// Show level title for new level
+			if currentScene := g.sceneManager.GetCurrentScene(); currentScene != nil {
+				if playingScene, ok := currentScene.(interface{ ShowLevelTitle(int) }); ok {
+					playingScene.ShowLevelTitle(nextLevelConfig.LevelNumber)
+				}
+			}
 		} else {
 			// No more levels, just reset
 			g.enemySystem.Reset()

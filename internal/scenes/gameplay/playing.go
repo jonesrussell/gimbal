@@ -3,6 +3,7 @@ package gameplay
 import (
 	"fmt"
 	"image/color"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	v2text "github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -22,6 +23,12 @@ type PlayingScene struct {
 	font         v2text.Face
 	scoreManager *managers.ScoreManager
 	resourceMgr  *resources.ResourceManager
+
+	// Level title display
+	levelTitleStartTime time.Time
+	showLevelTitle      bool
+	currentLevelNumber  int
+	levelTitleDuration  float64 // Duration to show title in seconds
 }
 
 func NewPlayingScene(
@@ -31,10 +38,11 @@ func NewPlayingScene(
 	resourceMgr *resources.ResourceManager,
 ) *PlayingScene {
 	scene := &PlayingScene{
-		manager:      manager,
-		font:         font,
-		scoreManager: scoreManager,
-		resourceMgr:  resourceMgr,
+		manager:            manager,
+		font:               font,
+		scoreManager:       scoreManager,
+		resourceMgr:        resourceMgr,
+		levelTitleDuration: 3.0, // Show title for 3 seconds
 	}
 
 	// UI is now handled by the main game's EbitenUI system
@@ -50,6 +58,15 @@ func (s *PlayingScene) Update() error {
 			s.screenShake = 0
 		}
 	}
+
+	// Update level title display
+	if s.showLevelTitle {
+		elapsed := time.Since(s.levelTitleStartTime).Seconds()
+		if elapsed >= s.levelTitleDuration {
+			s.showLevelTitle = false
+		}
+	}
+
 	return nil
 }
 
@@ -72,6 +89,11 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 		screen.DrawImage(shakenImage, op)
 	} else {
 		s.drawGameContent(screen)
+	}
+
+	// Draw level title overlay if showing
+	if s.showLevelTitle {
+		s.drawLevelTitle(screen)
 	}
 }
 
@@ -133,10 +155,100 @@ func (s *PlayingScene) drawDebugInfo(screen *ebiten.Image) {
 
 func (s *PlayingScene) Enter() {
 	s.manager.GetLogger().Debug("Entering playing scene")
+
+	// Show level title when entering playing scene
+	if levelManager := s.manager.GetLevelManager(); levelManager != nil {
+		if levelConfig := levelManager.GetCurrentLevelConfig(); levelConfig != nil {
+			s.ShowLevelTitle(levelConfig.LevelNumber)
+		}
+	}
 }
 
 func (s *PlayingScene) Exit() {
 	s.manager.GetLogger().Debug("Exiting playing scene")
+	s.showLevelTitle = false
+}
+
+// ShowLevelTitle displays the level title overlay
+func (s *PlayingScene) ShowLevelTitle(levelNumber int) {
+	s.currentLevelNumber = levelNumber
+	s.levelTitleStartTime = time.Now()
+	s.showLevelTitle = true
+	s.manager.GetLogger().Debug("Level title shown", "level", levelNumber)
+}
+
+// drawLevelTitle draws the level title overlay
+func (s *PlayingScene) drawLevelTitle(screen *ebiten.Image) {
+	if s.font == nil {
+		return
+	}
+
+	elapsed := time.Since(s.levelTitleStartTime).Seconds()
+
+	// Calculate fade (fade in for first 0.5s, fade out for last 0.5s)
+	alpha := 1.0
+	if elapsed < 0.5 {
+		alpha = elapsed / 0.5 // Fade in
+	} else if elapsed > s.levelTitleDuration-0.5 {
+		alpha = (s.levelTitleDuration - elapsed) / 0.5 // Fade out
+	}
+
+	if alpha <= 0 {
+		return
+	}
+
+	// Draw semi-transparent background overlay
+	bgColor := color.RGBA{0, 0, 0, uint8(200 * alpha)}
+	overlay := ebiten.NewImage(screen.Bounds().Dx(), screen.Bounds().Dy())
+	overlay.Fill(bgColor)
+
+	op := &ebiten.DrawImageOptions{}
+	op.ColorScale.SetA(float32(alpha))
+	screen.DrawImage(overlay, op)
+
+	// Get level config to display name and description
+	var titleText, descText string
+	if levelManager := s.manager.GetLevelManager(); levelManager != nil {
+		if levelConfig := levelManager.GetCurrentLevelConfig(); levelConfig != nil {
+			titleText = levelConfig.Metadata.Name
+			if titleText == "" {
+				titleText = fmt.Sprintf("LEVEL %d", levelConfig.LevelNumber)
+			} else {
+				titleText = fmt.Sprintf("LEVEL %d: %s", levelConfig.LevelNumber, titleText)
+			}
+			descText = levelConfig.Metadata.Description
+		} else {
+			titleText = fmt.Sprintf("LEVEL %d", s.currentLevelNumber)
+		}
+	} else {
+		titleText = fmt.Sprintf("LEVEL %d", s.currentLevelNumber)
+	}
+
+	// Measure and center text
+	titleWidth, titleHeight := v2text.Measure(titleText, s.font, 0)
+	screenWidth := float64(s.manager.GetConfig().ScreenSize.Width)
+	screenHeight := float64(s.manager.GetConfig().ScreenSize.Height)
+
+	titleX := (screenWidth - float64(titleWidth)) / 2
+	titleY := screenHeight/2 - float64(titleHeight) - 30
+
+	// Draw title
+	titleOp := &v2text.DrawOptions{}
+	titleOp.GeoM.Translate(titleX, titleY)
+	titleOp.ColorScale.SetA(float32(alpha))
+	v2text.Draw(screen, titleText, s.font, titleOp)
+
+	// Draw description if available
+	if descText != "" {
+		descWidth, _ := v2text.Measure(descText, s.font, 0)
+		descX := (screenWidth - float64(descWidth)) / 2
+		descY := titleY + float64(titleHeight) + 20
+
+		descOp := &v2text.DrawOptions{}
+		descOp.GeoM.Translate(descX, descY)
+		descOp.ColorScale.SetA(float32(alpha * 0.8)) // Slightly more transparent
+		v2text.Draw(screen, descText, s.font, descOp)
+	}
 }
 
 func (s *PlayingScene) GetType() scenes.SceneType {

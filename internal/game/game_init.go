@@ -56,6 +56,7 @@ func (g *ECSGame) setupInitialScene(ctx context.Context) error {
 		g.stateManager.SetPaused(false)
 	})
 	g.sceneManager.SetHealthSystem(g.healthSystem)
+	g.sceneManager.SetLevelManager(g.levelManager)
 	g.sceneManager.SetRenderOptimizer(g.renderOptimizer)
 	g.sceneManager.SetImagePool(g.imagePool)
 	if sceneErr := g.sceneManager.SetInitialScene(scenes.SceneStudioIntro); sceneErr != nil {
