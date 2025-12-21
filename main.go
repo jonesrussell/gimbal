@@ -140,7 +140,7 @@ func (a *Application) logSystemInfo(logger interface{ Info(string, ...interface{
 // run executes the main application logic
 func run() error {
 	// Parse command-line flags
-	invincible := flag.Bool("invincible", false, "Enable player invincibility (only works when DEBUG_ENABLED=true)")
+	invincible := flag.Bool("invincible", false, "Enable player invincibility (only works when DEBUG=true)")
 	flag.Parse()
 
 	application, err := NewApplication(*invincible)

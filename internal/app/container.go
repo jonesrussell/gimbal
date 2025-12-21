@@ -90,7 +90,7 @@ func (c *Container) initializeLogger() error {
 
 // initializeConfig creates and validates the game configuration
 func (c *Container) initializeConfig() error {
-	// Use AppConfig's DEBUG_ENABLED value
+	// Use AppConfig's DEBUG value
 	debugEnabled := c.appConfig.IsDevelopment()
 
 	opts := []config.GameOption{
@@ -105,7 +105,7 @@ func (c *Container) initializeConfig() error {
 		opts = append(opts, config.WithInvincible(true))
 		c.logger.Info("Invincible mode enabled (DEBUG mode required)")
 	} else if c.invincible && !debugEnabled {
-		c.logger.Warn("Invincible flag ignored: DEBUG_ENABLED must be true to use invincible mode")
+		c.logger.Warn("Invincible flag ignored: DEBUG must be true to use invincible mode")
 	}
 
 	gameConfig := config.NewConfig(opts...)
