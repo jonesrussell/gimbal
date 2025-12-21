@@ -21,13 +21,13 @@ const (
 
 // Constants for formation types (matching enemy.FormationType)
 const (
-	FormationLine      = 0
-	FormationCircle    = 1
-	FormationV         = 2
-	FormationDiamond   = 3
-	FormationDiagonal  = 4
-	FormationSpiral    = 5
-	FormationRandom    = 6
+	FormationLine     = 0
+	FormationCircle   = 1
+	FormationV        = 2
+	FormationDiamond  = 3
+	FormationDiagonal = 4
+	FormationSpiral   = 5
+	FormationRandom   = 6
 )
 
 // Constants for movement patterns (matching enemy.MovementPattern)
@@ -68,7 +68,7 @@ func createLevel1() LevelConfig {
 			Size:            64,
 			Points:          1000,
 		},
-		Difficulty: DefaultDifficultySettings(),
+		Difficulty:           DefaultDifficultySettings(),
 		CompletionConditions: DefaultCompletionConditions(),
 	}
 }
@@ -109,11 +109,11 @@ func createLevel2() LevelConfig {
 			Points:          1500,
 		},
 		Difficulty: DifficultySettings{
-			EnemySpeedMultiplier:      1.1,
-			EnemyHealthMultiplier:      1.0,
-			EnemySpawnRateMultiplier:  1.0,
-			PlayerDamageMultiplier:     1.0,
-			ScoreMultiplier:           1.2,
+			EnemySpeedMultiplier:     1.1,
+			EnemyHealthMultiplier:    1.0,
+			EnemySpawnRateMultiplier: 1.0,
+			PlayerDamageMultiplier:   1.0,
+			ScoreMultiplier:          1.2,
 		},
 		CompletionConditions: DefaultCompletionConditions(),
 	}
@@ -155,11 +155,11 @@ func createLevel3() LevelConfig {
 			Points:          2000,
 		},
 		Difficulty: DifficultySettings{
-			EnemySpeedMultiplier:      1.2,
-			EnemyHealthMultiplier:      1.1,
-			EnemySpawnRateMultiplier:  1.1,
-			PlayerDamageMultiplier:     1.0,
-			ScoreMultiplier:           1.5,
+			EnemySpeedMultiplier:     1.2,
+			EnemyHealthMultiplier:    1.1,
+			EnemySpawnRateMultiplier: 1.1,
+			PlayerDamageMultiplier:   1.0,
+			ScoreMultiplier:          1.5,
 		},
 		CompletionConditions: DefaultCompletionConditions(),
 	}
@@ -204,11 +204,11 @@ func createLevel4() LevelConfig {
 			Points:          2500,
 		},
 		Difficulty: DifficultySettings{
-			EnemySpeedMultiplier:      1.3,
-			EnemyHealthMultiplier:      1.2,
-			EnemySpawnRateMultiplier:  1.2,
-			PlayerDamageMultiplier:     1.0,
-			ScoreMultiplier:           2.0,
+			EnemySpeedMultiplier:     1.3,
+			EnemyHealthMultiplier:    1.2,
+			EnemySpawnRateMultiplier: 1.2,
+			PlayerDamageMultiplier:   1.0,
+			ScoreMultiplier:          2.0,
 		},
 		CompletionConditions: DefaultCompletionConditions(),
 	}
@@ -253,11 +253,11 @@ func createLevel5() LevelConfig {
 			Points:          5000,
 		},
 		Difficulty: DifficultySettings{
-			EnemySpeedMultiplier:      1.5,
-			EnemyHealthMultiplier:      1.3,
-			EnemySpawnRateMultiplier:  1.3,
-			PlayerDamageMultiplier:     1.0,
-			ScoreMultiplier:           3.0,
+			EnemySpeedMultiplier:     1.5,
+			EnemyHealthMultiplier:    1.3,
+			EnemySpawnRateMultiplier: 1.3,
+			PlayerDamageMultiplier:   1.0,
+			ScoreMultiplier:          3.0,
 		},
 		CompletionConditions: DefaultCompletionConditions(),
 	}
@@ -287,4 +287,3 @@ func createWave(
 		MovementPattern: params.pattern,
 	}
 }
-

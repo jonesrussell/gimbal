@@ -9,11 +9,17 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	internalmath "github.com/jonesrussell/gimbal/internal/math"
 )
 
 // CreatePlayer creates a player entity with orbital movement
-func CreatePlayer(w donburi.World, sprite *ebiten.Image, gameConfig *config.GameConfig) donburi.Entity {
+func CreatePlayer(
+	w donburi.World,
+	sprite *ebiten.Image,
+	gameConfig *config.GameConfig,
+	playerConfig *managers.PlayerConfig,
+) donburi.Entity {
 	entity := w.Create(PlayerTag, Position, Sprite, Orbital, Size, Angle, Health)
 	entry := w.Entry(entity)
 
@@ -40,14 +46,21 @@ func CreatePlayer(w donburi.World, sprite *ebiten.Image, gameConfig *config.Game
 	}
 	Orbital.SetValue(entry, orbitalData)
 
-	// Set size
-	Size.SetValue(entry, gameConfig.PlayerSize)
+	// Set size from config
+	playerSize := config.Size{Width: playerConfig.Size, Height: playerConfig.Size}
+	Size.SetValue(entry, playerSize)
 
 	// Set initial angle
 	Angle.SetValue(entry, internalmath.Angle(0))
 
-	// Set initial health (3 lives)
-	healthData := NewHealthData(3, 3)
+	// Set initial health from config
+	healthData := HealthData{
+		Current:               playerConfig.Health,
+		Maximum:               playerConfig.Health,
+		InvincibilityTime:     0,
+		IsInvincible:          false,
+		InvincibilityDuration: playerConfig.InvincibilityDuration,
+	}
 	Health.SetValue(entry, healthData)
 
 	// DEBUG: Log initial player setup

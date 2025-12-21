@@ -25,8 +25,6 @@ func LoadLevelsFromJSON(dirPath string, logger common.Logger) ([]LevelConfig, er
 		return GetDefaultLevelDefinitions(), nil
 	}
 
-	var levels []LevelConfig
-
 	// Read all JSON files in the directory
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
@@ -34,26 +32,8 @@ func LoadLevelsFromJSON(dirPath string, logger common.Logger) ([]LevelConfig, er
 		return GetDefaultLevelDefinitions(), nil
 	}
 
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		// Only process .json files
-		if filepath.Ext(entry.Name()) != ".json" {
-			continue
-		}
-
-		filePath := filepath.Join(dirPath, entry.Name())
-		level, err := loadLevelFromFile(filePath, logger)
-		if err != nil {
-			logger.Warn("Failed to load level file, skipping", "file", entry.Name(), "error", err)
-			continue
-		}
-
-		levels = append(levels, level)
-		logger.Debug("Loaded level from JSON", "file", entry.Name(), "level", level.LevelNumber)
-	}
+	// Pre-allocate slice with estimated capacity
+	levels := processLevelFiles(entries, dirPath, logger)
 
 	// If no levels were loaded, fall back to defaults
 	if len(levels) == 0 {
@@ -62,14 +42,7 @@ func LoadLevelsFromJSON(dirPath string, logger common.Logger) ([]LevelConfig, er
 	}
 
 	// Sort levels by level number (in case files are loaded out of order)
-	// Simple bubble sort for small number of levels
-	for i := 0; i < len(levels)-1; i++ {
-		for j := 0; j < len(levels)-i-1; j++ {
-			if levels[j].LevelNumber > levels[j+1].LevelNumber {
-				levels[j], levels[j+1] = levels[j+1], levels[j]
-			}
-		}
-	}
+	sortLevelsByNumber(levels)
 
 	logger.Info("Levels loaded from JSON", "count", len(levels), "path", dirPath)
 	return levels, nil
@@ -84,8 +57,8 @@ func loadLevelFromFile(filePath string, logger common.Logger) (LevelConfig, erro
 		return level, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	if err := json.Unmarshal(data, &level); err != nil {
-		return level, fmt.Errorf("failed to parse JSON: %w", err)
+	if unmarshalErr := json.Unmarshal(data, &level); unmarshalErr != nil {
+		return level, fmt.Errorf("failed to parse JSON: %w", unmarshalErr)
 	}
 
 	// Validate level configuration
@@ -105,16 +78,54 @@ func loadLevelFromFile(filePath string, logger common.Logger) (LevelConfig, erro
 	return level, nil
 }
 
+// processLevelFiles processes directory entries and loads levels
+func processLevelFiles(entries []os.DirEntry, dirPath string, logger common.Logger) []LevelConfig {
+	levels := make([]LevelConfig, 0, len(entries))
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		// Only process .json files
+		if filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+
+		filePath := filepath.Join(dirPath, entry.Name())
+		level, loadErr := loadLevelFromFile(filePath, logger)
+		if loadErr != nil {
+			logger.Warn("Failed to load level file, skipping", "file", entry.Name(), "error", loadErr)
+			continue
+		}
+
+		levels = append(levels, level)
+		logger.Debug("Loaded level from JSON", "file", entry.Name(), "level", level.LevelNumber)
+	}
+
+	return levels
+}
+
+// sortLevelsByNumber sorts levels by level number using bubble sort
+func sortLevelsByNumber(levels []LevelConfig) {
+	for i := 0; i < len(levels)-1; i++ {
+		for j := 0; j < len(levels)-i-1; j++ {
+			if levels[j].LevelNumber > levels[j+1].LevelNumber {
+				levels[j], levels[j+1] = levels[j+1], levels[j]
+			}
+		}
+	}
+}
+
 // noOpLogger is a minimal logger implementation for when no logger is provided
 type noOpLogger struct{}
 
-func (n *noOpLogger) Debug(msg string, fields ...interface{})                {}
+func (n *noOpLogger) Debug(msg string, fields ...interface{})                             {}
 func (n *noOpLogger) DebugContext(ctx context.Context, msg string, fields ...interface{}) {}
-func (n *noOpLogger) Info(msg string, fields ...interface{})                {}
+func (n *noOpLogger) Info(msg string, fields ...interface{})                              {}
 func (n *noOpLogger) InfoContext(ctx context.Context, msg string, fields ...interface{})  {}
-func (n *noOpLogger) Warn(msg string, fields ...interface{})                {}
-func (n *noOpLogger) WarnContext(ctx context.Context, msg string, fields ...interface{}) {}
-func (n *noOpLogger) Error(msg string, fields ...interface{})               {}
+func (n *noOpLogger) Warn(msg string, fields ...interface{})                              {}
+func (n *noOpLogger) WarnContext(ctx context.Context, msg string, fields ...interface{})  {}
+func (n *noOpLogger) Error(msg string, fields ...interface{})                             {}
 func (n *noOpLogger) ErrorContext(ctx context.Context, msg string, fields ...interface{}) {}
-func (n *noOpLogger) Sync() error { return nil }
-
+func (n *noOpLogger) Sync() error                                                         { return nil }

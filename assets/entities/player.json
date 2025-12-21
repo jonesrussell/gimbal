@@ -1,0 +1,6 @@
+{
+    "health": 3,
+    "size": 48,
+    "sprite_name": "player",
+    "invincibility_duration": 2.0
+}
