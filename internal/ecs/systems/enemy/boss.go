@@ -62,11 +62,20 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	// Set sprite
 	core.Sprite.SetValue(entry, bossSprite)
 
-	// Verify sprite was set correctly
+	// Verify sprite was set correctly and log pointer address for debugging
 	if setSprite := core.Sprite.Get(entry); setSprite != nil && *setSprite != nil {
 		bounds := (*setSprite).Bounds()
+		// Get player sprite for comparison
+		playerSprite, _ := es.resourceMgr.GetSprite(ctx, "player")
+		spriteMatch := "different"
+		if playerSprite != nil && *setSprite == playerSprite {
+			spriteMatch = "SAME AS PLAYER - ERROR!"
+		}
 		es.logger.Debug("[BOSS_SPRITE] Boss sprite set successfully",
 			"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()),
+			"sprite_ptr", fmt.Sprintf("%p", *setSprite),
+			"player_ptr", fmt.Sprintf("%p", playerSprite),
+			"comparison", spriteMatch,
 			"entity", entity)
 	} else {
 		es.logger.Error("[BOSS_SPRITE] Failed to set boss sprite - sprite is nil")
@@ -167,6 +176,28 @@ func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
 		bounds := bossSprite.Bounds()
 		es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'enemy_boss'",
 			"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()))
+
+		// CRITICAL: Verify we didn't accidentally get the player sprite
+		// Compare with player sprite to ensure they're different
+		playerSprite, playerExists := es.resourceMgr.GetSprite(ctx, "player")
+		if playerExists && playerSprite != nil {
+			// Check if they're the same pointer (same sprite object)
+			if bossSprite == playerSprite {
+				es.logger.Error("[BOSS_SPRITE] CRITICAL ERROR: Boss sprite is the same as player sprite! This is wrong!")
+				// Force create a proper boss sprite
+				bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+				if err != nil {
+					es.logger.Error("[BOSS_SPRITE] Failed to get boss data for replacement", "error", err)
+					bossSprite = ebiten.NewImage(64, 64) // Default size
+				} else {
+					bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
+				}
+				bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
+				es.logger.Warn("[BOSS_SPRITE] Created replacement boss sprite to fix player sprite issue", "size", bossData.Size)
+			} else {
+				es.logger.Debug("[BOSS_SPRITE] Verified boss sprite is different from player sprite")
+			}
+		}
 	}
 
 	// Verify sprite is not nil before caching
@@ -180,25 +211,6 @@ func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
 			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
 		}
 		bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
-	}
-
-	// Double-check: ensure we're not accidentally getting the player sprite
-	// Check sprite dimensions - boss should be larger than player (typically 64x64 vs 32x32)
-	bounds := bossSprite.Bounds()
-	if bounds.Dx() <= 32 && bounds.Dy() <= 32 {
-		es.logger.Error("[BOSS_SPRITE] ERROR: Boss sprite appears to be player-sized! This is wrong!",
-			"size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()),
-			"expected", "64x64 or larger")
-		// Force create a proper boss sprite
-		bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
-		if err != nil {
-			es.logger.Error("[BOSS_SPRITE] Failed to get boss data for replacement", "error", err)
-			bossSprite = ebiten.NewImage(64, 64) // Default size
-		} else {
-			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
-		}
-		bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
-		es.logger.Warn("[BOSS_SPRITE] Created replacement boss sprite", "size", bossData.Size)
 	}
 
 	// Cache the sprite
