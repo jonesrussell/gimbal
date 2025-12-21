@@ -14,10 +14,8 @@ import (
 // Returns an error if the file is missing or invalid (no fallback)
 func LoadPlayerConfig(ctx context.Context, logger common.Logger) (*PlayerConfig, error) {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return nil, err
 	}
 
 	// Load from embedded assets

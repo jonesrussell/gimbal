@@ -50,10 +50,8 @@ func NewHealthSystem(
 // Update updates the health system with context support
 func (hs *HealthSystem) Update(ctx context.Context) error {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
 	}
 
 	now := time.Now()
@@ -93,10 +91,8 @@ func (hs *HealthSystem) Update(ctx context.Context) error {
 // DamageEntity damages an entity and handles invincibility
 func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity, damage int) error {
 	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
 	}
 
 	entry := hs.world.Entry(entity)
