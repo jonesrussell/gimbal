@@ -14,6 +14,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
@@ -44,6 +45,7 @@ type EnemySystem struct {
 	// Boss spawning
 	bossSpawnTimer float64
 	bossSpawned    bool
+	bossConfig     *managers.BossConfig // Current level's boss configuration
 
 	// Enemy sprites cache
 	enemySprites map[EnemyType]*ebiten.Image
@@ -102,6 +104,9 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	// Check if wave is complete and start next
 	es.handleWaveCompletion(ctx, deltaTime)
 
+	// Handle boss spawning after all waves are complete
+	es.handleBossSpawning(ctx, deltaTime)
+
 	// Update enemy movement (including boss)
 	es.updateEnemies(deltaTime)
 	es.UpdateBossMovement(deltaTime)
@@ -109,7 +114,7 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	return nil
 }
 
-// handleWaveCompletion handles wave completion and boss spawning
+// handleWaveCompletion handles wave completion and advances to next wave
 func (es *EnemySystem) handleWaveCompletion(ctx context.Context, deltaTime float64) {
 	if !es.waveManager.IsWaveComplete() {
 		return
@@ -121,13 +126,38 @@ func (es *EnemySystem) handleWaveCompletion(ctx context.Context, deltaTime float
 		return
 	}
 
-	// All waves complete, start boss spawn timer
-	if !es.bossSpawned {
-		es.bossSpawnTimer += deltaTime
-		if es.bossSpawnTimer >= BossSpawnDelay {
-			es.SpawnBoss(ctx)
-			es.bossSpawned = true
-		}
+	// All waves complete - boss will be handled in handleBossSpawning
+	if es.bossConfig != nil && es.bossConfig.Enabled && !es.bossSpawned {
+		es.logger.Debug("All waves complete, boss will spawn soon", "spawn_delay", es.bossConfig.SpawnDelay)
+	}
+}
+
+// handleBossSpawning handles boss spawn timer and spawning
+func (es *EnemySystem) handleBossSpawning(ctx context.Context, deltaTime float64) {
+	// Only spawn boss if all waves are complete and boss hasn't been spawned yet
+	if es.waveManager.HasMoreWaves() {
+		return // Still have waves to complete
+	}
+
+	if es.bossSpawned {
+		return // Boss already spawned
+	}
+
+	if es.bossConfig == nil || !es.bossConfig.Enabled {
+		return // No boss configured for this level
+	}
+
+	// Increment boss spawn timer
+	es.bossSpawnTimer += deltaTime
+	spawnDelay := es.bossConfig.SpawnDelay
+	if spawnDelay <= 0 {
+		spawnDelay = BossSpawnDelay // Fallback to default
+	}
+
+	if es.bossSpawnTimer >= spawnDelay {
+		es.SpawnBoss(ctx)
+		es.bossSpawned = true
+		es.logger.Debug("Boss spawned", "delay", es.bossSpawnTimer)
 	}
 }
 
@@ -453,12 +483,31 @@ func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
 	return points
 }
 
+// LoadLevelConfig loads the waves and boss configuration for a level
+func (es *EnemySystem) LoadLevelConfig(waves []WaveConfig, bossConfig *managers.BossConfig) {
+	es.waveManager.LoadWaves(waves)
+	es.bossConfig = bossConfig
+	es.bossSpawned = false
+	es.bossSpawnTimer = 0
+
+	bossHealth := 0
+	if bossConfig != nil {
+		bossHealth = bossConfig.Health
+	}
+
+	es.logger.Debug("Level config loaded",
+		"waves", len(waves),
+		"boss_enabled", bossConfig != nil && bossConfig.Enabled,
+		"boss_health", bossHealth)
+}
+
 // Reset resets the enemy system for a new level
 func (es *EnemySystem) Reset() {
 	es.waveManager.Reset()
 	es.bossSpawned = false
 	es.bossSpawnTimer = 0
 	es.spawnTimer = 0
+	// Note: bossConfig is not reset here as it should be set via LoadLevelConfig
 }
 
 // IsBossActive checks if there's an active boss
