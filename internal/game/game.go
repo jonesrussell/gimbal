@@ -27,6 +27,34 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ui/state"
 )
 
+// convertWaveConfigs converts managers.WaveConfig to enemy.WaveConfig
+func convertWaveConfigs(managerWaves []managers.WaveConfig) []enemysys.WaveConfig {
+	enemyWaves := make([]enemysys.WaveConfig, len(managerWaves))
+	for i, mw := range managerWaves {
+		enemyTypes := make([]enemysys.EnemyType, len(mw.EnemyTypes))
+		for j, et := range mw.EnemyTypes {
+			enemyTypes[j] = enemysys.EnemyType(et)
+		}
+		enemyWaves[i] = enemysys.WaveConfig{
+			FormationType:   enemysys.FormationType(mw.FormationType),
+			EnemyCount:      mw.EnemyCount,
+			EnemyTypes:      enemyTypes,
+			SpawnDelay:      mw.SpawnDelay,
+			Timeout:         mw.Timeout,
+			InterWaveDelay:  mw.InterWaveDelay,
+			MovementPattern: enemysys.MovementPattern(mw.MovementPattern),
+		}
+	}
+	return enemyWaves
+}
+
+// convertBossConfig converts managers.BossConfig to enemy system compatible format
+func convertBossConfig(mb *managers.BossConfig) *managers.BossConfig {
+	// BossConfig is already in managers package, just return it
+	// But we need to ensure EnemyType is properly handled
+	return mb
+}
+
 // ECSGame represents the main game state using ECS
 type ECSGame struct {
 	world        donburi.World
@@ -194,14 +222,53 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 
 // checkLevelCompletion checks if the boss is killed and advances the level
 func (g *ECSGame) checkLevelCompletion() {
-	// Check if boss was spawned but is now killed
-	if g.enemySystem.WasBossSpawned() && !g.enemySystem.IsBossActive() {
-		// Boss was killed, level complete!
-		g.logger.Debug("Level complete - boss defeated")
+	// Get current level config to check completion conditions
+	levelConfig := g.levelManager.GetCurrentLevelConfig()
+	if levelConfig == nil {
+		return
+	}
+
+	// Check completion conditions
+	conditions := levelConfig.CompletionConditions
+	canComplete := true
+
+	// Check if boss kill is required
+	if conditions.RequireBossKill {
+		if !g.enemySystem.WasBossSpawned() || g.enemySystem.IsBossActive() {
+			canComplete = false
+		}
+	}
+
+	// Check if all waves are required
+	if conditions.RequireAllWaves {
+		if g.enemySystem.GetWaveManager().HasMoreWaves() {
+			canComplete = false
+		}
+	}
+
+	// Check if all enemies must be killed
+	if conditions.RequireAllEnemiesKilled {
+		// This would require checking active enemy count
+		// For now, we'll assume boss kill + all waves = all enemies killed
+	}
+
+	if canComplete {
+		// Level complete!
+		g.logger.Debug("Level complete", "level", g.levelManager.GetLevel())
 		g.levelManager.IncrementLevel()
 
-		// Reset enemy system for next level
-		g.enemySystem.Reset()
+		// Load next level's configuration
+		nextLevelConfig := g.levelManager.GetCurrentLevelConfig()
+		if nextLevelConfig != nil {
+			enemyWaves := convertWaveConfigs(nextLevelConfig.Waves)
+			g.enemySystem.LoadLevelConfig(enemyWaves, &nextLevelConfig.Boss)
+			g.logger.Debug("Next level config loaded",
+				"level", nextLevelConfig.LevelNumber,
+				"waves", len(nextLevelConfig.Waves))
+		} else {
+			// No more levels, just reset
+			g.enemySystem.Reset()
+		}
 
 		// TODO: Add level complete event/UI notification
 	}

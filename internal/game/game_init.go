@@ -73,6 +73,14 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
 	g.scoreManager = managers.NewScoreManager(10000)
 	g.levelManager = managers.NewLevelManager(g.logger)
+
+	// Load level definitions
+	levelDefs := managers.GetDefaultLevelDefinitions()
+	if err := g.levelManager.LoadLevels(levelDefs); err != nil {
+		return fmt.Errorf("failed to load levels: %w", err)
+	}
+	g.logger.Debug("Level definitions loaded", "count", len(levelDefs))
+
 	return nil
 }
 
@@ -83,6 +91,17 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.logger, g.inputHandler)
 	g.logger.Debug("Movement system created")
 	g.enemySystem = enemy.NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
+
+	// Load initial level configuration into enemy system
+	levelConfig := g.levelManager.GetCurrentLevelConfig()
+	if levelConfig != nil {
+		enemyWaves := convertWaveConfigs(levelConfig.Waves)
+		g.enemySystem.LoadLevelConfig(enemyWaves, &levelConfig.Boss)
+		g.logger.Debug("Initial level config loaded into enemy system",
+			"level", levelConfig.LevelNumber,
+			"waves", len(levelConfig.Waves))
+	}
+
 	g.enemyWeaponSystem = enemy.NewEnemyWeaponSystem(g.world, g.config, g.logger)
 	g.logger.Debug("Enemy weapon system created")
 	g.weaponSystem = weapon.NewWeaponSystem(g.world, g.config)

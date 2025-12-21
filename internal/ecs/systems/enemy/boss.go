@@ -47,12 +47,25 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	// Set sprite
 	core.Sprite.SetValue(entry, bossSprite)
 
-	// Set size (boss is larger)
+	// Use boss config if available, otherwise use default boss data
 	bossData := GetEnemyTypeData(EnemyTypeBoss)
-	core.Size.SetValue(entry, config.Size{Width: bossData.Size, Height: bossData.Size})
+	bossSize := bossData.Size
+	bossHealth := bossData.Health
+
+	if es.bossConfig != nil {
+		if es.bossConfig.Size > 0 {
+			bossSize = es.bossConfig.Size
+		}
+		if es.bossConfig.Health > 0 {
+			bossHealth = es.bossConfig.Health
+		}
+	}
+
+	// Set size (boss is larger)
+	core.Size.SetValue(entry, config.Size{Width: bossSize, Height: bossSize})
 
 	// Set health
-	core.Health.SetValue(entry, core.NewHealthData(bossData.Health, bossData.Health))
+	core.Health.SetValue(entry, core.NewHealthData(bossHealth, bossHealth))
 
 	// Set enemy type ID for proper identification
 	core.EnemyTypeID.SetValue(entry, int(EnemyTypeBoss))
