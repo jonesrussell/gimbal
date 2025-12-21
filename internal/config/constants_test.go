@@ -166,7 +166,8 @@ func TestTimingConstants_Relationship(t *testing.T) {
 	// Verify the relationship between timing constants
 	calculatedFrameDuration := time.Second / time.Duration(TargetFPS)
 	if FrameDuration != calculatedFrameDuration {
-		t.Errorf("FrameDuration should equal time.Second/TargetFPS. Got %v, want %v", FrameDuration, calculatedFrameDuration)
+		t.Errorf("FrameDuration should equal time.Second/TargetFPS. Got %v, want %v",
+			FrameDuration, calculatedFrameDuration)
 	}
 
 	calculatedDeltaTime := 1.0 / float64(TargetFPS)

@@ -9,64 +9,65 @@ import (
 func TestCheckContextCancellation(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func() context.Context
+		setup   func() (context.Context, func())
 		wantErr bool
 	}{
 		{
 			name: "active context",
-			setup: func() context.Context {
-				return context.Background()
+			setup: func() (context.Context, func()) {
+				return context.Background(), func() {}
 			},
 			wantErr: false,
 		},
 		{
 			name: "canceled context",
-			setup: func() context.Context {
+			setup: func() (context.Context, func()) {
 				ctx, cancel := context.WithCancel(context.Background())
 				cancel()
-				return ctx
+				return ctx, func() {}
 			},
 			wantErr: true,
 		},
 		{
 			name: "context with timeout (not expired)",
-			setup: func() context.Context {
-				ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
-				return ctx
+			setup: func() (context.Context, func()) {
+				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+				return ctx, cancel
 			},
 			wantErr: false,
 		},
 		{
 			name: "context with timeout (expired)",
-			setup: func() context.Context {
+			setup: func() (context.Context, func()) {
 				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
 				time.Sleep(1 * time.Millisecond) // Ensure timeout has occurred
 				cancel()
-				return ctx
+				return ctx, func() {}
 			},
 			wantErr: true,
 		},
 		{
 			name: "context with deadline (not expired)",
-			setup: func() context.Context {
-				ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(1*time.Second))
-				return ctx
+			setup: func() (context.Context, func()) {
+				ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(1*time.Second))
+				return ctx, cancel
 			},
 			wantErr: false,
 		},
 		{
 			name: "context with deadline (expired)",
-			setup: func() context.Context {
+			setup: func() (context.Context, func()) {
 				ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-1*time.Second))
 				cancel()
-				return ctx
+				return ctx, func() {}
 			},
 			wantErr: true,
 		},
 		{
 			name: "context with value (still active)",
-			setup: func() context.Context {
-				return context.WithValue(context.Background(), "key", "value")
+			setup: func() (context.Context, func()) {
+				type ctxKey string
+				return context.WithValue(context.Background(), ctxKey("key"), "value"), func() {}
 			},
 			wantErr: false,
 		},
@@ -74,7 +75,9 @@ func TestCheckContextCancellation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := tt.setup()
+			ctx, cleanup := tt.setup()
+			defer cleanup()
+
 			err := CheckContextCancellation(ctx)
 
 			if tt.wantErr && err == nil {

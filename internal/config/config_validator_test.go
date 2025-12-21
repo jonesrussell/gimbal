@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
@@ -126,7 +126,7 @@ func TestValidator_ValidateScreenSize(t *testing.T) {
 			// Adjust radius and star spawn radius to avoid unrelated validation errors
 			if tt.name == "at min width" || tt.name == "at min height" {
 				// For minimum sizes, adjust related configs to be valid
-				config.Radius = float64(min(tt.width, tt.height)) / 2 * 0.8
+				config.Radius = float64(minInt(tt.width, tt.height)) / 2 * 0.8
 				config.StarSpawnRadiusMax = config.Radius * 0.5
 			}
 
