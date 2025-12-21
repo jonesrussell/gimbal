@@ -61,90 +61,35 @@ func NewWaveManager(world donburi.World, logger common.Logger) *WaveManager {
 
 // generateDefaultWaves creates default wave configurations
 func (wm *WaveManager) generateDefaultWaves() []WaveConfig {
-	waves := []WaveConfig{
-		// Wave 1: Line formation, basic enemies, slow intro
-		{
-			FormationType:   FormationLine,
-			EnemyCount:      6,
-			EnemyTypes:      []EnemyType{EnemyTypeBasic},
-			SpawnDelay:      0.25,
-			Timeout:         12.0,
-			InterWaveDelay:  0.0, // First wave starts immediately
-			MovementPattern: MovementPatternNormal,
-		},
-		// Wave 2: Circle formation, basic enemies, fast spawn
-		{
-			FormationType:   FormationCircle,
-			EnemyCount:      10,
-			EnemyTypes:      []EnemyType{EnemyTypeBasic},
-			SpawnDelay:      0.1,
-			Timeout:         12.0,
-			InterWaveDelay:  1.5,
-			MovementPattern: MovementPatternNormal,
-		},
-		// Wave 3: V-formation, mixed enemies, zigzag movement
-		{
-			FormationType:   FormationV,
-			EnemyCount:      9,
-			EnemyTypes:      []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
-			SpawnDelay:      0.18,
-			Timeout:         12.0,
-			InterWaveDelay:  1.5,
-			MovementPattern: MovementPatternZigzag,
-		},
-		// Wave 4: Diamond formation, heavy enemies, accelerating
-		{
-			FormationType:   FormationDiamond,
-			EnemyCount:      8,
-			EnemyTypes:      []EnemyType{EnemyTypeHeavy},
-			SpawnDelay:      0.2,
-			Timeout:         12.0,
-			InterWaveDelay:  1.5,
-			MovementPattern: MovementPatternAccelerating,
-		},
-		// Wave 5: Spiral formation, mixed, pulsing movement
-		{
-			FormationType:   FormationSpiral,
-			EnemyCount:      12,
-			EnemyTypes:      []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
-			SpawnDelay:      0.12,
-			Timeout:         12.0,
-			InterWaveDelay:  1.5,
-			MovementPattern: MovementPatternPulsing,
-		},
-		// Wave 6: Diagonal formation, heavy focus, faster speed
-		{
-			FormationType:   FormationDiagonal,
-			EnemyCount:      10,
-			EnemyTypes:      []EnemyType{EnemyTypeHeavy, EnemyTypeBasic},
-			SpawnDelay:      0.15,
-			Timeout:         12.0,
-			InterWaveDelay:  1.5,
-			MovementPattern: MovementPatternNormal,
-		},
-		// Wave 7: Random formation, all types, chaotic
-		{
-			FormationType:   FormationRandom,
-			EnemyCount:      14,
-			EnemyTypes:      []EnemyType{EnemyTypeBasic, EnemyTypeHeavy},
-			SpawnDelay:      0.1,
-			Timeout:         12.0,
-			InterWaveDelay:  1.5,
-			MovementPattern: MovementPatternZigzag,
-		},
-		// Wave 8: Circle formation, heavy wave before boss
-		{
-			FormationType:   FormationCircle,
-			EnemyCount:      12,
-			EnemyTypes:      []EnemyType{EnemyTypeHeavy, EnemyTypeBasic},
-			SpawnDelay:      0.12,
-			Timeout:         12.0,
-			InterWaveDelay:  1.5,
-			MovementPattern: MovementPatternAccelerating,
-		},
+	return []WaveConfig{
+		wm.createWave(FormationLine, 6, []EnemyType{EnemyTypeBasic}, 0.25, 0.0, MovementPatternNormal),
+		wm.createWave(FormationCircle, 10, []EnemyType{EnemyTypeBasic}, 0.1, 1.5, MovementPatternNormal),
+		wm.createWave(FormationV, 9, []EnemyType{EnemyTypeBasic, EnemyTypeHeavy}, 0.18, 1.5, MovementPatternZigzag),
+		wm.createWave(FormationDiamond, 8, []EnemyType{EnemyTypeHeavy}, 0.2, 1.5, MovementPatternAccelerating),
+		wm.createWave(FormationSpiral, 12, []EnemyType{EnemyTypeBasic, EnemyTypeHeavy}, 0.12, 1.5, MovementPatternPulsing),
+		wm.createWave(FormationDiagonal, 10, []EnemyType{EnemyTypeHeavy, EnemyTypeBasic}, 0.15, 1.5, MovementPatternNormal),
+		wm.createWave(FormationRandom, 14, []EnemyType{EnemyTypeBasic, EnemyTypeHeavy}, 0.1, 1.5, MovementPatternZigzag),
+		wm.createWave(FormationCircle, 12, []EnemyType{EnemyTypeHeavy, EnemyTypeBasic}, 0.12, 1.5, MovementPatternAccelerating),
 	}
+}
 
-	return waves
+// createWave creates a wave configuration with the given parameters
+func (wm *WaveManager) createWave(
+	formation FormationType,
+	count int,
+	types []EnemyType,
+	spawnDelay, interWaveDelay float64,
+	pattern MovementPattern,
+) WaveConfig {
+	return WaveConfig{
+		FormationType:   formation,
+		EnemyCount:      count,
+		EnemyTypes:      types,
+		SpawnDelay:      spawnDelay,
+		Timeout:         12.0,
+		InterWaveDelay:  interWaveDelay,
+		MovementPattern: pattern,
+	}
 }
 
 // StartNextWave starts the next wave (with inter-wave delay)
