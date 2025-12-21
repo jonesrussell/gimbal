@@ -77,14 +77,14 @@ func loadLevelFromFile(filePath string, logger common.Logger) (LevelConfig, erro
 
 	// Validate enum values in waves
 	for i := range level.Waves {
-		if err := validateWaveConfig(&level.Waves[i], i); err != nil {
+		if err = validateWaveConfig(&level.Waves[i], i); err != nil {
 			return level, fmt.Errorf("wave %d: %w", i, err)
 		}
 	}
 
 	// Validate boss config if enabled
 	if level.Boss.Enabled {
-		if err := validateBossConfig(&level.Boss); err != nil {
+		if err = validateBossConfig(&level.Boss); err != nil {
 			return level, fmt.Errorf("boss config: %w", err)
 		}
 	}
