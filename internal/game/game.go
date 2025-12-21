@@ -2,9 +2,13 @@ package game
 
 import (
 	"context"
+	"fmt"
+	"image/color"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	v2text "github.com/hajimehoshi/ebiten/v2/text/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
@@ -22,6 +26,34 @@ import (
 	"github.com/jonesrussell/gimbal/internal/scenes"
 	"github.com/jonesrussell/gimbal/internal/ui/state"
 )
+
+// convertWaveConfigs converts managers.WaveConfig to enemy.WaveConfig
+func convertWaveConfigs(managerWaves []managers.WaveConfig) []enemysys.WaveConfig {
+	enemyWaves := make([]enemysys.WaveConfig, len(managerWaves))
+	for i, mw := range managerWaves {
+		enemyTypes := make([]enemysys.EnemyType, len(mw.EnemyTypes))
+		for j, et := range mw.EnemyTypes {
+			enemyTypes[j] = enemysys.EnemyType(et)
+		}
+		enemyWaves[i] = enemysys.WaveConfig{
+			FormationType:   enemysys.FormationType(mw.FormationType),
+			EnemyCount:      mw.EnemyCount,
+			EnemyTypes:      enemyTypes,
+			SpawnDelay:      mw.SpawnDelay,
+			Timeout:         mw.Timeout,
+			InterWaveDelay:  mw.InterWaveDelay,
+			MovementPattern: enemysys.MovementPattern(mw.MovementPattern),
+		}
+	}
+	return enemyWaves
+}
+
+// convertBossConfig converts managers.BossConfig to enemy system compatible format
+func convertBossConfig(mb *managers.BossConfig) *managers.BossConfig {
+	// BossConfig is already in managers package, just return it
+	// But we need to ensure EnemyType is properly handled
+	return mb
+}
 
 // ECSGame represents the main game state using ECS
 type ECSGame struct {
@@ -190,14 +222,53 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 
 // checkLevelCompletion checks if the boss is killed and advances the level
 func (g *ECSGame) checkLevelCompletion() {
-	// Check if boss was spawned but is now killed
-	if g.enemySystem.WasBossSpawned() && !g.enemySystem.IsBossActive() {
-		// Boss was killed, level complete!
-		g.logger.Debug("Level complete - boss defeated")
+	// Get current level config to check completion conditions
+	levelConfig := g.levelManager.GetCurrentLevelConfig()
+	if levelConfig == nil {
+		return
+	}
+
+	// Check completion conditions
+	conditions := levelConfig.CompletionConditions
+	canComplete := true
+
+	// Check if boss kill is required
+	if conditions.RequireBossKill {
+		if !g.enemySystem.WasBossSpawned() || g.enemySystem.IsBossActive() {
+			canComplete = false
+		}
+	}
+
+	// Check if all waves are required
+	if conditions.RequireAllWaves {
+		if g.enemySystem.GetWaveManager().HasMoreWaves() {
+			canComplete = false
+		}
+	}
+
+	// Check if all enemies must be killed
+	if conditions.RequireAllEnemiesKilled {
+		// This would require checking active enemy count
+		// For now, we'll assume boss kill + all waves = all enemies killed
+	}
+
+	if canComplete {
+		// Level complete!
+		g.logger.Debug("Level complete", "level", g.levelManager.GetLevel())
 		g.levelManager.IncrementLevel()
 
-		// Reset enemy system for next level
-		g.enemySystem.Reset()
+		// Load next level's configuration
+		nextLevelConfig := g.levelManager.GetCurrentLevelConfig()
+		if nextLevelConfig != nil {
+			enemyWaves := convertWaveConfigs(nextLevelConfig.Waves)
+			g.enemySystem.LoadLevelConfig(enemyWaves, &nextLevelConfig.Boss)
+			g.logger.Debug("Next level config loaded",
+				"level", nextLevelConfig.LevelNumber,
+				"waves", len(nextLevelConfig.Waves))
+		} else {
+			// No more levels, just reset
+			g.enemySystem.Reset()
+		}
 
 		// TODO: Add level complete event/UI notification
 	}
@@ -343,6 +414,11 @@ func (g *ECSGame) Draw(screen *ebiten.Image) {
 		g.renderDebugger.StartFrame()
 		g.renderDebugger.RenderDebugInfo(screen, g.world)
 	}
+
+	// Render wave debug info at top of screen when DEBUG is enabled
+	if g.config.Debug && g.sceneManager.GetCurrentScene().GetType() == scenes.ScenePlaying {
+		g.drawWaveDebugInfo(screen)
+	}
 }
 
 // Layout returns the game's logical screen size
@@ -392,4 +468,170 @@ func (g *ECSGame) SetInputHandler(handler common.GameInputHandler) {
 // GetInputHandler returns the current input handler
 func (g *ECSGame) GetInputHandler() common.GameInputHandler {
 	return g.inputHandler
+}
+
+// drawWaveDebugInfo draws wave information at the bottom of the screen
+func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
+	if g.enemySystem == nil {
+		return
+	}
+
+	waveManager := g.enemySystem.GetWaveManager()
+	if waveManager == nil {
+		return
+	}
+
+	screenHeight := float64(g.config.ScreenSize.Height)
+	lineHeight := 20.0
+	x := 10.0
+
+	currentWave := waveManager.GetCurrentWave()
+	if currentWave == nil {
+		// No active wave - show waiting status
+		var statusText string
+		if waveManager.IsWaiting() {
+			statusText = "Wave: Waiting for next wave..."
+		} else if !waveManager.HasMoreWaves() {
+			statusText = "Wave: All waves complete"
+		} else {
+			statusText = "Wave: Starting..."
+		}
+		g.drawDebugText(screen, statusText, x, screenHeight-10)
+		return
+	}
+
+	// Format formation type
+	formationName := g.formatFormationType(currentWave.Config.FormationType)
+
+	// Format enemy types
+	enemyTypesStr := g.formatEnemyTypes(currentWave.Config.EnemyTypes)
+
+	// Calculate progress
+	progress := float64(currentWave.EnemiesKilled) / float64(currentWave.Config.EnemyCount) * 100
+	if currentWave.Config.EnemyCount == 0 {
+		progress = 0
+	}
+
+	// Calculate number of lines to determine starting Y position
+	numLines := 8 // Wave, Formation, Enemies, Spawned, Types, Pattern, Status, Timer
+	startY := screenHeight - float64(numLines)*lineHeight - 10
+
+	// Draw wave information from bottom up
+	y := startY
+	g.drawDebugText(screen, fmt.Sprintf("Wave %d/%d", currentWave.WaveIndex+1, waveManager.GetWaveCount()), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Formation: %s", formationName), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Enemies: %d/%d (%.0f%%)", currentWave.EnemiesKilled, currentWave.Config.EnemyCount, progress), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Spawned: %d", currentWave.EnemiesSpawned), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Types: %s", enemyTypesStr), x, y)
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Pattern: %s", g.formatMovementPattern(currentWave.Config.MovementPattern)), x, y)
+	y += lineHeight
+	if currentWave.IsSpawning {
+		g.drawDebugText(screen, "Status: Spawning", x, y)
+	} else if currentWave.IsComplete {
+		g.drawDebugText(screen, "Status: Complete", x, y)
+	} else {
+		g.drawDebugText(screen, "Status: Active", x, y)
+	}
+	y += lineHeight
+	g.drawDebugText(screen, fmt.Sprintf("Timer: %.1fs", currentWave.WaveTimer), x, y)
+}
+
+// drawDebugText draws text with a semi-transparent background
+func (g *ECSGame) drawDebugText(screen *ebiten.Image, text string, x, y float64) {
+	ctx := g.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	fontFace, err := g.resourceManager.GetDefaultFont(ctx)
+	if err != nil {
+		return
+	}
+
+	// Measure text size
+	width, height := v2text.Measure(text, fontFace, 0)
+
+	// Draw semi-transparent black rectangle behind text
+	padding := float32(4.0)
+	vector.DrawFilledRect(screen,
+		float32(x)-padding,
+		float32(y)-float32(height)-padding,
+		float32(width)+padding*2,
+		float32(height)+padding*2,
+		color.RGBA{0, 0, 0, 150}, false)
+
+	// Draw text on top
+	op := &v2text.DrawOptions{}
+	op.GeoM.Translate(x, y)
+	v2text.Draw(screen, text, fontFace, op)
+}
+
+// formatFormationType formats a formation type as a string
+func (g *ECSGame) formatFormationType(ft enemysys.FormationType) string {
+	switch ft {
+	case enemysys.FormationLine:
+		return "Line"
+	case enemysys.FormationCircle:
+		return "Circle"
+	case enemysys.FormationV:
+		return "V"
+	case enemysys.FormationDiamond:
+		return "Diamond"
+	case enemysys.FormationDiagonal:
+		return "Diagonal"
+	case enemysys.FormationSpiral:
+		return "Spiral"
+	case enemysys.FormationRandom:
+		return "Random"
+	default:
+		return "Unknown"
+	}
+}
+
+// formatEnemyTypes formats enemy types as a string
+func (g *ECSGame) formatEnemyTypes(types []enemysys.EnemyType) string {
+	if len(types) == 0 {
+		return "None"
+	}
+
+	typeCounts := make(map[string]int)
+	for _, t := range types {
+		typeCounts[t.String()]++
+	}
+
+	result := ""
+	first := true
+	for name, count := range typeCounts {
+		if !first {
+			result += ", "
+		}
+		if count > 1 {
+			result += fmt.Sprintf("%s x%d", name, count)
+		} else {
+			result += name
+		}
+		first = false
+	}
+	return result
+}
+
+// formatMovementPattern formats a movement pattern as a string
+func (g *ECSGame) formatMovementPattern(mp enemysys.MovementPattern) string {
+	switch mp {
+	case enemysys.MovementPatternNormal:
+		return "Normal"
+	case enemysys.MovementPatternZigzag:
+		return "Zigzag"
+	case enemysys.MovementPatternAccelerating:
+		return "Accelerating"
+	case enemysys.MovementPatternPulsing:
+		return "Pulsing"
+	default:
+		return "Unknown"
+	}
 }

@@ -36,7 +36,7 @@ type AppGameConfig struct {
 // DebugConfig holds debug-specific configuration
 type DebugConfig struct {
 	PprofPort  int  `envconfig:"DEBUG_PPROF_PORT" default:"6060"`
-	Enabled    bool `envconfig:"DEBUG_ENABLED" default:"true"`
+	Enabled    bool `envconfig:"DEBUG" default:"true"`
 	ShowFPS    bool `envconfig:"DEBUG_SHOW_FPS" default:"false"`
 	ShowMemory bool `envconfig:"DEBUG_SHOW_MEMORY" default:"false"`
 }

@@ -22,6 +22,7 @@ type Container struct {
 	config       *config.GameConfig
 	inputHandler common.GameInputHandler
 	game         *gamepkg.ECSGame
+	invincible   bool
 
 	// State
 	initialized bool
@@ -29,9 +30,10 @@ type Container struct {
 }
 
 // NewContainer creates a new application dependency container with the provided configuration
-func NewContainer(appConfig *config.AppConfig) *Container {
+func NewContainer(appConfig *config.AppConfig, invincible bool) *Container {
 	return &Container{
-		appConfig: appConfig,
+		appConfig:  appConfig,
+		invincible: invincible,
 	}
 }
 
@@ -88,12 +90,31 @@ func (c *Container) initializeLogger() error {
 
 // initializeConfig creates and validates the game configuration
 func (c *Container) initializeConfig() error {
-	gameConfig := config.NewConfig(
-		config.WithDebug(true), // Force debug mode
+	// Use AppConfig's DEBUG value
+	debugEnabled := c.appConfig.IsDevelopment()
+
+	opts := []config.GameOption{
+		config.WithDebug(debugEnabled),
 		config.WithSpeed(config.DefaultSpeed),
 		config.WithStarSettings(config.DefaultStarSize, config.DefaultStarSpeed),
 		config.WithAngleStep(config.DefaultAngleStep),
-	)
+	}
+
+	// Only add invincible option if debug is enabled
+	if debugEnabled && c.invincible {
+		opts = append(opts, config.WithInvincible(true))
+		c.logger.Info("Invincible mode enabled (DEBUG mode required)")
+	} else if c.invincible && !debugEnabled {
+		c.logger.Warn("Invincible flag ignored: DEBUG must be true to use invincible mode")
+	}
+
+	gameConfig := config.NewConfig(opts...)
+
+	// Safety check: ensure invincible is disabled if debug is disabled
+	if !gameConfig.Debug && gameConfig.Invincible {
+		gameConfig.Invincible = false
+		c.logger.Warn("Invincible mode disabled: DEBUG mode is required")
+	}
 
 	// Validate configuration
 	if err := config.ValidateConfig(gameConfig); err != nil {
@@ -106,6 +127,7 @@ func (c *Container) initializeConfig() error {
 		"player_size", gameConfig.PlayerSize,
 		"num_stars", gameConfig.NumStars,
 		"debug", gameConfig.Debug,
+		"invincible", gameConfig.Invincible,
 	)
 	return nil
 }
