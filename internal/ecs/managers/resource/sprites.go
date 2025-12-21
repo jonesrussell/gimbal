@@ -234,6 +234,21 @@ func (rm *ResourceManager) loadEnemySprites(ctx context.Context) error {
 	return err
 }
 
+func (rm *ResourceManager) loadEnemyHeavySprites(ctx context.Context) error {
+	rm.logger.Debug("[SPRITE_LOAD] Attempting to load enemy_heavy sprite", "path", "sprites/enemy_heavy.png")
+	err := rm.loadSpriteWithFallback(ctx, SpriteLoadConfig{
+		Name:           "enemy_heavy",
+		Path:           "sprites/enemy_heavy.png",
+		FallbackWidth:  32,
+		FallbackHeight: 32,
+		FallbackColor:  color.RGBA{255, 165, 0, 255}, // Orange fallback
+	})
+	if err == nil {
+		rm.logger.Debug("[SPRITE_LOAD] Enemy heavy sprite loaded successfully")
+	}
+	return err
+}
+
 // createUISprites creates UI-related sprites
 func (rm *ResourceManager) createUISprites(ctx context.Context) error {
 	// Create star sprite
@@ -272,6 +287,9 @@ func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 		return err
 	}
 	if err := rm.loadEnemySprites(ctx); err != nil {
+		return err
+	}
+	if err := rm.loadEnemyHeavySprites(ctx); err != nil {
 		return err
 	}
 	if err := rm.createUISprites(ctx); err != nil {

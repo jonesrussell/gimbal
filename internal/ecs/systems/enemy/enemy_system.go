@@ -261,7 +261,7 @@ func (es *EnemySystem) getEnemySprite(
 		return sprite
 	}
 
-	// Try to load sprite
+	// Try to load sprite (full size, will be scaled during rendering)
 	sprite, exists := es.resourceMgr.GetSprite(ctx, enemyData.SpriteName)
 	if !exists {
 		es.logger.Warn("Enemy sprite not found, using placeholder", "type", enemyType, "sprite", enemyData.SpriteName)
