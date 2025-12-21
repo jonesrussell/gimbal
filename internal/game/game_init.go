@@ -182,7 +182,6 @@ func (g *ECSGame) finalizeInitialization(ctx context.Context) error {
 	}
 
 	g.setupEventSubscriptions()
-	g.setupSystems()
 	return nil
 }
 
@@ -273,10 +272,4 @@ func (g *ECSGame) createEntities(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// setupSystems is no longer needed - systems are called directly in the Update loop
-// This method is kept for compatibility but does nothing
-func (g *ECSGame) setupSystems() {
-	// Systems are now called directly in the Update loop
 }
