@@ -32,4 +32,3 @@ func (l *Logger) shouldLog(msg string, fields ...any) bool {
 	l.lastLogs[key] = currentValue
 	return true
 }
-

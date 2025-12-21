@@ -161,4 +161,3 @@ func (dr *DebugRenderer) drawCollisionDebug(screen *ebiten.Image, world donburi.
 			1, color.RGBA{255, 0, 0, 60}, false)
 	})
 }
-

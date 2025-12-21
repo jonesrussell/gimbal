@@ -76,4 +76,3 @@ func equalStructs(va, vb reflect.Value) bool {
 	}
 	return true
 }
-

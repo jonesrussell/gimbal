@@ -40,4 +40,3 @@ func (g *ECSGame) initializeUI(ctx context.Context) error {
 	g.ui = gameUI
 	return nil
 }
-

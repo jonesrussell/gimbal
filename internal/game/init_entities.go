@@ -53,4 +53,3 @@ func (g *ECSGame) createEntities(ctx context.Context) error {
 
 	return nil
 }
-

@@ -70,4 +70,3 @@ func (g *ECSGame) formatMovementPattern(mp enemysys.MovementPattern) string {
 		return "Unknown"
 	}
 }
-

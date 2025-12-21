@@ -163,4 +163,3 @@ func (es *EnemySystem) createDefaultBossSprite(size int) *ebiten.Image {
 	// Placeholder creation only logged at Warn level in createBossPlaceholder
 	return sprite
 }
-
