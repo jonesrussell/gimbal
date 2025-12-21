@@ -173,9 +173,6 @@ func (ms *MovementSystem) updateStarMovement(deltaTime float64) {
 		if pos.X < 0 || pos.X > screenWidth || pos.Y < 0 || pos.Y > screenHeight {
 			// Reset star to a random position near the center
 			ms.resetStarPosition(entry, centerX, centerY)
-			ms.logger.Debug("Star reset to new position",
-				"entity_id", entry.Entity().String(),
-				"new_position", pos)
 		}
 
 		// Update scale based on distance from center (stars get bigger as they move outward)
@@ -211,8 +208,4 @@ func (ms *MovementSystem) resetStarPosition(entry *donburi.Entry, centerX, cente
 		scale := core.Scale.Get(entry)
 		*scale = ms.config.StarMinScale
 	}
-
-	ms.logger.Debug("Star reset to new position",
-		"entity_id", entry.Entity().String(),
-		"new_position", pos)
 }
