@@ -70,7 +70,7 @@ The `app/Container` manages all dependencies with ordered initialization:
 - **Tags**: PlayerTag, StarTag, EnemyTag, ProjectileTag, EnemyProjectileTag
 - **Systems**:
   - `collision/` - CollisionSystem for entity collision detection
-  - `enemy/` - EnemySystem for enemy spawning/movement, EnemyWeaponSystem for enemy shooting, WaveManager for wave management
+  - `enemy/` - EnemySystem for enemy spawning/movement, EnemyWeaponSystem for enemy shooting (uses sprite assets for projectiles), WaveManager for wave management
   - `health/` - HealthSystem for entity health and invincibility
   - `movement/` - MovementSystem for entity movement patterns
   - `weapon/` - WeaponSystem for player weapon firing
@@ -83,6 +83,12 @@ The `app/Container` manages all dependencies with ordered initialization:
   - `player.json` - Player configuration (health, size, sprite, invincibility)
   - `enemies.json` - Enemy type configurations (health, speed, size, movement patterns)
 - Level configurations loaded from JSON files in `assets/levels/` or use defaults
+
+### Sprite Assets
+- Sprites are loaded via the ResourceManager from `assets/sprites/`
+- Game sprites: `player.png`, `heart.png`, `enemy.png`, `enemy_heavy.png`, `enemy_boss.png`, `enemy_ammo.png`, `enemy_heavy_ammo.png`
+- Enemy projectile sprites: `enemy_ammo.png` (Basic enemies), `enemy_heavy_ammo.png` (Heavy enemies, also used for Boss as fallback)
+- All sprites use fallback colored placeholders if asset loading fails
 
 ## Coding Conventions
 
@@ -146,9 +152,15 @@ Use the `TestableInputHandler` interface for simulating input in tests.
 
 ### Adding a New System
 1. Create system directory in `internal/ecs/systems/<name>/`
-2. Initialize in `game/game_init.go` `createGameplaySystems()`
+2. Initialize in `game/init_systems.go` `createGameplaySystems()`
 3. Call Update in `game/game.go` `updateGameplaySystems()`
 4. Systems are organized by domain (collision, enemy, health, movement, weapon)
+
+### Adding Enemy Projectile Sprites
+1. Add sprite asset to `assets/sprites/` (e.g., `enemy_ammo.png`)
+2. Add sprite configuration to `internal/ecs/managers/resource/sprite_creation.go` in `loadGameSprites()`
+3. Update `EnemyWeaponSystem.initializeProjectileSprites()` to load the sprite for the appropriate enemy type
+4. The system automatically uses the sprite based on the enemy type when firing projectiles
 
 ## Performance Notes
 
