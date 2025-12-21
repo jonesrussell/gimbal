@@ -227,59 +227,66 @@ func (g *ECSGame) checkLevelCompletion() {
 	}
 
 	// Check completion conditions
-	conditions := levelConfig.CompletionConditions
-	canComplete := true
+	canComplete := g.checkCompletionConditions(levelConfig.CompletionConditions)
 
+	if canComplete {
+		g.handleLevelComplete()
+	}
+}
+
+// checkCompletionConditions checks all completion conditions
+func (g *ECSGame) checkCompletionConditions(conditions managers.CompletionConditions) bool {
 	// Check if boss kill is required
 	if conditions.RequireBossKill {
 		if !g.enemySystem.WasBossSpawned() || g.enemySystem.IsBossActive() {
-			canComplete = false
+			return false
 		}
 	}
 
 	// Check if all waves are required
 	if conditions.RequireAllWaves {
 		if g.enemySystem.GetWaveManager().HasMoreWaves() {
-			canComplete = false
+			return false
 		}
 	}
 
 	// Check if all enemies must be killed
-	if conditions.RequireAllEnemiesKilled {
-		// This would require checking active enemy count
-		// For now, we'll assume boss kill + all waves = all enemies killed
-		// TODO: Implement active enemy count check
-		_ = conditions // Avoid unused variable warning
-	}
+	// This would require checking active enemy count
+	// For now, we'll assume boss kill + all waves = all enemies killed
+	// TODO: Implement active enemy count check
+	_ = conditions.RequireAllEnemiesKilled
 
-	if canComplete {
-		// Level complete!
-		currentLevel := g.levelManager.GetLevel()
-		g.logger.Debug("Level complete", "level", currentLevel)
-		g.levelManager.IncrementLevel()
+	return true
+}
 
-		// Load next level's configuration
-		nextLevelConfig := g.levelManager.GetCurrentLevelConfig()
-		if nextLevelConfig != nil {
-			enemyWaves := convertWaveConfigs(nextLevelConfig.Waves)
-			g.enemySystem.LoadLevelConfig(enemyWaves, &nextLevelConfig.Boss)
-			g.logger.Debug("Next level config loaded",
-				"level", nextLevelConfig.LevelNumber,
-				"waves", len(nextLevelConfig.Waves))
+// handleLevelComplete handles level completion actions
+func (g *ECSGame) handleLevelComplete() {
+	// Level complete!
+	currentLevel := g.levelManager.GetLevel()
+	g.logger.Debug("Level complete", "level", currentLevel)
+	g.levelManager.IncrementLevel()
 
-			// Show level title for new level
-			if currentScene := g.sceneManager.GetCurrentScene(); currentScene != nil {
-				if playingScene, ok := currentScene.(interface{ ShowLevelTitle(int) }); ok {
-					playingScene.ShowLevelTitle(nextLevelConfig.LevelNumber)
-				}
+	// Load next level's configuration
+	nextLevelConfig := g.levelManager.GetCurrentLevelConfig()
+	if nextLevelConfig != nil {
+		enemyWaves := convertWaveConfigs(nextLevelConfig.Waves)
+		g.enemySystem.LoadLevelConfig(enemyWaves, &nextLevelConfig.Boss)
+		g.logger.Debug("Next level config loaded",
+			"level", nextLevelConfig.LevelNumber,
+			"waves", len(nextLevelConfig.Waves))
+
+		// Show level title for new level
+		if currentScene := g.sceneManager.GetCurrentScene(); currentScene != nil {
+			if playingScene, ok := currentScene.(interface{ ShowLevelTitle(int) }); ok {
+				playingScene.ShowLevelTitle(nextLevelConfig.LevelNumber)
 			}
-		} else {
-			// No more levels, just reset
-			g.enemySystem.Reset()
 		}
-
-		// TODO: Add level complete event/UI notification
+	} else {
+		// No more levels, just reset
+		g.enemySystem.Reset()
 	}
+
+	// TODO: Add level complete event/UI notification
 }
 
 // handlePauseInput processes pause input and switches to pause scene
@@ -495,35 +502,58 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 
 	currentWave := waveManager.GetCurrentWave()
 	if currentWave == nil {
-		// No active wave - check if boss is active or spawning
-		if !waveManager.HasMoreWaves() {
-			// All waves complete - show boss info if boss is active or spawning
-			if g.enemySystem.IsBossActive() || g.enemySystem.WasBossSpawned() {
-				g.drawBossDebugInfo(screen, x, screenHeight, lineHeight)
-				return
-			}
-			// Boss not spawned yet - show spawn timer
-			if g.enemySystem.WasBossSpawned() {
-				// Boss was spawned but is dead
-				g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
-				return
-			}
-			// Boss spawning soon
-			g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
-			return
-		}
-
-		// Still have waves - show waiting status
-		var statusText string
-		if waveManager.IsWaiting() {
-			statusText = "Wave: Waiting for next wave..."
-		} else {
-			statusText = "Wave: Starting..."
-		}
-		g.drawDebugText(screen, statusText, x, screenHeight-lineHeight)
+		g.drawNoWaveDebugInfo(screen, waveManager, x, screenHeight, lineHeight)
 		return
 	}
 
+	g.drawActiveWaveDebugInfo(screen, currentWave, waveManager, struct {
+		x, screenHeight, lineHeight float64
+	}{x, screenHeight, lineHeight})
+}
+
+// drawNoWaveDebugInfo handles debug info when no active wave
+func (g *ECSGame) drawNoWaveDebugInfo(
+	screen *ebiten.Image,
+	waveManager *enemysys.WaveManager,
+	x, screenHeight, lineHeight float64,
+) {
+	if !waveManager.HasMoreWaves() {
+		// All waves complete - show boss info if boss is active or spawning
+		if g.enemySystem.IsBossActive() || g.enemySystem.WasBossSpawned() {
+			g.drawBossDebugInfo(screen, x, screenHeight, lineHeight)
+			return
+		}
+		// Boss not spawned yet - show spawn timer
+		if g.enemySystem.WasBossSpawned() {
+			// Boss was spawned but is dead
+			g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
+			return
+		}
+		// Boss spawning soon
+		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
+		return
+	}
+
+	// Still have waves - show waiting status
+	var statusText string
+	if waveManager.IsWaiting() {
+		statusText = "Wave: Waiting for next wave..."
+	} else {
+		statusText = "Wave: Starting..."
+	}
+	g.drawDebugText(screen, statusText, x, screenHeight-lineHeight)
+}
+
+// drawActiveWaveDebugInfo handles debug info for active wave
+func (g *ECSGame) drawActiveWaveDebugInfo(
+	screen *ebiten.Image,
+	currentWave *enemysys.WaveState,
+	waveManager *enemysys.WaveManager,
+	pos struct{ x, screenHeight, lineHeight float64 },
+) {
+	x := pos.x
+	screenHeight := pos.screenHeight
+	lineHeight := pos.lineHeight
 	// Format formation type
 	formationName := g.formatFormationType(currentWave.Config.FormationType)
 

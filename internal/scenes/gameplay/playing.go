@@ -184,20 +184,29 @@ func (s *PlayingScene) drawLevelTitle(screen *ebiten.Image) {
 	}
 
 	elapsed := time.Since(s.levelTitleStartTime).Seconds()
+	alpha := s.calculateTitleAlpha(elapsed)
+	if alpha <= 0 {
+		return
+	}
 
-	// Calculate fade (fade in for first 0.5s, fade out for last 0.5s)
+	s.drawTitleOverlay(screen, alpha)
+	titleText, descText := s.getTitleText()
+	s.drawTitleText(screen, titleText, descText, alpha)
+}
+
+// calculateTitleAlpha calculates fade alpha (fade in for first 0.5s, fade out for last 0.5s)
+func (s *PlayingScene) calculateTitleAlpha(elapsed float64) float64 {
 	alpha := 1.0
 	if elapsed < 0.5 {
 		alpha = elapsed / 0.5 // Fade in
 	} else if elapsed > s.levelTitleDuration-0.5 {
 		alpha = (s.levelTitleDuration - elapsed) / 0.5 // Fade out
 	}
+	return alpha
+}
 
-	if alpha <= 0 {
-		return
-	}
-
-	// Draw semi-transparent background overlay
+// drawTitleOverlay draws the semi-transparent background overlay
+func (s *PlayingScene) drawTitleOverlay(screen *ebiten.Image, alpha float64) {
 	bgColor := color.RGBA{0, 0, 0, uint8(200 * alpha)}
 	overlay := ebiten.NewImage(screen.Bounds().Dx(), screen.Bounds().Dy())
 	overlay.Fill(bgColor)
@@ -205,26 +214,34 @@ func (s *PlayingScene) drawLevelTitle(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.ColorScale.SetA(float32(alpha))
 	screen.DrawImage(overlay, op)
+}
 
-	// Get level config to display name and description
-	var titleText, descText string
-	if levelManager := s.manager.GetLevelManager(); levelManager != nil {
-		if levelConfig := levelManager.GetCurrentLevelConfig(); levelConfig != nil {
-			titleText = levelConfig.Metadata.Name
-			if titleText == "" {
-				titleText = fmt.Sprintf("LEVEL %d", levelConfig.LevelNumber)
-			} else {
-				titleText = fmt.Sprintf("LEVEL %d: %s", levelConfig.LevelNumber, titleText)
-			}
-			descText = levelConfig.Metadata.Description
-		} else {
-			titleText = fmt.Sprintf("LEVEL %d", s.currentLevelNumber)
-		}
-	} else {
+// getTitleText gets title and description text from level config
+func (s *PlayingScene) getTitleText() (titleText, descText string) {
+	levelManager := s.manager.GetLevelManager()
+	if levelManager == nil {
 		titleText = fmt.Sprintf("LEVEL %d", s.currentLevelNumber)
+		return titleText, descText
 	}
 
-	// Measure and center text
+	levelConfig := levelManager.GetCurrentLevelConfig()
+	if levelConfig == nil {
+		titleText = fmt.Sprintf("LEVEL %d", s.currentLevelNumber)
+		return titleText, descText
+	}
+
+	titleText = levelConfig.Metadata.Name
+	if titleText == "" {
+		titleText = fmt.Sprintf("LEVEL %d", levelConfig.LevelNumber)
+	} else {
+		titleText = fmt.Sprintf("LEVEL %d: %s", levelConfig.LevelNumber, titleText)
+	}
+	descText = levelConfig.Metadata.Description
+	return titleText, descText
+}
+
+// drawTitleText draws the title and description text
+func (s *PlayingScene) drawTitleText(screen *ebiten.Image, titleText, descText string, alpha float64) {
 	titleWidth, titleHeight := v2text.Measure(titleText, s.font, 0)
 	screenWidth := float64(s.manager.GetConfig().ScreenSize.Width)
 	screenHeight := float64(s.manager.GetConfig().ScreenSize.Height)

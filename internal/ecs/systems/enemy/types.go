@@ -62,7 +62,7 @@ type EnemyTypeData struct {
 }
 
 // ConvertEnemyTypeConfig converts a managers.EnemyTypeConfig to enemy.EnemyTypeData
-func ConvertEnemyTypeConfig(config managers.EnemyTypeConfig, enemyType EnemyType) (EnemyTypeData, error) {
+func ConvertEnemyTypeConfig(config *managers.EnemyTypeConfig, enemyType EnemyType) (EnemyTypeData, error) {
 	// Convert movement pattern from int to MovementPattern
 	var movementPattern MovementPattern
 	switch config.MovementPattern {

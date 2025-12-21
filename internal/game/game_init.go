@@ -107,7 +107,7 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 		if typeErr != nil {
 			return fmt.Errorf("invalid enemy type '%s': %w", enemyConfig.Type, typeErr)
 		}
-		enemyData, convertErr := enemy.ConvertEnemyTypeConfig(enemyConfig, enemyType)
+		enemyData, convertErr := enemy.ConvertEnemyTypeConfig(&enemyConfig, enemyType)
 		if convertErr != nil {
 			return fmt.Errorf("failed to convert enemy config for type '%s': %w", enemyConfig.Type, err)
 		}

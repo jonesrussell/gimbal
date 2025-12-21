@@ -138,37 +138,16 @@ func (wm *WaveManager) getInterWaveDelay() float64 {
 func (wm *WaveManager) Update(deltaTime float64) {
 	// Handle level start delay (before first wave)
 	if wm.isWaitingForLevelStart {
-		wm.levelStartTimer += deltaTime
-		if wm.levelStartTimer >= wm.levelStartDelay {
-			wm.logger.Debug("Level start delay complete, starting first wave",
-				"waited", wm.levelStartTimer,
-				"target", wm.levelStartDelay)
-			wm.isWaitingForLevelStart = false
-			wm.levelStartTimer = 0
-			// Start first wave
-			if len(wm.waves) > 0 {
-				wm.startWaveInternal()
-			}
+		if wm.handleLevelStartDelay(deltaTime) {
+			return
 		}
-		return
 	}
 
 	// Handle inter-wave delay
 	if wm.isWaiting {
-		wm.interWaveTimer += deltaTime
-		targetDelay := wm.getInterWaveDelay()
-		if wm.interWaveTimer >= targetDelay {
-			wm.logger.Debug("Inter-wave delay complete, starting next wave",
-				"waited", wm.interWaveTimer,
-				"target", targetDelay,
-				"next_wave", wm.waveIndex+1)
-			wm.isWaiting = false
-			wm.interWaveTimer = 0
-			if wm.waveIndex < len(wm.waves) {
-				wm.startWaveInternal()
-			}
+		if wm.handleInterWaveDelay(deltaTime) {
+			return
 		}
-		return
 	}
 
 	if wm.currentWave == nil {
@@ -180,7 +159,48 @@ func (wm *WaveManager) Update(deltaTime float64) {
 	}
 
 	wm.currentWave.WaveTimer += deltaTime
+	wm.checkWaveCompletion()
+}
 
+// handleLevelStartDelay handles level start delay
+func (wm *WaveManager) handleLevelStartDelay(deltaTime float64) bool {
+	wm.levelStartTimer += deltaTime
+	if wm.levelStartTimer >= wm.levelStartDelay {
+		wm.logger.Debug("Level start delay complete, starting first wave",
+			"waited", wm.levelStartTimer,
+			"target", wm.levelStartDelay)
+		wm.isWaitingForLevelStart = false
+		wm.levelStartTimer = 0
+		// Start first wave
+		if len(wm.waves) > 0 {
+			wm.startWaveInternal()
+		}
+		return true
+	}
+	return true
+}
+
+// handleInterWaveDelay handles inter-wave delay
+func (wm *WaveManager) handleInterWaveDelay(deltaTime float64) bool {
+	wm.interWaveTimer += deltaTime
+	targetDelay := wm.getInterWaveDelay()
+	if wm.interWaveTimer >= targetDelay {
+		wm.logger.Debug("Inter-wave delay complete, starting next wave",
+			"waited", wm.interWaveTimer,
+			"target", targetDelay,
+			"next_wave", wm.waveIndex+1)
+		wm.isWaiting = false
+		wm.interWaveTimer = 0
+		if wm.waveIndex < len(wm.waves) {
+			wm.startWaveInternal()
+		}
+		return true
+	}
+	return true
+}
+
+// checkWaveCompletion checks if current wave is complete
+func (wm *WaveManager) checkWaveCompletion() {
 	// Check timeout (reduced from 30s to 12s)
 	if wm.currentWave.Config.Timeout > 0 && wm.currentWave.WaveTimer >= wm.currentWave.Config.Timeout {
 		wm.currentWave.IsComplete = true
