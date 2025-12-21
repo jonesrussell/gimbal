@@ -22,6 +22,16 @@ const (
 	EnemyProjectileMargin = 50.0 // Screen margin for cleanup
 )
 
+// EnemyWeaponSystemConfig groups all dependencies for EnemyWeaponSystem
+// to avoid argument limit lint violations
+type EnemyWeaponSystemConfig struct {
+	World       donburi.World
+	Config      *config.GameConfig
+	Logger      common.Logger
+	EnemySystem *EnemySystem
+	ResourceMgr *resources.ResourceManager
+}
+
 // EnemyWeaponSystem manages enemy shooting and projectiles
 type EnemyWeaponSystem struct {
 	world             donburi.World
@@ -36,20 +46,13 @@ type EnemyWeaponSystem struct {
 }
 
 // NewEnemyWeaponSystem creates a new enemy weapon system
-func NewEnemyWeaponSystem(
-	ctx context.Context,
-	world donburi.World,
-	gameConfig *config.GameConfig,
-	logger common.Logger,
-	enemySystem *EnemySystem,
-	resourceMgr *resources.ResourceManager,
-) *EnemyWeaponSystem {
+func NewEnemyWeaponSystem(ctx context.Context, cfg *EnemyWeaponSystemConfig) *EnemyWeaponSystem {
 	ews := &EnemyWeaponSystem{
-		world:             world,
-		config:            gameConfig,
-		logger:            logger,
-		resourceMgr:       resourceMgr,
-		enemySystem:       enemySystem,
+		world:             cfg.World,
+		config:            cfg.Config,
+		logger:            cfg.Logger,
+		resourceMgr:       cfg.ResourceMgr,
+		enemySystem:       cfg.EnemySystem,
 		projectileSprites: make(map[EnemyType]*ebiten.Image),
 		enemyFireTimers:   make(map[donburi.Entity]float64),
 	}
