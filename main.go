@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 
@@ -29,12 +30,13 @@ const (
 
 // Application represents the main application
 type Application struct {
-	container *app.Container
-	config    *config.AppConfig
+	container  *app.Container
+	config     *config.AppConfig
+	invincible bool
 }
 
 // NewApplication creates a new application instance
-func NewApplication() (*Application, error) {
+func NewApplication(invincible bool) (*Application, error) {
 	cfg, err := config.LoadAppConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
@@ -45,11 +47,12 @@ func NewApplication() (*Application, error) {
 		return nil, fmt.Errorf("configuration validation failed: %w", err)
 	}
 
-	container := app.NewContainer(cfg)
+	container := app.NewContainer(cfg, invincible)
 
 	return &Application{
-		container: container,
-		config:    cfg,
+		container:  container,
+		config:     cfg,
+		invincible: invincible,
 	}, nil
 }
 
@@ -136,7 +139,11 @@ func (a *Application) logSystemInfo(logger interface{ Info(string, ...interface{
 
 // run executes the main application logic
 func run() error {
-	application, err := NewApplication()
+	// Parse command-line flags
+	invincible := flag.Bool("invincible", false, "Enable player invincibility (only works when DEBUG_ENABLED=true)")
+	flag.Parse()
+
+	application, err := NewApplication(*invincible)
 	if err != nil {
 		return err
 	}
