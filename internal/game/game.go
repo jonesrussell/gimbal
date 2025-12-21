@@ -50,13 +50,6 @@ func convertWaveConfigs(managerWaves []managers.WaveConfig) []enemysys.WaveConfi
 	return enemyWaves
 }
 
-// convertBossConfig converts managers.BossConfig to enemy system compatible format
-func convertBossConfig(mb *managers.BossConfig) *managers.BossConfig {
-	// BossConfig is already in managers package, just return it
-	// But we need to ensure EnemyType is properly handled
-	return mb
-}
-
 // ECSGame represents the main game state using ECS
 type ECSGame struct {
 	world        donburi.World
@@ -255,6 +248,8 @@ func (g *ECSGame) checkLevelCompletion() {
 	if conditions.RequireAllEnemiesKilled {
 		// This would require checking active enemy count
 		// For now, we'll assume boss kill + all waves = all enemies killed
+		// TODO: Implement active enemy count check
+		_ = conditions // Avoid unused variable warning
 	}
 
 	if canComplete {
@@ -542,7 +537,8 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 	}
 
 	// Calculate number of lines to determine starting Y position
-	numLines := 8                                              // Wave, Formation, Enemies, Spawned, Types, Pattern, Status, Timer
+	// Wave, Formation, Enemies, Spawned, Types, Pattern, Status, Timer
+	numLines := 8
 	startY := screenHeight - float64(numLines)*lineHeight - 20 // Increased margin to prevent cutoff
 
 	// Draw wave information from bottom up
@@ -551,13 +547,17 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 	y += lineHeight
 	g.drawDebugText(screen, fmt.Sprintf("Formation: %s", formationName), x, y)
 	y += lineHeight
-	g.drawDebugText(screen, fmt.Sprintf("Enemies: %d/%d (%.0f%%)", currentWave.EnemiesKilled, currentWave.Config.EnemyCount, progress), x, y)
+	enemyText := fmt.Sprintf("Enemies: %d/%d (%.0f%%)",
+		currentWave.EnemiesKilled, currentWave.Config.EnemyCount, progress)
+	g.drawDebugText(screen, enemyText, x, y)
 	y += lineHeight
 	g.drawDebugText(screen, fmt.Sprintf("Spawned: %d", currentWave.EnemiesSpawned), x, y)
 	y += lineHeight
 	g.drawDebugText(screen, fmt.Sprintf("Types: %s", enemyTypesStr), x, y)
 	y += lineHeight
-	g.drawDebugText(screen, fmt.Sprintf("Pattern: %s", g.formatMovementPattern(currentWave.Config.MovementPattern)), x, y)
+	patternText := fmt.Sprintf("Pattern: %s",
+		g.formatMovementPattern(currentWave.Config.MovementPattern))
+	g.drawDebugText(screen, patternText, x, y)
 	y += lineHeight
 	if currentWave.IsSpawning {
 		g.drawDebugText(screen, "Status: Spawning", x, y)
@@ -667,7 +667,16 @@ func (g *ECSGame) formatMovementPattern(mp enemysys.MovementPattern) string {
 
 // drawBossDebugInfo draws boss debug information
 func (g *ECSGame) drawBossDebugInfo(screen *ebiten.Image, x, screenHeight, lineHeight float64) {
-	// Find boss entity
+	bossEntry := g.findBossEntity()
+	if bossEntry == nil {
+		g.drawBossStatus(screen, x, screenHeight, lineHeight)
+		return
+	}
+	g.drawBossDetails(screen, bossEntry, x, screenHeight, lineHeight)
+}
+
+// findBossEntity finds the boss entity in the world
+func (g *ECSGame) findBossEntity() *donburi.Entry {
 	var bossEntry *donburi.Entry
 	query.NewQuery(
 		filter.And(
@@ -680,18 +689,20 @@ func (g *ECSGame) drawBossDebugInfo(screen *ebiten.Image, x, screenHeight, lineH
 			bossEntry = entry
 		}
 	})
+	return bossEntry
+}
 
-	if bossEntry == nil {
-		// Boss not found - show spawn status
-		if g.enemySystem.WasBossSpawned() {
-			g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
-		} else {
-			g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
-		}
-		return
+// drawBossStatus draws boss spawn/defeat status
+func (g *ECSGame) drawBossStatus(screen *ebiten.Image, x, screenHeight, lineHeight float64) {
+	if g.enemySystem.WasBossSpawned() {
+		g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
+	} else {
+		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
 	}
+}
 
-	// Get boss data
+// drawBossDetails draws detailed boss information
+func (g *ECSGame) drawBossDetails(screen *ebiten.Image, bossEntry *donburi.Entry, x, screenHeight, lineHeight float64) {
 	pos := core.Position.Get(bossEntry)
 	health := core.Health.Get(bossEntry)
 	orbital := core.Orbital.Get(bossEntry)
@@ -708,7 +719,9 @@ func (g *ECSGame) drawBossDebugInfo(screen *ebiten.Image, x, screenHeight, lineH
 
 	if health != nil {
 		healthPercent := float64(health.Current) / float64(health.Maximum) * 100
-		g.drawDebugText(screen, fmt.Sprintf("Health: %d/%d (%.0f%%)", health.Current, health.Maximum, healthPercent), x, y)
+		healthText := fmt.Sprintf("Health: %d/%d (%.0f%%)",
+			health.Current, health.Maximum, healthPercent)
+		g.drawDebugText(screen, healthText, x, y)
 	} else {
 		g.drawDebugText(screen, "Health: Unknown", x, y)
 	}

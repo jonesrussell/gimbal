@@ -45,9 +45,9 @@ func LoadLevelsFromJSON(dirPath string, logger common.Logger) ([]LevelConfig, er
 		}
 
 		filePath := filepath.Join(dirPath, entry.Name())
-		level, err := loadLevelFromFile(filePath, logger)
-		if err != nil {
-			logger.Warn("Failed to load level file, skipping", "file", entry.Name(), "error", err)
+		level, loadErr := loadLevelFromFile(filePath, logger)
+		if loadErr != nil {
+			logger.Warn("Failed to load level file, skipping", "file", entry.Name(), "error", loadErr)
 			continue
 		}
 
@@ -84,8 +84,8 @@ func loadLevelFromFile(filePath string, logger common.Logger) (LevelConfig, erro
 		return level, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	if err := json.Unmarshal(data, &level); err != nil {
-		return level, fmt.Errorf("failed to parse JSON: %w", err)
+	if unmarshalErr := json.Unmarshal(data, &level); unmarshalErr != nil {
+		return level, fmt.Errorf("failed to parse JSON: %w", unmarshalErr)
 	}
 
 	// Validate level configuration
