@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/yohamta/donburi"
-	"github.com/yohamta/donburi/filter"
-	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
@@ -14,25 +12,15 @@ import (
 
 // getPlayerEntity returns the first valid player entity
 func (cs *CollisionSystem) getPlayerEntity() (donburi.Entity, *donburi.Entry) {
-	players := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.PlayerTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
-		players = append(players, entry.Entity())
-	})
-	if len(players) == 0 {
+	entries := core.GetPlayerEntries(cs.world)
+	if len(entries) == 0 {
 		return 0, nil
 	}
-	playerEntity := players[0]
-	playerEntry := cs.world.Entry(playerEntity)
+	playerEntry := entries[0]
 	if !playerEntry.Valid() {
 		return 0, nil
 	}
-	return playerEntity, playerEntry
+	return playerEntry.Entity(), playerEntry
 }
 
 // checkPlayerEnemyCollisions checks for collisions between player and enemies
