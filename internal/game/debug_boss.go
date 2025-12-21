@@ -101,4 +101,3 @@ func (g *ECSGame) drawBossDetails(screen *ebiten.Image, bossEntry *donburi.Entry
 	}
 	g.drawDebugText(screen, fmt.Sprintf("Status: %s", status), x, y)
 }
-

@@ -68,4 +68,3 @@ func (wm *WaveManager) ShouldSpawnEnemy(deltaTime float64) bool {
 	timeSinceLastSpawn := wm.currentWave.WaveTimer - wm.currentWave.LastSpawnTime
 	return timeSinceLastSpawn >= wm.currentWave.Config.SpawnDelay
 }
-

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
@@ -13,7 +14,6 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
-	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // createCoreSystems creates core ECS systems
@@ -119,4 +119,3 @@ func (g *ECSGame) registerAllSystems(ctx context.Context) error {
 	g.logger.Debug("Performance optimizations initialized")
 	return nil
 }
-

@@ -156,4 +156,3 @@ func (g *ECSGame) drawDebugText(screen *ebiten.Image, text string, x, y float64)
 	op.GeoM.Translate(x, y)
 	v2text.Draw(screen, text, fontFace, op)
 }
-
