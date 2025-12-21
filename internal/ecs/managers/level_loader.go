@@ -108,13 +108,12 @@ func loadLevelFromFile(filePath string, logger common.Logger) (LevelConfig, erro
 // noOpLogger is a minimal logger implementation for when no logger is provided
 type noOpLogger struct{}
 
-func (n *noOpLogger) Debug(msg string, fields ...interface{})                {}
+func (n *noOpLogger) Debug(msg string, fields ...interface{})                             {}
 func (n *noOpLogger) DebugContext(ctx context.Context, msg string, fields ...interface{}) {}
-func (n *noOpLogger) Info(msg string, fields ...interface{})                {}
+func (n *noOpLogger) Info(msg string, fields ...interface{})                              {}
 func (n *noOpLogger) InfoContext(ctx context.Context, msg string, fields ...interface{})  {}
-func (n *noOpLogger) Warn(msg string, fields ...interface{})                {}
-func (n *noOpLogger) WarnContext(ctx context.Context, msg string, fields ...interface{}) {}
-func (n *noOpLogger) Error(msg string, fields ...interface{})               {}
+func (n *noOpLogger) Warn(msg string, fields ...interface{})                              {}
+func (n *noOpLogger) WarnContext(ctx context.Context, msg string, fields ...interface{})  {}
+func (n *noOpLogger) Error(msg string, fields ...interface{})                             {}
 func (n *noOpLogger) ErrorContext(ctx context.Context, msg string, fields ...interface{}) {}
-func (n *noOpLogger) Sync() error { return nil }
-
+func (n *noOpLogger) Sync() error                                                         { return nil }

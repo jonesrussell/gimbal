@@ -542,7 +542,7 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 	}
 
 	// Calculate number of lines to determine starting Y position
-	numLines := 8 // Wave, Formation, Enemies, Spawned, Types, Pattern, Status, Timer
+	numLines := 8                                              // Wave, Formation, Enemies, Spawned, Types, Pattern, Status, Timer
 	startY := screenHeight - float64(numLines)*lineHeight - 20 // Increased margin to prevent cutoff
 
 	// Draw wave information from bottom up

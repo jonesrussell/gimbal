@@ -36,16 +36,16 @@ type WaveState struct {
 
 // WaveManager manages wave spawning and completion
 type WaveManager struct {
-	world              donburi.World
-	currentWave        *WaveState
-	waves              []WaveConfig
-	waveIndex          int
-	logger             common.Logger
-	interWaveTimer     float64
-	isWaiting          bool
-	levelStartDelay    float64 // Delay before starting first wave of level
-	levelStartTimer    float64 // Timer for level start delay
-	isWaitingForLevelStart bool // True if waiting for level start delay
+	world                  donburi.World
+	currentWave            *WaveState
+	waves                  []WaveConfig
+	waveIndex              int
+	logger                 common.Logger
+	interWaveTimer         float64
+	isWaiting              bool
+	levelStartDelay        float64 // Delay before starting first wave of level
+	levelStartTimer        float64 // Timer for level start delay
+	isWaitingForLevelStart bool    // True if waiting for level start delay
 }
 
 // NewWaveManager creates a new wave manager
@@ -61,7 +61,7 @@ func NewWaveManager(world donburi.World, logger common.Logger) *WaveManager {
 // LoadWaves loads wave configurations for the current level
 func (wm *WaveManager) LoadWaves(waves []WaveConfig) {
 	wm.waves = waves
-	wm.Reset() // Reset to start of new wave sequence
+	wm.Reset()               // Reset to start of new wave sequence
 	wm.levelStartDelay = 3.5 // Default delay: 3.5 seconds (allows time for title display)
 	wm.levelStartTimer = 0
 	wm.isWaitingForLevelStart = true
