@@ -181,7 +181,7 @@ func (es *EnemySystem) spawnEnemyAt(
 
 	entity := es.world.Create(
 		core.EnemyTag, core.Position, core.Sprite, core.Movement,
-		core.Size, core.Health,
+		core.Size, core.Health, core.EnemyTypeID,
 	)
 	entry := es.world.Entry(entity)
 
@@ -196,6 +196,9 @@ func (es *EnemySystem) spawnEnemyAt(
 
 	// Set health
 	core.Health.SetValue(entry, core.NewHealthData(enemyData.Health, enemyData.Health))
+
+	// Set enemy type for proper identification (avoids health-based heuristics)
+	core.EnemyTypeID.SetValue(entry, int(enemyType))
 
 	// Set movement based on type and pattern
 	switch enemyData.MovementType {
@@ -404,19 +407,26 @@ func (es *EnemySystem) DestroyEnemy(entity donburi.Entity) int {
 		return 0
 	}
 
-	// Determine enemy type from health (heuristic)
-	health := core.Health.Get(entry)
-	points := 100 // Default
-
-	if health != nil {
+	// Get enemy type from component (preferred) or fall back to health heuristic
+	var enemyType EnemyType
+	if entry.HasComponent(core.EnemyTypeID) {
+		typeID := core.EnemyTypeID.Get(entry)
+		enemyType = EnemyType(*typeID)
+	} else if entry.HasComponent(core.Health) {
+		// Fallback for legacy entities without EnemyTypeID
+		health := core.Health.Get(entry)
 		if health.Maximum >= 10 {
-			points = GetEnemyTypeData(EnemyTypeBoss).Points
+			enemyType = EnemyTypeBoss
 		} else if health.Maximum >= 2 {
-			points = GetEnemyTypeData(EnemyTypeHeavy).Points
+			enemyType = EnemyTypeHeavy
 		} else {
-			points = GetEnemyTypeData(EnemyTypeBasic).Points
+			enemyType = EnemyTypeBasic
 		}
+	} else {
+		enemyType = EnemyTypeBasic
 	}
+
+	points := GetEnemyTypeData(enemyType).Points
 
 	// Mark enemy killed in wave manager
 	es.waveManager.MarkEnemyKilled()
@@ -438,16 +448,16 @@ func (es *EnemySystem) Reset() {
 // IsBossActive checks if there's an active boss
 func (es *EnemySystem) IsBossActive() bool {
 	if es.bossSpawned {
-		// Check if boss still exists
+		// Check if boss still exists using EnemyTypeID component
 		count := 0
 		query.NewQuery(
 			filter.And(
 				filter.Contains(core.EnemyTag),
-				filter.Contains(core.Orbital),
+				filter.Contains(core.EnemyTypeID),
 			),
 		).Each(es.world, func(entry *donburi.Entry) {
-			health := core.Health.Get(entry)
-			if health != nil && health.Maximum >= 10 {
+			typeID := core.EnemyTypeID.Get(entry)
+			if EnemyType(*typeID) == EnemyTypeBoss {
 				count++
 			}
 		})

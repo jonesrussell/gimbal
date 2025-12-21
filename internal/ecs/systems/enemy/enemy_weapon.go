@@ -94,19 +94,26 @@ func (ews *EnemyWeaponSystem) updateEnemyShooting(deltaTime float64, playerPos c
 		filter.And(
 			filter.Contains(core.EnemyTag),
 			filter.Contains(core.Position),
-			filter.Contains(core.Health),
 		),
 	).Each(ews.world, func(entry *donburi.Entry) {
 		entity := entry.Entity()
 		enemyPos := core.Position.Get(entry)
-		health := core.Health.Get(entry)
 
-		// Determine enemy type from health (heuristic)
+		// Get enemy type from component (preferred) or fall back to health heuristic
 		var enemyData EnemyTypeData
-		if health.Maximum >= 10 {
-			enemyData = GetEnemyTypeData(EnemyTypeBoss)
-		} else if health.Maximum >= 2 {
-			enemyData = GetEnemyTypeData(EnemyTypeHeavy)
+		if entry.HasComponent(core.EnemyTypeID) {
+			typeID := core.EnemyTypeID.Get(entry)
+			enemyData = GetEnemyTypeData(EnemyType(*typeID))
+		} else if entry.HasComponent(core.Health) {
+			// Fallback for legacy entities without EnemyTypeID
+			health := core.Health.Get(entry)
+			if health.Maximum >= 10 {
+				enemyData = GetEnemyTypeData(EnemyTypeBoss)
+			} else if health.Maximum >= 2 {
+				enemyData = GetEnemyTypeData(EnemyTypeHeavy)
+			} else {
+				enemyData = GetEnemyTypeData(EnemyTypeBasic)
+			}
 		} else {
 			enemyData = GetEnemyTypeData(EnemyTypeBasic)
 		}

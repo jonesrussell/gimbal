@@ -48,6 +48,8 @@ var (
 	Scale = donburi.NewComponentType[float64]()
 	// Health component stores entity health data
 	Health = donburi.NewComponentType[HealthData]()
+	// EnemyTypeID component stores the enemy type identifier
+	EnemyTypeID = donburi.NewComponentType[int]()
 )
 
 // MovementData represents movement information
