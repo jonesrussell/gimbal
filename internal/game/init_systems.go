@@ -86,7 +86,7 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 			"waves", len(levelConfig.Waves))
 	}
 
-	g.enemyWeaponSystem = enemy.NewEnemyWeaponSystem(g.world, g.config, g.logger, g.enemySystem)
+	g.enemyWeaponSystem = enemy.NewEnemyWeaponSystem(g.world, g.config, g.logger, g.enemySystem, g.resourceManager)
 	g.logger.Debug("Enemy weapon system created")
 	g.weaponSystem = weapon.NewWeaponSystem(g.world, g.config)
 	g.collisionSystem = collision.NewCollisionSystem(&collision.CollisionSystemConfig{
