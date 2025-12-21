@@ -1,6 +1,7 @@
 package enemy
 
 import (
+	"context"
 	"image/color"
 	"math"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
 // Enemy weapon constants
@@ -22,11 +24,12 @@ const (
 
 // EnemyWeaponSystem manages enemy shooting and projectiles
 type EnemyWeaponSystem struct {
-	world            donburi.World
-	config           *config.GameConfig
-	logger           common.Logger
-	projectileSprite *ebiten.Image
-	enemySystem      *EnemySystem // Reference to enemy system for getting enemy type data
+	world             donburi.World
+	config            *config.GameConfig
+	logger            common.Logger
+	resourceMgr       *resources.ResourceManager
+	projectileSprites map[EnemyType]*ebiten.Image
+	enemySystem       *EnemySystem // Reference to enemy system for getting enemy type data
 
 	// Track fire timers per enemy entity
 	enemyFireTimers map[donburi.Entity]float64
@@ -38,23 +41,58 @@ func NewEnemyWeaponSystem(
 	gameConfig *config.GameConfig,
 	logger common.Logger,
 	enemySystem *EnemySystem,
+	resourceMgr *resources.ResourceManager,
 ) *EnemyWeaponSystem {
 	ews := &EnemyWeaponSystem{
-		world:           world,
-		config:          gameConfig,
-		logger:          logger,
-		enemySystem:     enemySystem,
-		enemyFireTimers: make(map[donburi.Entity]float64),
+		world:             world,
+		config:            gameConfig,
+		logger:            logger,
+		resourceMgr:       resourceMgr,
+		enemySystem:       enemySystem,
+		projectileSprites: make(map[EnemyType]*ebiten.Image),
+		enemyFireTimers:   make(map[donburi.Entity]float64),
 	}
-	ews.initializeProjectileSprite()
+	ews.initializeProjectileSprites()
 	return ews
 }
 
-// initializeProjectileSprite creates the enemy projectile sprite
-func (ews *EnemyWeaponSystem) initializeProjectileSprite() {
-	// Red projectile for enemies
-	ews.projectileSprite = ebiten.NewImage(EnemyProjectileSize, EnemyProjectileSize)
-	ews.projectileSprite.Fill(color.RGBA{R: 255, G: 50, B: 50, A: 255})
+// initializeProjectileSprites loads projectile sprites from resource manager
+func (ews *EnemyWeaponSystem) initializeProjectileSprites() {
+	ctx := context.Background()
+
+	// Load sprite for basic enemy
+	if sprite, exists := ews.resourceMgr.GetSprite(ctx, "enemy_ammo"); exists {
+		ews.projectileSprites[EnemyTypeBasic] = sprite
+		ews.logger.Debug("Loaded enemy_ammo sprite for basic enemies")
+	} else {
+		// Fallback: create red projectile
+		fallback := ebiten.NewImage(EnemyProjectileSize, EnemyProjectileSize)
+		fallback.Fill(color.RGBA{R: 255, G: 50, B: 50, A: 255})
+		ews.projectileSprites[EnemyTypeBasic] = fallback
+		ews.logger.Warn("enemy_ammo sprite not found, using fallback")
+	}
+
+	// Load sprite for heavy enemy
+	if sprite, exists := ews.resourceMgr.GetSprite(ctx, "enemy_heavy_ammo"); exists {
+		ews.projectileSprites[EnemyTypeHeavy] = sprite
+		ews.logger.Debug("Loaded enemy_heavy_ammo sprite for heavy enemies")
+	} else {
+		// Fallback: create orange projectile
+		fallback := ebiten.NewImage(EnemyProjectileSize, EnemyProjectileSize)
+		fallback.Fill(color.RGBA{R: 255, G: 165, B: 0, A: 255})
+		ews.projectileSprites[EnemyTypeHeavy] = fallback
+		ews.logger.Warn("enemy_heavy_ammo sprite not found, using fallback")
+	}
+
+	// For boss, use heavy ammo sprite as fallback (until dedicated boss ammo is added)
+	if sprite, exists := ews.projectileSprites[EnemyTypeHeavy]; exists {
+		ews.projectileSprites[EnemyTypeBoss] = sprite
+	} else {
+		// Ultimate fallback: create red projectile
+		fallback := ebiten.NewImage(EnemyProjectileSize, EnemyProjectileSize)
+		fallback.Fill(color.RGBA{R: 255, G: 50, B: 50, A: 255})
+		ews.projectileSprites[EnemyTypeBoss] = fallback
+	}
 }
 
 // Update updates enemy weapons and their projectiles
@@ -126,7 +164,7 @@ func (ews *EnemyWeaponSystem) updateEnemyShooting(deltaTime float64, playerPos c
 		// Check if it's time to fire
 		fireInterval := 1.0 / enemyData.FireRate
 		if ews.enemyFireTimers[entity] >= fireInterval {
-			ews.fireAtPlayer(*enemyPos, playerPos, enemyData.ProjectileSpeed)
+			ews.fireAtPlayer(*enemyPos, playerPos, enemyData.ProjectileSpeed, enemyData.Type)
 			ews.enemyFireTimers[entity] = 0
 		}
 	})
@@ -153,7 +191,7 @@ func (ews *EnemyWeaponSystem) getEnemyTypeDataForWeapon(entry *donburi.Entry) (E
 }
 
 // fireAtPlayer creates a projectile aimed at the player
-func (ews *EnemyWeaponSystem) fireAtPlayer(enemyPos, playerPos common.Point, speed float64) {
+func (ews *EnemyWeaponSystem) fireAtPlayer(enemyPos, playerPos common.Point, speed float64, enemyType EnemyType) {
 	// Calculate direction from enemy to player
 	dirX := playerPos.X - enemyPos.X
 	dirY := playerPos.Y - enemyPos.Y
@@ -193,10 +231,23 @@ func (ews *EnemyWeaponSystem) fireAtPlayer(enemyPos, playerPos common.Point, spe
 		MaxSpeed: speed,
 	})
 
-	// Set sprite
-	core.Sprite.SetValue(entry, ews.projectileSprite)
+	// Get sprite for this enemy type
+	sprite, exists := ews.projectileSprites[enemyType]
+	if !exists {
+		// Fallback to basic sprite if type not found
+		sprite = ews.projectileSprites[EnemyTypeBasic]
+		if sprite == nil {
+			// Ultimate fallback: create red projectile
+			fallback := ebiten.NewImage(EnemyProjectileSize, EnemyProjectileSize)
+			fallback.Fill(color.RGBA{R: 255, G: 50, B: 50, A: 255})
+			sprite = fallback
+		}
+	}
 
-	ews.logger.Debug("Enemy fired projectile", "from", enemyPos, "toward", playerPos)
+	// Set sprite
+	core.Sprite.SetValue(entry, sprite)
+
+	ews.logger.Debug("Enemy fired projectile", "from", enemyPos, "toward", playerPos, "type", enemyType.String())
 }
 
 // updateProjectiles updates all enemy projectile positions

@@ -110,6 +110,20 @@ func (rm *ResourceManager) loadGameSprites(ctx context.Context) error {
 			FallbackHeight: 64,
 			FallbackColor:  color.RGBA{128, 0, 128, 255}, // Purple fallback
 		},
+		{
+			Name:           "enemy_ammo",
+			Path:           "sprites/enemy_ammo.png",
+			FallbackWidth:  6,
+			FallbackHeight: 6,
+			FallbackColor:  color.RGBA{255, 50, 50, 255}, // Red fallback
+		},
+		{
+			Name:           "enemy_heavy_ammo",
+			Path:           "sprites/enemy_heavy_ammo.png",
+			FallbackWidth:  6,
+			FallbackHeight: 6,
+			FallbackColor:  color.RGBA{255, 165, 0, 255}, // Orange fallback
+		},
 	}
 
 	for _, cfg := range spriteConfigs {
