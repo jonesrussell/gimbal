@@ -104,6 +104,15 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 		return nil
 	}
 
+	// Check if invincible flag is enabled (only works when DEBUG is on)
+	if hs.config.Debug && hs.config.Invincible {
+		// Check if this is the player entity
+		if entry.HasComponent(core.PlayerTag) {
+			hs.logger.Debug("Player damage prevented by invincible flag (DEBUG mode)")
+			return nil // Player is invincible, no damage taken
+		}
+	}
+
 	health := core.Health.Get(entry)
 	if health.IsInvincible {
 		return nil // Entity is invincible, no damage taken

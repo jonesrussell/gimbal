@@ -29,6 +29,7 @@ type GameConfig struct {
 	Radius     float64
 	NumStars   int
 	Debug      bool
+	Invincible bool // Player invincibility (only works when Debug is true)
 	Speed      float64
 	StarSize   float64
 	StarSpeed  float64
@@ -85,6 +86,15 @@ func WithAngleStep(step float64) GameOption {
 	}
 }
 
+// WithInvincible enables player invincibility (only works when Debug is enabled)
+// Note: The constraint that invincible only works when Debug is enabled is enforced
+// at the application level, not in this option function.
+func WithInvincible(invincible bool) GameOption {
+	return func(c *GameConfig) {
+		c.Invincible = invincible
+	}
+}
+
 // DefaultConfig returns a default game configuration
 func DefaultConfig() *GameConfig {
 	return &GameConfig{
@@ -96,13 +106,14 @@ func DefaultConfig() *GameConfig {
 			Width:  DefaultPlayerSize,
 			Height: DefaultPlayerSize,
 		},
-		Radius:    float64(DefaultScreenHeight/CenterDivisor) * DefaultRadiusRatio, // Use height since it's smaller
-		NumStars:  DefaultNumStars,
-		Debug:     false,
-		Speed:     DefaultSpeed,
-		StarSize:  DefaultStarSize,
-		StarSpeed: DefaultStarSpeed,
-		AngleStep: DefaultAngleStep,
+		Radius:     float64(DefaultScreenHeight/CenterDivisor) * DefaultRadiusRatio, // Use height since it's smaller
+		NumStars:   DefaultNumStars,
+		Debug:      false,
+		Invincible: false,
+		Speed:      DefaultSpeed,
+		StarSize:   DefaultStarSize,
+		StarSpeed:  DefaultStarSpeed,
+		AngleStep:  DefaultAngleStep,
 
 		// Star field defaults
 		StarSpawnRadiusMin: DefaultStarSpawnRadiusMin,
