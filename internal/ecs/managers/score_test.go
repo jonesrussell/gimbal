@@ -114,7 +114,8 @@ func TestScoreManager_AddScore(t *testing.T) {
 				t.Errorf("AddScore() score = %d, want %d (%s)", sm.GetScore(), tt.wantScore, tt.description)
 			}
 			if sm.GetHighScore() != tt.wantHighScore {
-				t.Errorf("AddScore() high score = %d, want %d (%s)", sm.GetHighScore(), tt.wantHighScore, tt.description)
+				t.Errorf("AddScore() high score = %d, want %d (%s)",
+					sm.GetHighScore(), tt.wantHighScore, tt.description)
 			}
 		})
 	}
@@ -178,7 +179,8 @@ func TestScoreManager_SetScore(t *testing.T) {
 				t.Errorf("SetScore() score = %d, want %d (%s)", sm.GetScore(), tt.wantScore, tt.description)
 			}
 			if sm.GetHighScore() != tt.wantHighScore {
-				t.Errorf("SetScore() high score = %d, want %d (%s)", sm.GetHighScore(), tt.wantHighScore, tt.description)
+				t.Errorf("SetScore() high score = %d, want %d (%s)",
+					sm.GetHighScore(), tt.wantHighScore, tt.description)
 			}
 		})
 	}
@@ -276,7 +278,8 @@ func TestScoreManager_SetMultiplier(t *testing.T) {
 			sm := NewScoreManager(10000)
 			sm.SetMultiplier(tt.multiplier)
 			if sm.GetMultiplier() != tt.want {
-				t.Errorf("SetMultiplier(%d) = %d, want %d (%s)", tt.multiplier, sm.GetMultiplier(), tt.want, tt.description)
+				t.Errorf("SetMultiplier(%d) = %d, want %d (%s)",
+					tt.multiplier, sm.GetMultiplier(), tt.want, tt.description)
 			}
 		})
 	}
