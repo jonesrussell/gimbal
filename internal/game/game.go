@@ -77,6 +77,9 @@ type ECSGame struct {
 	scoreManager *managers.ScoreManager
 	levelManager *managers.LevelManager
 
+	// Entity configurations (loaded from JSON)
+	playerConfig *managers.PlayerConfig
+
 	// Scene management
 	sceneManager *scenes.SceneManager
 

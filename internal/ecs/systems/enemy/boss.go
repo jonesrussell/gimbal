@@ -2,6 +2,7 @@ package enemy
 
 import (
 	"context"
+	"fmt"
 	"image/color"
 	stdmath "math"
 
@@ -25,7 +26,21 @@ const BossOrbitalSpeed = 0.5 // radians per second
 // SpawnBoss spawns a boss enemy with orbital movement
 func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	// Load boss sprite if not already loaded
+	// IMPORTANT: Use getBossSprite, not getEnemySprite, to ensure correct sprite
 	bossSprite := es.getBossSprite(ctx)
+
+	// Final verification: ensure sprite is not nil
+	if bossSprite == nil {
+		es.logger.Error("[BOSS_SPRITE] CRITICAL: Boss sprite is nil in SpawnBoss, creating emergency fallback")
+		bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+		if err != nil {
+			es.logger.Error("[BOSS_SPRITE] Failed to get boss data for fallback", "error", err)
+			bossSprite = ebiten.NewImage(64, 64) // Default size
+		} else {
+			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
+		}
+		bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
+	}
 
 	centerX := float64(es.gameConfig.ScreenSize.Width) / 2
 	centerY := float64(es.gameConfig.ScreenSize.Height) / 2
@@ -47,8 +62,22 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	// Set sprite
 	core.Sprite.SetValue(entry, bossSprite)
 
-	// Use boss config if available, otherwise use default boss data
-	bossData := GetEnemyTypeData(EnemyTypeBoss)
+	// Verify sprite was set correctly
+	if setSprite := core.Sprite.Get(entry); setSprite != nil && *setSprite != nil {
+		bounds := (*setSprite).Bounds()
+		es.logger.Debug("[BOSS_SPRITE] Boss sprite set successfully",
+			"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()),
+			"entity", entity)
+	} else {
+		es.logger.Error("[BOSS_SPRITE] Failed to set boss sprite - sprite is nil")
+	}
+
+	// Use boss config if available, otherwise use loaded boss data
+	bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+	if err != nil {
+		es.logger.Error("[BOSS_SPRITE] Failed to get boss type data", "error", err)
+		return donburi.Null
+	}
 	bossSize := bossData.Size
 	bossHealth := bossData.Health
 
@@ -82,12 +111,22 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	// Set initial angle
 	core.Angle.SetValue(entry, 0)
 
-	es.logger.Debug("Enemy spawned",
+	// Verify final sprite
+	finalSprite := core.Sprite.Get(entry)
+	spriteInfo := "nil"
+	if finalSprite != nil && *finalSprite != nil {
+		bounds := (*finalSprite).Bounds()
+		spriteInfo = fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy())
+	}
+
+	es.logger.Debug("Boss spawned",
 		"type", EnemyTypeBoss.String(),
-		"sprite", "enemy_boss",
-		"health", bossData.Health,
+		"sprite_name", "enemy_boss",
+		"sprite_size", spriteInfo,
+		"health", bossHealth,
 		"position", common.Point{X: spawnX, Y: spawnY},
-		"angle", initialAngle)
+		"angle", initialAngle,
+		"entity", entity)
 
 	return entity
 }
@@ -96,25 +135,75 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
 	// Check cache first
 	if sprite, ok := es.enemySprites[EnemyTypeBoss]; ok {
+		es.logger.Debug("[BOSS_SPRITE] Using cached boss sprite", "sprite_size", sprite.Bounds())
 		return sprite
 	}
 
 	// Try to load boss sprite from resource manager
+	es.logger.Debug("[BOSS_SPRITE] Loading boss sprite from resource manager", "sprite_name", "enemy_boss")
 	bossSprite, exists := es.resourceMgr.GetSprite(ctx, "enemy_boss")
-	if !exists {
+	if !exists || bossSprite == nil {
+		es.logger.Warn("[BOSS_SPRITE] enemy_boss not found or nil", "exists", exists, "sprite_nil", bossSprite == nil)
 		// Try alternative name
 		bossSprite, exists = es.resourceMgr.GetSprite(ctx, "boss")
-		if !exists {
-			es.logger.Warn("Boss sprite not found, using placeholder")
+		if !exists || bossSprite == nil {
+			es.logger.Warn("[BOSS_SPRITE] Boss sprite not found in resource manager, creating placeholder")
 			// Create a larger placeholder sprite (purple to distinguish from regular enemies)
-			bossData := GetEnemyTypeData(EnemyTypeBoss)
-			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
+			bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+			if err != nil {
+				es.logger.Error("[BOSS_SPRITE] Failed to get boss data for placeholder", "error", err)
+				bossSprite = ebiten.NewImage(64, 64) // Default size
+			} else {
+				bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
+			}
 			bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
+			es.logger.Debug("[BOSS_SPRITE] Created purple placeholder", "size", bossData.Size)
+		} else {
+			bounds := bossSprite.Bounds()
+			es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'boss'",
+				"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()))
 		}
+	} else {
+		bounds := bossSprite.Bounds()
+		es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'enemy_boss'",
+			"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()))
+	}
+
+	// Verify sprite is not nil before caching
+	if bossSprite == nil {
+		es.logger.Error("[BOSS_SPRITE] Boss sprite is nil after all attempts, creating fallback")
+		bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+		if err != nil {
+			es.logger.Error("[BOSS_SPRITE] Failed to get boss data for fallback", "error", err)
+			bossSprite = ebiten.NewImage(64, 64) // Default size
+		} else {
+			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
+		}
+		bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
+	}
+
+	// Double-check: ensure we're not accidentally getting the player sprite
+	// Check sprite dimensions - boss should be larger than player (typically 64x64 vs 32x32)
+	bounds := bossSprite.Bounds()
+	if bounds.Dx() <= 32 && bounds.Dy() <= 32 {
+		es.logger.Error("[BOSS_SPRITE] ERROR: Boss sprite appears to be player-sized! This is wrong!",
+			"size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()),
+			"expected", "64x64 or larger")
+		// Force create a proper boss sprite
+		bossData, err := es.GetEnemyTypeData(EnemyTypeBoss)
+		if err != nil {
+			es.logger.Error("[BOSS_SPRITE] Failed to get boss data for replacement", "error", err)
+			bossSprite = ebiten.NewImage(64, 64) // Default size
+		} else {
+			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
+		}
+		bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
+		es.logger.Warn("[BOSS_SPRITE] Created replacement boss sprite", "size", bossData.Size)
 	}
 
 	// Cache the sprite
 	es.enemySprites[EnemyTypeBoss] = bossSprite
+	es.logger.Debug("[BOSS_SPRITE] Boss sprite cached", "final_size", bossSprite.Bounds())
 	return bossSprite
 }
 
