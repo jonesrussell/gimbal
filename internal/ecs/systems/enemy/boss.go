@@ -37,7 +37,7 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 
 	entity := es.world.Create(
 		core.EnemyTag, core.Position, core.Sprite, core.Orbital,
-		core.Size, core.Health, core.Angle,
+		core.Size, core.Health, core.Angle, core.EnemyTypeID,
 	)
 	entry := es.world.Entry(entity)
 
@@ -53,6 +53,9 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 
 	// Set health
 	core.Health.SetValue(entry, core.NewHealthData(bossData.Health, bossData.Health))
+
+	// Set enemy type ID for proper identification
+	core.EnemyTypeID.SetValue(entry, int(EnemyTypeBoss))
 
 	// Set up orbital movement
 	orbitalData := core.OrbitalData{
@@ -71,9 +74,14 @@ func (es *EnemySystem) SpawnBoss(ctx context.Context) donburi.Entity {
 	return entity
 }
 
-// getBossSprite loads or creates the boss sprite
+// getBossSprite loads or creates the boss sprite (with caching)
 func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
-	// Try to load boss sprite
+	// Check cache first
+	if sprite, ok := es.enemySprites[EnemyTypeBoss]; ok {
+		return sprite
+	}
+
+	// Try to load boss sprite from resource manager
 	bossSprite, exists := es.resourceMgr.GetSprite(ctx, "enemy_boss")
 	if !exists {
 		// Try alternative name
@@ -81,11 +89,14 @@ func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
 		if !exists {
 			es.logger.Warn("Boss sprite not found, using placeholder")
 			// Create a larger placeholder sprite (purple to distinguish from regular enemies)
-			bossSprite = ebiten.NewImage(64, 64)
+			bossData := GetEnemyTypeData(EnemyTypeBoss)
+			bossSprite = ebiten.NewImage(bossData.Size, bossData.Size)
 			bossSprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
 		}
 	}
 
+	// Cache the sprite
+	es.enemySprites[EnemyTypeBoss] = bossSprite
 	return bossSprite
 }
 
