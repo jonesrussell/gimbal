@@ -49,10 +49,11 @@ type ECSGame struct {
 	sceneManager *scenes.SceneManager
 
 	// Combat systems
-	enemySystem     *enemysys.EnemySystem
-	weaponSystem    *weaponsys.WeaponSystem
-	collisionSystem *collision.CollisionSystem
-	healthSystem    *healthsys.HealthSystem
+	enemySystem       *enemysys.EnemySystem
+	enemyWeaponSystem *enemysys.EnemyWeaponSystem
+	weaponSystem      *weaponsys.WeaponSystem
+	collisionSystem   *collision.CollisionSystem
+	healthSystem      *healthsys.HealthSystem
 
 	// Movement system
 	movementSystem *movement.MovementSystem
@@ -163,6 +164,13 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 		return g.enemySystem.Update(ctx, deltaTime)
 	}
 	if err := g.updateSystemWithTiming("enemy", enemyUpdateFunc); err != nil {
+		return err
+	}
+	enemyWeaponUpdateFunc := func() error {
+		g.enemyWeaponSystem.Update(deltaTime)
+		return nil
+	}
+	if err := g.updateSystemWithTiming("enemy_weapon", enemyWeaponUpdateFunc); err != nil {
 		return err
 	}
 	weaponUpdateFunc := func() error {

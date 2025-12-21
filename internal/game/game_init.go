@@ -83,6 +83,8 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.logger, g.inputHandler)
 	g.logger.Debug("Movement system created")
 	g.enemySystem = enemy.NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
+	g.enemyWeaponSystem = enemy.NewEnemyWeaponSystem(g.world, g.config, g.logger)
+	g.logger.Debug("Enemy weapon system created")
 	g.weaponSystem = weapon.NewWeaponSystem(g.world, g.config)
 	g.collisionSystem = collision.NewCollisionSystem(&collision.CollisionSystemConfig{
 		World:        g.world,

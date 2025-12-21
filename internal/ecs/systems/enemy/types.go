@@ -36,6 +36,9 @@ type EnemyTypeData struct {
 	SpriteName      string
 	MovementType    string          // "outward", "spiral", "orbital"
 	MovementPattern MovementPattern // Movement behavior pattern
+	CanShoot        bool            // Whether this enemy type can shoot
+	FireRate        float64         // Shots per second (0 = no shooting)
+	ProjectileSpeed float64         // Speed of enemy projectiles
 }
 
 // GetEnemyTypeData returns the configuration for an enemy type
@@ -51,6 +54,9 @@ func GetEnemyTypeData(enemyType EnemyType) EnemyTypeData {
 			SpriteName:      "enemy",
 			MovementType:    "outward",
 			MovementPattern: MovementPatternNormal,
+			CanShoot:        true,
+			FireRate:        0.5, // Shoots every 2 seconds
+			ProjectileSpeed: 4.0,
 		}
 	case EnemyTypeHeavy:
 		return EnemyTypeData{
@@ -62,6 +68,9 @@ func GetEnemyTypeData(enemyType EnemyType) EnemyTypeData {
 			SpriteName:      "enemy_heavy",
 			MovementType:    "spiral",
 			MovementPattern: MovementPatternNormal,
+			CanShoot:        true,
+			FireRate:        1.0, // Shoots every second
+			ProjectileSpeed: 5.0,
 		}
 	case EnemyTypeBoss:
 		return EnemyTypeData{
@@ -73,6 +82,9 @@ func GetEnemyTypeData(enemyType EnemyType) EnemyTypeData {
 			SpriteName:      "enemy_boss",
 			MovementType:    "orbital",
 			MovementPattern: MovementPatternNormal,
+			CanShoot:        true,
+			FireRate:        2.0, // Shoots twice per second
+			ProjectileSpeed: 6.0,
 		}
 	default:
 		return GetEnemyTypeData(EnemyTypeBasic)
