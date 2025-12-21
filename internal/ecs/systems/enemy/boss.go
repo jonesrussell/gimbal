@@ -180,9 +180,8 @@ func (es *EnemySystem) setupBossEntity(entry *donburi.Entry, centerX, centerY fl
 
 // getBossSprite loads or creates the boss sprite (with caching)
 func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
-	// Check cache first
+	// Check cache first (silent - this happens frequently)
 	if sprite, ok := es.enemySprites[EnemyTypeBoss]; ok {
-		es.logger.Debug("[BOSS_SPRITE] Using cached boss sprite", "sprite_size", sprite.Bounds())
 		return sprite
 	}
 
@@ -195,33 +194,24 @@ func (es *EnemySystem) getBossSprite(ctx context.Context) *ebiten.Image {
 		bossSprite = es.createBossPlaceholder()
 	}
 
-	// Cache the sprite
+	// Cache the sprite (log only once during initialization)
 	es.enemySprites[EnemyTypeBoss] = bossSprite
-	es.logger.Debug("[BOSS_SPRITE] Boss sprite cached", "final_size", bossSprite.Bounds())
+	es.logger.Info("[BOSS_SPRITE] Boss sprite loaded and cached", "size", bossSprite.Bounds())
 	return bossSprite
 }
 
 // tryLoadBossSprite tries to load boss sprite from resource manager
 func (es *EnemySystem) tryLoadBossSprite(ctx context.Context) *ebiten.Image {
-	es.logger.Debug("[BOSS_SPRITE] Loading boss sprite from resource manager", "sprite_name", "enemy_boss")
 	bossSprite, exists := es.resourceMgr.GetSprite(ctx, "enemy_boss")
 	if !exists || bossSprite == nil {
-		es.logger.Warn("[BOSS_SPRITE] enemy_boss not found or nil", "exists", exists, "sprite_nil", bossSprite == nil)
 		// Try alternative name
 		bossSprite, exists = es.resourceMgr.GetSprite(ctx, "boss")
 		if !exists || bossSprite == nil {
-			es.logger.Warn("[BOSS_SPRITE] Boss sprite not found in resource manager, creating placeholder")
+			es.logger.Warn("[BOSS_SPRITE] Boss sprite not found in resource manager")
 			return nil
 		}
-		bounds := bossSprite.Bounds()
-		es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'boss'",
-			"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()))
 		return bossSprite
 	}
-
-	bounds := bossSprite.Bounds()
-	es.logger.Debug("[BOSS_SPRITE] Found boss sprite with name 'enemy_boss'",
-		"sprite_size", fmt.Sprintf("%dx%d", bounds.Dx(), bounds.Dy()))
 	return bossSprite
 }
 
@@ -239,13 +229,13 @@ func (es *EnemySystem) verifyBossSpriteNotPlayer(ctx context.Context, bossSprite
 	// Check if they're the same pointer (same sprite object)
 	if bossSprite == playerSprite {
 		es.logger.Error(
-			"[BOSS_SPRITE] CRITICAL ERROR: Boss sprite is the same as player sprite! This is wrong!",
+			"[BOSS_SPRITE] CRITICAL ERROR: Boss sprite is the same as player sprite",
 		)
 		// Force create a proper boss sprite
 		return es.createBossPlaceholder()
 	}
 
-	es.logger.Debug("[BOSS_SPRITE] Verified boss sprite is different from player sprite")
+	// Verification passed (no need to log success on every check)
 	return bossSprite
 }
 
@@ -264,7 +254,7 @@ func (es *EnemySystem) createBossPlaceholder() *ebiten.Image {
 func (es *EnemySystem) createDefaultBossSprite(size int) *ebiten.Image {
 	sprite := ebiten.NewImage(size, size)
 	sprite.Fill(color.RGBA{128, 0, 128, 255}) // Purple
-	es.logger.Debug("[BOSS_SPRITE] Created purple placeholder", "size", size)
+	// Placeholder creation only logged at Warn level in createBossPlaceholder
 	return sprite
 }
 
