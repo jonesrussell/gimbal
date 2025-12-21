@@ -37,6 +37,7 @@ type EnemyWeaponSystem struct {
 
 // NewEnemyWeaponSystem creates a new enemy weapon system
 func NewEnemyWeaponSystem(
+	ctx context.Context,
 	world donburi.World,
 	gameConfig *config.GameConfig,
 	logger common.Logger,
@@ -52,14 +53,12 @@ func NewEnemyWeaponSystem(
 		projectileSprites: make(map[EnemyType]*ebiten.Image),
 		enemyFireTimers:   make(map[donburi.Entity]float64),
 	}
-	ews.initializeProjectileSprites()
+	ews.initializeProjectileSprites(ctx)
 	return ews
 }
 
 // initializeProjectileSprites loads projectile sprites from resource manager
-func (ews *EnemyWeaponSystem) initializeProjectileSprites() {
-	ctx := context.Background()
-
+func (ews *EnemyWeaponSystem) initializeProjectileSprites(ctx context.Context) {
 	// Load sprite for basic enemy
 	if sprite, exists := ews.resourceMgr.GetSprite(ctx, "enemy_ammo"); exists {
 		ews.projectileSprites[EnemyTypeBasic] = sprite
