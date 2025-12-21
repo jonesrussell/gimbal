@@ -38,9 +38,9 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 
 // createGameplaySystems creates gameplay ECS systems
 func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
-	enemyConfigMap, err := g.loadEntityConfigs(ctx)
-	if err != nil {
-		return err
+	enemyConfigMap, configErr := g.loadEntityConfigs(ctx)
+	if configErr != nil {
+		return configErr
 	}
 
 	if err := g.createBasicSystems(enemyConfigMap); err != nil {
