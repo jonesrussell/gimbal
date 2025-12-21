@@ -43,11 +43,11 @@ func LoadAndValidateJSON[T any](ctx context.Context, path string, validator Vali
 
 	// Validate if validator provided
 	if validator != nil {
-		if err := validator(config); err != nil {
+		if validateErr := validator(config); validateErr != nil {
 			return zero, errors.NewGameErrorWithCause(
 				errors.ConfigInvalid,
 				fmt.Sprintf("invalid configuration in %s", path),
-				err,
+				validateErr,
 			)
 		}
 	}
