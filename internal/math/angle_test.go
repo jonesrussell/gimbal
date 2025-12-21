@@ -1,4 +1,4 @@
-package math
+package math //nolint:testpackage // Testing from same package to access unexported functions
 
 import (
 	"math"
