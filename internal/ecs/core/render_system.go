@@ -41,14 +41,14 @@ func renderStaticEntity(entry *donburi.Entry, screen *ebiten.Image, pos *common.
 	op := &ebiten.DrawImageOptions{}
 	ApplySpriteTransform(entry, sprite, op)
 
-		// Apply invincibility flashing if entity has health and is invincible
-		if entry.HasComponent(Health) {
-			health := Health.Get(entry)
-			if health.IsInvincible {
-				// Flash every 0.2 seconds (5 times per second)
-				flashRate := 0.2 * float64(time.Second) // Convert to time.Duration
-				remainingTime := health.InvincibilityDuration - health.InvincibilityTime
-				flashPhase := int(remainingTime / time.Duration(flashRate))
+	// Apply invincibility flashing if entity has health and is invincible
+	if entry.HasComponent(Health) {
+		health := Health.Get(entry)
+		if health.IsInvincible {
+			// Flash every 0.2 seconds (5 times per second)
+			flashRate := 0.2 * float64(time.Second) // Convert to time.Duration
+			remainingTime := health.InvincibilityDuration - health.InvincibilityTime
+			flashPhase := int(remainingTime / time.Duration(flashRate))
 			if flashPhase%2 == 0 {
 				// Make sprite semi-transparent during flash
 				op.ColorScale.SetR(1)
