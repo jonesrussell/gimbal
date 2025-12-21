@@ -1,0 +1,92 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - "v*" # Triggers on tags starting with 'v' (e.g., v1.0.0)
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            goos: linux
+            goarch: amd64
+            binary: gimbal
+            archive: tar.gz
+          - os: windows
+            goos: windows
+            goarch: amd64
+            binary: gimbal.exe
+            archive: zip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Get version from tag
+        id: tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          VERSION: ${{ steps.tag.outputs.VERSION }}
+        run: |
+          go build -tags build -ldflags "-X main.version=${VERSION} -s -w" -o ${{ matrix.binary }} .
+
+      - name: Create release archive
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            zip gimbal-${{ steps.tag.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.goarch }}.zip ${{ matrix.binary }}
+          else
+            tar -czf gimbal-${{ steps.tag.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.goarch }}.${{ matrix.archive }} ${{ matrix.binary }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gimbal-${{ steps.tag.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.goarch }}
+          path: gimbal-${{ steps.tag.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.goarch }}.${{ matrix.archive }}
+          retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.VERSION }}
+          name: Release ${{ steps.tag.outputs.VERSION }}
+          files: artifacts/**/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
