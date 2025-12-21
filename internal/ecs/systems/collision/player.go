@@ -20,7 +20,8 @@ func (cs *CollisionSystem) getPlayerEntity() (donburi.Entity, *donburi.Entry) {
 	if !playerEntry.Valid() {
 		return 0, nil
 	}
-	return playerEntry.Entity(), playerEntry
+	playerEntity := playerEntry.Entity()
+	return playerEntity, playerEntry
 }
 
 // checkPlayerEnemyCollisions checks for collisions between player and enemies
