@@ -130,3 +130,63 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 
 	return nil
 }
+
+// checkEnemyProjectilePlayerCollisions checks for collisions between enemy projectiles and player
+func (cs *CollisionSystem) checkEnemyProjectilePlayerCollisions(ctx context.Context) error {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Get player entity
+	playerEntity, playerEntry := cs.getPlayerEntity()
+	if playerEntry == nil {
+		return nil
+	}
+
+	playerPos := core.Position.Get(playerEntry)
+	playerSize := core.Size.Get(playerEntry)
+
+	// Get all enemy projectiles
+	enemyProjectiles := cs.getEnemyProjectileEntities()
+
+	for _, projectileEntity := range enemyProjectiles {
+		projectileEntry := cs.world.Entry(projectileEntity)
+		if !projectileEntry.Valid() {
+			continue
+		}
+
+		projectilePos := core.Position.Get(projectileEntry)
+		projectileSize := core.Size.Get(projectileEntry)
+
+		// Check collision
+		if cs.checkCollision(*projectilePos, *projectileSize, *playerPos, *playerSize) {
+			// Remove the projectile
+			cs.world.Remove(projectileEntity)
+
+			// Damage the player (1 damage per projectile hit)
+			cs.healthSystem.DamagePlayer(playerEntity, 1)
+
+			cs.logger.Debug("Player hit by enemy projectile")
+		}
+	}
+
+	return nil
+}
+
+// getEnemyProjectileEntities returns all enemy projectile entities
+func (cs *CollisionSystem) getEnemyProjectileEntities() []donburi.Entity {
+	projectiles := make([]donburi.Entity, 0)
+	query.NewQuery(
+		filter.And(
+			filter.Contains(core.EnemyProjectileTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
+		),
+	).Each(cs.world, func(entry *donburi.Entry) {
+		projectiles = append(projectiles, entry.Entity())
+	})
+	return projectiles
+}

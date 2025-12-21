@@ -1,6 +1,6 @@
 module github.com/jonesrussell/gimbal
 
-go 1.24
+go 1.25
 
 require (
 	github.com/ebitenui/ebitenui v0.6.2
@@ -8,7 +8,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/yohamta/donburi v1.15.7
-	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	golang.org/x/image v0.29.0
 )
@@ -45,6 +44,7 @@ require (
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
+	go.uber.org/mock v0.5.2 // indirect
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
