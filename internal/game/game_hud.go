@@ -23,4 +23,3 @@ func (g *ECSGame) updateHUD() {
 		hudUI.UpdateHUD(uiData)
 	}
 }
-

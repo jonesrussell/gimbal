@@ -57,4 +57,3 @@ func (g *ECSGame) handleShootingInput() {
 		}
 	}
 }
-
