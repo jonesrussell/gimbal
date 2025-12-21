@@ -85,10 +85,11 @@ func (es *EnemySystem) Update(ctx context.Context, deltaTime float64) error {
 	// Update wave manager
 	es.waveManager.Update(deltaTime)
 
-	// Check if we need to start a new wave (but not if we're waiting for inter-wave delay)
+	// Check if we need to start a new wave (but not if we're waiting for level start or inter-wave delay)
 	if es.waveManager.GetCurrentWave() == nil &&
 		es.waveManager.HasMoreWaves() &&
-		!es.waveManager.IsWaiting() {
+		!es.waveManager.IsWaiting() &&
+		!es.waveManager.IsWaitingForLevelStart() {
 		es.waveManager.StartNextWave()
 	}
 
