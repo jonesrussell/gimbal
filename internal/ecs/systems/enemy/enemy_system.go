@@ -161,10 +161,10 @@ func (es *EnemySystem) spawnWaveEnemy(ctx context.Context, wave *WaveState) {
 	enemyIndex := wave.EnemiesSpawned
 	if enemyIndex < len(formationData) {
 		formData := formationData[enemyIndex]
-		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, enemyData)
+		es.spawnEnemyAt(ctx, formData.Position, formData.Angle, enemyType, &enemyData)
 	} else {
 		// Fallback: spawn at center with random angle
-		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, enemyData)
+		es.spawnEnemyAt(ctx, common.Point{X: centerX, Y: centerY}, baseAngle, enemyType, &enemyData)
 	}
 }
 
@@ -174,7 +174,7 @@ func (es *EnemySystem) spawnEnemyAt(
 	position common.Point,
 	angle float64,
 	enemyType EnemyType,
-	enemyData EnemyTypeData,
+	enemyData *EnemyTypeData,
 ) {
 	// Get or create sprite
 	sprite := es.getEnemySprite(ctx, enemyType, enemyData)
@@ -251,7 +251,7 @@ func (es *EnemySystem) setSpiralMovement(entry *donburi.Entry, baseAngle, speed 
 }
 
 // getEnemySprite gets or creates the sprite for an enemy type
-func (es *EnemySystem) getEnemySprite(ctx context.Context, enemyType EnemyType, enemyData EnemyTypeData) *ebiten.Image {
+func (es *EnemySystem) getEnemySprite(ctx context.Context, enemyType EnemyType, enemyData *EnemyTypeData) *ebiten.Image {
 	// Check cache
 	if sprite, ok := es.enemySprites[enemyType]; ok {
 		return sprite
