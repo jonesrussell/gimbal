@@ -1,4 +1,4 @@
-package common
+package common //nolint:testpackage // Testing from same package to access unexported functions
 
 import (
 	"context"

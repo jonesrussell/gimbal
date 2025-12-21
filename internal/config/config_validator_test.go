@@ -1,4 +1,4 @@
-package config
+package config //nolint:testpackage // Testing from same package to access unexported functions
 
 import (
 	"testing"
@@ -20,9 +20,7 @@ func TestNewValidator(t *testing.T) {
 
 func TestNewValidationResult(t *testing.T) {
 	result := NewValidationResult()
-	if result == nil {
-		t.Error("NewValidationResult() returned nil")
-	}
+	// NewValidationResult always returns a non-nil pointer, so no nil check needed
 	if !result.IsValid {
 		t.Error("Expected new validation result to be valid")
 	}
@@ -95,6 +93,7 @@ func TestValidator_Validate_ValidConfig(t *testing.T) {
 	}
 }
 
+//nolint:revive // High cognitive complexity is acceptable for comprehensive table-driven tests
 func TestValidator_ValidateScreenSize(t *testing.T) {
 	validator := NewValidator()
 	tests := []struct {

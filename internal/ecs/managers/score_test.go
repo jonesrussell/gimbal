@@ -1,4 +1,4 @@
-package managers
+package managers //nolint:testpackage // Testing from same package to access unexported functions
 
 import "testing"
 

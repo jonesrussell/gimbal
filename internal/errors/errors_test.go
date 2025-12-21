@@ -1,4 +1,4 @@
-package errors
+package errors //nolint:testpackage // Testing from same package to access unexported functions
 
 import (
 	"context"

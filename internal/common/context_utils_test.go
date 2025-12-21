@@ -1,4 +1,4 @@
-package common
+package common //nolint:testpackage // Testing from same package to access unexported functions
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+//nolint:revive // High cognitive complexity is acceptable for comprehensive table-driven tests
 func TestCheckContextCancellation(t *testing.T) {
 	tests := []struct {
 		name    string
