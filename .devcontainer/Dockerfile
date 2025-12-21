@@ -53,24 +53,26 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up Xvfb for testing
-RUN echo '#!/bin/bash\n\
-    if [ "$1" = "test" ]; then\n\
-    # Set up fake X server with authentication\n\
-    export XAUTHORITY=/tmp/.Xauthority\n\
-    touch $XAUTHORITY\n\
-    xauth generate :99 . trusted\n\
-    Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &\n\
-    export DISPLAY=:99\n\
-    shift\n\
-    exec "$@"\n\
-    else\n\
-    # Copy X11 authentication if available\n\
-    if [ -f /tmp/.Xauthority ]; then\n\
-    cp /tmp/.Xauthority /home/vscode/.Xauthority\n\
-    chown vscode:vscode /home/vscode/.Xauthority\n\
-    fi\n\
-    exec "$@"\n\
-    fi' > /usr/local/bin/entrypoint.sh \
+RUN printf '%s\n' \
+    '#!/bin/bash' \
+    'if [ "$1" = "test" ]; then' \
+    '    # Set up fake X server with authentication' \
+    '    export XAUTHORITY=/tmp/.Xauthority' \
+    '    touch $XAUTHORITY' \
+    '    xauth generate :99 . trusted' \
+    '    Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &' \
+    '    export DISPLAY=:99' \
+    '    shift' \
+    '    exec "$@"' \
+    'else' \
+    '    # Copy X11 authentication if available' \
+    '    if [ -f /tmp/.Xauthority ]; then' \
+    '        cp /tmp/.Xauthority /home/vscode/.Xauthority' \
+    '        chown vscode:vscode /home/vscode/.Xauthority' \
+    '    fi' \
+    '    exec "$@"' \
+    'fi' \
+    > /usr/local/bin/entrypoint.sh \
     && chmod +x /usr/local/bin/entrypoint.sh
 
 # Set display for X11 forwarding
