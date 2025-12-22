@@ -7,5 +7,3 @@ package resources
 func suppressStderrFD(originalFd, devNullFd int) func() {
 	return func() {}
 }
-
-

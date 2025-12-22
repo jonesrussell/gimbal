@@ -30,4 +30,3 @@ func suppressStderrFD(originalFd, devNullFd int) func() {
 		syscall.Close(savedFd)
 	}
 }
-
