@@ -50,7 +50,8 @@ func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceMana
 	// Initialize audio player (44100 Hz sample rate)
 	// Audio is optional - if disabled or initialization fails (e.g., no audio device in container),
 	// the game will continue without audio
-	if os.Getenv("DISABLE_AUDIO") == "1" || os.Getenv("DISABLE_AUDIO") == "true" {
+	disableAudio := os.Getenv("DISABLE_AUDIO")
+	if disableAudio == "1" || disableAudio == "true" {
 		logger.Debug("Audio disabled, skipping audio player initialization")
 		rm.audioPlayer = nil
 	} else {

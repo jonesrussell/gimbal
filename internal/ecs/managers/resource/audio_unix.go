@@ -26,7 +26,9 @@ func suppressStderrFD(originalFd, devNullFd int) func() {
 	// Return restore function
 	return func() {
 		// Restore original stderr
-		syscall.Dup2(savedFd, originalFd)
-		syscall.Close(savedFd)
+		//nolint:errcheck // Best effort restore - if it fails, there's nothing we can do
+		_ = syscall.Dup2(savedFd, originalFd)
+		//nolint:errcheck // Best effort cleanup - if it fails, there's nothing we can do
+		_ = syscall.Close(savedFd)
 	}
 }
