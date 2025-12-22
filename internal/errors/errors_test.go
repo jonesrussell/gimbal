@@ -294,8 +294,9 @@ func TestGetGameError(t *testing.T) {
 			wantCode: EntityNotFound,
 		},
 		{
-			name:     "double wrapped GameError",
-			err:      fmt.Errorf("outer: %w", fmt.Errorf("middle: %w", NewGameError(SystemInitFailed, "double wrapped"))),
+			name: "double wrapped GameError",
+			err: fmt.Errorf("outer: %w",
+				fmt.Errorf("middle: %w", NewGameError(SystemInitFailed, "double wrapped"))),
 			wantErr:  true,
 			wantCode: SystemInitFailed,
 		},
@@ -306,8 +307,9 @@ func TestGetGameError(t *testing.T) {
 			wantCode: AssetLoadFailed,
 		},
 		{
-			name:     "wrapped GameError with cause",
-			err:      fmt.Errorf("operation failed: %w", NewGameErrorWithCause(ConfigInvalid, "invalid config", errors.New("parse error"))),
+			name: "wrapped GameError with cause",
+			err: fmt.Errorf("operation failed: %w",
+				NewGameErrorWithCause(ConfigInvalid, "invalid config", errors.New("parse error"))),
 			wantErr:  true,
 			wantCode: ConfigInvalid,
 		},
