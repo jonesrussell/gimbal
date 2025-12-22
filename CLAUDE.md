@@ -40,7 +40,7 @@ gimbal/
 │   │   ├── debug/             # Debug rendering and performance monitoring
 │   │   ├── events/            # Event system
 │   │   ├── managers/          # Score, level, resource, entity config managers
-│   │   │   ├── resource/      # Resource manager for sprites and assets
+│   │   │   ├── resource/      # Resource manager for sprites, audio, and assets
 │   │   │   ├── level_config.go    # Level configuration structures
 │   │   │   ├── level_loader.go    # Level loading from JSON files
 │   │   │   ├── level_definitions.go # Default level definitions
@@ -89,6 +89,17 @@ The `app/Container` manages all dependencies with ordered initialization:
 - Game sprites: `player.png`, `heart.png`, `enemy.png`, `enemy_heavy.png`, `enemy_boss.png`, `enemy_ammo.png`, `enemy_heavy_ammo.png`
 - Enemy projectile sprites: `enemy_ammo.png` (Basic enemies), `enemy_heavy_ammo.png` (Heavy enemies, also used for Boss as fallback)
 - All sprites use fallback colored placeholders if asset loading fails
+
+### Audio Assets
+- Audio files are loaded via the ResourceManager from `assets/sounds/`
+- Format: OGG/Vorbis (`.ogg` files) - recommended for background music
+- Music tracks:
+  - `game_music_main.ogg` - Menu music (plays in main menu)
+  - `game_music_level_1.ogg` - Level 1 gameplay music
+  - `game_music_boss.ogg` - Boss battle music (plays when boss appears)
+- Audio is optional - game continues without audio if initialization fails (e.g., no audio device in containers)
+- Audio automatically loops during playback
+- Music switches dynamically: level music → boss music when boss spawns, boss music → level music when boss is defeated
 
 ## Coding Conventions
 
@@ -162,6 +173,15 @@ Use the `TestableInputHandler` interface for simulating input in tests.
 3. Update `EnemyWeaponSystem.initializeProjectileSprites()` to load the sprite for the appropriate enemy type
 4. The system automatically uses the sprite based on the enemy type when firing projectiles
 
+### Adding Audio/Music
+1. Add OGG/Vorbis audio file to `assets/sounds/` (e.g., `game_music_level_2.ogg`)
+2. Add audio configuration to `internal/ecs/managers/resource/audio.go` in `LoadAllAudio()`
+3. Use `ResourceManager.GetAudioPlayer()` to access the audio player
+4. Call `PlayMusic(name, audioResource, volume)` to play music (volume 0.0-1.0)
+5. Music automatically loops - use `StopMusic(name)` to stop playback
+6. For scene-specific music, add playback in scene's `Enter()` method and stop in `Exit()` method
+7. For dynamic music switching (e.g., boss battles), check game state in scene's `Update()` method
+
 ## Performance Notes
 
 - Collision detection has a timeout of `config.CollisionTimeout` (half frame budget)
@@ -184,3 +204,17 @@ Use the `TestableInputHandler` interface for simulating input in tests.
 - Enemy types: Basic (0), Heavy (1), Boss (2)
 - Formation types: Line, Circle, V, Diamond, Diagonal, Spiral, Random
 - Movement patterns: Normal, Zigzag, Accelerating, Pulsing
+
+## Audio System
+
+- Audio uses Ebiten's `audio/vorbis` package for OGG/Vorbis playback
+- `ResourceManager` loads audio files from embedded assets (`assets/sounds/*`)
+- `AudioPlayer` manages background music playback with looping support
+- Audio initialization is optional - game runs without audio if device unavailable
+- Music tracks:
+  - Menu music (`game_music_main`) - Plays in main menu scene
+  - Level music (`game_music_level_1`) - Plays during gameplay (level-specific)
+  - Boss music (`game_music_boss`) - Plays when boss appears, switches back to level music when defeated
+- Music volume defaults to 70% (0.7) for background music
+- Audio context uses 44100 Hz sample rate
+- Audio files are decoded and cached for efficient playback
