@@ -49,9 +49,9 @@ func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceMana
 	// Initialize audio player (44100 Hz sample rate)
 	// Audio is optional - if initialization fails (e.g., no audio device in container),
 	// the game will continue without audio
-	audioPlayer, err := NewAudioPlayer(44100, logger)
-	if err != nil {
-		logger.Warn("Failed to create audio player, audio will be disabled", "error", err)
+	audioPlayer, audioErr := NewAudioPlayer(44100, logger)
+	if audioErr != nil {
+		logger.Warn("Failed to create audio player, audio will be disabled", "error", audioErr)
 		rm.audioPlayer = nil
 	} else if audioPlayer == nil {
 		logger.Debug("Audio player not available (no audio device), continuing without audio")
@@ -60,8 +60,8 @@ func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceMana
 		rm.audioPlayer = audioPlayer
 	}
 
-	if err := rm.loadDefaultFont(ctx); err != nil {
-		logger.Error("failed to load default font", "error", err)
+	if fontErr := rm.loadDefaultFont(ctx); fontErr != nil {
+		logger.Error("failed to load default font", "error", fontErr)
 	}
 	return rm
 }

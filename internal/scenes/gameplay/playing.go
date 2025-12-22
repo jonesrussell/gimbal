@@ -15,7 +15,15 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 	"github.com/jonesrussell/gimbal/internal/scenes"
+)
+
+// Music track name constants
+const (
+	musicTrackMain   = "game_music_main"
+	musicTrackLevel1 = "game_music_level_1"
+	musicTrackBoss   = "game_music_boss"
 )
 
 type PlayingScene struct {
@@ -108,7 +116,7 @@ func (s *PlayingScene) isBossActive() bool {
 		),
 	).Each(s.manager.GetWorld(), func(entry *donburi.Entry) {
 		typeID := core.EnemyTypeID.Get(entry)
-		if typeID != nil && *typeID == 2 { // EnemyTypeBoss = 2
+		if typeID != nil && *typeID == int(enemy.EnemyTypeBoss) {
 			bossCount++
 		}
 	})
@@ -231,24 +239,7 @@ func (s *PlayingScene) startBackgroundMusic() {
 	}
 
 	// Determine which music to play based on level
-	var musicName string
-	if levelManager := s.manager.GetLevelManager(); levelManager != nil {
-		if levelConfig := levelManager.GetCurrentLevelConfig(); levelConfig != nil {
-			// Use level-specific music (e.g., game_music_level_1 for level 1)
-			if levelConfig.LevelNumber == 1 {
-				musicName = "game_music_level_1"
-			} else {
-				// Fallback to main music for other levels (can be extended later)
-				musicName = "game_music_main"
-			}
-		} else {
-			// Default to level 1 music if no level config
-			musicName = "game_music_level_1"
-		}
-	} else {
-		// Default to level 1 music if no level manager
-		musicName = "game_music_level_1"
-	}
+	musicName := s.getLevelMusicName()
 
 	// Get the music resource
 	s.manager.GetLogger().Debug("Getting audio resource", "music", musicName)
@@ -276,9 +267,9 @@ func (s *PlayingScene) stopBackgroundMusic() {
 	}
 
 	// Stop all gameplay music tracks
-	audioPlayer.StopMusic("game_music_level_1")
-	audioPlayer.StopMusic("game_music_boss")
-	audioPlayer.StopMusic("game_music_main") // Fallback
+	audioPlayer.StopMusic(musicTrackLevel1)
+	audioPlayer.StopMusic(musicTrackBoss)
+	audioPlayer.StopMusic(musicTrackMain)
 	s.currentMusicTrack = ""
 }
 
@@ -290,21 +281,21 @@ func (s *PlayingScene) switchToBossMusic() {
 	}
 
 	// Stop current level music
-	audioPlayer.StopMusic("game_music_level_1")
-	audioPlayer.StopMusic("game_music_main")
+	audioPlayer.StopMusic(musicTrackLevel1)
+	audioPlayer.StopMusic(musicTrackMain)
 
 	// Get boss music resource
-	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), "game_music_boss")
+	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), musicTrackBoss)
 	if !ok {
 		s.manager.GetLogger().Debug("Boss music not loaded, keeping level music")
 		return
 	}
 
 	// Play boss music at 70% volume
-	if err := audioPlayer.PlayMusic("game_music_boss", musicRes, 0.7); err != nil {
+	if err := audioPlayer.PlayMusic(musicTrackBoss, musicRes, 0.7); err != nil {
 		s.manager.GetLogger().Warn("Failed to play boss music", "error", err)
 	} else {
-		s.currentMusicTrack = "game_music_boss"
+		s.currentMusicTrack = musicTrackBoss
 		s.manager.GetLogger().Debug("Boss music started")
 	}
 }
@@ -317,23 +308,10 @@ func (s *PlayingScene) switchToLevelMusic() {
 	}
 
 	// Stop boss music
-	audioPlayer.StopMusic("game_music_boss")
+	audioPlayer.StopMusic(musicTrackBoss)
 
 	// Determine which level music to play
-	var musicName string
-	if levelManager := s.manager.GetLevelManager(); levelManager != nil {
-		if levelConfig := levelManager.GetCurrentLevelConfig(); levelConfig != nil {
-			if levelConfig.LevelNumber == 1 {
-				musicName = "game_music_level_1"
-			} else {
-				musicName = "game_music_main"
-			}
-		} else {
-			musicName = "game_music_level_1"
-		}
-	} else {
-		musicName = "game_music_level_1"
-	}
+	musicName := s.getLevelMusicName()
 
 	// Get the level music resource
 	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), musicName)
@@ -349,6 +327,27 @@ func (s *PlayingScene) switchToLevelMusic() {
 		s.currentMusicTrack = musicName
 		s.manager.GetLogger().Debug("Level music resumed", "music", musicName)
 	}
+}
+
+// getLevelMusicName determines which level music to play based on current level
+func (s *PlayingScene) getLevelMusicName() string {
+	levelManager := s.manager.GetLevelManager()
+	if levelManager == nil {
+		return musicTrackLevel1
+	}
+
+	levelConfig := levelManager.GetCurrentLevelConfig()
+	if levelConfig == nil {
+		return musicTrackLevel1
+	}
+
+	// Use level-specific music (e.g., game_music_level_1 for level 1)
+	if levelConfig.LevelNumber == 1 {
+		return musicTrackLevel1
+	}
+
+	// Fallback to main music for other levels (can be extended later)
+	return musicTrackMain
 }
 
 // ShowLevelTitle displays the level title overlay
