@@ -1,6 +1,7 @@
 package mainmenu
 
 import (
+	"context"
 	"image/color"
 	"os"
 
@@ -69,11 +70,54 @@ func (s *MenuScene) drawTitle(screen *ebiten.Image) {
 func (s *MenuScene) Enter() {
 	s.manager.GetLogger().Debug("Entering menu scene")
 	s.menu.Reset()
+	s.startMenuMusic()
 }
 
 // Exit is called when the scene becomes inactive
 func (s *MenuScene) Exit() {
 	s.manager.GetLogger().Debug("Exiting menu scene")
+	s.stopMenuMusic()
+}
+
+// startMenuMusic starts playing the menu background music
+func (s *MenuScene) startMenuMusic() {
+	resourceMgr := s.manager.GetResourceManager()
+	if resourceMgr == nil {
+		return
+	}
+
+	audioPlayer := resourceMgr.GetAudioPlayer()
+	if audioPlayer == nil {
+		s.manager.GetLogger().Debug("Audio player not available, skipping menu music")
+		return
+	}
+
+	musicRes, ok := resourceMgr.GetAudio(context.Background(), "game_music_main")
+	if !ok {
+		s.manager.GetLogger().Debug("Menu music not loaded, skipping")
+		return
+	}
+
+	if err := audioPlayer.PlayMusic("game_music_main", musicRes, 0.7); err != nil {
+		s.manager.GetLogger().Warn("Failed to play menu music", "error", err)
+	} else {
+		s.manager.GetLogger().Debug("Menu music started")
+	}
+}
+
+// stopMenuMusic stops the menu background music
+func (s *MenuScene) stopMenuMusic() {
+	resourceMgr := s.manager.GetResourceManager()
+	if resourceMgr == nil {
+		return
+	}
+
+	audioPlayer := resourceMgr.GetAudioPlayer()
+	if audioPlayer == nil {
+		return
+	}
+
+	audioPlayer.StopMusic("game_music_main")
 }
 
 // GetType returns the scene type identifier

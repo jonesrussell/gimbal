@@ -30,6 +30,10 @@ type PlayingScene struct {
 	showLevelTitle      bool
 	currentLevelNumber  int
 	levelTitleDuration  float64 // Duration to show title in seconds
+
+	// Music state tracking
+	currentMusicTrack string // Track which music is currently playing
+	bossWasActive     bool    // Track if boss was active last frame
 }
 
 func NewPlayingScene(
@@ -68,7 +72,47 @@ func (s *PlayingScene) Update() error {
 		}
 	}
 
+	// Check for boss and switch music accordingly
+	s.updateBossMusic()
+
 	return nil
+}
+
+// updateBossMusic checks if boss is active and switches music accordingly
+func (s *PlayingScene) updateBossMusic() {
+	// Check if boss is active by querying the world
+	bossActive := s.isBossActive()
+
+	// If boss state changed, switch music
+	if bossActive != s.bossWasActive {
+		if bossActive {
+			// Boss just appeared - switch to boss music
+			s.manager.GetLogger().Debug("Boss appeared, switching to boss music")
+			s.switchToBossMusic()
+		} else if s.bossWasActive {
+			// Boss just died - switch back to level music
+			s.manager.GetLogger().Debug("Boss defeated, switching back to level music")
+			s.switchToLevelMusic()
+		}
+		s.bossWasActive = bossActive
+	}
+}
+
+// isBossActive checks if there's an active boss in the world
+func (s *PlayingScene) isBossActive() bool {
+	bossCount := 0
+	query.NewQuery(
+		filter.And(
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.EnemyTypeID),
+		),
+	).Each(s.manager.GetWorld(), func(entry *donburi.Entry) {
+		typeID := core.EnemyTypeID.Get(entry)
+		if typeID != nil && *typeID == 2 { // EnemyTypeBoss = 2
+			bossCount++
+		}
+	})
+	return bossCount > 0
 }
 
 func (s *PlayingScene) Draw(screen *ebiten.Image) {
@@ -166,6 +210,7 @@ func (s *PlayingScene) Enter() {
 
 	// Start background music
 	s.startBackgroundMusic()
+	s.bossWasActive = false // Reset boss tracking
 }
 
 func (s *PlayingScene) Exit() {
@@ -176,7 +221,7 @@ func (s *PlayingScene) Exit() {
 	s.stopBackgroundMusic()
 }
 
-// startBackgroundMusic starts playing the background music
+// startBackgroundMusic starts playing the background music based on current level
 func (s *PlayingScene) startBackgroundMusic() {
 	s.manager.GetLogger().Debug("Starting background music")
 	audioPlayer := s.resourceMgr.GetAudioPlayer()
@@ -185,21 +230,41 @@ func (s *PlayingScene) startBackgroundMusic() {
 		return
 	}
 
+	// Determine which music to play based on level
+	var musicName string
+	if levelManager := s.manager.GetLevelManager(); levelManager != nil {
+		if levelConfig := levelManager.GetCurrentLevelConfig(); levelConfig != nil {
+			// Use level-specific music (e.g., game_music_level_1 for level 1)
+			if levelConfig.LevelNumber == 1 {
+				musicName = "game_music_level_1"
+			} else {
+				// Fallback to main music for other levels (can be extended later)
+				musicName = "game_music_main"
+			}
+		} else {
+			// Default to level 1 music if no level config
+			musicName = "game_music_level_1"
+		}
+	} else {
+		// Default to level 1 music if no level manager
+		musicName = "game_music_level_1"
+	}
+
 	// Get the music resource
-	s.manager.GetLogger().Debug("Getting audio resource")
-	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), "game_music_main")
+	s.manager.GetLogger().Debug("Getting audio resource", "music", musicName)
+	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), musicName)
 	if !ok {
-		s.manager.GetLogger().Debug("Background music not loaded, skipping")
+		s.manager.GetLogger().Debug("Background music not loaded, skipping", "music", musicName)
 		return
 	}
 
 	// Play music at 70% volume
 	// Note: Audio decoding might take a moment, but it should not block indefinitely
-	s.manager.GetLogger().Debug("Starting music playback (this may take a moment)")
-	if err := audioPlayer.PlayMusic("game_music_main", musicRes, 0.7); err != nil {
-		s.manager.GetLogger().Warn("Failed to play background music", "error", err)
+	s.manager.GetLogger().Debug("Starting music playback (this may take a moment)", "music", musicName)
+	if err := audioPlayer.PlayMusic(musicName, musicRes, 0.7); err != nil {
+		s.manager.GetLogger().Warn("Failed to play background music", "error", err, "music", musicName)
 	} else {
-		s.manager.GetLogger().Debug("Background music started successfully")
+		s.manager.GetLogger().Debug("Background music started successfully", "music", musicName)
 	}
 }
 
@@ -210,7 +275,80 @@ func (s *PlayingScene) stopBackgroundMusic() {
 		return
 	}
 
+	// Stop all gameplay music tracks
+	audioPlayer.StopMusic("game_music_level_1")
+	audioPlayer.StopMusic("game_music_boss")
+	audioPlayer.StopMusic("game_music_main") // Fallback
+	s.currentMusicTrack = ""
+}
+
+// switchToBossMusic switches from level music to boss music
+func (s *PlayingScene) switchToBossMusic() {
+	audioPlayer := s.resourceMgr.GetAudioPlayer()
+	if audioPlayer == nil {
+		return
+	}
+
+	// Stop current level music
+	audioPlayer.StopMusic("game_music_level_1")
 	audioPlayer.StopMusic("game_music_main")
+
+	// Get boss music resource
+	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), "game_music_boss")
+	if !ok {
+		s.manager.GetLogger().Debug("Boss music not loaded, keeping level music")
+		return
+	}
+
+	// Play boss music at 70% volume
+	if err := audioPlayer.PlayMusic("game_music_boss", musicRes, 0.7); err != nil {
+		s.manager.GetLogger().Warn("Failed to play boss music", "error", err)
+	} else {
+		s.currentMusicTrack = "game_music_boss"
+		s.manager.GetLogger().Debug("Boss music started")
+	}
+}
+
+// switchToLevelMusic switches from boss music back to level music
+func (s *PlayingScene) switchToLevelMusic() {
+	audioPlayer := s.resourceMgr.GetAudioPlayer()
+	if audioPlayer == nil {
+		return
+	}
+
+	// Stop boss music
+	audioPlayer.StopMusic("game_music_boss")
+
+	// Determine which level music to play
+	var musicName string
+	if levelManager := s.manager.GetLevelManager(); levelManager != nil {
+		if levelConfig := levelManager.GetCurrentLevelConfig(); levelConfig != nil {
+			if levelConfig.LevelNumber == 1 {
+				musicName = "game_music_level_1"
+			} else {
+				musicName = "game_music_main"
+			}
+		} else {
+			musicName = "game_music_level_1"
+		}
+	} else {
+		musicName = "game_music_level_1"
+	}
+
+	// Get the level music resource
+	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), musicName)
+	if !ok {
+		s.manager.GetLogger().Debug("Level music not loaded", "music", musicName)
+		return
+	}
+
+	// Play level music at 70% volume
+	if err := audioPlayer.PlayMusic(musicName, musicRes, 0.7); err != nil {
+		s.manager.GetLogger().Warn("Failed to play level music", "error", err, "music", musicName)
+	} else {
+		s.currentMusicTrack = musicName
+		s.manager.GetLogger().Debug("Level music resumed", "music", musicName)
+	}
 }
 
 // ShowLevelTitle displays the level title overlay
