@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -67,7 +68,7 @@ func (ip *ImagePool) ReturnImage(image *ebiten.Image) {
 
 // createKey creates a string key for the image dimensions
 func (ip *ImagePool) createKey(width, height int) string {
-	return string(rune(width)) + "x" + string(rune(height))
+	return fmt.Sprintf("%dx%d", width, height)
 }
 
 // Cleanup releases all pooled images

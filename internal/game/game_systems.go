@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
@@ -18,6 +19,12 @@ func (g *ECSGame) updateCoreSystems() error {
 	if err := g.sceneManager.Update(); err != nil {
 		g.logger.Error("Scene manager update failed", "error", err)
 		return err
+	}
+
+	// Check if quit has been requested by a scene
+	if g.sceneManager.IsQuitRequested() {
+		g.logger.Info("Quit requested, stopping game loop")
+		return errors.NewGameError(errors.StateTransition, "application shutdown requested")
 	}
 
 	if err := g.ui.Update(); err != nil {
