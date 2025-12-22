@@ -33,7 +33,7 @@ type PlayingScene struct {
 
 	// Music state tracking
 	currentMusicTrack string // Track which music is currently playing
-	bossWasActive     bool    // Track if boss was active last frame
+	bossWasActive     bool   // Track if boss was active last frame
 }
 
 func NewPlayingScene(
