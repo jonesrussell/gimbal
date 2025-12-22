@@ -84,10 +84,12 @@ func (s *TitleScreenScene) Draw(screen *ebiten.Image) {
 func (s *TitleScreenScene) Enter() {
 	s.manager.GetLogger().Debug("Entering title screen scene")
 	s.startTime = time.Now()
+	// No music on title screen - music starts in menu
 }
 
 func (s *TitleScreenScene) Exit() {
 	s.manager.GetLogger().Debug("Exiting title screen scene")
+	// No music to stop - title screen doesn't play music
 }
 
 func (s *TitleScreenScene) GetType() scenes.SceneType {

@@ -157,6 +157,14 @@ func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
 			name: "game_music_main",
 			path: "sounds/game_music_main.ogg",
 		},
+		{
+			name: "game_music_level_1",
+			path: "sounds/game_music_level_1.ogg",
+		},
+		{
+			name: "game_music_boss",
+			path: "sounds/game_music_boss.ogg",
+		},
 	}
 
 	for _, cfg := range audioConfigs {
