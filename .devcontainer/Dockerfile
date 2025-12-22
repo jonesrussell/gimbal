@@ -19,6 +19,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     libxtst-dev \
     libpng++-dev \
     libasound2-dev \
+    alsa-utils \
+    pulseaudio \
     xvfb \
     xauth \
     x11-xserver-utils \
@@ -78,6 +80,19 @@ RUN printf '%s\n' \
 # Set display for X11 forwarding
 ENV DISPLAY=${DISPLAY:-:0}
 ENV XAUTHORITY=/tmp/.Xauthority
+
+# Set up dummy ALSA device for audio (prevents errors in containers without audio)
+# This creates a null audio device that won't fail when opened
+RUN mkdir -p /home/vscode && \
+    echo 'pcm.!default {' > /home/vscode/.asoundrc && \
+    echo '  type plug' >> /home/vscode/.asoundrc && \
+    echo '  slave.pcm "null"' >> /home/vscode/.asoundrc && \
+    echo '}' >> /home/vscode/.asoundrc && \
+    echo 'pcm.null {' >> /home/vscode/.asoundrc && \
+    echo '  type file' >> /home/vscode/.asoundrc && \
+    echo '  file /dev/null' >> /home/vscode/.asoundrc && \
+    echo '}' >> /home/vscode/.asoundrc && \
+    chown vscode:vscode /home/vscode/.asoundrc
 
 # Switch back to vscode user
 USER vscode
