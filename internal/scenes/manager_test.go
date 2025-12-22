@@ -1,4 +1,4 @@
-package scenes
+package scenes //nolint:testpackage // Testing from same package to access unexported fields
 
 import (
 	"testing"

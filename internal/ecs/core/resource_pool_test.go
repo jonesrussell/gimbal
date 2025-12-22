@@ -1,4 +1,4 @@
-package core
+package core //nolint:testpackage // Testing from same package to access unexported functions
 
 import (
 	"testing"
