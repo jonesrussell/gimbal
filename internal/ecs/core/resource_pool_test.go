@@ -64,4 +64,3 @@ func TestImagePool_createKey(t *testing.T) {
 		})
 	}
 }
-
