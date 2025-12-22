@@ -62,4 +62,3 @@ func TestSceneManager_IsQuitRequested(t *testing.T) {
 		})
 	}
 }
-
