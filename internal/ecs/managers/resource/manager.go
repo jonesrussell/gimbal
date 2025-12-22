@@ -35,7 +35,7 @@ type ResourceManager struct {
 	defaultFont text.Face
 
 	scaledCache map[string]*ebiten.Image // Cache for scaled sprites
-	audioPlayer *AudioPlayer              // Audio player for background music
+	audioPlayer *AudioPlayer             // Audio player for background music
 }
 
 // NewResourceManager creates a new resource management system with the provided logger
