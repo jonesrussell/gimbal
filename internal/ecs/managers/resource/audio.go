@@ -264,7 +264,8 @@ func (ap *AudioPlayer) PlayMusic(name string, audioRes *AudioResource, volume fl
 	}
 
 	// Create infinite loop from decoded data
-	ap.logger.Debug("PlayMusic: Creating infinite loop from decoded stream", "name", name, "decoded_size", len(decodedData))
+	ap.logger.Debug("PlayMusic: Creating infinite loop from decoded stream",
+		"name", name, "decoded_size", len(decodedData))
 	loopStream := audio.NewInfiniteLoop(bytes.NewReader(decodedData), int64(len(decodedData)))
 
 	ap.logger.Debug("PlayMusic: Creating audio player", "name", name)
