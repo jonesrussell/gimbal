@@ -200,37 +200,6 @@ type AudioPlayer struct {
 	logger       common.Logger
 }
 
-// suppressStderr temporarily suppresses stderr output during audio initialization.
-// This prevents ALSA library warnings from cluttering the console in headless environments.
-// Returns a restore function that should be called in a defer.
-// This suppresses both Go code output (via os.Stderr) and C library output (via FD redirection).
-func suppressStderr() (restore func()) {
-	// Save original stderr
-	originalStderr := os.Stderr
-	originalStderrFd := int(os.Stderr.Fd())
-
-	// Open /dev/null for writing (discards output)
-	devNull, err := os.OpenFile("/dev/null", os.O_WRONLY, 0)
-	if err != nil {
-		// If we can't open /dev/null (e.g., on Windows), return no-op restore function
-		return func() {}
-	}
-	devNullFd := int(devNull.Fd())
-
-	// Redirect file descriptor-level stderr (for C libraries like ALSA)
-	restoreFD := suppressStderrFD(originalStderrFd, devNullFd)
-
-	// Also redirect os.Stderr (for Go code)
-	os.Stderr = devNull
-
-	// Return combined restore function
-	return func() {
-		devNull.Close()
-		os.Stderr = originalStderr
-		restoreFD()
-	}
-}
-
 // isAudioDisabled checks if audio is disabled via environment variable
 func isAudioDisabled() bool {
 	val := os.Getenv("DISABLE_AUDIO")
@@ -255,10 +224,6 @@ func tryCreateAudioContext(sampleRate int, logger common.Logger) (*audio.Context
 				}
 			}
 		}()
-
-		// Suppress stderr during audio initialization to avoid ALSA warnings
-		restore := suppressStderr()
-		defer restore()
 
 		// audio.NewContext may panic if no audio device is available
 		// We catch the panic and return nil to allow the game to continue without audio
