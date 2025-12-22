@@ -3,6 +3,7 @@ package errors //nolint:testpackage // Testing from same package to access unexp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -285,6 +286,30 @@ func TestGetGameError(t *testing.T) {
 			name:    "nil error",
 			err:     nil,
 			wantErr: false,
+		},
+		{
+			name:     "wrapped GameError",
+			err:      fmt.Errorf("outer: %w", NewGameError(EntityNotFound, "wrapped")),
+			wantErr:  true,
+			wantCode: EntityNotFound,
+		},
+		{
+			name:     "double wrapped GameError",
+			err:      fmt.Errorf("outer: %w", fmt.Errorf("middle: %w", NewGameError(SystemInitFailed, "double wrapped"))),
+			wantErr:  true,
+			wantCode: SystemInitFailed,
+		},
+		{
+			name:     "GameError with cause",
+			err:      NewGameErrorWithCause(AssetLoadFailed, "failed to load", errors.New("file not found")),
+			wantErr:  true,
+			wantCode: AssetLoadFailed,
+		},
+		{
+			name:     "wrapped GameError with cause",
+			err:      fmt.Errorf("operation failed: %w", NewGameErrorWithCause(ConfigInvalid, "invalid config", errors.New("parse error"))),
+			wantErr:  true,
+			wantCode: ConfigInvalid,
 		},
 	}
 

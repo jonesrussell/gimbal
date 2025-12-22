@@ -9,6 +9,8 @@ import (
 	"github.com/jonesrussell/gimbal/internal/math"
 )
 
+// GameUI represents the game user interface system.
+// It manages HUD updates, score display, lives, and pause menu visibility.
 type GameUI interface {
 	Update() error
 	Draw(screen *ebiten.Image)
@@ -18,6 +20,7 @@ type GameUI interface {
 	SetDeviceClass(deviceClass string)
 }
 
+// UIData holds the current UI state data.
 type UIData struct {
 	Score       int
 	Lives       int
@@ -174,7 +177,12 @@ func Err[T any](err error) Result[T] {
 	return Result[T]{err: err}
 }
 
-// Unwrap returns the value or panics if there's an error
+// Unwrap returns the value or panics if there's an error.
+// Use UnwrapOr() or check IsErr() first to avoid panics.
+//
+// This method follows the Rust Result pattern where unwrapping
+// on an error causes a panic. For safe unwrapping, use UnwrapOr()
+// or check the error state with IsErr() before calling Unwrap().
 func (r Result[T]) Unwrap() T {
 	if r.err != nil {
 		panic(r.err)

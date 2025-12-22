@@ -1,9 +1,10 @@
+// Package mainmenu provides the main menu scene for the game.
+// It handles menu navigation, option selection, and scene transitions.
 package mainmenu
 
 import (
 	"context"
 	"image/color"
-	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -30,7 +31,7 @@ func NewMenuScene(manager *scenes.SceneManager, font text.Face) *MenuScene {
 		{Text: "Start Game", Action: func() { manager.SwitchScene(scenes.ScenePlaying) }},
 		{Text: "Options", Action: func() { manager.SwitchScene(scenes.SceneOptions) }},
 		{Text: "Credits", Action: func() { manager.SwitchScene(scenes.SceneCredits) }},
-		{Text: "Quit", Action: func() { manager.GetLogger().Debug("Quitting game"); os.Exit(0) }},
+		{Text: "Quit", Action: func() { manager.GetLogger().Debug("Quitting game"); manager.RequestQuit() }},
 	}
 	config := menu.DefaultMenuConfig()
 	config.MenuY = float64(manager.GetConfig().ScreenSize.Height) / 2
