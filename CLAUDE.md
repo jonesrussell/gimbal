@@ -110,6 +110,15 @@ return errors.NewGameError(errors.AssetNotFound, "player sprite not found")
 return errors.NewGameErrorWithCause(errors.SystemInitFailed, "failed to init", err)
 ```
 
+For error unwrapping, use `errors.As()` to properly traverse error chains:
+```go
+var gameErr *GameError
+if errors.As(err, &gameErr) {
+    // Handle GameError
+}
+```
+This correctly handles wrapped errors and error chains, unlike type assertions.
+
 ### Logging
 Use structured logging with key-value pairs:
 ```go
@@ -134,6 +143,13 @@ func (g *ECSGame) Update() error {
 }
 ```
 
+### Graceful Shutdown
+The game uses a graceful shutdown mechanism instead of `os.Exit()`:
+- Scenes request shutdown via `SceneManager.RequestQuit()`
+- The game loop checks `SceneManager.IsQuitRequested()` and returns an error to stop
+- This allows proper cleanup of resources, logging finalization, and proper shutdown sequencing
+- Example: `manager.RequestQuit()` in menu quit actions instead of `os.Exit(0)`
+
 ## Testing
 
 ```bash
@@ -148,6 +164,23 @@ go test ./internal/input/...
 ```
 
 Use the `TestableInputHandler` interface for simulating input in tests.
+
+### Test Coverage
+
+Current test coverage highlights:
+- Math utilities (100%)
+- Error handling (93.3%)
+- Configuration validation (63.3%)
+- ImagePool resource management (16.5%)
+- Score management (15.4%)
+- Scene management (4.3%)
+
+### Testing Patterns
+
+- Use `//nolint:testpackage` when testing unexported functionality from the same package
+- Create no-op test loggers for testing components that require a logger
+- Use table-driven tests for comprehensive coverage of edge cases
+- Test error unwrapping with `errors.As()` for proper error chain traversal
 
 ## Common Tasks
 
@@ -188,6 +221,7 @@ Use the `TestableInputHandler` interface for simulating input in tests.
 - Systems taking longer than `config.SlowSystemThreshold` (5ms) are logged as warnings
 - Use `config.DebugLogInterval` (60 frames) for periodic debug logging
 - The `RenderOptimizer` and `ImagePool` are available for rendering optimization
+- `ImagePool` reuses ebiten.Image instances to reduce allocations - use `GetImage()` and `ReturnImage()` to manage pooled images
 
 ## Level System
 
