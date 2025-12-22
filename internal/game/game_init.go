@@ -133,6 +133,12 @@ func (g *ECSGame) loadAssets(ctx context.Context) error {
 		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to load sprites", err)
 	}
 
+	// Load all audio through resource manager
+	if err := g.resourceManager.LoadAllAudio(ctx); err != nil {
+		// Audio is optional, log warning but don't fail
+		g.logger.Warn("Failed to load audio, continuing without it", "error", err)
+	}
+
 	g.logger.Debug("Assets loaded successfully", "resource_count", g.resourceManager.GetResourceCount())
 	return nil
 }

@@ -35,6 +35,7 @@ type ResourceManager struct {
 	defaultFont text.Face
 
 	scaledCache map[string]*ebiten.Image // Cache for scaled sprites
+	audioPlayer *AudioPlayer              // Audio player for background music
 }
 
 // NewResourceManager creates a new resource management system with the provided logger
@@ -44,6 +45,21 @@ func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceMana
 		logger:      logger,
 		scaledCache: make(map[string]*ebiten.Image),
 	}
+
+	// Initialize audio player (44100 Hz sample rate)
+	// Audio is optional - if initialization fails (e.g., no audio device in container),
+	// the game will continue without audio
+	audioPlayer, err := NewAudioPlayer(44100, logger)
+	if err != nil {
+		logger.Warn("Failed to create audio player, audio will be disabled", "error", err)
+		rm.audioPlayer = nil
+	} else if audioPlayer == nil {
+		logger.Debug("Audio player not available (no audio device), continuing without audio")
+		rm.audioPlayer = nil
+	} else {
+		rm.audioPlayer = audioPlayer
+	}
+
 	if err := rm.loadDefaultFont(ctx); err != nil {
 		logger.Error("failed to load default font", "error", err)
 	}
@@ -71,6 +87,11 @@ func (rm *ResourceManager) GetResourceInfo() map[string]interface{} {
 	return info
 }
 
+// GetAudioPlayer returns the audio player instance
+func (rm *ResourceManager) GetAudioPlayer() *AudioPlayer {
+	return rm.audioPlayer
+}
+
 // Cleanup releases all resources
 func (rm *ResourceManager) Cleanup(ctx context.Context) error {
 	// Check for cancellation
@@ -82,6 +103,11 @@ func (rm *ResourceManager) Cleanup(ctx context.Context) error {
 
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
+
+	// Cleanup audio player
+	if rm.audioPlayer != nil {
+		rm.audioPlayer.Cleanup()
+	}
 
 	rm.logger.Info("Cleaning up resources", "count", len(rm.resources))
 	rm.resources = make(map[string]*Resource)

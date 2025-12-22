@@ -1,6 +1,7 @@
 package gameplay
 
 import (
+	"context"
 	"fmt"
 	"image/color"
 	"time"
@@ -162,11 +163,54 @@ func (s *PlayingScene) Enter() {
 			s.ShowLevelTitle(levelConfig.LevelNumber)
 		}
 	}
+
+	// Start background music
+	s.startBackgroundMusic()
 }
 
 func (s *PlayingScene) Exit() {
 	s.manager.GetLogger().Debug("Exiting playing scene")
 	s.showLevelTitle = false
+
+	// Stop background music
+	s.stopBackgroundMusic()
+}
+
+// startBackgroundMusic starts playing the background music
+func (s *PlayingScene) startBackgroundMusic() {
+	s.manager.GetLogger().Debug("Starting background music")
+	audioPlayer := s.resourceMgr.GetAudioPlayer()
+	if audioPlayer == nil {
+		s.manager.GetLogger().Debug("Audio player not available, skipping music")
+		return
+	}
+
+	// Get the music resource
+	s.manager.GetLogger().Debug("Getting audio resource")
+	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), "game_music_main")
+	if !ok {
+		s.manager.GetLogger().Debug("Background music not loaded, skipping")
+		return
+	}
+
+	// Play music at 70% volume
+	// Note: Audio decoding might take a moment, but it should not block indefinitely
+	s.manager.GetLogger().Debug("Starting music playback (this may take a moment)")
+	if err := audioPlayer.PlayMusic("game_music_main", musicRes, 0.7); err != nil {
+		s.manager.GetLogger().Warn("Failed to play background music", "error", err)
+	} else {
+		s.manager.GetLogger().Debug("Background music started successfully")
+	}
+}
+
+// stopBackgroundMusic stops the background music
+func (s *PlayingScene) stopBackgroundMusic() {
+	audioPlayer := s.resourceMgr.GetAudioPlayer()
+	if audioPlayer == nil {
+		return
+	}
+
+	audioPlayer.StopMusic("game_music_main")
 }
 
 // ShowLevelTitle displays the level title overlay
