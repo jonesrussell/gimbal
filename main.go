@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 
@@ -92,6 +93,21 @@ func (a *Application) Run() error {
 	gameRunner := game.NewRunner(a.config.Game, gameInstance)
 
 	if err := gameRunner.Run(); err != nil {
+		// Check if the error is audio-related (ALSA, oto, etc.)
+		// Audio is optional - if audio initialization fails, we should
+		// log a warning but not fail the entire game
+		errMsg := err.Error()
+		if strings.Contains(strings.ToLower(errMsg), "alsa") ||
+			strings.Contains(strings.ToLower(errMsg), "oto") ||
+			strings.Contains(strings.ToLower(errMsg), "audio") ||
+			strings.Contains(strings.ToLower(errMsg), "pulse") ||
+			strings.Contains(strings.ToLower(errMsg), "jack") {
+			// Audio is optional - log warning but don't fail
+			logger.Warn("Audio initialization failed (audio is optional), game will run without audio", "error", err)
+			// Return nil to indicate success (game can run without audio)
+			return nil
+		}
+		// For non-audio errors, return them as system init failures
 		return errors.NewGameErrorWithCause(
 			errors.SystemInitFailed,
 			"game execution failed",
@@ -119,7 +135,35 @@ func (a *Application) setupEnvironment() error {
 		}
 	}
 
+	// Auto-disable audio in containers (unless explicitly enabled)
+	if os.Getenv("DISABLE_AUDIO") == "" && isContainer() {
+		if err := os.Setenv("DISABLE_AUDIO", "1"); err != nil {
+			return fmt.Errorf("failed to set DISABLE_AUDIO: %w", err)
+		}
+	}
+
 	return nil
+}
+
+// isContainer detects if the application is running in a container
+func isContainer() bool {
+	// Check for .dockerenv file (Docker)
+	if _, err := os.Stat("/.dockerenv"); err == nil {
+		return true
+	}
+
+	// Check cgroup for container indicators
+	if cgroup, err := os.ReadFile("/proc/self/cgroup"); err == nil {
+		cgroupStr := string(cgroup)
+		if strings.Contains(cgroupStr, "docker") ||
+			strings.Contains(cgroupStr, "containerd") ||
+			strings.Contains(cgroupStr, "kubepods") ||
+			strings.Contains(cgroupStr, "container") {
+			return true
+		}
+	}
+
+	return false
 }
 
 // logSystemInfo logs system and runtime information
