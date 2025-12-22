@@ -44,7 +44,11 @@ jobs:
             libxinerama-dev \
             libxcursor-dev \
             libxi-dev \
-            libxxf86vm-dev
+            libxxf86vm-dev \
+            libasound2-dev \
+            pkg-config \
+            libasound2-dev \
+            pkg-config
 
       - name: Get version from tag
         id: tag
