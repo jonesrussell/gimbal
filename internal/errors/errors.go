@@ -2,6 +2,7 @@ package errors
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"time"
 )
@@ -218,10 +219,9 @@ func IsGameError(err error) bool {
 
 // GetGameError extracts GameError from an error chain
 func GetGameError(err error) (*GameError, bool) {
-	if err != nil {
-		if gameErr, ok := err.(*GameError); ok {
-			return gameErr, true
-		}
+	var gameErr *GameError
+	if stderrors.As(err, &gameErr) {
+		return gameErr, true
 	}
 	return nil, false
 }

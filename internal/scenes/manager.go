@@ -1,3 +1,5 @@
+// Package scenes provides scene management for the game.
+// It handles scene registration, transitions, and lifecycle management for all game scenes.
 package scenes
 
 import (
@@ -63,6 +65,7 @@ type SceneManager struct {
 	debugRenderer   *debug.DebugRenderer
 	renderOptimizer *core.RenderOptimizer
 	imagePool       *core.ImagePool
+	quitRequested   bool // Flag to signal graceful shutdown
 }
 
 func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
@@ -267,4 +270,18 @@ func (sceneMgr *SceneManager) GetImagePool() *core.ImagePool {
 // SetImagePool sets the image pool
 func (sceneMgr *SceneManager) SetImagePool(pool *core.ImagePool) {
 	sceneMgr.imagePool = pool
+}
+
+// RequestQuit signals that the application should exit gracefully.
+// This allows proper cleanup of resources instead of using os.Exit().
+func (sceneMgr *SceneManager) RequestQuit() {
+	sceneMgr.quitRequested = true
+	if sceneMgr.logger != nil {
+		sceneMgr.logger.Info("Quit requested, initiating graceful shutdown")
+	}
+}
+
+// IsQuitRequested returns whether a quit has been requested.
+func (sceneMgr *SceneManager) IsQuitRequested() bool {
+	return sceneMgr.quitRequested
 }

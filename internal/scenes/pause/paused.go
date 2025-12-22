@@ -1,7 +1,8 @@
+// Package pause provides the pause menu scene for the game.
+// It handles pause menu navigation and allows players to resume, return to menu, or quit.
 package pause
 
 import (
-	"os"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -72,7 +73,7 @@ func NewPausedScene(manager *scenes.SceneManager, font text.Face) *PausedScene {
 			manager.SwitchScene(scenes.ScenePlaying)
 		}},
 		{Text: "Return to Menu", Action: func() { manager.SwitchScene(scenes.SceneMenu) }},
-		{Text: "Quit", Action: func() { os.Exit(0) }},
+		{Text: "Quit", Action: func() { manager.RequestQuit() }},
 	}
 
 	config := menu.PausedMenuConfig()

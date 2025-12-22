@@ -1,3 +1,5 @@
+// Package gameplay provides the main gameplay scene for the game.
+// It handles the active game state, entity updates, rendering, and game logic during play.
 package gameplay
 
 import (
