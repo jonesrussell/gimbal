@@ -3,7 +3,9 @@ package resources
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
@@ -144,6 +146,12 @@ func (rm *ResourceManager) GetAudio(ctx context.Context, name string) (*AudioRes
 
 // LoadAllAudio loads all required audio resources for the game
 func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
+	// Skip audio loading if audio is disabled
+	if os.Getenv("DISABLE_AUDIO") == "1" || os.Getenv("DISABLE_AUDIO") == "true" {
+		rm.logger.Debug("Audio disabled, skipping audio loading")
+		return nil
+	}
+
 	// Check for cancellation at the start
 	if err := common.CheckContextCancellation(ctx); err != nil {
 		return err
@@ -187,26 +195,97 @@ type AudioPlayer struct {
 	logger       common.Logger
 }
 
+// suppressStderr temporarily suppresses stderr output during audio initialization.
+// This prevents ALSA library warnings from cluttering the console in headless environments.
+// Returns a restore function that should be called in a defer.
+// This suppresses both Go code output (via os.Stderr) and C library output (via FD redirection).
+func suppressStderr() (restore func()) {
+	// Save original stderr
+	originalStderr := os.Stderr
+	originalStderrFd := int(os.Stderr.Fd())
+
+	// Open /dev/null for writing (discards output)
+	devNull, err := os.OpenFile("/dev/null", os.O_WRONLY, 0)
+	if err != nil {
+		// If we can't open /dev/null (e.g., on Windows), return no-op restore function
+		return func() {}
+	}
+	devNullFd := int(devNull.Fd())
+
+	// Redirect file descriptor-level stderr (for C libraries like ALSA)
+	restoreFD := suppressStderrFD(originalStderrFd, devNullFd)
+
+	// Also redirect os.Stderr (for Go code)
+	os.Stderr = devNull
+
+	// Return combined restore function
+	return func() {
+		devNull.Close()
+		os.Stderr = originalStderr
+		restoreFD()
+	}
+}
+
 // NewAudioPlayer creates a new audio player
 // Returns nil, nil if audio initialization fails (e.g., no audio device available)
 // This allows the game to run without audio in environments like containers
+// Attempts to suppress ALSA stderr output during initialization, though some C library
+// messages may still appear as they write directly to file descriptors.
 func NewAudioPlayer(sampleRate int, logger common.Logger) (*AudioPlayer, error) {
+	// Check if we should skip audio initialization (e.g., in WSL2 without audio)
+	// If DISABLE_AUDIO environment variable is set, skip audio entirely
+	if os.Getenv("DISABLE_AUDIO") == "1" || os.Getenv("DISABLE_AUDIO") == "true" {
+		logger.Debug("Audio disabled via DISABLE_AUDIO environment variable")
+		return nil, nil
+	}
+
 	// Try to create audio context - this may fail in containers without audio devices
-	// We use a recover to catch any panics that might occur during audio initialization
+	// We attempt to suppress stderr during initialization to reduce ALSA error messages
+	// Note: Some ALSA warnings may still appear as the C library writes directly to FDs
 	var audioContext *audio.Context
+	var initErr error
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
 				logger.Debug("Audio context creation panicked (no audio device available)", "panic", r)
 				audioContext = nil
+				// Convert panic to error for logging
+				if err, ok := r.(error); ok {
+					initErr = err
+				} else {
+					initErr = fmt.Errorf("audio context panic: %v", r)
+				}
 			}
 		}()
+
+		// Suppress stderr during audio initialization to avoid ALSA warnings
+		restore := suppressStderr()
+		defer restore()
+
+		// audio.NewContext may panic if no audio device is available
+		// We catch the panic and return nil to allow the game to continue without audio
+		// Note: In some environments (e.g., WSL2), the underlying ALSA system may be
+		// unavailable, causing errors. We handle this gracefully by catching panics.
 		audioContext = audio.NewContext(sampleRate)
 	}()
 
 	if audioContext == nil {
 		// Return nil without error - audio is optional
-		logger.Debug("Audio context not available (no audio device), continuing without audio")
+		if initErr != nil {
+			logger.Debug("Audio context creation failed", "error", initErr)
+		} else {
+			logger.Debug("Audio context not available (no audio device), continuing without audio")
+		}
+		// Set DISABLE_AUDIO environment variable to prevent Ebiten from trying to initialize audio
+		// This helps avoid errors when ebiten.RunGame is called, as Ebiten may try to initialize
+		// audio internally even if our AudioPlayer failed to initialize
+		if os.Getenv("DISABLE_AUDIO") == "" {
+			if err := os.Setenv("DISABLE_AUDIO", "1"); err != nil {
+				logger.Debug("Failed to set DISABLE_AUDIO environment variable", "error", err)
+			} else {
+				logger.Debug("Set DISABLE_AUDIO=1 to prevent Ebiten audio initialization")
+			}
+		}
 		return nil, nil
 	}
 
@@ -270,10 +349,12 @@ func (ap *AudioPlayer) PlayMusic(name string, audioRes *AudioResource, volume fl
 
 	ap.logger.Debug("PlayMusic: Creating audio player", "name", name)
 	// Create a new player from the looping stream
+	// If this fails (e.g., ALSA unavailable in WSL2), treat it as non-fatal
+	// Audio is optional and the game should continue without it
 	player, err := ap.audioContext.NewPlayer(loopStream)
 	if err != nil {
-		ap.logger.Error("Failed to create audio player", "name", name, "error", err)
-		return errors.NewGameErrorWithCause(errors.SystemInitFailed, "failed to create audio player", err)
+		ap.logger.Warn("Failed to create audio player (audio unavailable), continuing without audio", "name", name, "error", err)
+		return nil // Not a fatal error - audio is optional
 	}
 
 	ap.logger.Debug("PlayMusic: Setting volume and playing", "name", name, "volume", volume)

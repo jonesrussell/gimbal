@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"os"
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -47,17 +48,22 @@ func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceMana
 	}
 
 	// Initialize audio player (44100 Hz sample rate)
-	// Audio is optional - if initialization fails (e.g., no audio device in container),
+	// Audio is optional - if disabled or initialization fails (e.g., no audio device in container),
 	// the game will continue without audio
-	audioPlayer, audioErr := NewAudioPlayer(44100, logger)
-	if audioErr != nil {
-		logger.Warn("Failed to create audio player, audio will be disabled", "error", audioErr)
-		rm.audioPlayer = nil
-	} else if audioPlayer == nil {
-		logger.Debug("Audio player not available (no audio device), continuing without audio")
+	if os.Getenv("DISABLE_AUDIO") == "1" || os.Getenv("DISABLE_AUDIO") == "true" {
+		logger.Debug("Audio disabled, skipping audio player initialization")
 		rm.audioPlayer = nil
 	} else {
-		rm.audioPlayer = audioPlayer
+		audioPlayer, audioErr := NewAudioPlayer(44100, logger)
+		if audioErr != nil {
+			logger.Warn("Failed to create audio player, audio will be disabled", "error", audioErr)
+			rm.audioPlayer = nil
+		} else if audioPlayer == nil {
+			logger.Debug("Audio player not available (no audio device), continuing without audio")
+			rm.audioPlayer = nil
+		} else {
+			rm.audioPlayer = audioPlayer
+		}
 	}
 
 	if fontErr := rm.loadDefaultFont(ctx); fontErr != nil {
