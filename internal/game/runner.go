@@ -24,9 +24,8 @@ func NewRunner(cfg *config.AppGameConfig, game ebiten.Game) *Runner {
 	}
 }
 
-// Run configures Ebiten and starts the game
-func (r *Runner) Run() error {
-	// Configure Ebiten window
+// configureEbitenWindow sets up the Ebiten window configuration
+func (r *Runner) configureEbitenWindow() {
 	ebiten.SetWindowSize(r.config.WindowWidth, r.config.WindowHeight)
 	ebiten.SetWindowTitle(r.config.WindowTitle)
 	ebiten.SetTPS(r.config.TPS)
@@ -34,38 +33,30 @@ func (r *Runner) Run() error {
 	if r.config.Resizable {
 		ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	}
+}
 
-	// Check if audio is already disabled via environment variable
-	// If audio initialization failed during game init (e.g., no audio device),
-	// we should set DISABLE_AUDIO to prevent Ebiten from trying to initialize audio
-	// Ebiten's oto library may respect this, or at least fail more gracefully
-	if os.Getenv("DISABLE_AUDIO") == "" {
-		// Try to detect if audio is available by checking if we can create an audio context
-		// If audio initialization would fail, set DISABLE_AUDIO to prevent Ebiten from trying
-		// This is a best-effort attempt - Ebiten may still try to initialize audio internally
-		r.checkAndDisableAudioIfNeeded()
+// handleAudioPanic converts audio-related panics to errors
+func handleAudioPanic(r interface{}) error {
+	panicMsg := strings.ToLower(fmt.Sprintf("%v", r))
+	if !containsAudioError(panicMsg) {
+		// Re-panic if it's not audio-related
+		panic(r)
 	}
 
-	// Run the game with panic recovery for audio-related issues
-	// In environments like WSL2 where audio is unavailable, ebiten.RunGame
-	// may panic or return an error. We catch these and handle them gracefully.
+	// Audio is optional - convert panic to error
+	if err, ok := r.(error); ok {
+		return fmt.Errorf("audio initialization failed (audio is optional): %w", err)
+	}
+	return fmt.Errorf("audio initialization failed (audio is optional): %v", r)
+}
+
+// runGameWithRecovery runs the game with panic recovery for audio-related issues
+func (r *Runner) runGameWithRecovery() error {
 	var runErr error
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				// Check if panic is audio-related
-				panicMsg := strings.ToLower(fmt.Sprintf("%v", r))
-				if containsAudioError(panicMsg) {
-					// Audio is optional - convert panic to error
-					if err, ok := r.(error); ok {
-						runErr = fmt.Errorf("audio initialization failed (audio is optional): %w", err)
-					} else {
-						runErr = fmt.Errorf("audio initialization failed (audio is optional): %v", r)
-					}
-				} else {
-					// Re-panic if it's not audio-related
-					panic(r)
-				}
+				runErr = handleAudioPanic(r)
 			}
 		}()
 
@@ -83,6 +74,27 @@ func (r *Runner) Run() error {
 	}
 
 	return runErr
+}
+
+// Run configures Ebiten and starts the game
+func (r *Runner) Run() error {
+	r.configureEbitenWindow()
+
+	// Check if audio is already disabled via environment variable
+	// If audio initialization failed during game init (e.g., no audio device),
+	// we should set DISABLE_AUDIO to prevent Ebiten from trying to initialize audio
+	// Ebiten's oto library may respect this, or at least fail more gracefully
+	if os.Getenv("DISABLE_AUDIO") == "" {
+		// Try to detect if audio is available by checking if we can create an audio context
+		// If audio initialization would fail, set DISABLE_AUDIO to prevent Ebiten from trying
+		// This is a best-effort attempt - Ebiten may still try to initialize audio internally
+		r.checkAndDisableAudioIfNeeded()
+	}
+
+	// Run the game with panic recovery for audio-related issues
+	// In environments like WSL2 where audio is unavailable, ebiten.RunGame
+	// may panic or return an error. We catch these and handle them gracefully.
+	return r.runGameWithRecovery()
 }
 
 // checkAndDisableAudioIfNeeded checks if audio is available and sets DISABLE_AUDIO

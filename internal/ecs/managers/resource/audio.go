@@ -15,6 +15,11 @@ import (
 	"github.com/jonesrussell/gimbal/internal/errors"
 )
 
+const (
+	disableAudioEnvValue = "1"
+	disableAudioEnvTrue  = "true"
+)
+
 // AudioResource represents a loaded audio resource
 type AudioResource struct {
 	Data   []byte
@@ -147,7 +152,7 @@ func (rm *ResourceManager) GetAudio(ctx context.Context, name string) (*AudioRes
 // LoadAllAudio loads all required audio resources for the game
 func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
 	// Skip audio loading if audio is disabled
-	if os.Getenv("DISABLE_AUDIO") == "1" || os.Getenv("DISABLE_AUDIO") == "true" {
+	if isAudioDisabled() {
 		rm.logger.Debug("Audio disabled, skipping audio loading")
 		return nil
 	}
@@ -226,24 +231,17 @@ func suppressStderr() (restore func()) {
 	}
 }
 
-// NewAudioPlayer creates a new audio player
-// Returns nil, nil if audio initialization fails (e.g., no audio device available)
-// This allows the game to run without audio in environments like containers
-// Attempts to suppress ALSA stderr output during initialization, though some C library
-// messages may still appear as they write directly to file descriptors.
-func NewAudioPlayer(sampleRate int, logger common.Logger) (*AudioPlayer, error) {
-	// Check if we should skip audio initialization (e.g., in WSL2 without audio)
-	// If DISABLE_AUDIO environment variable is set, skip audio entirely
-	if os.Getenv("DISABLE_AUDIO") == "1" || os.Getenv("DISABLE_AUDIO") == "true" {
-		logger.Debug("Audio disabled via DISABLE_AUDIO environment variable")
-		return nil, nil
-	}
+// isAudioDisabled checks if audio is disabled via environment variable
+func isAudioDisabled() bool {
+	val := os.Getenv("DISABLE_AUDIO")
+	return val == disableAudioEnvValue || val == disableAudioEnvTrue
+}
 
-	// Try to create audio context - this may fail in containers without audio devices
-	// We attempt to suppress stderr during initialization to reduce ALSA error messages
-	// Note: Some ALSA warnings may still appear as the C library writes directly to FDs
+// tryCreateAudioContext attempts to create an audio context with panic recovery
+func tryCreateAudioContext(sampleRate int, logger common.Logger) (*audio.Context, error) {
 	var audioContext *audio.Context
 	var initErr error
+
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -269,23 +267,49 @@ func NewAudioPlayer(sampleRate int, logger common.Logger) (*AudioPlayer, error) 
 		audioContext = audio.NewContext(sampleRate)
 	}()
 
-	if audioContext == nil {
-		// Return nil without error - audio is optional
-		if initErr != nil {
-			logger.Debug("Audio context creation failed", "error", initErr)
+	return audioContext, initErr
+}
+
+// handleAudioInitFailure handles the case when audio initialization fails
+func handleAudioInitFailure(initErr error, logger common.Logger) {
+	if initErr != nil {
+		logger.Debug("Audio context creation failed", "error", initErr)
+	} else {
+		logger.Debug("Audio context not available (no audio device), continuing without audio")
+	}
+
+	// Set DISABLE_AUDIO environment variable to prevent Ebiten from trying to initialize audio
+	// This helps avoid errors when ebiten.RunGame is called, as Ebiten may try to initialize
+	// audio internally even if our AudioPlayer failed to initialize
+	if os.Getenv("DISABLE_AUDIO") == "" {
+		if err := os.Setenv("DISABLE_AUDIO", disableAudioEnvValue); err != nil {
+			logger.Debug("Failed to set DISABLE_AUDIO environment variable", "error", err)
 		} else {
-			logger.Debug("Audio context not available (no audio device), continuing without audio")
+			logger.Debug("Set DISABLE_AUDIO=1 to prevent Ebiten audio initialization")
 		}
-		// Set DISABLE_AUDIO environment variable to prevent Ebiten from trying to initialize audio
-		// This helps avoid errors when ebiten.RunGame is called, as Ebiten may try to initialize
-		// audio internally even if our AudioPlayer failed to initialize
-		if os.Getenv("DISABLE_AUDIO") == "" {
-			if err := os.Setenv("DISABLE_AUDIO", "1"); err != nil {
-				logger.Debug("Failed to set DISABLE_AUDIO environment variable", "error", err)
-			} else {
-				logger.Debug("Set DISABLE_AUDIO=1 to prevent Ebiten audio initialization")
-			}
-		}
+	}
+}
+
+// NewAudioPlayer creates a new audio player
+// Returns nil, nil if audio initialization fails (e.g., no audio device available)
+// This allows the game to run without audio in environments like containers
+// Attempts to suppress ALSA stderr output during initialization, though some C library
+// messages may still appear as they write directly to file descriptors.
+func NewAudioPlayer(sampleRate int, logger common.Logger) (*AudioPlayer, error) {
+	// Check if we should skip audio initialization (e.g., in WSL2 without audio)
+	// If DISABLE_AUDIO environment variable is set, skip audio entirely
+	if isAudioDisabled() {
+		logger.Debug("Audio disabled via DISABLE_AUDIO environment variable")
+		return nil, nil
+	}
+
+	// Try to create audio context - this may fail in containers without audio devices
+	// We attempt to suppress stderr during initialization to reduce ALSA error messages
+	// Note: Some ALSA warnings may still appear as the C library writes directly to FDs
+	audioContext, initErr := tryCreateAudioContext(sampleRate, logger)
+
+	if audioContext == nil {
+		handleAudioInitFailure(initErr, logger)
 		return nil, nil
 	}
 
