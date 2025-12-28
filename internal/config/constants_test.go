@@ -85,8 +85,8 @@ func TestDefaultPlayerSize(t *testing.T) {
 }
 
 func TestDefaultNumStars(t *testing.T) {
-	if DefaultNumStars != 100 {
-		t.Errorf("DefaultNumStars = %d, want 100", DefaultNumStars)
+	if DefaultNumStars != 25 {
+		t.Errorf("DefaultNumStars = %d, want 50", DefaultNumStars)
 	}
 }
 
