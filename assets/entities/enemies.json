@@ -10,7 +10,7 @@
             "movement_type": "outward",
             "movement_pattern": 0,
             "can_shoot": true,
-            "fire_rate": 0.5,
+            "fire_rate": 0.25,
             "projectile_speed": 4.0
         },
         {

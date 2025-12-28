@@ -124,6 +124,13 @@ func (rm *ResourceManager) loadGameSprites(ctx context.Context) error {
 			FallbackHeight: 6,
 			FallbackColor:  color.RGBA{255, 165, 0, 255}, // Orange fallback
 		},
+		{
+			Name:           "star",
+			Path:           "sprites/star.png",
+			FallbackWidth:  uicore.StarSpriteSize,
+			FallbackHeight: uicore.StarSpriteSize,
+			FallbackColor:  color.White,
+		},
 	}
 
 	for _, cfg := range spriteConfigs {
@@ -136,11 +143,6 @@ func (rm *ResourceManager) loadGameSprites(ctx context.Context) error {
 
 // createUISprites creates UI-related sprites
 func (rm *ResourceManager) createUISprites(ctx context.Context) error {
-	// Create star sprite
-	if _, err := rm.CreateSprite("star", uicore.StarSpriteSize, uicore.StarSpriteSize, color.White); err != nil {
-		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to create star sprite", err)
-	}
-
 	// Create button sprite
 	if _, err := rm.CreateSprite("button", uicore.ButtonSpriteWidth, uicore.ButtonSpriteHeight,
 		color.RGBA{uicore.ButtonColorR, uicore.ButtonColorG, uicore.ButtonColorB, uicore.ButtonColorA}); err != nil {
@@ -167,7 +169,7 @@ func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 		return err
 	}
 
-	// Create UI sprites (star, button, background)
+	// Create UI sprites (button, background)
 	if err := rm.createUISprites(ctx); err != nil {
 		return err
 	}
