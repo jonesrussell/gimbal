@@ -4,7 +4,7 @@ const (
 	DefaultScreenWidth  = 1280
 	DefaultScreenHeight = 720
 	DefaultPlayerSize   = 48 // Reduced for better gameplay balance
-	DefaultNumStars     = 100
+	DefaultNumStars     = 25
 	DefaultSpeed        = 0.04
 	DefaultStarSize     = 5.0
 	DefaultStarSpeed    = 40.0
