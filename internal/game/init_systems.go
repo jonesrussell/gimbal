@@ -26,6 +26,9 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 	g.scoreManager = managers.NewScoreManager(10000)
 	g.levelManager = managers.NewLevelManager(g.logger)
 
+	// Wire up level manager to emit events
+	g.levelManager.SetEventEmitter(g.eventSystem)
+
 	// Load level definitions
 	levelDefs := managers.GetDefaultLevelDefinitions()
 	if err := g.levelManager.LoadLevels(levelDefs); err != nil {
