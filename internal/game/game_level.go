@@ -1,98 +1,37 @@
 package game
 
-import (
-	"github.com/jonesrussell/gimbal/internal/ecs/managers"
-	enemysys "github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
-)
-
-// convertWaveConfigs converts managers.WaveConfig to enemy.WaveConfig
-func convertWaveConfigs(managerWaves []managers.WaveConfig) []enemysys.WaveConfig {
-	enemyWaves := make([]enemysys.WaveConfig, len(managerWaves))
-	for i, mw := range managerWaves {
-		enemyTypes := make([]enemysys.EnemyType, len(mw.EnemyTypes))
-		for j, et := range mw.EnemyTypes {
-			enemyTypes[j] = enemysys.EnemyType(et)
-		}
-		enemyWaves[i] = enemysys.WaveConfig{
-			FormationType:   enemysys.FormationType(mw.FormationType),
-			EnemyCount:      mw.EnemyCount,
-			EnemyTypes:      enemyTypes,
-			SpawnDelay:      mw.SpawnDelay,
-			Timeout:         mw.Timeout,
-			InterWaveDelay:  mw.InterWaveDelay,
-			MovementPattern: enemysys.MovementPattern(mw.MovementPattern),
-		}
-	}
-	return enemyWaves
-}
-
-// checkLevelCompletion checks if the boss is killed and advances the level
+// checkLevelCompletion checks if the stage is complete and advances to the next
 func (g *ECSGame) checkLevelCompletion() {
-	// Get current level config to check completion conditions
-	levelConfig := g.levelManager.GetCurrentLevelConfig()
-	if levelConfig == nil {
+	// Check if current stage is complete (boss defeated)
+	if !g.gyrussSystem.IsStageComplete() {
 		return
 	}
 
-	// Check completion conditions
-	canComplete := g.checkCompletionConditions(levelConfig.CompletionConditions)
-
-	if canComplete {
-		g.handleLevelComplete()
-	}
-}
-
-// checkCompletionConditions checks all completion conditions
-func (g *ECSGame) checkCompletionConditions(conditions managers.CompletionConditions) bool {
-	// Check if boss kill is required
-	if conditions.RequireBossKill {
-		if !g.enemySystem.WasBossSpawned() || g.enemySystem.IsBossActive() {
-			return false
-		}
-	}
-
-	// Check if all waves are required
-	if conditions.RequireAllWaves {
-		if g.enemySystem.GetWaveManager().HasMoreWaves() {
-			return false
-		}
-	}
-
-	// Check if all enemies must be killed
-	// This would require checking active enemy count
-	// For now, we'll assume boss kill + all waves = all enemies killed
-	// TODO: Implement active enemy count check
-	_ = conditions.RequireAllEnemiesKilled
-
-	return true
+	g.handleLevelComplete()
 }
 
 // handleLevelComplete handles level completion actions
 func (g *ECSGame) handleLevelComplete() {
-	// Level complete!
-	currentLevel := g.levelManager.GetLevel()
-	g.logger.Debug("Level complete", "level", currentLevel)
+	currentStage := g.gyrussSystem.GetCurrentStage()
+	g.logger.Debug("Stage complete", "stage", currentStage)
+
+	// Update level manager to track progression
 	g.levelManager.IncrementLevel()
 
-	// Load next level's configuration
-	nextLevelConfig := g.levelManager.GetCurrentLevelConfig()
-	if nextLevelConfig != nil {
-		enemyWaves := convertWaveConfigs(nextLevelConfig.Waves)
-		g.enemySystem.LoadLevelConfig(enemyWaves, &nextLevelConfig.Boss)
-		g.logger.Debug("Next level config loaded",
-			"level", nextLevelConfig.LevelNumber,
-			"waves", len(nextLevelConfig.Waves))
-
-		// Show level title for new level
-		if currentScene := g.sceneManager.GetCurrentScene(); currentScene != nil {
-			if playingScene, ok := currentScene.(interface{ ShowLevelTitle(int) }); ok {
-				playingScene.ShowLevelTitle(nextLevelConfig.LevelNumber)
-			}
-		}
-	} else {
-		// No more levels, just reset
-		g.enemySystem.Reset()
+	// Load next stage
+	if err := g.gyrussSystem.LoadNextStage(); err != nil {
+		g.logger.Warn("Failed to load next stage, resetting", "error", err)
+		g.gyrussSystem.Reset()
+		return
 	}
 
-	// TODO: Add level complete event/UI notification
+	nextStage := g.gyrussSystem.GetCurrentStage()
+	g.logger.Debug("Next stage loaded", "stage", nextStage)
+
+	// Show level title for new stage
+	if currentScene := g.sceneManager.GetCurrentScene(); currentScene != nil {
+		if playingScene, ok := currentScene.(interface{ ShowLevelTitle(int) }); ok {
+			playingScene.ShowLevelTitle(nextStage)
+		}
+	}
 }

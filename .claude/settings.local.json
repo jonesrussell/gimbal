@@ -1,6 +1,10 @@
 {
   "permissions": {
     "allow": [
+      "Bash(go vet:*)",
+      "Bash(task deadcode:check:*)",
+      "Bash(git status:*)",
+      "Bash(ls:*)",
       "Bash(go test:*)",
       "Bash(go build:*)",
       "Bash(task lint:*)",

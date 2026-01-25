@@ -63,20 +63,15 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 		}
 	}
 
-	// Update systems without error returns
-	enemyUpdateFunc := func() error {
-		return g.enemySystem.Update(ctx, deltaTime)
+	// Update Gyruss system (handles all enemy spawning, paths, behaviors, attacks, firing)
+	gyrussUpdateFunc := func() error {
+		return g.gyrussSystem.Update(ctx, deltaTime)
 	}
-	if err := g.updateSystemWithTiming("enemy", enemyUpdateFunc); err != nil {
+	if err := g.updateSystemWithTiming("gyruss", gyrussUpdateFunc); err != nil {
 		return err
 	}
-	enemyWeaponUpdateFunc := func() error {
-		g.enemyWeaponSystem.Update(deltaTime)
-		return nil
-	}
-	if err := g.updateSystemWithTiming("enemy_weapon", enemyWeaponUpdateFunc); err != nil {
-		return err
-	}
+
+	// Update weapon system (player weapons)
 	weaponUpdateFunc := func() error {
 		g.weaponSystem.Update(deltaTime)
 		return nil
