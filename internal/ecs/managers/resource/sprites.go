@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"image"
+	"image/draw"
 	"image/png"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -92,13 +93,10 @@ func (rm *ResourceManager) decodePNGData(name, path string, imageData []byte) (*
 	var finalImg image.Image = img
 	if _, ok := img.(*image.NRGBA); !ok {
 		// Convert to NRGBA to ensure transparency works correctly
+		// Use draw.Draw to properly preserve alpha channel
 		bounds := img.Bounds()
 		nrgba := image.NewNRGBA(bounds)
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			for x := bounds.Min.X; x < bounds.Max.X; x++ {
-				nrgba.Set(x, y, img.At(x, y))
-			}
-		}
+		draw.Draw(nrgba, bounds, img, bounds.Min, draw.Src)
 		finalImg = nrgba
 	}
 
