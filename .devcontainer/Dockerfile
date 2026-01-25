@@ -1,4 +1,4 @@
-ARG VARIANT=1.25-bookworm
+ARG VARIANT=1-bookworm
 FROM mcr.microsoft.com/devcontainers/go:${VARIANT}
 
 SHELL ["/bin/bash", "-c"]
@@ -17,7 +17,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     mesa-utils \
     xorg-dev \
     libxtst-dev \
-    libpng++-dev \
+    libpng-dev \
     libasound2-dev \
     alsa-utils \
     pulseaudio \
