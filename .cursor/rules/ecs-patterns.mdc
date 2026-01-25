@@ -1,29 +1,32 @@
-# ECS Architecture Patterns
+---
+description: ECS architecture patterns for Donburi framework
+globs: ["**/ecs/**/*.go", "**/systems/**/*.go", "**/managers/**/*.go"]
+alwaysApply: false
+---
 
-## System Naming Conventions
-- Use consistent receiver names: `es` for EnemySystem, `ws` for WeaponSystem, `cs` for CollisionSystem, `evt` for EventSystem, `scoreMgr` for ScoreManager, `sceneMgr` for SceneManager
-- Avoid naming conflicts between different system types
+# ECS Architecture Patterns
 
 ## Component Management
 - Use `core/components.go` as the single source of truth for component definitions
-- Avoid duplicate component definitions across multiple files
 - Use Donburi's built-in component management, not custom registries
+- Register new components: `MyComponent = donburi.NewComponentType[MyData]()`
 
 ## System Responsibilities
 - **GameStateManager**: Core game state only (pause, game over, victory, timing)
 - **ScoreManager**: All score-related functionality
 - **LevelManager**: Level progression and difficulty
-- **ResourceManager**: Basic sprite caching without reference counting
+- **ResourceManager**: Sprite caching with context-aware loading
 - **EventSystem**: Game event emission and subscription
 
-## Function Design
-- Keep functions under 30 lines when possible
-- Break down long functions into smaller, focused helpers
-- Use descriptive function names that indicate single responsibility
-- Extract magic numbers to constants in `internal/ecs/constants.go`
+## Query Patterns
+```go
+// Use queries for entity iteration
+query := donburi.NewQuery(filter.Contains(core.Position, core.Sprite))
+query.Each(world, func(entry *donburi.Entry) {
+    pos := core.Position.Get(entry)
+    // ...
+})
+```
 
-## Error Handling
-- Use consistent error handling patterns across all systems
-- Return errors for recoverable conditions
-- Log and continue for non-critical issues
-- Use proper error context and wrapping
+## Constants
+Extract magic numbers to `internal/ecs/constants.go` for ECS-specific values.

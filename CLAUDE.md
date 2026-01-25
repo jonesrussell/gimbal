@@ -68,12 +68,17 @@ The `app/Container` manages all dependencies with ordered initialization:
 Scenes implement the `Scene` interface (Update, Draw, Enter, Exit, GetType) and are registered in `scenes/registry.go`.
 
 ### Configuration
-- Game constants: `config/constants.go`
+- Game constants: `config/constants.go` (game-wide), `ecs/constants.go` (ECS-specific), `game/constants.go` (game loop)
 - Runtime config: Functional options (`WithDebug()`, `WithSpeed()`)
 - Entity configs: JSON files in `assets/entities/` (player.json, enemies.json)
 - Level configs: JSON files in `assets/levels/`
 
 ## Coding Conventions
+
+### Function Design
+- Keep functions under 30 lines when possible
+- Break down long functions into smaller, focused helpers
+- Use descriptive function names that indicate single responsibility
 
 ### Receiver Naming
 Use consistent receiver names: `es` for EnemySystem, `ws` for WeaponSystem, `cs` for CollisionSystem, `evt` for EventSystem, `scoreMgr` for ScoreManager, `sceneMgr` for SceneManager.
@@ -83,6 +88,12 @@ Use consistent receiver names: `es` for EnemySystem, `ws` for WeaponSystem, `cs`
 // Use custom GameError with error codes
 return errors.NewGameError(errors.AssetNotFound, "player sprite not found")
 return errors.NewGameErrorWithCause(errors.SystemInitFailed, "failed to init", err)
+
+// Fluent error building with context
+errors.NewErrorBuilder(errors.AssetNotFound, "sprite missing").
+    WithCause(err).
+    WithContext("sprite_name", name).
+    Build()
 
 // Use errors.As() for unwrapping (not type assertions)
 var gameErr *GameError
@@ -99,7 +110,17 @@ g.logger.Error("System failed", "system", name, "error", err)
 ```
 
 ### Context
-Pass context through the call chain for proper lifecycle management.
+Pass context through the call chain for proper lifecycle management:
+- Use `context.Background()` for initialization and startup operations
+- Use `context.WithTimeout()` for resource loading operations
+- Add cancellation checks in loops and long operations:
+```go
+select {
+case <-ctx.Done():
+    return ctx.Err()
+default:
+}
+```
 
 ### Graceful Shutdown
 Use `SceneManager.RequestQuit()` instead of `os.Exit()` for proper cleanup.

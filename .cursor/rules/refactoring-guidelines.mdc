@@ -1,34 +1,32 @@
-# Refactoring Guidelines - MINIMAL FIX APPROACH
-
-## Context Integration Principles
-- **Match existing interfaces**: ResourceManager methods must align with contracts
-- **Use context.Background()**: For initialization and existing call sites
-- **Add cancellation checks**: `select { case <-ctx.Done(): return ctx.Err() }`
-- **Timeout long operations**: Use `context.WithTimeout()` for resource loading
-- **Build after each change**: Verify compilation after each method update
-
-## Context Usage Patterns
-- **Initialization**: `context.Background()` for startup operations
-- **Resource Loading**: `context.WithTimeout(ctx, 5*time.Second)` 
-- **Cancellation Checks**: Add in loops and long-running operations
-- **Error Handling**: Return `ctx.Err()` when context is cancelled
-
-## Interface Alignment Success
-- ✅ **Contracts exist**: `ResourceSystem` interface already has context parameters
-- ✅ **Implementation gap**: ResourceManager methods need context parameters
-- ✅ **Call sites identified**: All locations needing context updates mapped
-- ✅ **Type safety**: No `interface{}` anti-patterns remain
-
-## Context Integration Checklist
-- [ ] LoadSprite() signature updated with context
-- [ ] GetSprite() signature updated with context  
-- [ ] LoadAllSprites() signature updated with context
-- [ ] GetDefaultFont() signature updated with context
-- [ ] Cleanup() signature updated with context
-- [ ] All call sites pass context parameters
-- [ ] Cancellation checks added to resource operations
-- [ ] Clean build: `go build ./...`
-description:
-globs:
+---
+description: Guidelines for refactoring code safely
+globs: ["**/*.go"]
 alwaysApply: false
 ---
+
+# Refactoring Guidelines
+
+## Minimal Fix Approach
+- Match existing interfaces before changing implementations
+- Build after each change to verify compilation
+- Run tests after each logical change
+
+## Safe Refactoring Steps
+1. Read and understand the existing code
+2. Identify all call sites that will be affected
+3. Update interface/signature first
+4. Update implementation to match
+5. Update all call sites systematically
+6. Build and test
+
+## Interface Changes
+- Check if contracts already exist (interfaces may already have the desired signature)
+- Update implementation to match existing contracts when possible
+- Avoid breaking changes to public APIs
+
+## Code Quality Checks
+```bash
+task lint          # Check for issues
+task tests:all     # Run all tests
+go build ./...     # Verify compilation
+```

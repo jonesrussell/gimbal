@@ -1,9 +1,29 @@
-# Recent Architecture Improvements
-- **Interface Type Safety**: Eliminated all `interface{}` anti-patterns
-- **Context-Ready Contracts**: System interfaces support context cancellation
-- **ResourceManager Enhancement**: Adding context support to implementation
-- **Professional Quality**: Enterprise-grade code structure and error handling
-description:
-globs:
-alwaysApply: false
 ---
+description: Project structure and key file locations
+globs: []
+alwaysApply: true
+---
+
+# Project Structure
+
+## Key Directories
+- `internal/app/` - Dependency injection container
+- `internal/ecs/core/` - Components and queries
+- `internal/ecs/systems/` - Game systems (collision, enemy, health, movement, weapon)
+- `internal/ecs/managers/` - Resource, score, level, game state managers
+- `internal/scenes/` - Scene implementations and registry
+- `internal/game/` - Main game loop and initialization
+- `assets/` - Sprites, fonts, entities JSON, levels JSON
+
+## Adding New Features
+- **Component**: `ecs/core/components.go`
+- **System**: `internal/ecs/systems/<name>/`, init in `game/init_systems.go`
+- **Scene**: `internal/scenes/<name>/`, register in `scenes/registry.go`
+- **Sprite**: `assets/sprites/`, configure in `ecs/managers/resource/sprite_creation.go`
+- **Audio**: `assets/sounds/`, configure in `ecs/managers/resource/audio.go`
+
+## Configuration Files
+- `config/constants.go` - Game-wide constants
+- `ecs/constants.go` - ECS-specific constants
+- `assets/entities/*.json` - Entity definitions
+- `assets/levels/*.json` - Level definitions
