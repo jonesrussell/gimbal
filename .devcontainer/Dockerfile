@@ -1,7 +1,8 @@
-ARG VARIANT=1-bookworm
+ARG VARIANT=1.25-bookworm
 FROM mcr.microsoft.com/devcontainers/go:${VARIANT}
 
-SHELL ["/bin/bash", "-c"]
+# Remove expired Yarn repository
+RUN rm -f /etc/apt/sources.list.d/yarn.list || true
 
 # Install X11 development libraries and essential tools
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
@@ -95,8 +96,6 @@ RUN mkdir -p /home/vscode && \
     chown vscode:vscode /home/vscode/.asoundrc
 
 # Switch back to vscode user
-USER vscode
-WORKDIR /workspaces/gimbal
+# USER vscode
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["sleep", "infinity"]
+WORKDIR /workspaces/gimbal
