@@ -156,8 +156,8 @@ func (cs *CollisionSystem) checkEnemyProjectilePlayerCollisions(ctx context.Cont
 			// Remove the projectile
 			cs.world.Remove(projectileEntity)
 
-			// Damage the player (1 damage per projectile hit)
-			cs.healthSystem.DamagePlayer(playerEntity, 1)
+			// Damage the player (1 damage per projectile hit) with proper context propagation
+			cs.healthSystem.DamagePlayer(ctx, playerEntity, 1)
 
 			cs.logger.Debug("Player hit by enemy projectile")
 		}

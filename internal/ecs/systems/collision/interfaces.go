@@ -8,7 +8,7 @@ import (
 
 // HealthSystemInterface defines the interface for health system interactions during collision
 type HealthSystemInterface interface {
-	DamagePlayer(entity donburi.Entity, damage int)
+	DamagePlayer(ctx context.Context, entity donburi.Entity, damage int)
 	IsPlayerInvincible() bool
 }
 
