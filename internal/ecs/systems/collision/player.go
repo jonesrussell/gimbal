@@ -25,6 +25,7 @@ func (cs *CollisionSystem) getPlayerEntity() (donburi.Entity, *donburi.Entry) {
 }
 
 // checkPlayerEnemyCollisions checks for collisions between player and enemies
+// Uses spatial hash for O(1) broad-phase collision detection
 func (cs *CollisionSystem) checkPlayerEnemyCollisions(ctx context.Context) error {
 	// Check for cancellation
 	if err := common.CheckContextCancellation(ctx); err != nil {
@@ -38,16 +39,15 @@ func (cs *CollisionSystem) checkPlayerEnemyCollisions(ctx context.Context) error
 	playerPos := core.Position.Get(playerEntry)
 	playerSize := core.Size.Get(playerEntry)
 
-	enemies, err := cs.getEnemyEntities(ctx)
-	if err != nil {
-		return err
-	}
+	// Use spatial hash to get only nearby enemies (broad phase)
+	nearbyEnemies := cs.enemyHash.Query(*playerPos, *playerSize)
+
 	return cs.checkCollisionsWithEnemies(ctx, PlayerCollisionData{
 		Entity: playerEntity,
 		Entry:  playerEntry,
 		Pos:    playerPos,
 		Size:   playerSize,
-	}, enemies)
+	}, nearbyEnemies)
 }
 
 type PlayerCollisionData struct {
@@ -107,8 +107,8 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 		// Remove enemy immediately
 		cs.world.Remove(enemyEntity)
 
-		// Damage player (1 damage per enemy collision)
-		cs.healthSystem.DamagePlayer(playerEntity, 1)
+		// Damage player (1 damage per enemy collision) with proper context propagation
+		cs.healthSystem.DamagePlayer(ctx, playerEntity, 1)
 
 		cs.logger.Debug("Player damaged by enemy collision")
 	}

@@ -10,16 +10,19 @@ import (
 )
 
 // checkProjectileEnemyCollisions checks for collisions between projectiles and enemies
+// Uses spatial hash for O(1) broad-phase collision detection
 func (cs *CollisionSystem) checkProjectileEnemyCollisions(ctx context.Context) error {
 	projectiles, err := cs.getProjectileEntities(ctx)
 	if err != nil {
 		return err
 	}
-	enemies, err := cs.getEnemyEntities(ctx)
-	if err != nil {
-		return err
+
+	for _, projectileEntity := range projectiles {
+		if checkErr := cs.checkSingleProjectileCollisionsWithHash(ctx, projectileEntity); checkErr != nil {
+			return checkErr
+		}
 	}
-	return cs.processProjectileEnemyCollisions(ctx, projectiles, enemies)
+	return nil
 }
 
 func (cs *CollisionSystem) getProjectileEntities(ctx context.Context) ([]donburi.Entity, error) {
@@ -31,19 +34,9 @@ func (cs *CollisionSystem) getProjectileEntities(ctx context.Context) ([]donburi
 	return projectiles, nil
 }
 
-func (cs *CollisionSystem) processProjectileEnemyCollisions(
-	ctx context.Context, projectiles, enemies []donburi.Entity,
-) error {
-	for _, projectileEntity := range projectiles {
-		if err := cs.checkSingleProjectileCollisions(ctx, projectileEntity, enemies); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (cs *CollisionSystem) checkSingleProjectileCollisions(
-	ctx context.Context, projectileEntity donburi.Entity, enemies []donburi.Entity,
+// checkSingleProjectileCollisionsWithHash uses spatial hash for efficient collision detection
+func (cs *CollisionSystem) checkSingleProjectileCollisionsWithHash(
+	ctx context.Context, projectileEntity donburi.Entity,
 ) error {
 	// Check for cancellation
 	if err := common.CheckContextCancellation(ctx); err != nil {
@@ -58,7 +51,11 @@ func (cs *CollisionSystem) checkSingleProjectileCollisions(
 	projectilePos := core.Position.Get(projectileEntry)
 	projectileSize := core.Size.Get(projectileEntry)
 
-	for _, enemyEntity := range enemies {
+	// Use spatial hash to get only nearby enemies (broad phase)
+	nearbyEnemies := cs.enemyHash.Query(*projectilePos, *projectileSize)
+
+	// Narrow phase: check actual collision with nearby enemies
+	for _, enemyEntity := range nearbyEnemies {
 		enemyEntry := cs.world.Entry(enemyEntity)
 		if !enemyEntry.Valid() {
 			continue
@@ -67,7 +64,7 @@ func (cs *CollisionSystem) checkSingleProjectileCollisions(
 		enemyPos := core.Position.Get(enemyEntry)
 		enemySize := core.Size.Get(enemyEntry)
 
-		// Check collision
+		// Check collision (narrow phase)
 		if cs.checkCollision(*projectilePos, *projectileSize, *enemyPos, *enemySize) {
 			if err := cs.handleProjectileEnemyCollision(
 				ctx, projectileEntity, enemyEntity, projectileEntry, enemyEntry,
@@ -156,8 +153,8 @@ func (cs *CollisionSystem) checkEnemyProjectilePlayerCollisions(ctx context.Cont
 			// Remove the projectile
 			cs.world.Remove(projectileEntity)
 
-			// Damage the player (1 damage per projectile hit)
-			cs.healthSystem.DamagePlayer(playerEntity, 1)
+			// Damage the player (1 damage per projectile hit) with proper context propagation
+			cs.healthSystem.DamagePlayer(ctx, playerEntity, 1)
 
 			cs.logger.Debug("Player hit by enemy projectile")
 		}

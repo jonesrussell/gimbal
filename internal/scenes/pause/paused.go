@@ -69,10 +69,15 @@ func NewPausedScene(manager *scenes.SceneManager, font text.Face) *PausedScene {
 
 	options := []menu.MenuOption{
 		{Text: "Resume", Action: func() {
-			// Resume callback is handled by the game when switching to playing scene
+			// Invoke resume callback to sync game state (sets IsPaused = false)
+			manager.InvokeResumeCallback()
 			manager.SwitchScene(scenes.ScenePlaying)
 		}},
-		{Text: "Return to Menu", Action: func() { manager.SwitchScene(scenes.SceneMenu) }},
+		{Text: "Return to Menu", Action: func() {
+			// Invoke resume callback to reset pause state before going to menu
+			manager.InvokeResumeCallback()
+			manager.SwitchScene(scenes.SceneMenu)
+		}},
 		{Text: "Quit", Action: func() { manager.RequestQuit() }},
 	}
 

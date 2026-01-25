@@ -34,18 +34,27 @@ type CollisionSystem struct {
 	scoreManager *managers.ScoreManager
 	enemySystem  EnemySystemInterface
 	logger       common.Logger
+
+	// Spatial partitioning for O(1) collision lookups
+	enemyHash      *SpatialHash
+	projectileHash *SpatialHash
 }
 
 // NewCollisionSystem creates a new collision detection system with the provided configuration
 func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
+	screenWidth := cfg.Config.ScreenSize.Width
+	screenHeight := cfg.Config.ScreenSize.Height
+
 	return &CollisionSystem{
-		world:        cfg.World,
-		config:       cfg.Config,
-		healthSystem: cfg.HealthSystem,
-		eventSystem:  cfg.EventSystem,
-		scoreManager: cfg.ScoreManager,
-		enemySystem:  cfg.EnemySystem,
-		logger:       cfg.Logger,
+		world:          cfg.World,
+		config:         cfg.Config,
+		healthSystem:   cfg.HealthSystem,
+		eventSystem:    cfg.EventSystem,
+		scoreManager:   cfg.ScoreManager,
+		enemySystem:    cfg.EnemySystem,
+		logger:         cfg.Logger,
+		enemyHash:      NewSpatialHash(screenWidth, screenHeight),
+		projectileHash: NewSpatialHash(screenWidth, screenHeight),
 	}
 }
 
@@ -55,6 +64,9 @@ func (cs *CollisionSystem) Update(ctx context.Context) error {
 	// Using half the frame budget to leave room for other systems
 	ctx, cancel := context.WithTimeout(ctx, config.CollisionTimeout)
 	defer cancel()
+
+	// Rebuild spatial hashes for this frame
+	cs.rebuildSpatialHashes()
 
 	// Check projectile-enemy collisions (player shots hitting enemies)
 	if err := cs.checkProjectileEnemyCollisions(ctx); err != nil {
@@ -74,6 +86,32 @@ func (cs *CollisionSystem) Update(ctx context.Context) error {
 	return nil
 }
 
+// rebuildSpatialHashes clears and repopulates spatial hashes with current entity positions
+func (cs *CollisionSystem) rebuildSpatialHashes() {
+	cs.enemyHash.Clear()
+	cs.projectileHash.Clear()
+
+	// Insert all enemies into spatial hash
+	query.NewQuery(
+		filter.And(
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.Size),
+		),
+	).Each(cs.world, func(entry *donburi.Entry) {
+		pos := core.Position.Get(entry)
+		size := core.Size.Get(entry)
+		cs.enemyHash.Insert(entry.Entity(), *pos, *size)
+	})
+
+	// Insert all player projectiles into spatial hash
+	for _, entry := range core.GetProjectileEntries(cs.world) {
+		pos := core.Position.Get(entry)
+		size := core.Size.Get(entry)
+		cs.projectileHash.Insert(entry.Entity(), *pos, *size)
+	}
+}
+
 // GetCollisionDistance calculates the distance between two points
 func (cs *CollisionSystem) GetCollisionDistance(pos1, pos2 common.Point) float64 {
 	dx := pos1.X - pos2.X
@@ -85,27 +123,4 @@ func (cs *CollisionSystem) GetCollisionDistance(pos1, pos2 common.Point) float64
 func (cs *CollisionSystem) IsWithinRange(pos1, pos2 common.Point, maxDistance float64) bool {
 	distance := cs.GetCollisionDistance(pos1, pos2)
 	return distance <= maxDistance*maxDistance // Compare squared distances
-}
-
-// getEnemyEntities returns all valid enemy entities with health
-func (cs *CollisionSystem) getEnemyEntities(ctx context.Context) ([]donburi.Entity, error) {
-	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
-	enemies := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.EnemyTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-			filter.Contains(core.Health),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
-		enemies = append(enemies, entry.Entity())
-	})
-	return enemies, nil
 }

@@ -47,7 +47,8 @@ func (c *escReleasedCommand) Execute(s *PausedScene) {
 type resumeCommand struct{}
 
 func (c *resumeCommand) Execute(s *PausedScene) {
-	// Note: Resume callback is handled in the menu action, not here
+	// Invoke resume callback to sync game state (sets IsPaused = false)
+	s.manager.InvokeResumeCallback()
 	s.manager.SwitchScene(scenes.ScenePlaying)
 }
 

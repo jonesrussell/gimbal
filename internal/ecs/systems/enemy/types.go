@@ -3,6 +3,7 @@ package enemy
 import (
 	"fmt"
 
+	"github.com/jonesrussell/gimbal/internal/domain/value"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
 
@@ -32,18 +33,16 @@ func (et EnemyType) String() string {
 	}
 }
 
-// MovementPattern represents the movement behavior pattern for enemies
-type MovementPattern int
+// MovementPattern is a type alias for backward compatibility within this package.
+// The canonical definition is in domain/value package.
+type MovementPattern = value.MovementPattern
 
+// Re-export movement pattern constants for backward compatibility.
 const (
-	// MovementPatternNormal is standard outward movement
-	MovementPatternNormal MovementPattern = iota
-	// MovementPatternZigzag oscillates side-to-side while moving outward
-	MovementPatternZigzag
-	// MovementPatternAccelerating starts slow and speeds up
-	MovementPatternAccelerating
-	// MovementPatternPulsing moves in bursts (fast-slow-fast)
-	MovementPatternPulsing
+	MovementPatternNormal       = value.MovementPatternNormal
+	MovementPatternZigzag       = value.MovementPatternZigzag
+	MovementPatternAccelerating = value.MovementPatternAccelerating
+	MovementPatternPulsing      = value.MovementPatternPulsing
 )
 
 // EnemyTypeData contains configuration for each enemy type
