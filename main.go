@@ -15,11 +15,23 @@ import (
 	"github.com/jonesrussell/gimbal/internal/game"
 
 	// Scene packages - explicit imports for registration
+	"github.com/jonesrussell/gimbal/internal/scenes/bossintro"
+	"github.com/jonesrussell/gimbal/internal/scenes/credits"
 	"github.com/jonesrussell/gimbal/internal/scenes/gameover"
 	"github.com/jonesrussell/gimbal/internal/scenes/gameplay"
 	"github.com/jonesrussell/gimbal/internal/scenes/intro"
 	"github.com/jonesrussell/gimbal/internal/scenes/mainmenu"
 	"github.com/jonesrussell/gimbal/internal/scenes/pause"
+	"github.com/jonesrussell/gimbal/internal/scenes/stageintro"
+	"github.com/jonesrussell/gimbal/internal/scenes/stagetransition"
+	"github.com/jonesrussell/gimbal/internal/scenes/victory"
+	
+	// Ensure packages are imported for their init() registration
+	_ = bossintro.Register
+	_ = credits.Register
+	_ = stageintro.Register
+	_ = stagetransition.Register
+	_ = victory.Register
 )
 
 // ExitCode represents the program's exit status

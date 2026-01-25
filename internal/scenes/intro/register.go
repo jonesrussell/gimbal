@@ -35,5 +35,5 @@ func createTitleScreenScene(
 	scoreManager *managers.ScoreManager,
 	resourceMgr *resources.ResourceManager,
 ) scenes.Scene {
-	return NewTitleScreenScene(manager, font)
+	return NewTitleScreenScene(manager, font, scoreManager, resourceMgr)
 }

@@ -19,6 +19,7 @@ import (
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 	"github.com/jonesrussell/gimbal/internal/scenes"
+	"github.com/jonesrussell/gimbal/internal/scenes/bossintro"
 )
 
 // Music track name constants
@@ -44,6 +45,9 @@ type PlayingScene struct {
 	// Music state tracking
 	currentMusicTrack string // Track which music is currently playing
 	bossWasActive     bool   // Track if boss was active last frame
+
+	// Boss intro overlay
+	bossIntroOverlay *bossintro.BossIntroOverlay
 }
 
 func NewPlayingScene(
@@ -59,6 +63,9 @@ func NewPlayingScene(
 		resourceMgr:        resourceMgr,
 		levelTitleDuration: 3.0, // Show title for 3 seconds
 	}
+
+	// Create boss intro overlay
+	scene.bossIntroOverlay = bossintro.NewBossIntroOverlay(manager, font, scoreManager, resourceMgr)
 
 	// UI is now handled by the main game's EbitenUI system
 
@@ -82,6 +89,12 @@ func (s *PlayingScene) Update() error {
 		}
 	}
 
+	// Update boss intro overlay
+	if s.bossIntroOverlay != nil {
+		deltaTime := 1.0 / 60.0 // Assume 60 FPS
+		s.bossIntroOverlay.Update(deltaTime)
+	}
+
 	// Check for boss and switch music accordingly
 	s.updateBossMusic()
 
@@ -96,8 +109,9 @@ func (s *PlayingScene) updateBossMusic() {
 	// If boss state changed, switch music
 	if bossActive != s.bossWasActive {
 		if bossActive {
-			// Boss just appeared - switch to boss music
+			// Boss just appeared - trigger boss intro overlay and switch to boss music
 			s.manager.GetLogger().Debug("Boss appeared, switching to boss music")
+			s.triggerBossIntro()
 			s.switchToBossMusic()
 		} else if s.bossWasActive {
 			// Boss just died - switch back to level music
@@ -106,6 +120,28 @@ func (s *PlayingScene) updateBossMusic() {
 		}
 		s.bossWasActive = bossActive
 	}
+}
+
+// triggerBossIntro triggers the boss intro overlay
+func (s *PlayingScene) triggerBossIntro() {
+	if s.bossIntroOverlay == nil {
+		return
+	}
+
+	// Get current stage number
+	stageNumber := 1
+	if levelMgr := s.manager.GetLevelManager(); levelMgr != nil {
+		stageNumber = levelMgr.GetLevel()
+	}
+
+	// Get boss type from stage config (simplified - use stage number to determine boss type)
+	bossTypes := []string{"earth", "mars", "jupiter", "saturn", "uranus", "neptune"}
+	bossType := "earth"
+	if stageNumber > 0 && stageNumber <= len(bossTypes) {
+		bossType = bossTypes[stageNumber-1]
+	}
+
+	s.bossIntroOverlay.Trigger(stageNumber, bossType)
 }
 
 // isBossActive checks if there's an active boss in the world
@@ -149,6 +185,11 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 	// Draw level title overlay if showing
 	if s.showLevelTitle {
 		s.drawLevelTitle(screen)
+	}
+
+	// Draw boss intro overlay if active (draws on top of everything)
+	if s.bossIntroOverlay != nil && s.bossIntroOverlay.IsActive() {
+		s.bossIntroOverlay.Draw(screen)
 	}
 }
 

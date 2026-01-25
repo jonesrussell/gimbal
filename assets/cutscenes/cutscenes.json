@@ -1,0 +1,84 @@
+{
+  "stage_intros": [
+    {
+      "stage": 1,
+      "from_planet": "Earth",
+      "to_planet": "Mars",
+      "message": "ENEMY ACTIVITY DETECTED",
+      "duration": 2.5
+    },
+    {
+      "stage": 2,
+      "from_planet": "Mars",
+      "to_planet": "Jupiter",
+      "message": "HOSTILE FORCES APPROACHING",
+      "duration": 2.5
+    },
+    {
+      "stage": 3,
+      "from_planet": "Jupiter",
+      "to_planet": "Saturn",
+      "message": "DANGER LEVEL INCREASING",
+      "duration": 2.5
+    },
+    {
+      "stage": 4,
+      "from_planet": "Saturn",
+      "to_planet": "Uranus",
+      "message": "ENEMY STRENGTH MULTIPLYING",
+      "duration": 2.5
+    },
+    {
+      "stage": 5,
+      "from_planet": "Uranus",
+      "to_planet": "Neptune",
+      "message": "FINAL APPROACH",
+      "duration": 2.5
+    },
+    {
+      "stage": 6,
+      "from_planet": "Neptune",
+      "to_planet": "Pluto",
+      "message": "ULTIMATE THREAT DETECTED",
+      "duration": 2.5
+    }
+  ],
+  "boss_intros": [
+    {
+      "stage": 1,
+      "boss_type": "earth",
+      "warning_text": "WARNING — BOSS APPROACHING",
+      "duration": 1.5
+    },
+    {
+      "stage": 2,
+      "boss_type": "mars",
+      "warning_text": "WARNING — BOSS APPROACHING",
+      "duration": 1.5
+    },
+    {
+      "stage": 3,
+      "boss_type": "jupiter",
+      "warning_text": "WARNING — BOSS APPROACHING",
+      "duration": 1.5
+    },
+    {
+      "stage": 4,
+      "boss_type": "saturn",
+      "warning_text": "WARNING — BOSS APPROACHING",
+      "duration": 1.5
+    },
+    {
+      "stage": 5,
+      "boss_type": "uranus",
+      "warning_text": "WARNING — BOSS APPROACHING",
+      "duration": 1.5
+    },
+    {
+      "stage": 6,
+      "boss_type": "neptune",
+      "warning_text": "WARNING — FINAL BOSS APPROACHING",
+      "duration": 2.0
+    }
+  ]
+}

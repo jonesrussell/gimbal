@@ -25,5 +25,5 @@ func createGameOverScene(
 	scoreManager *managers.ScoreManager,
 	resourceMgr *resources.ResourceManager,
 ) scenes.Scene {
-	return NewGameOverScene(manager, font)
+	return NewGameOverScene(manager, font, scoreManager, resourceMgr)
 }

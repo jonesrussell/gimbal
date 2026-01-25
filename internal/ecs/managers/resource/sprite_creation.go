@@ -157,6 +157,157 @@ func (rm *ResourceManager) createUISprites(ctx context.Context) error {
 	return nil
 }
 
+// loadUISprites loads UI-related sprites
+func (rm *ResourceManager) loadUISprites(ctx context.Context) error {
+	spriteConfigs := []SpriteLoadConfig{
+		{
+			Name:           "title_logo",
+			Path:           "ui/title_logo.png",
+			FallbackWidth:  320,
+			FallbackHeight: 80,
+			FallbackColor:  color.RGBA{0, 255, 255, 255}, // Cyan fallback
+		},
+		{
+			Name:           "menu_frame",
+			Path:           "ui/menu_frame.png",
+			FallbackWidth:  640,
+			FallbackHeight: 480,
+			FallbackColor:  color.RGBA{128, 0, 255, 255}, // Purple fallback
+		},
+		{
+			Name:           "button_highlight",
+			Path:           "ui/button_highlight.png",
+			FallbackWidth:  200,
+			FallbackHeight: 40,
+			FallbackColor:  color.RGBA{255, 0, 255, 255}, // Magenta fallback
+		},
+		{
+			Name:           "warning_overlay",
+			Path:           "ui/warning_overlay.png",
+			FallbackWidth:  640,
+			FallbackHeight: 480,
+			FallbackColor:  color.RGBA{255, 0, 0, 128}, // Red semi-transparent fallback
+		},
+		{
+			Name:           "scanline_overlay",
+			Path:           "ui/scanline_overlay.png",
+			FallbackWidth:  640,
+			FallbackHeight: 480,
+			FallbackColor:  color.RGBA{0, 0, 0, 128}, // Black semi-transparent fallback
+		},
+	}
+
+	for _, cfg := range spriteConfigs {
+		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
+			rm.logger.Warn("Failed to load UI sprite, using fallback", "name", cfg.Name, "error", err)
+			// Continue with fallback
+		}
+	}
+	return nil
+}
+
+// loadCutsceneSprites loads cutscene-related sprites
+func (rm *ResourceManager) loadCutsceneSprites(ctx context.Context) error {
+	// Scanning grid
+	spriteConfigs := []SpriteLoadConfig{
+		{
+			Name:           "scanning_grid",
+			Path:           "cutscenes/scanning_grid.png",
+			FallbackWidth:  640,
+			FallbackHeight: 480,
+			FallbackColor:  color.RGBA{0, 255, 255, 64}, // Cyan semi-transparent fallback
+		},
+	}
+
+	// Warp tunnel frames
+	for i := 1; i <= 8; i++ {
+		cfg := SpriteLoadConfig{
+			Name:           fmt.Sprintf("warp_tunnel_%02d", i),
+			Path:           fmt.Sprintf("cutscenes/warp_tunnel_%02d.png", i),
+			FallbackWidth:  640,
+			FallbackHeight: 480,
+			FallbackColor:  color.RGBA{128, 0, 255, 128}, // Purple semi-transparent fallback
+		}
+		spriteConfigs = append(spriteConfigs, cfg)
+	}
+
+	for _, cfg := range spriteConfigs {
+		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
+			rm.logger.Warn("Failed to load cutscene sprite, using fallback", "name", cfg.Name, "error", err)
+			// Continue with fallback
+		}
+	}
+	return nil
+}
+
+// loadPlanetSprites loads planet portrait sprites
+func (rm *ResourceManager) loadPlanetSprites(ctx context.Context) error {
+	planets := []string{"earth", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"}
+	
+	for _, planet := range planets {
+		cfg := SpriteLoadConfig{
+			Name:           fmt.Sprintf("planet_%s", planet),
+			Path:           fmt.Sprintf("planets/%s.png", planet),
+			FallbackWidth:  128,
+			FallbackHeight: 128,
+			FallbackColor:  color.RGBA{0, 128, 255, 255}, // Blue fallback
+		}
+		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
+			rm.logger.Warn("Failed to load planet sprite, using fallback", "planet", planet, "error", err)
+			// Continue with fallback
+		}
+	}
+	return nil
+}
+
+// loadBossPortraitSprites loads boss portrait sprites
+func (rm *ResourceManager) loadBossPortraitSprites(ctx context.Context) error {
+	bosses := []string{"earth", "mars", "jupiter", "saturn", "uranus", "neptune"}
+	
+	for _, boss := range bosses {
+		cfg := SpriteLoadConfig{
+			Name:           fmt.Sprintf("boss_portrait_%s", boss),
+			Path:           fmt.Sprintf("bosses/%s_boss_portrait.png", boss),
+			FallbackWidth:  128,
+			FallbackHeight: 128,
+			FallbackColor:  color.RGBA{255, 0, 0, 255}, // Red fallback
+		}
+		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
+			rm.logger.Warn("Failed to load boss portrait sprite, using fallback", "boss", boss, "error", err)
+			// Continue with fallback
+		}
+	}
+	return nil
+}
+
+// loadEndingSprites loads ending sequence sprites
+func (rm *ResourceManager) loadEndingSprites(ctx context.Context) error {
+	spriteConfigs := []SpriteLoadConfig{
+		{
+			Name:           "starfield_bg",
+			Path:           "ending/starfield_bg.png",
+			FallbackWidth:  640,
+			FallbackHeight: 480,
+			FallbackColor:  color.Black,
+		},
+		{
+			Name:           "mission_complete",
+			Path:           "ending/mission_complete.png",
+			FallbackWidth:  400,
+			FallbackHeight: 100,
+			FallbackColor:  color.RGBA{0, 255, 255, 255}, // Cyan fallback
+		},
+	}
+
+	for _, cfg := range spriteConfigs {
+		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
+			rm.logger.Warn("Failed to load ending sprite, using fallback", "name", cfg.Name, "error", err)
+			// Continue with fallback
+		}
+	}
+	return nil
+}
+
 // LoadAllSprites loads all required sprites for the game
 func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 	// Check for cancellation at the start
@@ -172,6 +323,31 @@ func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 	// Create UI sprites (button, background)
 	if err := rm.createUISprites(ctx); err != nil {
 		return err
+	}
+
+	// Load UI sprites (title logo, menu frame, etc.)
+	if err := rm.loadUISprites(ctx); err != nil {
+		rm.logger.Warn("Failed to load some UI sprites, continuing", "error", err)
+	}
+
+	// Load cutscene sprites
+	if err := rm.loadCutsceneSprites(ctx); err != nil {
+		rm.logger.Warn("Failed to load some cutscene sprites, continuing", "error", err)
+	}
+
+	// Load planet sprites
+	if err := rm.loadPlanetSprites(ctx); err != nil {
+		rm.logger.Warn("Failed to load some planet sprites, continuing", "error", err)
+	}
+
+	// Load boss portrait sprites
+	if err := rm.loadBossPortraitSprites(ctx); err != nil {
+		rm.logger.Warn("Failed to load some boss portrait sprites, continuing", "error", err)
+	}
+
+	// Load ending sprites
+	if err := rm.loadEndingSprites(ctx); err != nil {
+		rm.logger.Warn("Failed to load some ending sprites, continuing", "error", err)
 	}
 
 	rm.logger.Info("[SPRITE_LOAD] All sprites loaded successfully")
