@@ -22,18 +22,18 @@ const (
 
 // BossIntroOverlay represents a boss intro overlay that appears on top of gameplay
 type BossIntroOverlay struct {
-	manager       *scenes.SceneManager
-	font          text.Face
-	resourceMgr   *resources.ResourceManager
-	scoreManager  *managers.ScoreManager
-	startTime     time.Time
-	active        bool
-	bossSprite    *ebiten.Image
-	warningOverlay *ebiten.Image
+	manager         *scenes.SceneManager
+	font            text.Face
+	resourceMgr     *resources.ResourceManager
+	scoreManager    *managers.ScoreManager
+	startTime       time.Time
+	active          bool
+	bossSprite      *ebiten.Image
+	warningOverlay  *ebiten.Image
 	flashTransition *transitions.FlashTransition
-	stageNumber   int
-	bossType      string
-	soundPlayed   bool
+	stageNumber     int
+	bossType        string
+	soundPlayed     bool
 }
 
 // NewBossIntroOverlay creates a new boss intro overlay
@@ -47,12 +47,12 @@ func NewBossIntroOverlay(
 	flashTransition := transitions.NewFlashTransition(0.3, 0.8, config.ScreenSize.Width, config.ScreenSize.Height)
 
 	return &BossIntroOverlay{
-		manager:        manager,
-		font:           font,
-		resourceMgr:    resourceMgr,
-		scoreManager:   scoreManager,
+		manager:         manager,
+		font:            font,
+		resourceMgr:     resourceMgr,
+		scoreManager:    scoreManager,
 		flashTransition: flashTransition,
-		active:        false,
+		active:          false,
 	}
 }
 
@@ -142,12 +142,12 @@ func (b *BossIntroOverlay) Draw(screen *ebiten.Image) {
 		// Ease-out zoom: start fast, slow down
 		easedProgress := 1.0 - math.Pow(1.0-zoomProgress, 3)
 		scale := 0.3 + easedProgress*1.2 // Scale from 0.3 to 1.5
-		
+
 		spriteWidth := float64(b.bossSprite.Bounds().Dx()) * scale
 		spriteHeight := float64(b.bossSprite.Bounds().Dy()) * scale
 		op.GeoM.Scale(scale, scale)
 		op.GeoM.Translate(centerX-spriteWidth/2, centerY-spriteHeight/2-40)
-		
+
 		// Fade in
 		alpha := math.Min(1.0, elapsed/0.3)
 		op.ColorScale.SetA(float32(alpha))

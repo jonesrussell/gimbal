@@ -243,7 +243,7 @@ func (rm *ResourceManager) loadCutsceneSprites(ctx context.Context) error {
 // loadPlanetSprites loads planet portrait sprites
 func (rm *ResourceManager) loadPlanetSprites(ctx context.Context) error {
 	planets := []string{"earth", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"}
-	
+
 	for _, planet := range planets {
 		cfg := SpriteLoadConfig{
 			Name:           fmt.Sprintf("planet_%s", planet),
@@ -263,7 +263,7 @@ func (rm *ResourceManager) loadPlanetSprites(ctx context.Context) error {
 // loadBossPortraitSprites loads boss portrait sprites
 func (rm *ResourceManager) loadBossPortraitSprites(ctx context.Context) error {
 	bosses := []string{"earth", "mars", "jupiter", "saturn", "uranus", "neptune"}
-	
+
 	for _, boss := range bosses {
 		cfg := SpriteLoadConfig{
 			Name:           fmt.Sprintf("boss_portrait_%s", boss),

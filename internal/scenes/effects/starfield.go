@@ -10,10 +10,10 @@ import (
 
 // Star represents a single star in the starfield
 type Star struct {
-	X      float64
-	Y      float64
-	Speed  float64
-	Size   float64
+	X          float64
+	Y          float64
+	Speed      float64
+	Size       float64
 	Brightness float64
 }
 
@@ -44,7 +44,7 @@ func NewStarfield(width, height int, starCount int, speed float64) *Starfield {
 // initialize creates the initial star positions
 func (sf *Starfield) initialize() {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	
+
 	for i := 0; i < sf.starCount; i++ {
 		sf.stars[i] = Star{
 			X:          float64(rng.Intn(sf.width)),
@@ -60,11 +60,11 @@ func (sf *Starfield) initialize() {
 // Update updates the starfield animation
 func (sf *Starfield) Update(deltaTime float64) {
 	sf.elapsed += deltaTime
-	
+
 	for i := range sf.stars {
 		// Move stars downward (or in direction of travel)
 		sf.stars[i].Y += sf.stars[i].Speed * deltaTime * 60.0 // Normalize to 60 FPS
-		
+
 		// Wrap stars around when they go off screen
 		if sf.stars[i].Y >= float64(sf.height) {
 			sf.stars[i].Y = 0
@@ -86,14 +86,14 @@ func (sf *Starfield) Draw(screen *ebiten.Image) {
 		if size < 1 {
 			size = 1
 		}
-		
+
 		// Create star color
 		starColor := color.RGBA{brightness, brightness, brightness, 255}
-		
+
 		// Draw star as a small square (simple and performant)
 		starImg := ebiten.NewImage(size, size)
 		starImg.Fill(starColor)
-		
+
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(star.X-float64(size)/2, star.Y-float64(size)/2)
 		screen.DrawImage(starImg, op)

@@ -8,18 +8,18 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
+	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 	"github.com/jonesrussell/gimbal/internal/scenes/effects"
 )
 
 const (
-	scrollSpeed     = 30.0 // pixels per second
-	lineSpacing     = 40.0
-	creditsStartY   = 600.0 // Start below screen
-	creditsEndY     = -100.0 // End above screen
+	scrollSpeed   = 30.0 // pixels per second
+	lineSpacing   = 40.0
+	creditsStartY = 600.0  // Start below screen
+	creditsEndY   = -100.0 // End above screen
 )
 
 var creditsText = []string{
@@ -67,7 +67,7 @@ func NewCreditsScene(
 		config.ScreenSize.Width,
 		config.ScreenSize.Height,
 		100, // star count
-		1.0,  // speed
+		1.0, // speed
 	)
 
 	return &CreditsScene{

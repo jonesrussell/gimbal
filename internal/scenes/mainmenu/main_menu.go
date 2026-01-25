@@ -28,11 +28,13 @@ type MenuScene struct {
 // NewMenuScene creates a new menu scene instance
 func NewMenuScene(manager *scenes.SceneManager, font text.Face) *MenuScene {
 	options := []menu.MenuOption{
-		{Text: "Start Game", Action: func() { 
+		{Text: "Start Game", Action: func() {
 			// Start with stage 1 intro - set info after switching
 			manager.SwitchScene(scenes.SceneStageIntro)
 			// Set stage info on the new scene
-			if stageIntroScene, ok := manager.GetCurrentScene().(interface{ SetStageInfo(int, string, string, string) }); ok {
+			if stageIntroScene, ok := manager.GetCurrentScene().(interface {
+				SetStageInfo(int, string, string, string)
+			}); ok {
 				stageIntroScene.SetStageInfo(1, "Earth", "Mars", "ENEMY ACTIVITY DETECTED")
 			}
 		}},

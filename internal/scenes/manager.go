@@ -34,7 +34,7 @@ const (
 	SceneStudioIntro SceneType = iota
 	SceneTitleScreen
 	SceneMenu
-	SceneStageIntro      // Stage intro cutscene
+	SceneStageIntro // Stage intro cutscene
 	ScenePlaying
 	SceneBossIntro       // Boss intro overlay (not full scene)
 	SceneStageTransition // Between-stage transition
