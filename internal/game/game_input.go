@@ -18,6 +18,8 @@ func (g *ECSGame) handlePauseInput() {
 	// Check if pause key is pressed
 	if g.inputHandler.IsPausePressed() {
 		g.logger.Debug("Pause key pressed, switching to pause scene")
+		// Update game state manager BEFORE switching scene
+		g.stateManager.SetPaused(true)
 		g.sceneManager.SwitchScene(scenes.ScenePaused)
 	}
 }
