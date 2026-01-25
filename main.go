@@ -15,7 +15,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/game"
 
 	// Scene packages - explicit imports for registration
-	"github.com/jonesrussell/gimbal/internal/scenes/bossintro"
+
 	"github.com/jonesrussell/gimbal/internal/scenes/credits"
 	"github.com/jonesrussell/gimbal/internal/scenes/gameover"
 	"github.com/jonesrussell/gimbal/internal/scenes/gameplay"
@@ -196,7 +196,6 @@ func registerScenes() {
 	pause.Register()
 	gameover.Register()
 	// New scene registrations
-	bossintro.Register()
 	credits.Register()
 	stageintro.Register()
 	stagetransition.Register()

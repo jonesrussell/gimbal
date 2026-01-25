@@ -149,20 +149,12 @@ func (rm *ResourceManager) GetAudio(ctx context.Context, name string) (*AudioRes
 	return nil, false
 }
 
-// LoadAllAudio loads all required audio resources for the game
-func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
-	// Skip audio loading if audio is disabled
-	if isAudioDisabled() {
-		rm.logger.Debug("Audio disabled, skipping audio loading")
-		return nil
-	}
-
-	// Check for cancellation at the start
-	if err := common.CheckContextCancellation(ctx); err != nil {
-		return err
-	}
-
-	audioConfigs := []struct {
+// getAudioConfigs returns the list of audio files to load
+func getAudioConfigs() []struct {
+	name string
+	path string
+} {
+	return []struct {
 		name string
 		path string
 	}{
@@ -208,7 +200,22 @@ func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
 			path: "sounds/victory_fanfare.ogg",
 		},
 	}
+}
 
+// LoadAllAudio loads all required audio resources for the game
+func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
+	// Skip audio loading if audio is disabled
+	if isAudioDisabled() {
+		rm.logger.Debug("Audio disabled, skipping audio loading")
+		return nil
+	}
+
+	// Check for cancellation at the start
+	if err := common.CheckContextCancellation(ctx); err != nil {
+		return err
+	}
+
+	audioConfigs := getAudioConfigs()
 	for _, cfg := range audioConfigs {
 		if _, err := rm.LoadAudio(ctx, cfg.name, cfg.path); err != nil {
 			rm.logger.Warn("Failed to load audio, continuing without it", "name", cfg.name, "error", err)

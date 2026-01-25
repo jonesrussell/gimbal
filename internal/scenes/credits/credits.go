@@ -165,30 +165,44 @@ func (s *CreditsScene) Enter() {
 	s.starfield.Reset()
 
 	// Start main theme music
-	if s.resourceMgr != nil {
-		audioPlayer := s.resourceMgr.GetAudioPlayer()
-		if audioPlayer != nil {
-			if musicRes, ok := s.resourceMgr.GetAudio(context.Background(), "game_music_main"); ok {
-				if err := audioPlayer.PlayMusic("game_music_main", musicRes, 0.7); err != nil {
-					s.manager.GetLogger().Warn("Failed to play credits music", "error", err)
-				} else {
-					s.musicPlaying = true
-				}
-			}
-		}
-	}
+	s.startMusic("game_music_main")
 }
 
 func (s *CreditsScene) Exit() {
 	s.manager.GetLogger().Debug("Exiting credits scene")
-	// Stop music if playing
-	if s.resourceMgr != nil && s.musicPlaying {
-		audioPlayer := s.resourceMgr.GetAudioPlayer()
-		if audioPlayer != nil {
-			audioPlayer.StopMusic("game_music_main")
-		}
-		s.musicPlaying = false
+	s.stopMusic("game_music_main")
+}
+
+// startMusic starts playing a music track
+func (s *CreditsScene) startMusic(trackName string) {
+	if s.resourceMgr == nil {
+		return
 	}
+	audioPlayer := s.resourceMgr.GetAudioPlayer()
+	if audioPlayer == nil {
+		return
+	}
+	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), trackName)
+	if !ok {
+		return
+	}
+	if err := audioPlayer.PlayMusic(trackName, musicRes, 0.7); err != nil {
+		s.manager.GetLogger().Warn("Failed to play music", "track", trackName, "error", err)
+		return
+	}
+	s.musicPlaying = true
+}
+
+// stopMusic stops playing a music track
+func (s *CreditsScene) stopMusic(trackName string) {
+	if s.resourceMgr == nil || !s.musicPlaying {
+		return
+	}
+	audioPlayer := s.resourceMgr.GetAudioPlayer()
+	if audioPlayer != nil {
+		audioPlayer.StopMusic(trackName)
+	}
+	s.musicPlaying = false
 }
 
 func (s *CreditsScene) GetType() scenes.SceneType {

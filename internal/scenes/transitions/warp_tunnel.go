@@ -1,8 +1,6 @@
 package transitions
 
 import (
-	"math"
-
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -56,7 +54,7 @@ func (w *WarpTunnelTransition) Update(deltaTime float64) bool {
 }
 
 // Draw draws the warp tunnel transition
-func (w *WarpTunnelTransition) Draw(screen *ebiten.Image, from, to *ebiten.Image) {
+func (w *WarpTunnelTransition) Draw(screen, from, to *ebiten.Image) {
 	// Draw the "to" scene in the background (scaled down to simulate tunnel effect)
 	if to != nil {
 		op := &ebiten.DrawImageOptions{}
@@ -84,23 +82,16 @@ func (w *WarpTunnelTransition) Draw(screen *ebiten.Image, from, to *ebiten.Image
 }
 
 // drawRadialTunnel draws a procedural radial tunnel effect
-func (w *WarpTunnelTransition) drawRadialTunnel(screen *ebiten.Image, to *ebiten.Image) {
+func (w *WarpTunnelTransition) drawRadialTunnel(screen, to *ebiten.Image) {
 	progress := w.GetProgress()
-	centerX := float64(w.screenWidth) / 2
-	centerY := float64(w.screenHeight) / 2
 
 	// Create tunnel effect using concentric circles
 	tunnelImg := ebiten.NewImage(w.screenWidth, w.screenHeight)
 
 	// Draw radial lines
-	for i := 0; i < 16; i++ {
-		angle := float64(i) * (2 * math.Pi / 16)
-		radius := float64(w.screenWidth) * (1.0 - progress)
-
-		// Draw line from center to edge
-		// This is simplified - in practice, you'd use a more sophisticated drawing method
-		// For now, we'll use the frame-based approach when frames are available
-	}
+	// This is simplified - in practice, you'd use a more sophisticated drawing method
+	// For now, we'll use the frame-based approach when frames are available
+	// Radial tunnel drawing would be implemented here if needed
 
 	op := &ebiten.DrawImageOptions{}
 	op.ColorScale.SetA(float32(1.0 - progress))

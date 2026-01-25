@@ -47,7 +47,7 @@ func (f *FadeTransition) Update(deltaTime float64) bool {
 }
 
 // Draw draws the fade transition
-func (f *FadeTransition) Draw(screen *ebiten.Image, from, to *ebiten.Image) {
+func (f *FadeTransition) Draw(screen, from, to *ebiten.Image) {
 	// Draw the "to" scene with current alpha
 	if to != nil {
 		op := &ebiten.DrawImageOptions{}

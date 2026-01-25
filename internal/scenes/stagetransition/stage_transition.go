@@ -116,7 +116,6 @@ func (s *StageTransitionScene) Draw(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 		portraitScale := 0.3 + 0.7*math.Min(1.0, elapsed/0.5) // Zoom in
 		portraitWidth := float64(s.bossPortrait.Bounds().Dx()) * portraitScale
-		portraitHeight := float64(s.bossPortrait.Bounds().Dy()) * portraitScale
 		op.GeoM.Scale(portraitScale, portraitScale)
 		op.GeoM.Translate(centerX-portraitWidth/2, centerY+20)
 		op.ColorScale.SetA(float32(fadeAlpha))

@@ -1,5 +1,9 @@
 package game
 
+import (
+	"github.com/jonesrussell/gimbal/internal/scenes"
+)
+
 // checkLevelCompletion checks if the stage is complete and advances to the next
 func (g *ECSGame) checkLevelCompletion() {
 	// Check if current stage is complete (boss defeated)

@@ -18,7 +18,7 @@ type FlashTransition struct {
 }
 
 // NewFlashTransition creates a new flash transition
-func NewFlashTransition(duration float64, intensity float64, screenWidth, screenHeight int) *FlashTransition {
+func NewFlashTransition(duration, intensity float64, screenWidth, screenHeight int) *FlashTransition {
 	return &FlashTransition{
 		duration:     duration,
 		intensity:    intensity,
@@ -43,7 +43,7 @@ func (f *FlashTransition) Update(deltaTime float64) bool {
 }
 
 // Draw draws the flash transition
-func (f *FlashTransition) Draw(screen *ebiten.Image, from, to *ebiten.Image) {
+func (f *FlashTransition) Draw(screen, from, to *ebiten.Image) {
 	// Draw the base scene
 	if to != nil {
 		screen.DrawImage(to, nil)
