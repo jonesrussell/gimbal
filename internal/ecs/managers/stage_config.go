@@ -134,6 +134,26 @@ type PowerUpTypeConfig struct {
 	Duration float64 `json:"duration"`
 }
 
+// DifficultySettings contains level-specific difficulty multipliers
+type DifficultySettings struct {
+	EnemySpeedMultiplier     float64 `json:"enemy_speed_multiplier"`
+	EnemyHealthMultiplier    float64 `json:"enemy_health_multiplier"`
+	EnemySpawnRateMultiplier float64 `json:"enemy_spawn_rate_multiplier"`
+	PlayerDamageMultiplier   float64 `json:"player_damage_multiplier"`
+	ScoreMultiplier          float64 `json:"score_multiplier"`
+}
+
+// DefaultDifficultySettings returns default difficulty settings
+func DefaultDifficultySettings() DifficultySettings {
+	return DifficultySettings{
+		EnemySpeedMultiplier:     1.0,
+		EnemyHealthMultiplier:    1.0,
+		EnemySpawnRateMultiplier: 1.0,
+		PlayerDamageMultiplier:   1.0,
+		ScoreMultiplier:          1.0,
+	}
+}
+
 // ConvertDirection converts string direction to int (1=clockwise, -1=counter-clockwise)
 func ConvertDirection(dir string) int {
 	switch dir {

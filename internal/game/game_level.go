@@ -1,9 +1,5 @@
 package game
 
-import (
-	"github.com/jonesrussell/gimbal/internal/ecs/managers"
-)
-
 // checkLevelCompletion checks if the stage is complete and advances to the next
 func (g *ECSGame) checkLevelCompletion() {
 	// Check if current stage is complete (boss defeated)
@@ -12,25 +8,6 @@ func (g *ECSGame) checkLevelCompletion() {
 	}
 
 	g.handleLevelComplete()
-}
-
-// checkCompletionConditions checks all completion conditions
-func (g *ECSGame) checkCompletionConditions(conditions managers.CompletionConditions) bool {
-	// Check if boss kill is required
-	if conditions.RequireBossKill {
-		if !g.gyrussSystem.WasBossSpawned() || g.gyrussSystem.IsBossActive() {
-			return false
-		}
-	}
-
-	// Check if all waves are required
-	if conditions.RequireAllWaves {
-		if g.gyrussSystem.GetWaveManager().HasMoreWaves() {
-			return false
-		}
-	}
-
-	return true
 }
 
 // handleLevelComplete handles level completion actions

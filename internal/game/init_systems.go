@@ -26,13 +26,7 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
 	g.scoreManager = managers.NewScoreManager(10000)
 	g.levelManager = managers.NewLevelManager(g.logger)
-
-	// Load level definitions
-	levelDefs := managers.GetDefaultLevelDefinitions()
-	if err := g.levelManager.LoadLevels(levelDefs); err != nil {
-		return fmt.Errorf("failed to load levels: %w", err)
-	}
-	g.logger.Debug("Level definitions loaded", "count", len(levelDefs))
+	g.logger.Debug("Level manager created")
 
 	return nil
 }

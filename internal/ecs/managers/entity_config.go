@@ -1,6 +1,13 @@
 package managers
 
-import "time"
+import (
+	"context"
+	"encoding/json"
+	"time"
+
+	"github.com/jonesrussell/gimbal/assets"
+	"github.com/jonesrussell/gimbal/internal/common"
+)
 
 // PlayerConfig defines player entity configuration
 type PlayerConfig struct {
@@ -35,4 +42,31 @@ type EnemyTypeConfig struct {
 // EnemyConfigs contains all enemy type configurations
 type EnemyConfigs struct {
 	EnemyTypes []EnemyTypeConfig `json:"enemy_types"`
+}
+
+// LoadPlayerConfig loads player configuration from the embedded assets
+func LoadPlayerConfig(_ context.Context, logger common.Logger) (*PlayerConfig, error) {
+	data, err := assets.Assets.ReadFile("entities/player.json")
+	if err != nil {
+		logger.Warn("Failed to load player.json, using defaults", "error", err)
+		return defaultPlayerConfig(), nil
+	}
+
+	var config PlayerConfig
+	if err := json.Unmarshal(data, &config); err != nil {
+		logger.Warn("Failed to parse player.json, using defaults", "error", err)
+		return defaultPlayerConfig(), nil
+	}
+
+	return &config, nil
+}
+
+// defaultPlayerConfig returns default player configuration
+func defaultPlayerConfig() *PlayerConfig {
+	return &PlayerConfig{
+		Health:                3,
+		Size:                  32,
+		SpriteName:            "player",
+		InvincibilityDuration: 2.0,
+	}
 }
