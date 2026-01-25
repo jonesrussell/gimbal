@@ -8,12 +8,21 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/domain/value"
 	"github.com/jonesrussell/gimbal/internal/math"
 )
 
-// MovementPattern represents movement behavior patterns
-// This is a type alias to avoid import cycles - it should match enemy.MovementPattern
-type MovementPattern int
+// MovementPattern is a type alias for backward compatibility.
+// New code should use value.MovementPattern directly.
+type MovementPattern = value.MovementPattern
+
+// Re-export movement pattern constants for backward compatibility.
+const (
+	MovementPatternNormal       = value.MovementPatternNormal
+	MovementPatternZigzag       = value.MovementPatternZigzag
+	MovementPatternAccelerating = value.MovementPatternAccelerating
+	MovementPatternPulsing      = value.MovementPatternPulsing
+)
 
 // Re-export timing constants for use by other packages
 var (
@@ -81,7 +90,7 @@ var (
 type MovementData struct {
 	Velocity    common.Point
 	MaxSpeed    float64
-	Pattern     MovementPattern // Movement pattern type (should match enemy.MovementPattern)
+	Pattern     MovementPattern // Movement pattern type from domain layer
 	PatternTime time.Duration   // Time accumulator for pattern-based movement
 	BaseAngle   float64         // Base angle for pattern calculations
 	BaseSpeed   float64         // Base speed for pattern calculations

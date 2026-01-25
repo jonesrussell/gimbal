@@ -5,10 +5,13 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/scenes"
+	"github.com/jonesrussell/gimbal/internal/ui/presenter"
 )
 
 // setupEventSubscriptions sets up event handlers
 func (g *ECSGame) setupEventSubscriptions() {
+	// Initialize HUD presenter with current game state
+	g.initializeHUDPresenter()
 	// Subscribe to player movement events
 	g.eventSystem.SubscribeToPlayerMoved(func(w donburi.World, event events.PlayerMovedEvent) {
 		g.logger.Debug("Player moved",
@@ -56,4 +59,25 @@ func (g *ECSGame) setupEventSubscriptions() {
 			"total_score", g.scoreManager.GetScore(),
 		)
 	})
+}
+
+// initializeHUDPresenter creates and subscribes the HUD presenter to events
+func (g *ECSGame) initializeHUDPresenter() {
+	// Get initial values from game state
+	current, maximum := g.healthSystem.GetPlayerHealth()
+	initialHealth := 1.0
+	if maximum > 0 {
+		initialHealth = float64(current) / float64(maximum)
+	}
+
+	g.hudPresenter = presenter.NewHUDPresenter(
+		g.scoreManager.GetScore(),
+		current,
+		g.levelManager.GetLevel(),
+		initialHealth,
+	)
+
+	// Subscribe to events
+	g.hudPresenter.Subscribe(g.eventSystem)
+	g.logger.Debug("HUD presenter initialized and subscribed to events")
 }

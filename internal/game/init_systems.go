@@ -26,6 +26,10 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
 	g.scoreManager = managers.NewScoreManager(10000)
 	g.levelManager = managers.NewLevelManager(g.logger)
+
+	// Wire up level manager to emit events
+	g.levelManager.SetEventEmitter(g.eventSystem)
+
 	g.logger.Debug("Level manager created")
 
 	return nil

@@ -19,6 +19,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
 	weaponsys "github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
 	"github.com/jonesrussell/gimbal/internal/scenes"
+	"github.com/jonesrussell/gimbal/internal/ui/presenter"
 )
 
 // ECSGame represents the main game state using ECS
@@ -59,7 +60,8 @@ type ECSGame struct {
 	movementSystem *movement.MovementSystem
 
 	// 2025: EbitenUI responsive design system
-	ui common.GameUI
+	ui           common.GameUI
+	hudPresenter *presenter.HUDPresenter
 
 	// Entity references
 	playerEntity donburi.Entity

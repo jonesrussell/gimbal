@@ -4,7 +4,14 @@
       "Bash(go vet:*)",
       "Bash(task deadcode:check:*)",
       "Bash(git status:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(go test:*)",
+      "Bash(go build:*)",
+      "Bash(task lint:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh api:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr list:*)"
     ]
   }
 }

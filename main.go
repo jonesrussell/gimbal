@@ -14,11 +14,12 @@ import (
 	"github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/game"
 
-	_ "github.com/jonesrussell/gimbal/internal/scenes/gameover"
-	_ "github.com/jonesrussell/gimbal/internal/scenes/gameplay"
-	_ "github.com/jonesrussell/gimbal/internal/scenes/intro"
-	_ "github.com/jonesrussell/gimbal/internal/scenes/mainmenu"
-	_ "github.com/jonesrussell/gimbal/internal/scenes/pause"
+	// Scene packages - explicit imports for registration
+	"github.com/jonesrussell/gimbal/internal/scenes/gameover"
+	"github.com/jonesrussell/gimbal/internal/scenes/gameplay"
+	"github.com/jonesrussell/gimbal/internal/scenes/intro"
+	"github.com/jonesrussell/gimbal/internal/scenes/mainmenu"
+	"github.com/jonesrussell/gimbal/internal/scenes/pause"
 )
 
 // ExitCode represents the program's exit status
@@ -181,8 +182,21 @@ func (a *Application) logSystemInfo(logger interface{ Info(string, ...interface{
 	)
 }
 
+// registerScenes explicitly registers all scene factories.
+// This replaces the implicit init()-based registration for clean architecture.
+func registerScenes() {
+	intro.Register()
+	mainmenu.Register()
+	gameplay.Register()
+	pause.Register()
+	gameover.Register()
+}
+
 // run executes the main application logic
 func run() error {
+	// Explicitly register all scenes (Clean Architecture approach)
+	registerScenes()
+
 	// Parse command-line flags
 	invincible := flag.Bool("invincible", false, "Enable player invincibility (only works when DEBUG=true)")
 	flag.Parse()
