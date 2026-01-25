@@ -137,14 +137,6 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 	// Update health component
 	core.Health.SetValue(entry, *health)
 
-	// Emit player damaged event
-	// The original code had registry.Events().EmitPlayerDamaged, but registry is removed.
-	// Assuming this method is no longer needed or will be re-added.
-	// For now, commenting out or removing as per the new_code.
-	// if err := hs.registry.Events().EmitPlayerDamaged(ctx, entity, damage, health.Current); err != nil {
-	// 	return err
-	// }
-
 	hs.logger.Debug("Entity damaged", "damage", damage, "remaining_health", health.Current)
 
 	// Check if entity should respawn or game over
@@ -153,15 +145,6 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 			return err
 		}
 	} else {
-		// The original code had registry.State().SetGameOver and registry.Events().EmitGameOver.
-		// registry is removed. Assuming these methods are no longer needed or will be re-added.
-		// For now, commenting out or removing as per the new_code.
-		// if err := hs.registry.State().SetGameOver(ctx, true); err != nil {
-		// 	return err
-		// }
-		// if err := hs.registry.Events().EmitGameOver(ctx); err != nil {
-		// 	return err
-		// }
 		hs.logger.Debug("Game over - no health remaining")
 	}
 
@@ -254,8 +237,10 @@ func (hs *HealthSystem) respawnEntity(ctx context.Context, entity donburi.Entity
 	return nil
 }
 
-func (hs *HealthSystem) DamagePlayer(entity donburi.Entity, damage int) {
-	if err := hs.DamageEntity(context.Background(), entity, damage); err != nil {
+// DamagePlayer damages the player entity with proper context propagation.
+// This method implements the collision.HealthSystemInterface.
+func (hs *HealthSystem) DamagePlayer(ctx context.Context, entity donburi.Entity, damage int) {
+	if err := hs.DamageEntity(ctx, entity, damage); err != nil {
 		hs.logger.Error("Failed to damage entity", "error", err, "entity", entity)
 	}
 }
