@@ -1,4 +1,4 @@
-package collision
+package collision_test
 
 import (
 	"testing"
@@ -7,10 +7,11 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 )
 
 func TestSpatialHash_InsertAndQuery(t *testing.T) {
-	sh := NewSpatialHash(640, 480)
+	sh := collision.NewSpatialHash(640, 480)
 
 	// Insert an entity at position (100, 100) with size 32x32
 	entity1 := donburi.Entity(1)
@@ -33,7 +34,7 @@ func TestSpatialHash_InsertAndQuery(t *testing.T) {
 }
 
 func TestSpatialHash_Clear(t *testing.T) {
-	sh := NewSpatialHash(640, 480)
+	sh := collision.NewSpatialHash(640, 480)
 
 	// Insert an entity
 	entity1 := donburi.Entity(1)
@@ -56,7 +57,7 @@ func TestSpatialHash_Clear(t *testing.T) {
 }
 
 func TestSpatialHash_MultipleEntities(t *testing.T) {
-	sh := NewSpatialHash(640, 480)
+	sh := collision.NewSpatialHash(640, 480)
 
 	// Insert multiple entities in the same cell
 	entity1 := donburi.Entity(1)
@@ -75,7 +76,7 @@ func TestSpatialHash_MultipleEntities(t *testing.T) {
 }
 
 func TestSpatialHash_EntitySpanningCells(t *testing.T) {
-	sh := NewSpatialHash(640, 480)
+	sh := collision.NewSpatialHash(640, 480)
 
 	// Insert a large entity that spans multiple cells
 	entity1 := donburi.Entity(1)
@@ -99,7 +100,7 @@ func TestSpatialHash_EntitySpanningCells(t *testing.T) {
 }
 
 func TestSpatialHash_QueryNearby(t *testing.T) {
-	sh := NewSpatialHash(640, 480)
+	sh := collision.NewSpatialHash(640, 480)
 
 	// Insert entity in center
 	entity1 := donburi.Entity(1)

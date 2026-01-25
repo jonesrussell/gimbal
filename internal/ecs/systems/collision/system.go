@@ -124,26 +124,3 @@ func (cs *CollisionSystem) IsWithinRange(pos1, pos2 common.Point, maxDistance fl
 	distance := cs.GetCollisionDistance(pos1, pos2)
 	return distance <= maxDistance*maxDistance // Compare squared distances
 }
-
-// getEnemyEntities returns all valid enemy entities with health
-func (cs *CollisionSystem) getEnemyEntities(ctx context.Context) ([]donburi.Entity, error) {
-	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
-	enemies := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.EnemyTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Size),
-			filter.Contains(core.Health),
-		),
-	).Each(cs.world, func(entry *donburi.Entry) {
-		enemies = append(enemies, entry.Entity())
-	})
-	return enemies, nil
-}
