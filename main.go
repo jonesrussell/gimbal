@@ -25,13 +25,6 @@ import (
 	"github.com/jonesrussell/gimbal/internal/scenes/stageintro"
 	"github.com/jonesrussell/gimbal/internal/scenes/stagetransition"
 	"github.com/jonesrussell/gimbal/internal/scenes/victory"
-	
-	// Ensure packages are imported for their init() registration
-	_ = bossintro.Register
-	_ = credits.Register
-	_ = stageintro.Register
-	_ = stagetransition.Register
-	_ = victory.Register
 )
 
 // ExitCode represents the program's exit status
@@ -202,6 +195,12 @@ func registerScenes() {
 	gameplay.Register()
 	pause.Register()
 	gameover.Register()
+	// New scene registrations
+	bossintro.Register()
+	credits.Register()
+	stageintro.Register()
+	stagetransition.Register()
+	victory.Register()
 }
 
 // run executes the main application logic
