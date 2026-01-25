@@ -14,7 +14,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
-	enemysys "github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/gyruss"
 	healthsys "github.com/jonesrussell/gimbal/internal/ecs/systems/health"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
 	weaponsys "github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
@@ -51,11 +51,10 @@ type ECSGame struct {
 	sceneManager *scenes.SceneManager
 
 	// Combat systems
-	enemySystem       *enemysys.EnemySystem
-	enemyWeaponSystem *enemysys.EnemyWeaponSystem
-	weaponSystem      *weaponsys.WeaponSystem
-	collisionSystem   *collision.CollisionSystem
-	healthSystem      *healthsys.HealthSystem
+	gyrussSystem    *gyruss.GyrussSystem
+	weaponSystem    *weaponsys.WeaponSystem
+	collisionSystem *collision.CollisionSystem
+	healthSystem    *healthsys.HealthSystem
 
 	// Movement system
 	movementSystem *movement.MovementSystem

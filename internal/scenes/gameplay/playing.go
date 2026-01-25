@@ -213,9 +213,7 @@ func (s *PlayingScene) Enter() {
 
 	// Show level title when entering playing scene
 	if levelManager := s.manager.GetLevelManager(); levelManager != nil {
-		if levelConfig := levelManager.GetCurrentLevelConfig(); levelConfig != nil {
-			s.ShowLevelTitle(levelConfig.LevelNumber)
-		}
+		s.ShowLevelTitle(levelManager.GetLevel())
 	}
 
 	// Start background music
@@ -338,13 +336,8 @@ func (s *PlayingScene) getLevelMusicName() string {
 		return musicTrackLevel1
 	}
 
-	levelConfig := levelManager.GetCurrentLevelConfig()
-	if levelConfig == nil {
-		return musicTrackLevel1
-	}
-
 	// Use level-specific music (e.g., game_music_level_1 for level 1)
-	if levelConfig.LevelNumber == 1 {
+	if levelManager.GetLevel() == 1 {
 		return musicTrackLevel1
 	}
 
@@ -399,27 +392,9 @@ func (s *PlayingScene) drawTitleOverlay(screen *ebiten.Image, alpha float64) {
 	screen.DrawImage(overlay, op)
 }
 
-// getTitleText gets title and description text from level config
+// getTitleText gets title and description text for the current level
 func (s *PlayingScene) getTitleText() (titleText, descText string) {
-	levelManager := s.manager.GetLevelManager()
-	if levelManager == nil {
-		titleText = fmt.Sprintf("LEVEL %d", s.currentLevelNumber)
-		return titleText, descText
-	}
-
-	levelConfig := levelManager.GetCurrentLevelConfig()
-	if levelConfig == nil {
-		titleText = fmt.Sprintf("LEVEL %d", s.currentLevelNumber)
-		return titleText, descText
-	}
-
-	titleText = levelConfig.Metadata.Name
-	if titleText == "" {
-		titleText = fmt.Sprintf("LEVEL %d", levelConfig.LevelNumber)
-	} else {
-		titleText = fmt.Sprintf("LEVEL %d: %s", levelConfig.LevelNumber, titleText)
-	}
-	descText = levelConfig.Metadata.Description
+	titleText = fmt.Sprintf("STAGE %d", s.currentLevelNumber)
 	return titleText, descText
 }
 

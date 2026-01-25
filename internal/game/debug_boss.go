@@ -41,7 +41,7 @@ func (g *ECSGame) findBossEntity() *donburi.Entry {
 
 // drawBossStatus draws boss spawn/defeat status
 func (g *ECSGame) drawBossStatus(screen *ebiten.Image, x, screenHeight, lineHeight float64) {
-	if g.enemySystem.WasBossSpawned() {
+	if g.gyrussSystem.WasBossSpawned() {
 		g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
 	} else {
 		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)

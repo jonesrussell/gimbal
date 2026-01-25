@@ -1,0 +1,299 @@
+{
+  "stage_number": 1,
+  "planet": "Earth",
+  "metadata": {
+    "name": "Earth to Mars",
+    "description": "The journey begins",
+    "music_track": "",
+    "background": "default"
+  },
+  "waves": [
+    {
+      "wave_id": "earth_wave_1",
+      "description": "Opening spiral warp-in",
+      "spawn_sequence": [
+        {
+          "enemy_type": "basic",
+          "count": 8,
+          "spawn_delay": 0.0,
+          "spawn_interval": 0.15,
+          "entry_path": {
+            "type": "spiral_in",
+            "duration": 2.0,
+            "parameters": {
+              "spiral_turns": 1.5,
+              "rotation_direction": "counter_clockwise",
+              "start_radius": 20
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.1,
+            "end_scale": 1.0,
+            "easing": "ease_out"
+          },
+          "behavior": {
+            "post_entry": "orbit_then_attack",
+            "orbit_duration": 3.0,
+            "orbit_direction": "clockwise",
+            "orbit_speed": 45.0,
+            "max_attacks": 2
+          },
+          "attack_pattern": {
+            "type": "single_rush",
+            "cooldown": 5.0,
+            "rush_speed": 300.0,
+            "return_speed": 200.0
+          },
+          "fire_pattern": {
+            "type": "single_shot",
+            "fire_rate": 0.5,
+            "fire_while_orbit": true,
+            "fire_while_attack": false
+          },
+          "retreat": {
+            "health_threshold": 0.2,
+            "timeout": 15.0,
+            "speed": 200.0
+          },
+          "powerup_trigger": false
+        }
+      ],
+      "on_clear": "next_wave",
+      "timing": {
+        "inter_wave_delay": 0.0,
+        "timeout": 30.0
+      }
+    },
+    {
+      "wave_id": "earth_wave_2",
+      "description": "Alternating spirals",
+      "spawn_sequence": [
+        {
+          "enemy_type": "basic",
+          "count": 6,
+          "spawn_delay": 0.0,
+          "spawn_interval": 0.2,
+          "entry_path": {
+            "type": "spiral_in",
+            "duration": 2.0,
+            "parameters": {
+              "spiral_turns": 1.5,
+              "rotation_direction": "counter_clockwise",
+              "start_radius": 20
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.1,
+            "end_scale": 1.0,
+            "easing": "ease_out"
+          },
+          "behavior": {
+            "post_entry": "orbit_only",
+            "orbit_duration": 5.0,
+            "orbit_direction": "clockwise",
+            "orbit_speed": 40.0,
+            "max_attacks": 0
+          },
+          "attack_pattern": {
+            "type": "none"
+          },
+          "fire_pattern": {
+            "type": "none"
+          },
+          "retreat": {
+            "timeout": 20.0,
+            "speed": 200.0
+          }
+        },
+        {
+          "enemy_type": "basic",
+          "count": 6,
+          "spawn_delay": 1.2,
+          "spawn_interval": 0.2,
+          "entry_path": {
+            "type": "spiral_in",
+            "duration": 2.0,
+            "parameters": {
+              "spiral_turns": 1.5,
+              "rotation_direction": "clockwise",
+              "start_radius": 20
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.1,
+            "end_scale": 1.0,
+            "easing": "ease_out"
+          },
+          "behavior": {
+            "post_entry": "orbit_then_attack",
+            "orbit_duration": 3.0,
+            "orbit_direction": "counter_clockwise",
+            "orbit_speed": 50.0,
+            "max_attacks": 2
+          },
+          "attack_pattern": {
+            "type": "paired_rush",
+            "cooldown": 4.0,
+            "rush_speed": 280.0
+          },
+          "fire_pattern": {
+            "type": "burst",
+            "fire_rate": 1.0,
+            "burst_count": 3,
+            "fire_while_orbit": true
+          },
+          "retreat": {
+            "timeout": 15.0,
+            "speed": 250.0
+          },
+          "powerup_trigger": true,
+          "powerup_type": "double_shot"
+        }
+      ],
+      "on_clear": "next_wave",
+      "timing": {
+        "inter_wave_delay": 2.0,
+        "timeout": 30.0
+      }
+    },
+    {
+      "wave_id": "earth_wave_3",
+      "description": "Center burst + satellites",
+      "spawn_sequence": [
+        {
+          "enemy_type": "basic",
+          "count": 10,
+          "spawn_delay": 0.0,
+          "spawn_interval": 0.1,
+          "entry_path": {
+            "type": "straight_in",
+            "duration": 1.5,
+            "parameters": {
+              "start_radius": 10
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.1,
+            "end_scale": 1.0,
+            "easing": "ease_out"
+          },
+          "behavior": {
+            "post_entry": "orbit_then_attack",
+            "orbit_duration": 2.5,
+            "orbit_direction": "clockwise",
+            "orbit_speed": 55.0,
+            "max_attacks": 1
+          },
+          "attack_pattern": {
+            "type": "single_rush",
+            "cooldown": 3.0,
+            "rush_speed": 320.0
+          },
+          "fire_pattern": {
+            "type": "single_shot",
+            "fire_rate": 0.8,
+            "fire_while_orbit": true
+          },
+          "retreat": {
+            "timeout": 12.0,
+            "speed": 220.0
+          }
+        },
+        {
+          "enemy_type": "satellite",
+          "count": 4,
+          "spawn_delay": 2.0,
+          "spawn_interval": 0.5,
+          "entry_path": {
+            "type": "random_outward",
+            "duration": 1.0,
+            "parameters": {
+              "start_radius": 30
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.2,
+            "end_scale": 1.0,
+            "easing": "linear"
+          },
+          "behavior": {
+            "post_entry": "orbit_only",
+            "orbit_duration": 10.0,
+            "orbit_speed": 60.0
+          },
+          "attack_pattern": {
+            "type": "none"
+          },
+          "fire_pattern": {
+            "type": "none"
+          },
+          "retreat": {
+            "timeout": 8.0,
+            "speed": 300.0
+          }
+        }
+      ],
+      "on_clear": "boss",
+      "timing": {
+        "inter_wave_delay": 2.0,
+        "timeout": 30.0
+      }
+    }
+  ],
+  "boss": {
+    "enabled": true,
+    "boss_type": "earth_boss",
+    "health": 15,
+    "size": 64,
+    "entry_path": {
+      "type": "straight_in",
+      "duration": 3.0,
+      "parameters": {
+        "start_radius": 10
+      }
+    },
+    "behavior": {
+      "post_entry": "hover_center_then_orbit",
+      "orbit_duration": 2.0,
+      "orbit_direction": "clockwise",
+      "orbit_speed": 25.0,
+      "max_attacks": 0
+    },
+    "attack_pattern": {
+      "type": "loopback_rush",
+      "cooldown": 6.0,
+      "rush_speed": 200.0
+    },
+    "fire_pattern": {
+      "type": "spray",
+      "fire_rate": 1.5,
+      "spray_angle": 60.0,
+      "projectile_count": 5,
+      "fire_while_orbit": true,
+      "fire_while_attack": true
+    },
+    "spawn_delay": 3.0,
+    "points": 1000
+  },
+  "power_ups": {
+    "drop_chance": 0.15,
+    "types": [
+      {
+        "type": "double_shot",
+        "weight": 0.7,
+        "duration": 10.0
+      },
+      {
+        "type": "extra_life",
+        "weight": 0.3
+      }
+    ]
+  },
+  "difficulty": {
+    "enemy_speed_multiplier": 1.0,
+    "enemy_health_multiplier": 1.0,
+    "enemy_spawn_rate_multiplier": 1.0,
+    "player_damage_multiplier": 1.0,
+    "score_multiplier": 1.0
+  }
+}

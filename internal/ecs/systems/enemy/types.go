@@ -7,6 +7,14 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
 
+// Enemy type string constants
+const (
+	EnemyTypeStrBasic     = "basic"
+	EnemyTypeStrHeavy     = "heavy"
+	EnemyTypeStrBoss      = "boss"
+	EnemyTypeStrSatellite = "satellite"
+)
+
 // EnemyType represents the type of enemy
 type EnemyType int
 
@@ -95,11 +103,11 @@ func ConvertEnemyTypeConfig(config *managers.EnemyTypeConfig, enemyType EnemyTyp
 // GetEnemyTypeFromString converts a string type name to EnemyType
 func GetEnemyTypeFromString(typeStr string) (EnemyType, error) {
 	switch typeStr {
-	case "basic":
+	case EnemyTypeStrBasic:
 		return EnemyTypeBasic, nil
-	case "heavy":
+	case EnemyTypeStrHeavy:
 		return EnemyTypeHeavy, nil
-	case "boss":
+	case EnemyTypeStrBoss:
 		return EnemyTypeBoss, nil
 	default:
 		return EnemyTypeBasic, fmt.Errorf("unknown enemy type: %s", typeStr)
