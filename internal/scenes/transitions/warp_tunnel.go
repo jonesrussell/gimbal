@@ -15,16 +15,16 @@ type WarpTunnelTransition struct {
 	currentFrame int
 	complete     bool
 	screenWidth  int
-	screenHeight  int
+	screenHeight int
 }
 
 // NewWarpTunnelTransition creates a new warp tunnel transition
 func NewWarpTunnelTransition(duration float64, frames []*ebiten.Image, screenWidth, screenHeight int) *WarpTunnelTransition {
 	return &WarpTunnelTransition{
-		duration:    duration,
-		frames:      frames,
-		frameCount:  len(frames),
-		screenWidth: screenWidth,
+		duration:     duration,
+		frames:       frames,
+		frameCount:   len(frames),
+		screenWidth:  screenWidth,
 		screenHeight: screenHeight,
 	}
 }
@@ -91,17 +91,17 @@ func (w *WarpTunnelTransition) drawRadialTunnel(screen *ebiten.Image, to *ebiten
 
 	// Create tunnel effect using concentric circles
 	tunnelImg := ebiten.NewImage(w.screenWidth, w.screenHeight)
-	
+
 	// Draw radial lines
 	for i := 0; i < 16; i++ {
 		angle := float64(i) * (2 * math.Pi / 16)
 		radius := float64(w.screenWidth) * (1.0 - progress)
-		
+
 		// Draw line from center to edge
 		// This is simplified - in practice, you'd use a more sophisticated drawing method
 		// For now, we'll use the frame-based approach when frames are available
 	}
-	
+
 	op := &ebiten.DrawImageOptions{}
 	op.ColorScale.SetA(float32(1.0 - progress))
 	screen.DrawImage(tunnelImg, op)

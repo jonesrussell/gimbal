@@ -8,20 +8,20 @@ import (
 
 // FadeTransition implements a fade in/out transition
 type FadeTransition struct {
-	duration   float64
-	elapsed    float64
-	fromAlpha  float64
-	toAlpha    float64
+	duration     float64
+	elapsed      float64
+	fromAlpha    float64
+	toAlpha      float64
 	currentAlpha float64
-	complete   bool
+	complete     bool
 }
 
 // NewFadeTransition creates a new fade transition
 func NewFadeTransition(duration float64) *FadeTransition {
 	return &FadeTransition{
-		duration:   duration,
-		fromAlpha:  1.0,
-		toAlpha:    0.0,
+		duration:     duration,
+		fromAlpha:    1.0,
+		toAlpha:      0.0,
 		currentAlpha: 1.0,
 	}
 }

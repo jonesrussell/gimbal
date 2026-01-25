@@ -21,12 +21,12 @@ const (
 )
 
 type GameOverScene struct {
-	manager         *scenes.SceneManager
-	font            text.Face
-	resourceMgr     *resources.ResourceManager
-	scoreManager    *managers.ScoreManager
-	startTime       time.Time
-	fadeAlpha       float64
+	manager          *scenes.SceneManager
+	font             text.Face
+	resourceMgr      *resources.ResourceManager
+	scoreManager     *managers.ScoreManager
+	startTime        time.Time
+	fadeAlpha        float64
 	countdown        float64
 	lastTickTime     time.Time
 	continueAccepted bool

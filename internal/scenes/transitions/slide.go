@@ -16,12 +16,12 @@ const (
 
 // SlideTransition implements a slide transition
 type SlideTransition struct {
-	duration    float64
-	elapsed     float64
-	direction   SlideDirection
-	screenWidth int
+	duration     float64
+	elapsed      float64
+	direction    SlideDirection
+	screenWidth  int
 	screenHeight int
-	complete    bool
+	complete     bool
 }
 
 // NewSlideTransition creates a new slide transition

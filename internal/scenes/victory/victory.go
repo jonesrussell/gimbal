@@ -21,16 +21,16 @@ const (
 )
 
 type VictoryScene struct {
-	manager         *scenes.SceneManager
-	font            text.Face
-	resourceMgr     *resources.ResourceManager
-	scoreManager    *managers.ScoreManager
-	startTime       time.Time
-	starfield       *effects.Starfield
-	missionBanner   *ebiten.Image
-	starfieldBg     *ebiten.Image
-	scrollOffset    float64
-	soundPlayed     bool
+	manager       *scenes.SceneManager
+	font          text.Face
+	resourceMgr   *resources.ResourceManager
+	scoreManager  *managers.ScoreManager
+	startTime     time.Time
+	starfield     *effects.Starfield
+	missionBanner *ebiten.Image
+	starfieldBg   *ebiten.Image
+	scrollOffset  float64
+	soundPlayed   bool
 }
 
 func NewVictoryScene(
@@ -44,7 +44,7 @@ func NewVictoryScene(
 		config.ScreenSize.Width,
 		config.ScreenSize.Height,
 		150, // More stars for ending
-		0.5,  // Slower speed
+		0.5, // Slower speed
 	)
 
 	return &VictoryScene{

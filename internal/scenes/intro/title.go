@@ -39,7 +39,7 @@ func NewTitleScreenScene(
 		config.ScreenSize.Width,
 		config.ScreenSize.Height,
 		100, // star count
-		2.0,  // speed
+		2.0, // speed
 	)
 
 	// Try to load title logo
@@ -106,8 +106,8 @@ func (s *TitleScreenScene) Draw(screen *ebiten.Image) {
 
 	// Draw "PRESS START" with blinking effect
 	elapsed := time.Since(s.startTime).Seconds()
-	blinkAlpha := (math.Sin(elapsed * 4.0) + 1.0) / 2.0 // Smooth blink between 0 and 1
-	if blinkAlpha > 0.3 { // Only show when above threshold
+	blinkAlpha := (math.Sin(elapsed*4.0) + 1.0) / 2.0 // Smooth blink between 0 and 1
+	if blinkAlpha > 0.3 {                             // Only show when above threshold
 		scenes.DrawCenteredTextWithOptions(screen, scenes.TextDrawOptions{
 			Text:  "PRESS START",
 			X:     centerX,

@@ -20,16 +20,16 @@ const (
 )
 
 type StageTransitionScene struct {
-	manager        *scenes.SceneManager
-	font           text.Face
-	resourceMgr    *resources.ResourceManager
-	scoreManager   *managers.ScoreManager
-	startTime      time.Time
-	nextPlanet     string
-	bossPortrait   *ebiten.Image
-	warpFrames     []*ebiten.Image
-	currentFrame   int
-	soundPlayed    bool
+	manager      *scenes.SceneManager
+	font         text.Face
+	resourceMgr  *resources.ResourceManager
+	scoreManager *managers.ScoreManager
+	startTime    time.Time
+	nextPlanet   string
+	bossPortrait *ebiten.Image
+	warpFrames   []*ebiten.Image
+	currentFrame int
+	soundPlayed  bool
 }
 
 func NewStageTransitionScene(
@@ -95,7 +95,7 @@ func (s *StageTransitionScene) Draw(screen *ebiten.Image) {
 	if len(s.warpFrames) > 0 && s.currentFrame < len(s.warpFrames) && s.warpFrames[s.currentFrame] != nil {
 		op := &ebiten.DrawImageOptions{}
 		// Fade effect
-		alpha := 1.0 - (elapsed / stageTransitionDuration) * 0.5 // Fade out slightly
+		alpha := 1.0 - (elapsed/stageTransitionDuration)*0.5 // Fade out slightly
 		op.ColorScale.SetA(float32(alpha))
 		screen.DrawImage(s.warpFrames[s.currentFrame], op)
 	}

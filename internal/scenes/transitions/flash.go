@@ -9,11 +9,11 @@ import (
 
 // FlashTransition implements a screen flash transition
 type FlashTransition struct {
-	duration    float64
-	elapsed     float64
-	intensity   float64
-	complete    bool
-	screenWidth int
+	duration     float64
+	elapsed      float64
+	intensity    float64
+	complete     bool
+	screenWidth  int
 	screenHeight int
 }
 
