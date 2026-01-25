@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance for Claude Code when working with the Gimbal codebase.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -10,245 +10,137 @@ Gimbal is a Gyruss-style arcade game written in Go using:
 - **EbitenUI** - UI library for game interfaces
 - **Zap** - Structured logging
 
-## Build & Run
+## Build & Run Commands
 
 ```bash
-# Run the game
-go run .
+# Development (debug mode with hot reload)
+task dev:run                    # Run with debug features
+task dev:hot                    # Hot reload with Air
+task dev:serve                  # WebAssembly at localhost:4242
 
-# Build
-go build -o gimbal .
+# Building
+task builds:current             # Build for current platform
+task builds:linux               # Build for Linux
+task builds:windows             # Build for Windows
+task builds:web                 # Build for WebAssembly
+task builds:all                 # Build all platforms
 
-# Run tests
-go test ./...
+# Testing
+task tests:all                  # All tests with race detection
+task tests:short                # Fast tests only
+task tests:coverage             # Generate HTML coverage report
+go test ./internal/input/...    # Run specific package tests
 
-# Run with hot reload (development)
-air
+# Code Quality
+task lint                       # Format, vet, and lint
+task lint:fix                   # Auto-fix lint issues
+task deadcode:check             # Check for dead code
+
+# Dependencies
+task install:tools              # Install Air, wasmserve, mockgen
+task deps:tidy                  # Tidy and download modules
 ```
 
-## Project Structure
-
-```
-gimbal/
-├── main.go                    # Application entry point
-├── internal/
-│   ├── app/                   # Dependency injection container
-│   ├── common/                # Shared interfaces and types
-│   ├── config/                # Configuration and constants
-│   ├── ecs/
-│   │   ├── core/              # ECS components, tags, factories
-│   │   ├── debug/             # Debug rendering and performance monitoring
-│   │   ├── events/            # Event system
-│   │   ├── managers/          # Score, level, resource, entity config managers
-│   │   │   ├── resource/      # Resource manager for sprites, audio, and assets
-│   │   │   ├── level_config.go    # Level configuration structures
-│   │   │   ├── level_loader.go    # Level loading from JSON files
-│   │   │   ├── level_definitions.go # Default level definitions
-│   │   │   ├── level.go           # LevelManager for level progression
-│   │   │   ├── score.go           # ScoreManager for scoring
-│   │   │   ├── entity_config.go   # Entity configuration structures
-│   │   │   └── entity_loader.go    # Entity config loading from JSON
-│   │   └── systems/           # ECS systems (collision, enemy, health, movement, weapon)
-│   ├── errors/                # Custom error types with codes
-│   ├── game/                  # Main game loop and initialization
-│   ├── input/                 # Input handling (keyboard, touch, mouse)
-│   ├── logger/                # Zap-based logging
-│   ├── math/                  # Angle utilities
-│   ├── scenes/                # Scene management (intro, menu, gameplay, pause, etc.)
-│   └── ui/                    # Responsive UI components
-└── assets/                    # Game assets (sprites, fonts, audio)
-```
-
-## Key Patterns
+## Architecture
 
 ### Dependency Injection
 The `app/Container` manages all dependencies with ordered initialization:
 1. Logger → 2. Config → 3. Input Handler → 4. Game Instance
 
 ### ECS Architecture
-- **Components**: Position, Sprite, Movement, Orbital, Health, Size, Speed, Angle, Scale, EnemyTypeID
+- **Components** (`ecs/core/components.go`): Position, Sprite, Movement, Orbital, Health, Size, Speed, Angle, Scale, EnemyTypeID
 - **Tags**: PlayerTag, StarTag, EnemyTag, ProjectileTag, EnemyProjectileTag
-- **Systems**:
-  - `collision/` - CollisionSystem for entity collision detection
-  - `enemy/` - EnemySystem for enemy spawning/movement, EnemyWeaponSystem for enemy shooting (uses sprite assets for projectiles), WaveManager for wave management
-  - `health/` - HealthSystem for entity health and invincibility
-  - `movement/` - MovementSystem for entity movement patterns
-  - `weapon/` - WeaponSystem for player weapon firing
+- **Systems** (`ecs/systems/`):
+  - `collision/` - Entity collision detection with timeout protection
+  - `enemy/` - Enemy spawning, movement, shooting, wave management
+  - `health/` - Entity health and invincibility
+  - `movement/` - Entity movement patterns
+  - `weapon/` - Player weapon firing
+
+### Managers (`ecs/managers/`)
+- **GameStateManager** - Core game state (pause, game over, victory, timing)
+- **ScoreManager** - Score tracking and bonus lives
+- **LevelManager** - Level progression and configuration
+- **ResourceManager** - Sprites, audio, and asset caching
+- **WaveManager** - Wave spawning and completion
+
+### Scene System
+Scenes implement the `Scene` interface (Update, Draw, Enter, Exit, GetType) and are registered in `scenes/registry.go`.
 
 ### Configuration
-- Game constants are in `config/constants.go`
-- Runtime config uses functional options pattern (`WithDebug()`, `WithSpeed()`, etc.)
-- Environment variables loaded via `godotenv` and `envconfig`
-- Entity configurations loaded from JSON files in `assets/entities/`:
-  - `player.json` - Player configuration (health, size, sprite, invincibility)
-  - `enemies.json` - Enemy type configurations (health, speed, size, movement patterns)
-- Level configurations loaded from JSON files in `assets/levels/` or use defaults
-
-### Sprite Assets
-- Sprites are loaded via the ResourceManager from `assets/sprites/`
-- Game sprites: `player.png`, `heart.png`, `enemy.png`, `enemy_heavy.png`, `enemy_boss.png`, `enemy_ammo.png`, `enemy_heavy_ammo.png`
-- Enemy projectile sprites: `enemy_ammo.png` (Basic enemies), `enemy_heavy_ammo.png` (Heavy enemies, also used for Boss as fallback)
-- All sprites use fallback colored placeholders if asset loading fails
-
-### Audio Assets
-- Audio files are loaded via the ResourceManager from `assets/sounds/`
-- Format: OGG/Vorbis (`.ogg` files) - recommended for background music
-- Music tracks:
-  - `game_music_main.ogg` - Menu music (plays in main menu)
-  - `game_music_level_1.ogg` - Level 1 gameplay music
-  - `game_music_boss.ogg` - Boss battle music (plays when boss appears)
-- Audio is optional - game continues without audio if initialization fails (e.g., no audio device in containers)
-- Audio automatically loops during playback
-- Music switches dynamically: level music → boss music when boss spawns, boss music → level music when boss is defeated
+- Game constants: `config/constants.go`
+- Runtime config: Functional options (`WithDebug()`, `WithSpeed()`)
+- Entity configs: JSON files in `assets/entities/` (player.json, enemies.json)
+- Level configs: JSON files in `assets/levels/`
 
 ## Coding Conventions
 
+### Receiver Naming
+Use consistent receiver names: `es` for EnemySystem, `ws` for WeaponSystem, `cs` for CollisionSystem, `evt` for EventSystem, `scoreMgr` for ScoreManager, `sceneMgr` for SceneManager.
+
 ### Error Handling
-Use the custom `errors.GameError` type with error codes:
 ```go
+// Use custom GameError with error codes
 return errors.NewGameError(errors.AssetNotFound, "player sprite not found")
 return errors.NewGameErrorWithCause(errors.SystemInitFailed, "failed to init", err)
-```
 
-For error unwrapping, use `errors.As()` to properly traverse error chains:
-```go
+// Use errors.As() for unwrapping (not type assertions)
 var gameErr *GameError
 if errors.As(err, &gameErr) {
     // Handle GameError
 }
 ```
-This correctly handles wrapped errors and error chains, unlike type assertions.
 
 ### Logging
-Use structured logging with key-value pairs:
 ```go
+// Use structured logging with key-value pairs
 g.logger.Debug("Player created", "entity_id", entity, "position", pos)
 g.logger.Error("System failed", "system", name, "error", err)
 ```
 
-### Interfaces
-- `common.Logger` - Logging interface
-- `common.GameInputHandler` - Composite input interface
-- `common.HealthProvider` - Health system access
-- `common.GameUI` - UI interface
-
-### Context Usage
-Pass context through the call chain for proper lifecycle management:
-```go
-func (g *ECSGame) Update() error {
-    ctx := g.ctx // Use game's context
-    if err := g.updateGameplaySystems(ctx); err != nil {
-        return err
-    }
-}
-```
+### Context
+Pass context through the call chain for proper lifecycle management.
 
 ### Graceful Shutdown
-The game uses a graceful shutdown mechanism instead of `os.Exit()`:
-- Scenes request shutdown via `SceneManager.RequestQuit()`
-- The game loop checks `SceneManager.IsQuitRequested()` and returns an error to stop
-- This allows proper cleanup of resources, logging finalization, and proper shutdown sequencing
-- Example: `manager.RequestQuit()` in menu quit actions instead of `os.Exit(0)`
+Use `SceneManager.RequestQuit()` instead of `os.Exit()` for proper cleanup.
 
-## Testing
+## Adding New Features
 
-```bash
-# Run all tests
-go test ./...
+### New ECS Component
+1. Define in `ecs/core/components.go`
+2. Register: `MyComponent = donburi.NewComponentType[MyData]()`
 
-# Run with coverage
-go test -cover ./...
+### New Scene
+1. Create in `internal/scenes/<name>/`
+2. Implement Scene interface
+3. Register in `scenes/registry.go` with factory function
 
-# Run specific package tests
-go test ./internal/input/...
-```
+### New System
+1. Create in `internal/ecs/systems/<name>/`
+2. Initialize in `game/init_systems.go`
+3. Call Update in `game/game.go`
 
-Use the `TestableInputHandler` interface for simulating input in tests.
+### New Sprite Asset
+1. Add to `assets/sprites/`
+2. Configure in `ecs/managers/resource/sprite_creation.go`
 
-### Test Coverage
-
-Current test coverage highlights:
-- Math utilities (100%)
-- Error handling (93.3%)
-- Configuration validation (63.3%)
-- ImagePool resource management (16.5%)
-- Score management (15.4%)
-- Scene management (4.3%)
-
-### Testing Patterns
-
-- Use `//nolint:testpackage` when testing unexported functionality from the same package
-- Create no-op test loggers for testing components that require a logger
-- Use table-driven tests for comprehensive coverage of edge cases
-- Test error unwrapping with `errors.As()` for proper error chain traversal
-
-## Common Tasks
-
-### Adding a New ECS Component
-1. Define component type in `ecs/core/components.go`
-2. Register with Donburi: `MyComponent = donburi.NewComponentType[MyData]()`
-
-### Adding a New Scene
-1. Create scene directory in `internal/scenes/` (e.g., `scenes/myscene/`)
-2. Implement `Scene` interface (Update, Draw, Enter, Exit, GetType)
-3. Register in `scenes/registry.go` using `RegisterScene()` with a factory function
-4. Available scenes: intro, mainmenu, gameplay/playing, pause, gameover, menu
-
-### Adding a New System
-1. Create system directory in `internal/ecs/systems/<name>/`
-2. Initialize in `game/init_systems.go` `createGameplaySystems()`
-3. Call Update in `game/game.go` `updateGameplaySystems()`
-4. Systems are organized by domain (collision, enemy, health, movement, weapon)
-
-### Adding Enemy Projectile Sprites
-1. Add sprite asset to `assets/sprites/` (e.g., `enemy_ammo.png`)
-2. Add sprite configuration to `internal/ecs/managers/resource/sprite_creation.go` in `loadGameSprites()`
-3. Update `EnemyWeaponSystem.initializeProjectileSprites()` to load the sprite for the appropriate enemy type
-4. The system automatically uses the sprite based on the enemy type when firing projectiles
-
-### Adding Audio/Music
-1. Add OGG/Vorbis audio file to `assets/sounds/` (e.g., `game_music_level_2.ogg`)
-2. Add audio configuration to `internal/ecs/managers/resource/audio.go` in `LoadAllAudio()`
-3. Use `ResourceManager.GetAudioPlayer()` to access the audio player
-4. Call `PlayMusic(name, audioResource, volume)` to play music (volume 0.0-1.0)
-5. Music automatically loops - use `StopMusic(name)` to stop playback
-6. For scene-specific music, add playback in scene's `Enter()` method and stop in `Exit()` method
-7. For dynamic music switching (e.g., boss battles), check game state in scene's `Update()` method
-
-## Performance Notes
-
-- Collision detection has a timeout of `config.CollisionTimeout` (half frame budget)
-- Systems taking longer than `config.SlowSystemThreshold` (5ms) are logged as warnings
-- Use `config.DebugLogInterval` (60 frames) for periodic debug logging
-- The `RenderOptimizer` and `ImagePool` are available for rendering optimization
-- `ImagePool` reuses ebiten.Image instances to reduce allocations - use `GetImage()` and `ReturnImage()` to manage pooled images
+### New Audio Track
+1. Add OGG file to `assets/sounds/`
+2. Configure in `ecs/managers/resource/audio.go`
+3. Play via `ResourceManager.GetAudioPlayer().PlayMusic()`
 
 ## Level System
 
-- Levels are defined in JSON files in `assets/levels/` or use default definitions
-- Each level contains:
-  - `LevelNumber` - Level identifier
-  - `Metadata` - Name, description, music track, background theme
-  - `Waves` - Array of wave configurations with formations, enemy types, spawn delays
-  - `Boss` - Boss configuration (enabled, health, movement, shooting)
-  - `Difficulty` - Multipliers for enemy speed, health, spawn rate, etc.
-  - `CompletionConditions` - Requirements to complete level (boss kill, all waves, etc.)
-- `LevelManager` manages level progression and provides current level config
-- `WaveManager` (in enemy system) handles wave spawning and completion
-- Enemy types: Basic (0), Heavy (1), Boss (2)
-- Formation types: Line, Circle, V, Diamond, Diagonal, Spiral, Random
-- Movement patterns: Normal, Zigzag, Accelerating, Pulsing
+Levels are JSON files in `assets/levels/` containing:
+- Waves with formations (Line, Circle, V, Diamond, Diagonal, Spiral, Random)
+- Enemy types (Basic=0, Heavy=1, Boss=2)
+- Movement patterns (Normal, Zigzag, Accelerating, Pulsing)
+- Boss configuration and difficulty multipliers
+- Completion conditions
 
-## Audio System
+## Performance Notes
 
-- Audio uses Ebiten's `audio/vorbis` package for OGG/Vorbis playback
-- `ResourceManager` loads audio files from embedded assets (`assets/sounds/*`)
-- `AudioPlayer` manages background music playback with looping support
-- Audio initialization is optional - game runs without audio if device unavailable
-- Music tracks:
-  - Menu music (`game_music_main`) - Plays in main menu scene
-  - Level music (`game_music_level_1`) - Plays during gameplay (level-specific)
-  - Boss music (`game_music_boss`) - Plays when boss appears, switches back to level music when defeated
-- Music volume defaults to 70% (0.7) for background music
-- Audio context uses 44100 Hz sample rate
-- Audio files are decoded and cached for efficient playback
+- Collision detection timeout: `config.CollisionTimeout` (half frame budget)
+- Slow system threshold: `config.SlowSystemThreshold` (5ms)
+- `ImagePool` reuses ebiten.Image instances - use `GetImage()` and `ReturnImage()`
+- Debug logging interval: `config.DebugLogInterval` (60 frames)
