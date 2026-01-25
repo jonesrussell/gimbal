@@ -91,6 +91,11 @@ func (s *TitleScreenScene) Draw(screen *ebiten.Image) {
 		logoWidth := float64(s.titleLogo.Bounds().Dx())
 		logoHeight := float64(s.titleLogo.Bounds().Dy())
 		op.GeoM.Translate(centerX-logoWidth/2, centerY-logoHeight/2-80)
+		// Explicitly set ColorScale to preserve transparency
+		op.ColorScale.SetR(1)
+		op.ColorScale.SetG(1)
+		op.ColorScale.SetB(1)
+		op.ColorScale.SetA(1)
 		screen.DrawImage(s.titleLogo, op)
 	} else {
 		// Fallback to text

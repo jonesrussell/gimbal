@@ -21,7 +21,7 @@ func NewStageLoader(logger common.Logger, assetsFS embed.FS) *StageLoader {
 	return &StageLoader{
 		logger:    logger,
 		assetsFS:  assetsFS,
-		stagePath: "assets/stages",
+		stagePath: "stages", // Embedded paths are relative to the embed directive, not including "assets/"
 	}
 }
 
