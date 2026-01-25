@@ -6,11 +6,17 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 )
 
+// LevelEventEmitter defines the interface for emitting level events.
+type LevelEventEmitter interface {
+	EmitLevelChanged(oldLevel, newLevel int)
+}
+
 // LevelManager manages the game level progression
 type LevelManager struct {
-	level  int
-	levels []LevelConfig
-	logger common.Logger
+	level        int
+	levels       []LevelConfig
+	logger       common.Logger
+	eventEmitter LevelEventEmitter
 }
 
 // NewLevelManager creates a new level management system with the provided logger
@@ -21,6 +27,11 @@ func NewLevelManager(logger common.Logger) *LevelManager {
 		logger: logger,
 	}
 	return lm
+}
+
+// SetEventEmitter sets the event emitter for level change notifications.
+func (lm *LevelManager) SetEventEmitter(emitter LevelEventEmitter) {
+	lm.eventEmitter = emitter
 }
 
 // LoadLevels loads level configurations from the provided slice
@@ -61,8 +72,16 @@ func (lm *LevelManager) SetLevel(level int) {
 		lm.logger.Warn("Level exceeds available levels", "requested", level, "max", len(lm.levels))
 	}
 	oldLevel := lm.level
+	if oldLevel == level {
+		return // No change
+	}
 	lm.level = level
 	lm.logger.Debug("Level changed", "old_level", oldLevel, "new_level", lm.level)
+
+	// Emit level changed event
+	if lm.eventEmitter != nil {
+		lm.eventEmitter.EmitLevelChanged(oldLevel, lm.level)
+	}
 }
 
 // IncrementLevel increases the level by 1
@@ -77,8 +96,16 @@ func (lm *LevelManager) IncrementLevel() {
 // Reset resets the level to 1
 func (lm *LevelManager) Reset() {
 	oldLevel := lm.level
+	if oldLevel == 1 {
+		return // Already at level 1
+	}
 	lm.level = 1
 	lm.logger.Debug("Level reset", "old_level", oldLevel, "new_level", lm.level)
+
+	// Emit level changed event
+	if lm.eventEmitter != nil {
+		lm.eventEmitter.EmitLevelChanged(oldLevel, lm.level)
+	}
 }
 
 // HasMoreLevels returns true if there are more levels available
