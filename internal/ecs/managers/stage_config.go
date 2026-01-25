@@ -2,12 +2,12 @@ package managers
 
 // StageConfig defines the complete configuration for a Gyruss-style stage
 type StageConfig struct {
-	StageNumber int            `json:"stage_number"`
-	Planet      string         `json:"planet"`
-	Metadata    StageMetadata  `json:"metadata"`
-	Waves       []GyrussWave   `json:"waves"`
-	Boss        StageBossConfig `json:"boss"`
-	PowerUps    PowerUpConfig  `json:"power_ups"`
+	StageNumber int                `json:"stage_number"`
+	Planet      string             `json:"planet"`
+	Metadata    StageMetadata      `json:"metadata"`
+	Waves       []GyrussWave       `json:"waves"`
+	Boss        StageBossConfig    `json:"boss"`
+	PowerUps    PowerUpConfig      `json:"power_ups"`
 	Difficulty  DifficultySettings `json:"difficulty"`
 }
 
@@ -30,25 +30,25 @@ type GyrussWave struct {
 
 // EnemyGroupConfig defines a group of enemies in a wave
 type EnemyGroupConfig struct {
-	EnemyType         string            `json:"enemy_type"`
-	Count             int               `json:"count"`
-	SpawnDelay        float64           `json:"spawn_delay"`
-	SpawnInterval     float64           `json:"spawn_interval"`
-	EntryPath         EntryPathConfig   `json:"entry_path"`
-	ScaleAnimation    ScaleAnimConfig   `json:"scale_animation"`
-	Behavior          BehaviorConfig    `json:"behavior"`
-	AttackPattern     AttackConfig      `json:"attack_pattern"`
-	FirePattern       FireConfig        `json:"fire_pattern"`
-	Retreat           RetreatConfig     `json:"retreat"`
-	PowerUpTrigger    bool              `json:"powerup_trigger"`
-	PowerUpType       string            `json:"powerup_type"`
+	EnemyType      string          `json:"enemy_type"`
+	Count          int             `json:"count"`
+	SpawnDelay     float64         `json:"spawn_delay"`
+	SpawnInterval  float64         `json:"spawn_interval"`
+	EntryPath      EntryPathConfig `json:"entry_path"`
+	ScaleAnimation ScaleAnimConfig `json:"scale_animation"`
+	Behavior       BehaviorConfig  `json:"behavior"`
+	AttackPattern  AttackConfig    `json:"attack_pattern"`
+	FirePattern    FireConfig      `json:"fire_pattern"`
+	Retreat        RetreatConfig   `json:"retreat"`
+	PowerUpTrigger bool            `json:"powerup_trigger"`
+	PowerUpType    string          `json:"powerup_type"`
 }
 
 // EntryPathConfig defines entry path parameters
 type EntryPathConfig struct {
-	Type       string             `json:"type"` // "spiral_in", "arc_sweep", "straight_in", "loop_entry"
-	Duration   float64            `json:"duration"`
-	Parameters EntryPathParams    `json:"parameters"`
+	Type       string          `json:"type"` // "spiral_in", "arc_sweep", "straight_in", "loop_entry"
+	Duration   float64         `json:"duration"`
+	Parameters EntryPathParams `json:"parameters"`
 }
 
 // EntryPathParams contains path-specific parameters
@@ -77,21 +77,21 @@ type BehaviorConfig struct {
 
 // AttackConfig defines attack pattern parameters
 type AttackConfig struct {
-	Type       string  `json:"type"` // "none", "single_rush", "paired_rush", "loopback_rush", "suicide_dive"
-	Cooldown   float64 `json:"cooldown"`
-	RushSpeed  float64 `json:"rush_speed"`
+	Type        string  `json:"type"` // "none", "single_rush", "paired_rush", "loopback_rush", "suicide_dive"
+	Cooldown    float64 `json:"cooldown"`
+	RushSpeed   float64 `json:"rush_speed"`
 	ReturnSpeed float64 `json:"return_speed"`
 }
 
 // FireConfig defines fire pattern parameters
 type FireConfig struct {
-	Type              string  `json:"type"` // "none", "single_shot", "burst", "spray"
-	FireRate          float64 `json:"fire_rate"`
-	BurstCount        int     `json:"burst_count"`
-	SprayAngle        float64 `json:"spray_angle"`
-	ProjectileCount   int     `json:"projectile_count"`
-	FireWhileOrbit    bool    `json:"fire_while_orbit"`
-	FireWhileAttack   bool    `json:"fire_while_attack"`
+	Type            string  `json:"type"` // "none", "single_shot", "burst", "spray"
+	FireRate        float64 `json:"fire_rate"`
+	BurstCount      int     `json:"burst_count"`
+	SprayAngle      float64 `json:"spray_angle"`
+	ProjectileCount int     `json:"projectile_count"`
+	FireWhileOrbit  bool    `json:"fire_while_orbit"`
+	FireWhileAttack bool    `json:"fire_while_attack"`
 }
 
 // RetreatConfig defines retreat behavior
@@ -109,21 +109,21 @@ type WaveTiming struct {
 
 // StageBossConfig defines boss configuration for a stage
 type StageBossConfig struct {
-	Enabled       bool          `json:"enabled"`
-	BossType      string        `json:"boss_type"`
-	Health        int           `json:"health"`
-	Size          int           `json:"size"`
+	Enabled       bool            `json:"enabled"`
+	BossType      string          `json:"boss_type"`
+	Health        int             `json:"health"`
+	Size          int             `json:"size"`
 	EntryPath     EntryPathConfig `json:"entry_path"`
 	Behavior      BehaviorConfig  `json:"behavior"`
 	AttackPattern AttackConfig    `json:"attack_pattern"`
 	FirePattern   FireConfig      `json:"fire_pattern"`
-	SpawnDelay    float64       `json:"spawn_delay"`
-	Points        int           `json:"points"`
+	SpawnDelay    float64         `json:"spawn_delay"`
+	Points        int             `json:"points"`
 }
 
 // PowerUpConfig defines power-up drop configuration
 type PowerUpConfig struct {
-	DropChance float64            `json:"drop_chance"`
+	DropChance float64             `json:"drop_chance"`
 	Types      []PowerUpTypeConfig `json:"types"`
 }
 

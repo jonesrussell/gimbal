@@ -123,11 +123,11 @@ func NewHealthData(current, maximum int) HealthData {
 type PathType int
 
 const (
-	PathTypeSpiralIn  PathType = iota // Spiral inward from edge
-	PathTypeArcSweep                  // Arc sweep from edge
-	PathTypeStraightIn                // Straight line from edge
-	PathTypeLoopEntry                 // Loop path entry
-	PathTypeRandomOutward             // Random outward movement
+	PathTypeSpiralIn      PathType = iota // Spiral inward from edge
+	PathTypeArcSweep                      // Arc sweep from edge
+	PathTypeStraightIn                    // Straight line from edge
+	PathTypeLoopEntry                     // Loop path entry
+	PathTypeRandomOutward                 // Random outward movement
 )
 
 // BehaviorStateType represents enemy behavior states
@@ -192,14 +192,14 @@ const (
 
 // EntryPathData defines parametric entry path for enemy warp-in
 type EntryPathData struct {
-	PathType      PathType      // Type of entry path
-	Progress      float64       // 0.0 to 1.0
-	Duration      float64       // Total duration in seconds
-	ElapsedTime   float64       // Time elapsed since entry started
-	StartPosition common.Point  // Starting position (near center)
-	EndPosition   common.Point  // Target position (on orbit ring)
-	Parameters    PathParams    // Path-specific parameters
-	IsComplete    bool          // Whether entry is complete
+	PathType      PathType     // Type of entry path
+	Progress      float64      // 0.0 to 1.0
+	Duration      float64      // Total duration in seconds
+	ElapsedTime   float64      // Time elapsed since entry started
+	StartPosition common.Point // Starting position (near center)
+	EndPosition   common.Point // Target position (on orbit ring)
+	Parameters    PathParams   // Path-specific parameters
+	IsComplete    bool         // Whether entry is complete
 }
 
 // PathParams stores path-specific configuration
@@ -239,29 +239,29 @@ type ScaleAnimationData struct {
 
 // AttackPatternData stores attack behavior configuration
 type AttackPatternData struct {
-	PatternType     AttackPatternType // Type of attack pattern
-	RushSpeed       float64           // Speed during rush attacks
-	ReturnSpeed     float64           // Speed when returning to orbit
-	AttackDuration  time.Duration     // Duration of attack phase
-	AttackTimer     time.Duration     // Timer for current attack
-	TargetPosition  common.Point      // Target position for attack
-	ReturnPosition  common.Point      // Position to return to
-	IsActive        bool              // Whether attack is currently active
-	PairEntityID    int               // Partner entity ID for paired attacks
+	PatternType    AttackPatternType // Type of attack pattern
+	RushSpeed      float64           // Speed during rush attacks
+	ReturnSpeed    float64           // Speed when returning to orbit
+	AttackDuration time.Duration     // Duration of attack phase
+	AttackTimer    time.Duration     // Timer for current attack
+	TargetPosition common.Point      // Target position for attack
+	ReturnPosition common.Point      // Position to return to
+	IsActive       bool              // Whether attack is currently active
+	PairEntityID   int               // Partner entity ID for paired attacks
 }
 
 // FirePatternData stores firing behavior configuration
 type FirePatternData struct {
-	PatternType     FirePatternType // Type of fire pattern
-	FireRate        float64         // Shots per second
-	BurstCount      int             // Number of shots in a burst
-	BurstFired      int             // Shots fired in current burst
-	SprayAngle      float64         // Angle spread for spray pattern
-	ProjectileCount int             // Number of projectiles for spray
-	LastFireTime    time.Duration   // Time since last shot
-	FireCooldown    time.Duration   // Time between shots
-	CanFireWhileOrbit bool          // Fire while orbiting
-	CanFireWhileAttack bool         // Fire while attacking
+	PatternType        FirePatternType // Type of fire pattern
+	FireRate           float64         // Shots per second
+	BurstCount         int             // Number of shots in a burst
+	BurstFired         int             // Shots fired in current burst
+	SprayAngle         float64         // Angle spread for spray pattern
+	ProjectileCount    int             // Number of projectiles for spray
+	LastFireTime       time.Duration   // Time since last shot
+	FireCooldown       time.Duration   // Time between shots
+	CanFireWhileOrbit  bool            // Fire while orbiting
+	CanFireWhileAttack bool            // Fire while attacking
 }
 
 // RetreatTimerData stores retreat behavior

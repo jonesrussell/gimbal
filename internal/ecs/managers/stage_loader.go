@@ -11,9 +11,9 @@ import (
 
 // StageLoader loads stage configurations from JSON files
 type StageLoader struct {
-	logger     common.Logger
-	assetsFS   embed.FS
-	stagePath  string
+	logger    common.Logger
+	assetsFS  embed.FS
+	stagePath string
 }
 
 // NewStageLoader creates a new stage loader
@@ -169,9 +169,9 @@ func (sl *StageLoader) createDefaultStage(stageNumber int) *StageConfig {
 				RushSpeed: 250.0,
 			},
 			FirePattern: FireConfig{
-				Type:           "spray",
-				FireRate:       2.0,
-				SprayAngle:     60.0,
+				Type:            "spray",
+				FireRate:        2.0,
+				SprayAngle:      60.0,
 				ProjectileCount: 5,
 				FireWhileOrbit:  true,
 				FireWhileAttack: true,

@@ -18,23 +18,23 @@ import (
 )
 
 const (
-	PowerUpSize         = 16
-	PowerUpOrbitSpeed   = 30.0  // degrees per second
-	PowerUpLifetime     = 10.0  // seconds before despawn
-	PowerUpDropChance   = 0.15  // 15% chance to drop
-	CollisionDistance   = 30.0  // pixels for collection
-	DoubleFireRate      = 2.0   // Fire rate multiplier for double shot
+	PowerUpSize       = 16
+	PowerUpOrbitSpeed = 30.0 // degrees per second
+	PowerUpLifetime   = 10.0 // seconds before despawn
+	PowerUpDropChance = 0.15 // 15% chance to drop
+	CollisionDistance = 30.0 // pixels for collection
+	DoubleFireRate    = 2.0  // Fire rate multiplier for double shot
 )
 
 // PowerUpSystem manages power-up spawning, movement, and collection
 type PowerUpSystem struct {
-	world            donburi.World
-	config           *config.GameConfig
-	logger           common.Logger
-	screenCenter     common.Point
-	sprites          map[core.PowerUpType]*ebiten.Image
-	playerHasDouble  bool
-	doubleRemaining  time.Duration
+	world           donburi.World
+	config          *config.GameConfig
+	logger          common.Logger
+	screenCenter    common.Point
+	sprites         map[core.PowerUpType]*ebiten.Image
+	playerHasDouble bool
+	doubleRemaining time.Duration
 }
 
 // NewPowerUpSystem creates a new power-up system
@@ -51,7 +51,7 @@ func NewPowerUpSystem(
 			X: float64(cfg.ScreenSize.Width) / 2,
 			Y: float64(cfg.ScreenSize.Height) / 2,
 		},
-		sprites:        make(map[core.PowerUpType]*ebiten.Image),
+		sprites:         make(map[core.PowerUpType]*ebiten.Image),
 		playerHasDouble: false,
 		doubleRemaining: 0,
 	}

@@ -6,9 +6,9 @@ import (
 
 // LevelManager manages the game level progression
 type LevelManager struct {
-	level      int
-	maxLevels  int
-	logger     common.Logger
+	level     int
+	maxLevels int
+	logger    common.Logger
 }
 
 // NewLevelManager creates a new level management system with the provided logger

@@ -13,10 +13,10 @@ import (
 
 // HoveringState handles hovering near the center before orbiting
 type HoveringState struct {
-	config       *config.GameConfig
-	logger       common.Logger
-	hoverRadius  float64       // Radius to hover at
-	hoverTime    time.Duration // How long to hover before moving to orbit
+	config      *config.GameConfig
+	logger      common.Logger
+	hoverRadius float64       // Radius to hover at
+	hoverTime   time.Duration // How long to hover before moving to orbit
 }
 
 // NewHoveringState creates a new hovering state handler
@@ -24,8 +24,8 @@ func NewHoveringState(cfg *config.GameConfig, logger common.Logger) *HoveringSta
 	return &HoveringState{
 		config:      cfg,
 		logger:      logger,
-		hoverRadius: 80.0,              // Hover 80 pixels from center
-		hoverTime:   2 * time.Second,   // Hover for 2 seconds
+		hoverRadius: 80.0,            // Hover 80 pixels from center
+		hoverTime:   2 * time.Second, // Hover for 2 seconds
 	}
 }
 

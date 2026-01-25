@@ -14,10 +14,10 @@ import (
 
 // PathSystem handles parametric entry path execution for enemies
 type PathSystem struct {
-	world       donburi.World
-	config      *config.GameConfig
-	logger      common.Logger
-	registry    *PathRegistry
+	world        donburi.World
+	config       *config.GameConfig
+	logger       common.Logger
+	registry     *PathRegistry
 	screenCenter common.Point
 }
 
