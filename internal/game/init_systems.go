@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
-	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/gyruss"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
@@ -38,99 +39,64 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 
 // createGameplaySystems creates gameplay ECS systems
 func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
-	enemyConfigMap, configErr := g.loadEntityConfigs(ctx)
-	if configErr != nil {
-		return configErr
-	}
-
-	if err := g.createBasicSystems(enemyConfigMap); err != nil {
-		return err
-	}
-
-	g.loadInitialLevelConfig()
-	g.createRemainingSystems(ctx)
-	return nil
-}
-
-// loadEntityConfigs loads and converts player and enemy configurations
-func (g *ECSGame) loadEntityConfigs(ctx context.Context) (map[enemy.EnemyType]enemy.EnemyTypeData, error) {
 	// Load player config
 	playerConfig, err := managers.LoadPlayerConfig(ctx, g.logger)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load player config: %w", err)
+		return fmt.Errorf("failed to load player config: %w", err)
 	}
 	g.playerConfig = playerConfig
 	g.logger.Debug("Player config loaded", "health", playerConfig.Health, "size", playerConfig.Size)
 
-	// Load enemy configs
-	enemyConfigs, err := managers.LoadEnemyConfigs(ctx, g.logger)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load enemy configs: %w", err)
+	if err := g.createBasicSystems(); err != nil {
+		return err
 	}
 
-	// Convert enemy configs to map[EnemyType]EnemyTypeData
-	enemyConfigMap := make(map[enemy.EnemyType]enemy.EnemyTypeData)
-	for _, enemyConfig := range enemyConfigs.EnemyTypes {
-		enemyType, typeErr := enemy.GetEnemyTypeFromString(enemyConfig.Type)
-		if typeErr != nil {
-			return nil, fmt.Errorf("invalid enemy type '%s': %w", enemyConfig.Type, typeErr)
-		}
-		enemyData, convertErr := enemy.ConvertEnemyTypeConfig(&enemyConfig, enemyType)
-		if convertErr != nil {
-			return nil, fmt.Errorf("failed to convert enemy config for type '%s': %w", enemyConfig.Type, err)
-		}
-		enemyConfigMap[enemyType] = enemyData
+	g.createRemainingSystems(ctx)
+
+	// Load initial stage into Gyruss system
+	if err := g.gyrussSystem.LoadStage(1); err != nil {
+		g.logger.Warn("Failed to load initial stage", "error", err)
 	}
-	g.logger.Debug("Enemy configs loaded and converted", "count", len(enemyConfigMap))
-	return enemyConfigMap, nil
-}
 
-// createBasicSystems creates health, movement, and enemy systems
-func (g *ECSGame) createBasicSystems(enemyConfigMap map[enemy.EnemyType]enemy.EnemyTypeData) error {
-	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
-	g.logger.Debug("Health system created")
-	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.logger, g.inputHandler)
-	g.logger.Debug("Movement system created")
-	g.enemySystem = enemy.NewEnemySystem(g.world, g.config, g.resourceManager, g.logger)
-
-	// Load enemy configs into enemy system
-	g.enemySystem.LoadEnemyConfigs(enemyConfigMap)
-	g.logger.Debug("Enemy configs loaded into enemy system")
 	return nil
 }
 
-// loadInitialLevelConfig loads the initial level configuration into the enemy system
-func (g *ECSGame) loadInitialLevelConfig() {
-	levelConfig := g.levelManager.GetCurrentLevelConfig()
-	if levelConfig != nil {
-		enemyWaves := convertWaveConfigs(levelConfig.Waves)
-		g.enemySystem.LoadLevelConfig(enemyWaves, &levelConfig.Boss)
-		g.logger.Debug("Initial level config loaded into enemy system",
-			"level", levelConfig.LevelNumber,
-			"waves", len(levelConfig.Waves))
-	}
+// createBasicSystems creates health, movement, and Gyruss systems
+func (g *ECSGame) createBasicSystems() error {
+	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
+	g.logger.Debug("Health system created")
+
+	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.logger, g.inputHandler)
+	g.logger.Debug("Movement system created")
+
+	// Create Gyruss system (replaces EnemySystem)
+	g.gyrussSystem = gyruss.NewGyrussSystem(&gyruss.GyrussSystemConfig{
+		World:       g.world,
+		GameConfig:  g.config,
+		ResourceMgr: g.resourceManager,
+		Logger:      g.logger,
+		AssetsFS:    assets.Assets,
+	})
+	g.logger.Debug("Gyruss system created")
+
+	return nil
 }
 
-// createRemainingSystems creates enemy weapon, weapon, and collision systems
+// createRemainingSystems creates weapon and collision systems
 func (g *ECSGame) createRemainingSystems(ctx context.Context) {
-	g.enemyWeaponSystem = enemy.NewEnemyWeaponSystem(ctx, &enemy.EnemyWeaponSystemConfig{
-		World:       g.world,
-		Config:      g.config,
-		Logger:      g.logger,
-		EnemySystem: g.enemySystem,
-		ResourceMgr: g.resourceManager,
-	})
-	g.logger.Debug("Enemy weapon system created")
 	g.weaponSystem = weapon.NewWeaponSystem(g.world, g.config)
+	g.logger.Debug("Weapon system created")
+
 	g.collisionSystem = collision.NewCollisionSystem(&collision.CollisionSystemConfig{
 		World:        g.world,
 		Config:       g.config,
 		HealthSystem: g.healthSystem,
 		EventSystem:  g.eventSystem,
 		ScoreManager: g.scoreManager,
-		EnemySystem:  g.enemySystem,
+		EnemySystem:  g.gyrussSystem, // GyrussSystem implements EnemySystemInterface
 		Logger:       g.logger,
 	})
+	g.logger.Debug("Collision system created")
 }
 
 // registerAllSystems registers and initializes all systems

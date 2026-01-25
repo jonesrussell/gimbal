@@ -1,0 +1,312 @@
+{
+  "stage_number": 2,
+  "planet": "Mars",
+  "metadata": {
+    "name": "Mars to Jupiter",
+    "description": "The red planet challenge",
+    "music_track": "",
+    "background": "default"
+  },
+  "waves": [
+    {
+      "wave_id": "mars_wave_1",
+      "description": "Quick spiral formation",
+      "spawn_sequence": [
+        {
+          "enemy_type": "basic",
+          "count": 10,
+          "spawn_delay": 0.0,
+          "spawn_interval": 0.12,
+          "entry_path": {
+            "type": "spiral_in",
+            "duration": 1.8,
+            "parameters": {
+              "spiral_turns": 2.0,
+              "rotation_direction": "clockwise",
+              "start_radius": 20
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.1,
+            "end_scale": 1.0,
+            "easing": "ease_out"
+          },
+          "behavior": {
+            "post_entry": "orbit_then_attack",
+            "orbit_duration": 2.5,
+            "orbit_direction": "counter_clockwise",
+            "orbit_speed": 50.0,
+            "max_attacks": 2
+          },
+          "attack_pattern": {
+            "type": "single_rush",
+            "cooldown": 4.0,
+            "rush_speed": 320.0,
+            "return_speed": 220.0
+          },
+          "fire_pattern": {
+            "type": "single_shot",
+            "fire_rate": 0.7,
+            "fire_while_orbit": true,
+            "fire_while_attack": false
+          },
+          "retreat": {
+            "health_threshold": 0.2,
+            "timeout": 12.0,
+            "speed": 220.0
+          }
+        }
+      ],
+      "on_clear": "next_wave",
+      "timing": {
+        "inter_wave_delay": 0.0,
+        "timeout": 25.0
+      }
+    },
+    {
+      "wave_id": "mars_wave_2",
+      "description": "Heavy units introduction",
+      "spawn_sequence": [
+        {
+          "enemy_type": "basic",
+          "count": 6,
+          "spawn_delay": 0.0,
+          "spawn_interval": 0.15,
+          "entry_path": {
+            "type": "arc_sweep",
+            "duration": 2.0,
+            "parameters": {
+              "arc_angle": 120.0,
+              "rotation_direction": "clockwise",
+              "start_radius": 25
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.1,
+            "end_scale": 1.0,
+            "easing": "ease_out"
+          },
+          "behavior": {
+            "post_entry": "orbit_only",
+            "orbit_duration": 4.0,
+            "orbit_direction": "clockwise",
+            "orbit_speed": 45.0,
+            "max_attacks": 0
+          },
+          "attack_pattern": {
+            "type": "none"
+          },
+          "fire_pattern": {
+            "type": "single_shot",
+            "fire_rate": 0.5,
+            "fire_while_orbit": true
+          },
+          "retreat": {
+            "timeout": 18.0,
+            "speed": 200.0
+          }
+        },
+        {
+          "enemy_type": "heavy",
+          "count": 3,
+          "spawn_delay": 1.5,
+          "spawn_interval": 0.5,
+          "entry_path": {
+            "type": "straight_in",
+            "duration": 2.5,
+            "parameters": {
+              "start_radius": 15
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.15,
+            "end_scale": 1.0,
+            "easing": "ease_in_out"
+          },
+          "behavior": {
+            "post_entry": "orbit_then_attack",
+            "orbit_duration": 2.0,
+            "orbit_direction": "counter_clockwise",
+            "orbit_speed": 35.0,
+            "max_attacks": 3
+          },
+          "attack_pattern": {
+            "type": "paired_rush",
+            "cooldown": 5.0,
+            "rush_speed": 250.0
+          },
+          "fire_pattern": {
+            "type": "burst",
+            "fire_rate": 0.8,
+            "burst_count": 3,
+            "fire_while_orbit": true,
+            "fire_while_attack": true
+          },
+          "retreat": {
+            "health_threshold": 0.3,
+            "timeout": 20.0,
+            "speed": 180.0
+          },
+          "powerup_trigger": true,
+          "powerup_type": "double_shot"
+        }
+      ],
+      "on_clear": "next_wave",
+      "timing": {
+        "inter_wave_delay": 2.5,
+        "timeout": 35.0
+      }
+    },
+    {
+      "wave_id": "mars_wave_3",
+      "description": "Mixed assault",
+      "spawn_sequence": [
+        {
+          "enemy_type": "basic",
+          "count": 8,
+          "spawn_delay": 0.0,
+          "spawn_interval": 0.1,
+          "entry_path": {
+            "type": "spiral_in",
+            "duration": 1.5,
+            "parameters": {
+              "spiral_turns": 1.0,
+              "rotation_direction": "counter_clockwise",
+              "start_radius": 18
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.1,
+            "end_scale": 1.0,
+            "easing": "ease_out"
+          },
+          "behavior": {
+            "post_entry": "immediate_attack",
+            "orbit_duration": 1.5,
+            "orbit_direction": "clockwise",
+            "orbit_speed": 60.0,
+            "max_attacks": 1
+          },
+          "attack_pattern": {
+            "type": "single_rush",
+            "cooldown": 2.5,
+            "rush_speed": 350.0
+          },
+          "fire_pattern": {
+            "type": "single_shot",
+            "fire_rate": 1.0,
+            "fire_while_orbit": true
+          },
+          "retreat": {
+            "timeout": 10.0,
+            "speed": 250.0
+          }
+        },
+        {
+          "enemy_type": "heavy",
+          "count": 2,
+          "spawn_delay": 2.0,
+          "spawn_interval": 0.8,
+          "entry_path": {
+            "type": "straight_in",
+            "duration": 3.0,
+            "parameters": {
+              "start_radius": 12
+            }
+          },
+          "scale_animation": {
+            "start_scale": 0.2,
+            "end_scale": 1.0,
+            "easing": "ease_out"
+          },
+          "behavior": {
+            "post_entry": "orbit_then_attack",
+            "orbit_duration": 3.0,
+            "orbit_direction": "clockwise",
+            "orbit_speed": 40.0,
+            "max_attacks": 2
+          },
+          "attack_pattern": {
+            "type": "loopback_rush",
+            "cooldown": 6.0,
+            "rush_speed": 280.0
+          },
+          "fire_pattern": {
+            "type": "spray",
+            "fire_rate": 1.2,
+            "spray_angle": 45.0,
+            "projectile_count": 3,
+            "fire_while_orbit": true
+          },
+          "retreat": {
+            "timeout": 15.0,
+            "speed": 200.0
+          },
+          "powerup_trigger": true,
+          "powerup_type": "extra_life"
+        }
+      ],
+      "on_clear": "boss",
+      "timing": {
+        "inter_wave_delay": 2.0,
+        "timeout": 30.0
+      }
+    }
+  ],
+  "boss": {
+    "enabled": true,
+    "boss_type": "mars_boss",
+    "health": 20,
+    "size": 72,
+    "entry_path": {
+      "type": "straight_in",
+      "duration": 3.5,
+      "parameters": {
+        "start_radius": 8
+      }
+    },
+    "behavior": {
+      "post_entry": "hover_center_then_orbit",
+      "orbit_duration": 1.5,
+      "orbit_direction": "counter_clockwise",
+      "orbit_speed": 30.0,
+      "max_attacks": 0
+    },
+    "attack_pattern": {
+      "type": "loopback_rush",
+      "cooldown": 5.0,
+      "rush_speed": 220.0
+    },
+    "fire_pattern": {
+      "type": "spray",
+      "fire_rate": 1.8,
+      "spray_angle": 75.0,
+      "projectile_count": 7,
+      "fire_while_orbit": true,
+      "fire_while_attack": true
+    },
+    "spawn_delay": 3.0,
+    "points": 2000
+  },
+  "power_ups": {
+    "drop_chance": 0.18,
+    "types": [
+      {
+        "type": "double_shot",
+        "weight": 0.65,
+        "duration": 12.0
+      },
+      {
+        "type": "extra_life",
+        "weight": 0.35
+      }
+    ]
+  },
+  "difficulty": {
+    "enemy_speed_multiplier": 1.1,
+    "enemy_health_multiplier": 1.1,
+    "enemy_spawn_rate_multiplier": 1.05,
+    "player_damage_multiplier": 1.0,
+    "score_multiplier": 1.2
+  }
+}

@@ -7,17 +7,15 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	v2text "github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-
-	enemysys "github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 )
 
 // drawWaveDebugInfo draws wave information at the bottom of the screen
 func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
-	if g.enemySystem == nil {
+	if g.gyrussSystem == nil {
 		return
 	}
 
-	waveManager := g.enemySystem.GetWaveManager()
+	waveManager := g.gyrussSystem.GetWaveManager()
 	if waveManager == nil {
 		return
 	}
@@ -26,104 +24,57 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 	lineHeight := 20.0
 	x := 10.0
 
-	currentWave := waveManager.GetCurrentWave()
-	if currentWave == nil {
-		g.drawNoWaveDebugInfo(screen, waveManager, x, screenHeight, lineHeight)
+	// Get stage info
+	stageConfig := waveManager.GetStageConfig()
+	if stageConfig == nil {
+		g.drawDebugText(screen, "Stage: Not loaded", x, screenHeight-lineHeight)
 		return
 	}
 
-	g.drawActiveWaveDebugInfo(screen, currentWave, waveManager, struct {
-		x, screenHeight, lineHeight float64
-	}{x, screenHeight, lineHeight})
-}
-
-// drawNoWaveDebugInfo handles debug info when no active wave
-func (g *ECSGame) drawNoWaveDebugInfo(
-	screen *ebiten.Image,
-	waveManager *enemysys.WaveManager,
-	x, screenHeight, lineHeight float64,
-) {
-	if !waveManager.HasMoreWaves() {
-		// All waves complete - show boss info if boss is active or spawning
-		if g.enemySystem.IsBossActive() || g.enemySystem.WasBossSpawned() {
+	// Check if boss is triggered
+	if waveManager.IsBossTriggered() {
+		if g.gyrussSystem.IsBossActive() {
 			g.drawBossDebugInfo(screen, x, screenHeight, lineHeight)
-			return
-		}
-		// Boss not spawned yet - show spawn timer
-		if g.enemySystem.WasBossSpawned() {
-			// Boss was spawned but is dead
+		} else if g.gyrussSystem.IsBossDefeated() {
 			g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
-			return
+		} else {
+			g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
 		}
-		// Boss spawning soon
-		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
 		return
 	}
 
-	// Still have waves - show waiting status
-	var statusText string
-	if waveManager.IsWaiting() {
-		statusText = "Wave: Waiting for next wave..."
-	} else {
-		statusText = "Wave: Starting..."
-	}
-	g.drawDebugText(screen, statusText, x, screenHeight-lineHeight)
-}
+	// Show wave info
+	currentWaveIndex := waveManager.GetCurrentWaveIndex()
+	waveCount := waveManager.GetWaveCount()
 
-// drawActiveWaveDebugInfo handles debug info for active wave
-func (g *ECSGame) drawActiveWaveDebugInfo(
-	screen *ebiten.Image,
-	currentWave *enemysys.WaveState,
-	waveManager *enemysys.WaveManager,
-	pos struct{ x, screenHeight, lineHeight float64 },
-) {
-	x := pos.x
-	screenHeight := pos.screenHeight
-	lineHeight := pos.lineHeight
-	// Format formation type
-	formationName := g.formatFormationType(currentWave.Config.FormationType)
-
-	// Format enemy types
-	enemyTypesStr := g.formatEnemyTypes(currentWave.Config.EnemyTypes)
-
-	// Calculate progress
-	progress := float64(currentWave.EnemiesKilled) / float64(currentWave.Config.EnemyCount) * 100
-	if currentWave.Config.EnemyCount == 0 {
-		progress = 0
+	if waveManager.IsWaitingForLevelStart() {
+		g.drawDebugText(screen, "Stage: Starting...", x, screenHeight-lineHeight)
+		return
 	}
 
-	// Calculate number of lines to determine starting Y position
-	// Wave, Formation, Enemies, Spawned, Types, Pattern, Status, Timer
-	numLines := 8
-	startY := screenHeight - float64(numLines)*lineHeight - 20 // Increased margin to prevent cutoff
+	if !waveManager.HasMoreWaves() {
+		g.drawDebugText(screen, "Waves: Complete", x, screenHeight-lineHeight)
+		return
+	}
 
-	// Draw wave information from bottom up
+	// Calculate number of lines
+	numLines := 4
+	startY := screenHeight - float64(numLines)*lineHeight - 20
+
 	y := startY
-	g.drawDebugText(screen, fmt.Sprintf("Wave %d/%d", currentWave.WaveIndex+1, waveManager.GetWaveCount()), x, y)
+	g.drawDebugText(screen, fmt.Sprintf("Stage %d: %s", stageConfig.StageNumber, stageConfig.Metadata.Name), x, y)
 	y += lineHeight
-	g.drawDebugText(screen, fmt.Sprintf("Formation: %s", formationName), x, y)
+	g.drawDebugText(screen, fmt.Sprintf("Wave %d/%d", currentWaveIndex+1, waveCount), x, y)
 	y += lineHeight
-	enemyText := fmt.Sprintf("Enemies: %d/%d (%.0f%%)",
-		currentWave.EnemiesKilled, currentWave.Config.EnemyCount, progress)
-	g.drawDebugText(screen, enemyText, x, y)
-	y += lineHeight
-	g.drawDebugText(screen, fmt.Sprintf("Spawned: %d", currentWave.EnemiesSpawned), x, y)
-	y += lineHeight
-	g.drawDebugText(screen, fmt.Sprintf("Types: %s", enemyTypesStr), x, y)
-	y += lineHeight
-	patternText := fmt.Sprintf("Pattern: %s",
-		g.formatMovementPattern(currentWave.Config.MovementPattern))
-	g.drawDebugText(screen, patternText, x, y)
-	y += lineHeight
-	if currentWave.IsSpawning {
-		g.drawDebugText(screen, "Status: Spawning", x, y)
-	} else if currentWave.IsComplete {
-		g.drawDebugText(screen, "Status: Complete", x, y)
-	} else {
-		g.drawDebugText(screen, "Status: Active", x, y)
+
+	// Show current wave description if available
+	if currentWaveIndex < len(stageConfig.Waves) {
+		wave := stageConfig.Waves[currentWaveIndex]
+		g.drawDebugText(screen, fmt.Sprintf("Wave: %s", wave.Description), x, y)
+		y += lineHeight
 	}
-	y += lineHeight
-	g.drawDebugText(screen, fmt.Sprintf("Timer: %.1fs", currentWave.WaveTimer.Seconds()), x, y)
+
+	g.drawDebugText(screen, fmt.Sprintf("Stage: %s", stageConfig.Planet), x, y)
 }
 
 // drawDebugText draws text with a semi-transparent background
