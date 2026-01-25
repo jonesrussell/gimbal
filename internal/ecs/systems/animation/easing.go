@@ -1,8 +1,6 @@
 package animation
 
 import (
-	"math"
-
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -43,25 +41,9 @@ func easeInOutQuad(t float64) float64 {
 	if t < 0.5 {
 		return 2 * t * t
 	}
-	return 1 - math.Pow(-2*t+2, 2)/2
-}
-
-// easeInCubic - cubic ease in
-func easeInCubic(t float64) float64 {
-	return t * t * t
-}
-
-// easeOutCubic - cubic ease out
-func easeOutCubic(t float64) float64 {
-	return 1 - math.Pow(1-t, 3)
-}
-
-// easeInOutCubic - cubic ease in and out
-func easeInOutCubic(t float64) float64 {
-	if t < 0.5 {
-		return 4 * t * t * t
-	}
-	return 1 - math.Pow(-2*t+2, 3)/2
+	// Expanded from: 1 - math.Pow(-2*t+2, 2)/2
+	x := -2*t + 2
+	return 1 - (x*x)/2
 }
 
 // Lerp performs linear interpolation between two values

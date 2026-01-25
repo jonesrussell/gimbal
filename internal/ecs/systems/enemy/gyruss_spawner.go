@@ -49,6 +49,8 @@ func NewGyrussSpawner(
 }
 
 // SpawnEnemy spawns an enemy with full Gyruss components from group config
+//
+//nolint:funlen // Entity setup requires setting many related components sequentially
 func (gs *GyrussSpawner) SpawnEnemy(ctx context.Context, groupConfig *managers.EnemyGroupConfig, spawnIndex int) donburi.Entity {
 	// Create entity with all Gyruss components
 	entity := gs.world.Create(
@@ -200,6 +202,8 @@ func (gs *GyrussSpawner) SpawnEnemy(ctx context.Context, groupConfig *managers.E
 }
 
 // SpawnBoss spawns a boss with Gyruss components
+//
+//nolint:funlen // Entity setup requires setting many related components sequentially
 func (gs *GyrussSpawner) SpawnBoss(ctx context.Context, bossConfig *managers.StageBossConfig) donburi.Entity {
 	entity := gs.world.Create(
 		core.EnemyTag,
@@ -326,13 +330,13 @@ func (gs *GyrussSpawner) SpawnBoss(ctx context.Context, bossConfig *managers.Sta
 // getEnemyType converts string type to EnemyType enum
 func (gs *GyrussSpawner) getEnemyType(typeStr string) EnemyType {
 	switch typeStr {
-	case "basic":
+	case EnemyTypeStrBasic:
 		return EnemyTypeBasic
-	case "heavy":
+	case EnemyTypeStrHeavy:
 		return EnemyTypeHeavy
-	case "boss":
+	case EnemyTypeStrBoss:
 		return EnemyTypeBoss
-	case "satellite":
+	case EnemyTypeStrSatellite:
 		return EnemyTypeBasic // Map to basic for now
 	default:
 		return EnemyTypeBasic
@@ -342,11 +346,11 @@ func (gs *GyrussSpawner) getEnemyType(typeStr string) EnemyType {
 // getHealthForType returns health for an enemy type
 func (gs *GyrussSpawner) getHealthForType(typeStr string) int {
 	switch typeStr {
-	case "basic":
+	case EnemyTypeStrBasic:
 		return 1
-	case "heavy":
+	case EnemyTypeStrHeavy:
 		return 3
-	case "satellite":
+	case EnemyTypeStrSatellite:
 		return 1
 	default:
 		return 1
@@ -385,11 +389,11 @@ func (gs *GyrussSpawner) getSprite(ctx context.Context, typeStr string) *ebiten.
 	// Color based on type
 	var clr color.RGBA
 	switch typeStr {
-	case "basic":
+	case EnemyTypeStrBasic:
 		clr = color.RGBA{R: 255, G: 0, B: 0, A: 255} // Red
-	case "heavy":
+	case EnemyTypeStrHeavy:
 		clr = color.RGBA{R: 255, G: 165, B: 0, A: 255} // Orange
-	case "satellite":
+	case EnemyTypeStrSatellite:
 		clr = color.RGBA{R: 100, G: 100, B: 255, A: 255} // Light blue
 	case "earth_boss":
 		clr = color.RGBA{R: 128, G: 0, B: 128, A: 255} // Purple

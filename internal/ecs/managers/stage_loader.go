@@ -40,11 +40,11 @@ func (sl *StageLoader) LoadStage(stageNumber int) (*StageConfig, error) {
 	}
 
 	var config StageConfig
-	if err := json.Unmarshal(data, &config); err != nil {
+	if unmarshalErr := json.Unmarshal(data, &config); unmarshalErr != nil {
 		sl.logger.Error("Failed to parse stage config",
 			"stage", stageNumber,
-			"error", err)
-		return nil, fmt.Errorf("failed to parse stage %d: %w", stageNumber, err)
+			"error", unmarshalErr)
+		return nil, fmt.Errorf("failed to parse stage %d: %w", stageNumber, unmarshalErr)
 	}
 
 	sl.logger.Debug("Stage loaded",
@@ -78,120 +78,93 @@ func (sl *StageLoader) LoadStageByName(planetName string) (*StageConfig, error) 
 
 // createDefaultStage creates a default stage configuration
 func (sl *StageLoader) createDefaultStage(stageNumber int) *StageConfig {
-	planets := []string{"Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"}
-	planet := "Unknown"
-	if stageNumber > 0 && stageNumber <= len(planets) {
-		planet = planets[stageNumber-1]
-	}
+	planet := sl.getPlanetName(stageNumber)
 
 	return &StageConfig{
 		StageNumber: stageNumber,
 		Planet:      planet,
-		Metadata: StageMetadata{
-			Name:        fmt.Sprintf("Stage %d - %s", stageNumber, planet),
-			Description: fmt.Sprintf("Journey to %s", planet),
-			MusicTrack:  "",
-			Background:  "default",
+		Metadata:    sl.createDefaultMetadata(stageNumber, planet),
+		Waves:       []GyrussWave{sl.createDefaultWave()},
+		Boss:        sl.createDefaultBoss(),
+		PowerUps:    sl.createDefaultPowerUps(),
+		Difficulty:  DefaultDifficultySettings(),
+	}
+}
+
+func (sl *StageLoader) getPlanetName(stageNumber int) string {
+	planets := []string{"Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"}
+	if stageNumber > 0 && stageNumber <= len(planets) {
+		return planets[stageNumber-1]
+	}
+	return "Unknown"
+}
+
+func (sl *StageLoader) createDefaultMetadata(stageNumber int, planet string) StageMetadata {
+	return StageMetadata{
+		Name:        fmt.Sprintf("Stage %d - %s", stageNumber, planet),
+		Description: fmt.Sprintf("Journey to %s", planet),
+		MusicTrack:  "",
+		Background:  "default",
+	}
+}
+
+func (sl *StageLoader) createDefaultWave() GyrussWave {
+	return GyrussWave{
+		WaveID:        "default_wave_1",
+		Description:   "Opening wave",
+		SpawnSequence: []EnemyGroupConfig{sl.createDefaultEnemyGroup()},
+		Timing:        WaveTiming{InterWaveDelay: 2.0, Timeout: 30.0},
+	}
+}
+
+func (sl *StageLoader) createDefaultEnemyGroup() EnemyGroupConfig {
+	return EnemyGroupConfig{
+		EnemyType:     "basic",
+		Count:         8,
+		SpawnDelay:    0.0,
+		SpawnInterval: 0.3,
+		EntryPath: EntryPathConfig{
+			Type: "spiral_in", Duration: 2.0,
+			Parameters: EntryPathParams{SpiralTurns: 1.5, RotationDirection: "clockwise", StartRadius: 20},
 		},
-		Waves: []GyrussWave{
-			{
-				WaveID:      "default_wave_1",
-				Description: "Opening wave",
-				SpawnSequence: []EnemyGroupConfig{
-					{
-						EnemyType:     "basic",
-						Count:         8,
-						SpawnDelay:    0.0,
-						SpawnInterval: 0.3,
-						EntryPath: EntryPathConfig{
-							Type:     "spiral_in",
-							Duration: 2.0,
-							Parameters: EntryPathParams{
-								SpiralTurns:       1.5,
-								RotationDirection: "clockwise",
-								StartRadius:       20,
-							},
-						},
-						ScaleAnimation: ScaleAnimConfig{
-							StartScale: 0.1,
-							EndScale:   1.0,
-							Easing:     "ease_out",
-						},
-						Behavior: BehaviorConfig{
-							PostEntry:      "orbit_then_attack",
-							OrbitDuration:  3.0,
-							OrbitDirection: "clockwise",
-							OrbitSpeed:     45.0,
-							MaxAttacks:     2,
-						},
-						AttackPattern: AttackConfig{
-							Type:      "single_rush",
-							Cooldown:  5.0,
-							RushSpeed: 300.0,
-						},
-						FirePattern: FireConfig{
-							Type:           "single_shot",
-							FireRate:       0.5,
-							FireWhileOrbit: true,
-						},
-						Retreat: RetreatConfig{
-							HealthThreshold: 0.2,
-							Timeout:         15.0,
-							Speed:           200.0,
-						},
-					},
-				},
-				Timing: WaveTiming{
-					InterWaveDelay: 2.0,
-					Timeout:        30.0,
-				},
-			},
+		ScaleAnimation: ScaleAnimConfig{StartScale: 0.1, EndScale: 1.0, Easing: "ease_out"},
+		Behavior: BehaviorConfig{
+			PostEntry: "orbit_then_attack", OrbitDuration: 3.0,
+			OrbitDirection: "clockwise", OrbitSpeed: 45.0, MaxAttacks: 2,
 		},
-		Boss: StageBossConfig{
-			Enabled:  true,
-			BossType: "standard_boss",
-			Health:   10,
-			Size:     64,
-			EntryPath: EntryPathConfig{
-				Type:     "straight_in",
-				Duration: 3.0,
-			},
-			Behavior: BehaviorConfig{
-				PostEntry:      "hover_center_then_orbit",
-				OrbitDuration:  2.0,
-				OrbitDirection: "clockwise",
-				OrbitSpeed:     30.0,
-				MaxAttacks:     0, // Unlimited
-			},
-			AttackPattern: AttackConfig{
-				Type:      "paired_rush",
-				Cooldown:  4.0,
-				RushSpeed: 250.0,
-			},
-			FirePattern: FireConfig{
-				Type:            "spray",
-				FireRate:        2.0,
-				SprayAngle:      60.0,
-				ProjectileCount: 5,
-				FireWhileOrbit:  true,
-				FireWhileAttack: true,
-			},
-			SpawnDelay: 3.0,
-			Points:     1000,
+		AttackPattern: AttackConfig{Type: "single_rush", Cooldown: 5.0, RushSpeed: 300.0},
+		FirePattern:   FireConfig{Type: "single_shot", FireRate: 0.5, FireWhileOrbit: true},
+		Retreat:       RetreatConfig{HealthThreshold: 0.2, Timeout: 15.0, Speed: 200.0},
+	}
+}
+
+func (sl *StageLoader) createDefaultBoss() StageBossConfig {
+	return StageBossConfig{
+		Enabled:   true,
+		BossType:  "standard_boss",
+		Health:    10,
+		Size:      64,
+		EntryPath: EntryPathConfig{Type: "straight_in", Duration: 3.0},
+		Behavior: BehaviorConfig{
+			PostEntry: "hover_center_then_orbit", OrbitDuration: 2.0,
+			OrbitDirection: "clockwise", OrbitSpeed: 30.0, MaxAttacks: 0,
 		},
-		PowerUps: PowerUpConfig{
-			DropChance: 0.15,
-			Types: []PowerUpTypeConfig{
-				{Type: "double_shot", Weight: 0.7, Duration: 10.0},
-				{Type: "extra_life", Weight: 0.3},
-			},
+		AttackPattern: AttackConfig{Type: "paired_rush", Cooldown: 4.0, RushSpeed: 250.0},
+		FirePattern: FireConfig{
+			Type: "spray", FireRate: 2.0, SprayAngle: 60.0, ProjectileCount: 5,
+			FireWhileOrbit: true, FireWhileAttack: true,
 		},
-		Difficulty: DifficultySettings{
-			EnemySpeedMultiplier:     1.0,
-			EnemyHealthMultiplier:    1.0,
-			EnemySpawnRateMultiplier: 1.0,
-			PlayerDamageMultiplier:   1.0,
-			ScoreMultiplier:          1.0,
+		SpawnDelay: 3.0,
+		Points:     1000,
+	}
+}
+
+func (sl *StageLoader) createDefaultPowerUps() PowerUpConfig {
+	return PowerUpConfig{
+		DropChance: 0.15,
+		Types: []PowerUpTypeConfig{
+			{Type: "double_shot", Weight: 0.7, Duration: 10.0},
+			{Type: "extra_life", Weight: 0.3},
 		},
 	}
 }

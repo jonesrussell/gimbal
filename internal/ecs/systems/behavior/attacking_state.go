@@ -208,7 +208,7 @@ func (as *AttackingState) NextState(entry *donburi.Entry, data *core.BehaviorSta
 }
 
 // distanceToTarget calculates distance between two points
-func (as *AttackingState) distanceToTarget(pos *common.Point, target *common.Point) float64 {
+func (as *AttackingState) distanceToTarget(pos, target *common.Point) float64 {
 	dx := target.X - pos.X
 	dy := target.Y - pos.Y
 	return math.Sqrt(dx*dx + dy*dy)

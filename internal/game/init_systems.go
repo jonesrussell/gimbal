@@ -34,22 +34,22 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 // createGameplaySystems creates gameplay ECS systems
 func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 	// Load player config
-	playerConfig, err := managers.LoadPlayerConfig(ctx, g.logger)
-	if err != nil {
-		return fmt.Errorf("failed to load player config: %w", err)
+	playerConfig, loadErr := managers.LoadPlayerConfig(ctx, g.logger)
+	if loadErr != nil {
+		return fmt.Errorf("failed to load player config: %w", loadErr)
 	}
 	g.playerConfig = playerConfig
 	g.logger.Debug("Player config loaded", "health", playerConfig.Health, "size", playerConfig.Size)
 
-	if err := g.createBasicSystems(); err != nil {
-		return err
+	if basicErr := g.createBasicSystems(); basicErr != nil {
+		return basicErr
 	}
 
 	g.createRemainingSystems(ctx)
 
 	// Load initial stage into Gyruss system
-	if err := g.gyrussSystem.LoadStage(1); err != nil {
-		g.logger.Warn("Failed to load initial stage", "error", err)
+	if stageErr := g.gyrussSystem.LoadStage(1); stageErr != nil {
+		g.logger.Warn("Failed to load initial stage", "error", stageErr)
 	}
 
 	return nil

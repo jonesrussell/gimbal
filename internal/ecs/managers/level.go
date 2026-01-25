@@ -21,11 +21,11 @@ func NewLevelManager(logger common.Logger) *LevelManager {
 }
 
 // SetMaxLevels sets the maximum number of levels
-func (lm *LevelManager) SetMaxLevels(max int) {
-	if max < 1 {
-		max = 1
+func (lm *LevelManager) SetMaxLevels(maxLevels int) {
+	if maxLevels < 1 {
+		maxLevels = 1
 	}
-	lm.maxLevels = max
+	lm.maxLevels = maxLevels
 }
 
 // GetLevel returns the current level number

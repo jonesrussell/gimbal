@@ -53,8 +53,8 @@ func LoadPlayerConfig(_ context.Context, logger common.Logger) (*PlayerConfig, e
 	}
 
 	var config PlayerConfig
-	if err := json.Unmarshal(data, &config); err != nil {
-		logger.Warn("Failed to parse player.json, using defaults", "error", err)
+	if unmarshalErr := json.Unmarshal(data, &config); unmarshalErr != nil {
+		logger.Warn("Failed to parse player.json, using defaults", "error", unmarshalErr)
 		return defaultPlayerConfig(), nil
 	}
 

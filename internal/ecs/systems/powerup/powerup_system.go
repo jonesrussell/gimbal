@@ -266,8 +266,7 @@ func (ps *PowerUpSystem) SpawnPowerUp(position common.Point, powerUpType core.Po
 func (ps *PowerUpSystem) TrySpawnPowerUp(position common.Point) {
 	//nolint:gosec // Game logic randomness is acceptable
 	if rand.Float64() < PowerUpDropChance {
-		// Weighted random selection (70% double shot, 30% extra life)
-		//nolint:gosec
+		//nolint:gosec // Weighted random selection (70% double shot, 30% extra life)
 		if rand.Float64() < 0.7 {
 			ps.SpawnPowerUp(position, core.PowerUpDoubleShot)
 		} else {
