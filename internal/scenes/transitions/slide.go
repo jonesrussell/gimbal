@@ -50,7 +50,7 @@ func (s *SlideTransition) Update(deltaTime float64) bool {
 }
 
 // Draw draws the slide transition
-func (s *SlideTransition) Draw(screen *ebiten.Image, from, to *ebiten.Image) {
+func (s *SlideTransition) Draw(screen, from, to *ebiten.Image) {
 	progress := s.GetProgress()
 
 	var fromX, fromY, toX, toY float64

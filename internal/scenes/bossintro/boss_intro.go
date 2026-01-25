@@ -70,7 +70,7 @@ func (b *BossIntroOverlay) Trigger(stageNumber int, bossType string) {
 		// Try to load boss portrait
 		if bossPortrait, ok := b.resourceMgr.GetSprite(context.Background(), fmt.Sprintf("boss_portrait_%s", bossType)); ok {
 			b.bossSprite = bossPortrait
-		} else if bossSprite, ok := b.resourceMgr.GetSprite(context.Background(), "enemy_boss"); ok {
+		} else if bossSprite, ok2 := b.resourceMgr.GetSprite(context.Background(), "enemy_boss"); ok2 {
 			b.bossSprite = bossSprite
 		}
 
@@ -140,7 +140,9 @@ func (b *BossIntroOverlay) Draw(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 		zoomProgress := math.Min(1.0, elapsed/0.8)
 		// Ease-out zoom: start fast, slow down
-		easedProgress := 1.0 - math.Pow(1.0-zoomProgress, 3)
+		// Expand math.Pow(x, 3) to x*x*x for better performance
+		oneMinusProgress := 1.0 - zoomProgress
+		easedProgress := 1.0 - (oneMinusProgress * oneMinusProgress * oneMinusProgress)
 		scale := 0.3 + easedProgress*1.2 // Scale from 0.3 to 1.5
 
 		spriteWidth := float64(b.bossSprite.Bounds().Dx()) * scale

@@ -1,7 +1,6 @@
 package gameover
 
 import (
-	"context"
 	"fmt"
 	"image/color"
 	"math"
