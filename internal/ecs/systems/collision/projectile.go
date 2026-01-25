@@ -18,8 +18,8 @@ func (cs *CollisionSystem) checkProjectileEnemyCollisions(ctx context.Context) e
 	}
 
 	for _, projectileEntity := range projectiles {
-		if err := cs.checkSingleProjectileCollisionsWithHash(ctx, projectileEntity); err != nil {
-			return err
+		if checkErr := cs.checkSingleProjectileCollisionsWithHash(ctx, projectileEntity); checkErr != nil {
+			return checkErr
 		}
 	}
 	return nil
