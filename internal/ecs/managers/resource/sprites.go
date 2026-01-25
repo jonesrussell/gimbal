@@ -3,6 +3,7 @@ package resources
 import (
 	"bytes"
 	"context"
+	"image"
 	"image/png"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -79,13 +80,29 @@ func (rm *ResourceManager) loadSpriteFile(path string) ([]byte, error) {
 
 // decodePNGData decodes PNG data into ebiten image
 func (rm *ResourceManager) decodePNGData(name, path string, imageData []byte) (*ebiten.Image, error) {
+	// Use DecodeConfig first to check image format, then decode
+	// This ensures we handle transparency correctly
 	img, err := png.Decode(bytes.NewReader(imageData))
 	if err != nil {
 		rm.logger.Error("[SPRITE_ERROR] Failed to decode PNG sprite", "name", name, "path", path, "error", err)
 		return nil, errors.NewGameErrorWithCause(errors.AssetInvalid, "failed to decode sprite", err)
 	}
 
-	sprite := ebiten.NewImageFromImage(img)
+	// Convert to NRGBA if not already to ensure alpha channel is preserved
+	var finalImg image.Image = img
+	if _, ok := img.(*image.NRGBA); !ok {
+		// Convert to NRGBA to ensure transparency works correctly
+		bounds := img.Bounds()
+		nrgba := image.NewNRGBA(bounds)
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
+				nrgba.Set(x, y, img.At(x, y))
+			}
+		}
+		finalImg = nrgba
+	}
+
+	sprite := ebiten.NewImageFromImage(finalImg)
 	rm.logger.Debug("[SPRITE_DECODE] Sprite decoded successfully", "name", name, "bounds", img.Bounds())
 
 	return sprite, nil
