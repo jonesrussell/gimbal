@@ -34,7 +34,10 @@ const (
 	SceneStudioIntro SceneType = iota
 	SceneTitleScreen
 	SceneMenu
+	SceneStageIntro      // Stage intro cutscene
 	ScenePlaying
+	SceneBossIntro       // Boss intro overlay (not full scene)
+	SceneStageTransition // Between-stage transition
 	ScenePaused
 	SceneGameOver
 	SceneVictory
@@ -99,20 +102,18 @@ func (sceneMgr *SceneManager) registerScenes(cfg *SceneManagerConfig) {
 func (sceneMgr *SceneManager) registerGameScenes(cfg *SceneManagerConfig) {
 	sceneMgr.registerScene(SceneStudioIntro, "STUDIO INTRO", cfg)
 	sceneMgr.registerScene(SceneTitleScreen, "TITLE SCREEN", cfg)
+	sceneMgr.registerScene(SceneStageIntro, "STAGE INTRO", cfg)
 	sceneMgr.registerScene(ScenePlaying, "PLAYING", cfg)
+	sceneMgr.registerScene(SceneStageTransition, "STAGE TRANSITION", cfg)
 	sceneMgr.registerScene(ScenePaused, "PAUSED", cfg)
 	sceneMgr.registerScene(SceneGameOver, "GAME OVER", cfg)
+	sceneMgr.registerScene(SceneVictory, "VICTORY", cfg)
 }
 
 // registerMenuScenes registers the menu scenes
 func (sceneMgr *SceneManager) registerMenuScenes(cfg *SceneManagerConfig) {
 	sceneMgr.registerScene(SceneMenu, "MENU", cfg)
-	sceneMgr.scenes[SceneCredits] = NewSimpleTextScene(
-		sceneMgr,
-		"CREDITS\nGimbal Studios\n2025",
-		SceneCredits,
-		cfg.Font,
-	)
+	sceneMgr.registerScene(SceneCredits, "CREDITS", cfg)
 	sceneMgr.scenes[SceneOptions] = NewSimpleTextScene(sceneMgr, "OPTIONS\nComing Soon!", SceneOptions, cfg.Font)
 }
 

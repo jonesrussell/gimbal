@@ -15,23 +15,17 @@ func (g *ECSGame) handleLevelComplete() {
 	currentStage := g.gyrussSystem.GetCurrentStage()
 	g.logger.Debug("Stage complete", "stage", currentStage)
 
-	// Update level manager to track progression
-	g.levelManager.IncrementLevel()
-
-	// Load next stage
-	if err := g.gyrussSystem.LoadNextStage(); err != nil {
-		g.logger.Warn("Failed to load next stage, resetting", "error", err)
-		g.gyrussSystem.Reset()
+	// Check if final stage (stage 6)
+	if currentStage >= 6 {
+		// Show victory sequence
+		g.sceneManager.SwitchScene(scenes.SceneVictory)
 		return
 	}
 
-	nextStage := g.gyrussSystem.GetCurrentStage()
-	g.logger.Debug("Next stage loaded", "stage", nextStage)
+	// Update level manager to track progression
+	g.levelManager.IncrementLevel()
 
-	// Show level title for new stage
-	if currentScene := g.sceneManager.GetCurrentScene(); currentScene != nil {
-		if playingScene, ok := currentScene.(interface{ ShowLevelTitle(int) }); ok {
-			playingScene.ShowLevelTitle(nextStage)
-		}
-	}
+	// Show between-stage transition
+	// The transition scene will load the next stage and show stage intro
+	g.sceneManager.SwitchScene(scenes.SceneStageTransition)
 }

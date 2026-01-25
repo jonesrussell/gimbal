@@ -178,6 +178,35 @@ func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
 			name: "game_music_boss",
 			path: "sounds/game_music_boss.ogg",
 		},
+		// UI audio cues
+		{
+			name: "ui_blip",
+			path: "sounds/ui_blip.ogg",
+		},
+		{
+			name: "stage_intro_whoosh",
+			path: "sounds/stage_intro_whoosh.ogg",
+		},
+		{
+			name: "boss_warning",
+			path: "sounds/boss_warning.ogg",
+		},
+		{
+			name: "warp_transition",
+			path: "sounds/warp_transition.ogg",
+		},
+		{
+			name: "game_over",
+			path: "sounds/game_over.ogg",
+		},
+		{
+			name: "continue_tick",
+			path: "sounds/continue_tick.ogg",
+		},
+		{
+			name: "victory_fanfare",
+			path: "sounds/victory_fanfare.ogg",
+		},
 	}
 
 	for _, cfg := range audioConfigs {
