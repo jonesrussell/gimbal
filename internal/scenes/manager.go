@@ -222,6 +222,14 @@ func (sceneMgr *SceneManager) SetResumeCallback(callback func()) {
 	sceneMgr.onResume = callback
 }
 
+// InvokeResumeCallback invokes the resume callback if set.
+// This should be called when resuming from pause to sync game state.
+func (sceneMgr *SceneManager) InvokeResumeCallback() {
+	if sceneMgr.onResume != nil {
+		sceneMgr.onResume()
+	}
+}
+
 // SetHealthSystem sets the health system for scenes to access
 func (sceneMgr *SceneManager) SetHealthSystem(healthSystem common.HealthProvider) {
 	sceneMgr.healthSystem = healthSystem

@@ -55,8 +55,7 @@ func (es *EnemySystem) updateEnemies(deltaTime float64) {
 
 // applyMovementPattern applies the movement pattern to calculate velocity
 func (es *EnemySystem) applyMovementPattern(mov core.MovementData) common.Point {
-	pattern := MovementPattern(mov.Pattern)
-	switch pattern {
+	switch mov.Pattern {
 	case MovementPatternZigzag:
 		return es.calculateZigzagVelocity(mov)
 	case MovementPatternAccelerating:

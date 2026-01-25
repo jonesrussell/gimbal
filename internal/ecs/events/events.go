@@ -53,6 +53,11 @@ type EnemyDestroyedEvent struct {
 	Time   int64
 }
 
+type LevelChangedEvent struct {
+	OldLevel int
+	NewLevel int
+}
+
 // Event types for the game
 var (
 	PlayerMovedEventType    = events.NewEventType[PlayerMovedEvent]()
@@ -63,6 +68,7 @@ var (
 	GameOverEventType       = events.NewEventType[GameOverEvent]()
 	LifeAddedEventType      = events.NewEventType[LifeAddedEvent]()
 	EnemyDestroyedEventType = events.NewEventType[EnemyDestroyedEvent]()
+	LevelChangedEventType   = events.NewEventType[LevelChangedEvent]()
 )
 
 // EventSystem manages game events
@@ -184,6 +190,19 @@ func (evt *EventSystem) SubscribeToEnemyDestroyed(callback events.Subscriber[Ene
 	EnemyDestroyedEventType.Subscribe(evt.world, callback)
 }
 
+// EmitLevelChanged emits a level changed event
+func (evt *EventSystem) EmitLevelChanged(oldLevel, newLevel int) {
+	LevelChangedEventType.Publish(evt.world, LevelChangedEvent{
+		OldLevel: oldLevel,
+		NewLevel: newLevel,
+	})
+}
+
+// SubscribeToLevelChanged subscribes to level changed events
+func (evt *EventSystem) SubscribeToLevelChanged(callback events.Subscriber[LevelChangedEvent]) {
+	LevelChangedEventType.Subscribe(evt.world, callback)
+}
+
 // ProcessEvents processes all pending events
 func (evt *EventSystem) ProcessEvents() {
 	PlayerMovedEventType.ProcessEvents(evt.world)
@@ -194,4 +213,5 @@ func (evt *EventSystem) ProcessEvents() {
 	GameOverEventType.ProcessEvents(evt.world)
 	LifeAddedEventType.ProcessEvents(evt.world)
 	EnemyDestroyedEventType.ProcessEvents(evt.world)
+	LevelChangedEventType.ProcessEvents(evt.world)
 }

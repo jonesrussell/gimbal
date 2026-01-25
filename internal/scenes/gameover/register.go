@@ -8,9 +8,15 @@ import (
 	scenes "github.com/jonesrussell/gimbal/internal/scenes"
 )
 
-func init() {
-	// Register gameover scenes with the scene registry
+// Register registers the game over scene with the scene registry.
+// This should be called explicitly during application initialization.
+func Register() {
 	scenes.RegisterScene(scenes.SceneGameOver, createGameOverScene)
+}
+
+func init() {
+	// Auto-register for backward compatibility
+	Register()
 }
 
 func createGameOverScene(
