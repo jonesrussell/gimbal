@@ -1,3 +1,33 @@
+---
+description: Game mechanics and entity behavior patterns
+globs: ["**/systems/**/*.go", "**/entities/**", "**/levels/**"]
+alwaysApply: false
+---
+
 # Game Mechanics
 
-This rule applies when modifying player or entity behaviors in the game.
+## Player Movement
+- Player orbits around screen center at fixed radius
+- Movement controlled via Arrow Keys / WASD
+- Use `SceneManager.RequestQuit()` for graceful shutdown, not `os.Exit()`
+
+## Enemy System
+- Enemy types: Basic (0), Heavy (1), Boss (2)
+- Movement patterns: Normal, Zigzag, Accelerating, Pulsing
+- Formations: Line, Circle, V, Diamond, Diagonal, Spiral, Random
+
+## Collision Detection
+- Uses spatial hashing for efficiency
+- Timeout protection: `config.CollisionTimeout` (half frame budget)
+- Player has invincibility frames after taking damage
+
+## Level Configuration
+Levels are JSON files in `assets/levels/` containing:
+- Waves with formations and enemy counts
+- Boss configuration and difficulty multipliers
+- Completion conditions
+
+## Performance Thresholds
+- Slow system threshold: `config.SlowSystemThreshold` (5ms)
+- Debug logging interval: `config.DebugLogInterval` (60 frames)
+- Use `ImagePool` for ebiten.Image reuse
