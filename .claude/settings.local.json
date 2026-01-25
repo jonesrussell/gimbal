@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(go vet:*)",
-      "Bash(task deadcode:check:*)"
+      "Bash(task deadcode:check:*)",
+      "Bash(git status:*)",
+      "Bash(ls:*)"
     ]
   }
 }
