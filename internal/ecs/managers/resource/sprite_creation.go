@@ -90,6 +90,13 @@ func (rm *ResourceManager) loadGameSprites(ctx context.Context) error {
 			FallbackColor:  color.RGBA{255, 0, 0, 255}, // Red fallback
 		},
 		{
+			Name:           "ammo",
+			Path:           "sprites/ammo.png",
+			FallbackWidth:  16,
+			FallbackHeight: 16,
+			FallbackColor:  color.RGBA{255, 255, 0, 255}, // Yellow fallback
+		},
+		{
 			Name:           "enemy",
 			Path:           "sprites/enemy.png",
 			FallbackWidth:  32,
@@ -166,6 +173,13 @@ func (rm *ResourceManager) loadUISprites(ctx context.Context) error {
 			FallbackWidth:  320,
 			FallbackHeight: 80,
 			FallbackColor:  color.RGBA{0, 255, 255, 255}, // Cyan fallback
+		},
+		{
+			Name:           "studio_screen",
+			Path:           "ui/studio_screen.png",
+			FallbackWidth:  640,
+			FallbackHeight: 480,
+			FallbackColor:  color.Black,
 		},
 		{
 			Name:           "menu_frame",

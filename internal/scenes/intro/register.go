@@ -26,7 +26,7 @@ func createStudioIntroScene(
 	scoreManager *managers.ScoreManager,
 	resourceMgr *resources.ResourceManager,
 ) scenes.Scene {
-	return NewStudioIntroScene(manager, font)
+	return NewStudioIntroScene(manager, resourceMgr)
 }
 
 func createTitleScreenScene(
