@@ -1,9 +1,7 @@
 package game
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
@@ -52,52 +50,12 @@ func (g *ECSGame) drawBossStatus(screen *ebiten.Image, x, screenHeight, lineHeig
 
 // drawBossDetails draws detailed boss information
 func (g *ECSGame) drawBossDetails(screen *ebiten.Image, bossEntry *donburi.Entry, x, screenHeight, lineHeight float64) {
-	// #region agent log
-	if f, err := os.OpenFile("/workspaces/gimbal/.cursor/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
-		hasOrbital := bossEntry.HasComponent(core.Orbital)
-		hasPosition := bossEntry.HasComponent(core.Position)
-		hasHealth := bossEntry.HasComponent(core.Health)
-		hasSize := bossEntry.HasComponent(core.Size)
-		json.NewEncoder(f).Encode(map[string]interface{}{
-			"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A",
-			"location": "debug_boss.go:52", "message": "drawBossDetails entry",
-			"data": map[string]interface{}{
-				"entity_id": bossEntry.Entity().String(),
-				"has_orbital": hasOrbital, "has_position": hasPosition,
-				"has_health": hasHealth, "has_size": hasSize,
-			},
-			"timestamp": 0,
-		})
-		f.Close()
-	}
-	// #endregion
 	pos := core.Position.Get(bossEntry)
 	health := core.Health.Get(bossEntry)
-	// #region agent log
 	var orbital *core.OrbitalData
 	if bossEntry.HasComponent(core.Orbital) {
 		orbital = core.Orbital.Get(bossEntry)
-		if f, err := os.OpenFile("/workspaces/gimbal/.cursor/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
-			json.NewEncoder(f).Encode(map[string]interface{}{
-				"sessionId": "debug-session", "runId": "post-fix", "hypothesisId": "B",
-				"location": "debug_boss.go:79", "message": "Orbital component accessed",
-				"data": map[string]interface{}{"orbital_exists": true},
-				"timestamp": 0,
-			})
-			f.Close()
-		}
-	} else {
-		if f, err := os.OpenFile("/workspaces/gimbal/.cursor/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
-			json.NewEncoder(f).Encode(map[string]interface{}{
-				"sessionId": "debug-session", "runId": "post-fix", "hypothesisId": "C",
-				"location": "debug_boss.go:79", "message": "Orbital component missing - safe skip",
-				"data": map[string]interface{}{"orbital_exists": false},
-				"timestamp": 0,
-			})
-			f.Close()
-		}
 	}
-	// #endregion
 	size := core.Size.Get(bossEntry)
 
 	// Calculate number of lines for boss info
