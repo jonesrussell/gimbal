@@ -205,20 +205,6 @@ func (gs *GyrussSpawner) SpawnEnemy(ctx context.Context, groupConfig *managers.E
 //
 //nolint:funlen // Entity setup requires setting many related components sequentially
 func (gs *GyrussSpawner) SpawnBoss(ctx context.Context, bossConfig *managers.StageBossConfig) donburi.Entity {
-	// #region agent log
-	if f, err := os.OpenFile("/workspaces/gimbal/.cursor/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
-		json.NewEncoder(f).Encode(map[string]interface{}{
-			"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A",
-			"location": "gyruss_spawner.go:207", "message": "SpawnBoss creating entity",
-			"data": map[string]interface{}{
-				"components": []string{"EnemyTag", "Position", "Sprite", "Size", "Health", "Movement", "EnemyTypeID", "EntryPath", "BehaviorState", "ScaleAnimation", "AttackPattern", "FirePattern"},
-				"has_orbital_in_create": false,
-			},
-			"timestamp": 0,
-		})
-		f.Close()
-	}
-	// #endregion
 	entity := gs.world.Create(
 		core.EnemyTag,
 		core.Position,
@@ -234,21 +220,6 @@ func (gs *GyrussSpawner) SpawnBoss(ctx context.Context, bossConfig *managers.Sta
 		core.FirePattern,
 	)
 	entry := gs.world.Entry(entity)
-	// #region agent log
-	if f, err := os.OpenFile("/workspaces/gimbal/.cursor/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
-		hasOrbital := entry.HasComponent(core.Orbital)
-		json.NewEncoder(f).Encode(map[string]interface{}{
-			"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A",
-			"location": "gyruss_spawner.go:222", "message": "SpawnBoss entity created",
-			"data": map[string]interface{}{
-				"entity_id": entity.String(),
-				"has_orbital_after_create": hasOrbital,
-			},
-			"timestamp": 0,
-		})
-		f.Close()
-	}
-	// #endregion
 
 	// Get boss sprite
 	sprite := gs.getSprite(ctx, bossConfig.BossType)
