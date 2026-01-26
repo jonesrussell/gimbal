@@ -102,6 +102,10 @@ func (s *StageIntroScene) Draw(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 		gridAlpha := 0.3 + 0.2*math.Sin(elapsed*4.0) // Pulsing effect
 		op.ColorScale.SetA(float32(gridAlpha * fadeAlpha))
+		// Center the grid on the screen
+		gridWidth := float64(s.gridOverlay.Bounds().Dx())
+		gridHeight := float64(s.gridOverlay.Bounds().Dy())
+		op.GeoM.Translate(centerX-gridWidth/2, centerY-gridHeight/2)
 		screen.DrawImage(s.gridOverlay, op)
 	}
 
