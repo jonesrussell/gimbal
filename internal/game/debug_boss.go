@@ -79,8 +79,8 @@ func (g *ECSGame) drawBossDetails(screen *ebiten.Image, bossEntry *donburi.Entry
 		orbital = core.Orbital.Get(bossEntry)
 		if f, err := os.OpenFile("/workspaces/gimbal/.cursor/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
 			json.NewEncoder(f).Encode(map[string]interface{}{
-				"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B",
-				"location": "debug_boss.go:55", "message": "Orbital component accessed",
+				"sessionId": "debug-session", "runId": "post-fix", "hypothesisId": "B",
+				"location": "debug_boss.go:79", "message": "Orbital component accessed",
 				"data": map[string]interface{}{"orbital_exists": true},
 				"timestamp": 0,
 			})
@@ -89,8 +89,8 @@ func (g *ECSGame) drawBossDetails(screen *ebiten.Image, bossEntry *donburi.Entry
 	} else {
 		if f, err := os.OpenFile("/workspaces/gimbal/.cursor/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
 			json.NewEncoder(f).Encode(map[string]interface{}{
-				"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C",
-				"location": "debug_boss.go:55", "message": "Orbital component missing",
+				"sessionId": "debug-session", "runId": "post-fix", "hypothesisId": "C",
+				"location": "debug_boss.go:79", "message": "Orbital component missing - safe skip",
 				"data": map[string]interface{}{"orbital_exists": false},
 				"timestamp": 0,
 			})
