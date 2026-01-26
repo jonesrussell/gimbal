@@ -1,33 +1,43 @@
 package intro
 
 import (
-	"image/color"
+	"context"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 	scenes "github.com/jonesrussell/gimbal/internal/scenes"
 )
 
 type StudioIntroScene struct {
-	manager   *scenes.SceneManager
-	font      text.Face
-	startTime time.Time
-	minTime   float64
-	maxTime   float64
-	finished  bool
+	manager     *scenes.SceneManager
+	resourceMgr *resources.ResourceManager
+	startTime   time.Time
+	minTime     float64
+	maxTime     float64
+	finished    bool
+	studioScreen *ebiten.Image
 }
 
-func NewStudioIntroScene(manager *scenes.SceneManager, font text.Face) *StudioIntroScene {
+func NewStudioIntroScene(manager *scenes.SceneManager, resourceMgr *resources.ResourceManager) *StudioIntroScene {
+	// Try to load studio screen image
+	var studioScreen *ebiten.Image
+	if resourceMgr != nil {
+		if screen, ok := resourceMgr.GetSprite(context.Background(), "studio_screen"); ok {
+			studioScreen = screen
+		}
+	}
+
 	return &StudioIntroScene{
-		manager:   manager,
-		font:      font,
-		startTime: time.Now(),
-		minTime:   2.0, // Minimum 2 seconds
-		maxTime:   4.0, // Maximum 4 seconds
-		finished:  false,
+		manager:      manager,
+		resourceMgr:  resourceMgr,
+		startTime:    time.Now(),
+		minTime:      2.0, // Minimum 2 seconds
+		maxTime:      4.0, // Maximum 4 seconds
+		finished:     false,
+		studioScreen: studioScreen,
 	}
 }
 
@@ -54,33 +64,19 @@ func (s *StudioIntroScene) Update() error {
 }
 
 func (s *StudioIntroScene) Draw(screen *ebiten.Image) {
-	screen.Fill(color.Black)
-	elapsed := time.Since(s.startTime).Seconds()
-	fadeProgress := elapsed / s.maxTime
-	if fadeProgress > 1.0 {
-		fadeProgress = 1.0
+	// Draw studio screen image if available
+	if s.studioScreen != nil {
+		config := s.manager.GetConfig()
+		screenWidth := float64(config.ScreenSize.Width)
+		screenHeight := float64(config.ScreenSize.Height)
+		imgWidth := float64(s.studioScreen.Bounds().Dx())
+		imgHeight := float64(s.studioScreen.Bounds().Dy())
+
+		op := &ebiten.DrawImageOptions{}
+		// Center the image on screen
+		op.GeoM.Translate((screenWidth-imgWidth)/2, (screenHeight-imgHeight)/2)
+		screen.DrawImage(s.studioScreen, op)
 	}
-	scenes.DrawCenteredTextWithOptions(screen, scenes.TextDrawOptions{
-		Text:  "GIMBAL STUDIOS",
-		X:     float64(s.manager.GetConfig().ScreenSize.Width) / 2,
-		Y:     float64(s.manager.GetConfig().ScreenSize.Height) / 2,
-		Alpha: fadeProgress,
-		Font:  s.font,
-	})
-	scenes.DrawCenteredTextWithOptions(screen, scenes.TextDrawOptions{
-		Text:  "Presents",
-		X:     float64(s.manager.GetConfig().ScreenSize.Width) / 2,
-		Y:     float64(s.manager.GetConfig().ScreenSize.Height)/2 + 50,
-		Alpha: fadeProgress * 0.8,
-		Font:  s.font,
-	})
-	scenes.DrawCenteredTextWithOptions(screen, scenes.TextDrawOptions{
-		Text:  "Press any key...",
-		X:     float64(s.manager.GetConfig().ScreenSize.Width) / 2,
-		Y:     float64(s.manager.GetConfig().ScreenSize.Height)/2 + 40,
-		Alpha: 1.0,
-		Font:  s.font,
-	})
 }
 
 func (s *StudioIntroScene) Enter() {
