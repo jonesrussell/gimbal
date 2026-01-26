@@ -2,10 +2,8 @@ package enemy
 
 import (
 	"context"
-	"encoding/json"
 	"image/color"
 	"math"
-	"os"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
