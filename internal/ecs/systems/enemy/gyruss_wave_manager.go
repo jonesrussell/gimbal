@@ -321,6 +321,12 @@ func (gwm *GyrussWaveManager) GetCurrentWaveIndex() int {
 	return gwm.currentWaveIndex
 }
 
+// GetCurrentGroupSpawnIndex returns the spawn index for the current group (next enemy to spawn).
+// Use before MarkEnemySpawned so the spawner gets the correct index for orbit angle.
+func (gwm *GyrussWaveManager) GetCurrentGroupSpawnIndex() int {
+	return gwm.spawnIndex
+}
+
 // GetWaveCount returns total wave count
 func (gwm *GyrussWaveManager) GetWaveCount() int {
 	if gwm.stageConfig == nil {
