@@ -29,6 +29,12 @@ func (g *ECSGame) handleLevelComplete() {
 	// Update level manager to track progression
 	g.levelManager.IncrementLevel()
 
+	// Load next stage so transition/intro/playing use the new stage config
+	if err := g.gyrussSystem.LoadNextStage(); err != nil {
+		g.logger.Error("Failed to load next stage", "error", err)
+		// Still switch scene so the game doesn't hang; next play will retry same stage
+	}
+
 	// Show between-stage transition
 	// The transition scene will load the next stage and show stage intro
 	g.sceneManager.SwitchScene(scenes.SceneStageTransition)

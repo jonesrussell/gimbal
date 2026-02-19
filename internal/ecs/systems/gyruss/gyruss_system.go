@@ -187,8 +187,8 @@ func (gs *GyrussSystem) handleSpawning(ctx context.Context) {
 		return
 	}
 
-	// Get current spawn index
-	spawnIndex := gs.getSpawnIndexForGroup()
+	// Get current spawn index (before MarkEnemySpawned) for orbit angle distribution
+	spawnIndex := gs.waveManager.GetCurrentGroupSpawnIndex()
 
 	// Spawn enemy
 	gs.spawner.SpawnEnemy(ctx, groupConfig, spawnIndex)
@@ -225,12 +225,6 @@ func (gs *GyrussSystem) handleBossSpawning(ctx context.Context, deltaTime float6
 	gs.logger.Info("Gyruss boss spawned",
 		"stage", gs.currentStage,
 		"boss_type", bossConfig.BossType)
-}
-
-// getSpawnIndexForGroup calculates the spawn index based on wave manager state
-func (gs *GyrussSystem) getSpawnIndexForGroup() int {
-	// This is a simplified calculation - the wave manager tracks internally
-	return 0
 }
 
 // OnEnemyDestroyed is called when an enemy is destroyed
