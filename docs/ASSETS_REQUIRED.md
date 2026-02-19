@@ -64,13 +64,6 @@ This document lists all assets required for the Gimbal game, including what exis
 | Player Config | `entities/player.json` | ✅ Exists | Player entity configuration |
 | Enemies Config | `entities/enemies.json` | ✅ Exists | Enemy types configuration |
 
-## Level Configuration Files
-
-| Asset Name | Path | Status | Notes |
-|------------|------|--------|-------|
-| Level 1 | `levels/level_01.json` | ✅ Exists | May not be used (stages are used instead) |
-| Level 2 | `levels/level_02.json` | ✅ Exists | May not be used (stages are used instead) |
-
 ## Summary
 
 ### ✅ Existing Assets

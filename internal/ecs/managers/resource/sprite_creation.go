@@ -72,7 +72,9 @@ func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, config Sp
 	return nil
 }
 
-// loadGameSprites loads all game sprite types using a configuration-driven approach
+// loadGameSprites loads all game sprite types using a configuration-driven approach.
+//
+//nolint:funlen // Config slice is inherently long; splitting would not reduce complexity.
 func (rm *ResourceManager) loadGameSprites(ctx context.Context) error {
 	spriteConfigs := []SpriteLoadConfig{
 		{
