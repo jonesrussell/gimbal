@@ -274,17 +274,8 @@ func toZapFields(fields ...any) []zap.Field {
 	return zapFields
 }
 
-// Sync ensures all buffered logs are written
+// Sync ensures all buffered logs are written.
+// The log file is not closed so that any late writes (e.g. from deferred cleanup) do not get "file already closed".
 func (l *Logger) Sync() error {
-	// Sync the underlying zap logger
-	if err := l.Logger.Sync(); err != nil {
-		return err
-	}
-
-	// Close the log file if it exists
-	if l.file != nil {
-		return l.file.Close()
-	}
-
-	return nil
+	return l.Logger.Sync()
 }

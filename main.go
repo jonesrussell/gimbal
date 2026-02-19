@@ -141,8 +141,9 @@ func (a *Application) setupEnvironment() error {
 		}
 	}
 
-	// Auto-disable audio in containers (unless explicitly enabled)
-	if os.Getenv("DISABLE_AUDIO") == "" && isContainer() {
+	// Auto-disable audio in containers or WSL (unless explicitly enabled)
+	// WSL often has no ALSA device; avoid ALSA errors and game exit by disabling audio upfront
+	if os.Getenv("DISABLE_AUDIO") == "" && (isContainer() || isWSL()) {
 		if err := os.Setenv("DISABLE_AUDIO", "1"); err != nil {
 			return fmt.Errorf("failed to set DISABLE_AUDIO: %w", err)
 		}
@@ -170,6 +171,17 @@ func isContainer() bool {
 	}
 
 	return false
+}
+
+// isWSL reports whether the process is running under Windows Subsystem for Linux.
+// WSL typically has no ALSA sound device, so we disable audio to avoid init failures.
+func isWSL() bool {
+	data, err := os.ReadFile("/proc/version")
+	if err != nil {
+		return false
+	}
+	v := strings.ToLower(string(data))
+	return strings.Contains(v, "microsoft") || strings.Contains(v, "wsl")
 }
 
 // logSystemInfo logs system and runtime information

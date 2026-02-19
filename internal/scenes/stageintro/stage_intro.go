@@ -163,14 +163,17 @@ func (s *StageIntroScene) Enter() {
 	if s.stageNumber == 0 {
 		if levelMgr := s.manager.GetLevelManager(); levelMgr != nil {
 			s.stageNumber = levelMgr.GetLevel()
-			// Map stage numbers to planets
+			// Map stage numbers to planets (stage 1 = Earth→Mars, stage 2 = Mars→Jupiter, …)
 			planets := []string{"Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"}
-			if s.stageNumber > 1 && s.stageNumber <= len(planets) {
-				s.fromPlanet = planets[s.stageNumber-2]
-				s.toPlanet = planets[s.stageNumber-1]
-			} else if s.stageNumber == 1 {
+			if s.stageNumber == 1 {
 				s.fromPlanet = "Earth"
 				s.toPlanet = "Mars"
+			} else if s.stageNumber >= 2 && s.stageNumber < len(planets) {
+				s.fromPlanet = planets[s.stageNumber-1]
+				s.toPlanet = planets[s.stageNumber]
+			} else if s.stageNumber == len(planets) {
+				s.fromPlanet = planets[s.stageNumber-2]
+				s.toPlanet = planets[s.stageNumber-1]
 			}
 		}
 	}
