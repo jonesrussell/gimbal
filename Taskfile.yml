@@ -147,6 +147,23 @@ tasks:
       - task: tests:short
       - task: builds:current
 
+  vuln:
+    desc: Check dependencies for known vulnerabilities
+    cmds:
+      - |
+        if ! command -v govulncheck >/dev/null 2>&1; then
+          echo "govulncheck not found. Install with: go install golang.org/x/vuln/cmd/govulncheck@latest" >&2
+          exit 1
+        fi
+      - govulncheck ./...
+
+  ci:
+    desc: Run lint, test, and vuln (CI gate)
+    cmds:
+      - task: lint
+      - task: tests:short
+      - task: vuln
+
   ci:all:
     desc: Run full CI pipeline
     cmds:
