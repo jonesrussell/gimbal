@@ -26,6 +26,7 @@ type Starfield struct {
 	starCount   int
 	elapsed     float64
 	initialized bool
+	rng         *rand.Rand
 }
 
 // NewStarfield creates a new starfield effect
@@ -44,7 +45,10 @@ func NewStarfield(width, height, starCount int, speed float64) *Starfield {
 // initialize creates the initial star positions
 func (sf *Starfield) initialize() {
 	//nolint:gosec // Weak RNG is acceptable for visual effects (star positions)
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	if sf.rng == nil {
+		sf.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+	}
+	rng := sf.rng
 
 	for i := 0; i < sf.starCount; i++ {
 		sf.stars[i] = Star{
@@ -69,8 +73,10 @@ func (sf *Starfield) Update(deltaTime float64) {
 		// Wrap stars around when they go off screen
 		if sf.stars[i].Y >= float64(sf.height) {
 			sf.stars[i].Y = 0
-			//nolint:gosec // Weak RNG is acceptable for visual effects (star repositioning)
-			sf.stars[i].X = float64(rand.Intn(sf.width))
+			if sf.rng != nil {
+				//nolint:gosec // Weak RNG is acceptable for visual effects (star repositioning)
+				sf.stars[i].X = float64(sf.rng.Intn(sf.width))
+			}
 		}
 	}
 }
