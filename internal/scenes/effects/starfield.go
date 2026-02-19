@@ -74,7 +74,6 @@ func (sf *Starfield) Update(deltaTime float64) {
 		if sf.stars[i].Y >= float64(sf.height) {
 			sf.stars[i].Y = 0
 			if sf.rng != nil {
-				//nolint:gosec // Weak RNG is acceptable for visual effects (star repositioning)
 				sf.stars[i].X = float64(sf.rng.Intn(sf.width))
 			}
 		}
