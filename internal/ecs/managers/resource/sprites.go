@@ -90,7 +90,7 @@ func (rm *ResourceManager) decodePNGData(name, path string, imageData []byte) (*
 	}
 
 	// Convert to NRGBA if not already to ensure alpha channel is preserved
-	var finalImg image.Image = img
+	finalImg := img
 	if _, ok := img.(*image.NRGBA); !ok {
 		// Convert to NRGBA to ensure transparency works correctly
 		// Use draw.Draw to properly preserve alpha channel

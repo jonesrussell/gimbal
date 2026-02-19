@@ -1,6 +1,6 @@
 ---
 description: Game mechanics and entity behavior patterns
-globs: ["**/systems/**/*.go", "**/entities/**", "**/levels/**"]
+globs: ["**/systems/**/*.go", "**/entities/**", "**/stages/**"]
 alwaysApply: false
 ---
 
@@ -21,11 +21,11 @@ alwaysApply: false
 - Timeout protection: `config.CollisionTimeout` (half frame budget)
 - Player has invincibility frames after taking damage
 
-## Level Configuration
-Levels are JSON files in `assets/levels/` containing:
-- Waves with formations and enemy counts
-- Boss configuration and difficulty multipliers
-- Completion conditions
+## Stage Configuration
+Stages are JSON files in `assets/stages/` (single source of truth). Each stage defines:
+- Waves with spawn sequences, entry paths, behaviors, attack and fire patterns
+- Boss configuration and difficulty
+- Completion and progression
 
 ## Performance Thresholds
 - Slow system threshold: `config.SlowSystemThreshold` (5ms)

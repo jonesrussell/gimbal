@@ -13,7 +13,7 @@ alwaysApply: true
 - `internal/ecs/managers/` - Resource, score, level, game state managers
 - `internal/scenes/` - Scene implementations and registry
 - `internal/game/` - Main game loop and initialization
-- `assets/` - Sprites, fonts, entities JSON, levels JSON
+- `assets/` - Sprites, fonts, entities JSON, stages JSON
 
 ## Adding New Features
 - **Component**: `ecs/core/components.go`
@@ -26,4 +26,4 @@ alwaysApply: true
 - `config/constants.go` - Game-wide constants
 - `ecs/constants.go` - ECS-specific constants
 - `assets/entities/*.json` - Entity definitions
-- `assets/levels/*.json` - Level definitions
+- `assets/stages/*.json` - Stage definitions (single source of truth for level content)

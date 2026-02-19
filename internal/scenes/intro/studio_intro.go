@@ -12,12 +12,12 @@ import (
 )
 
 type StudioIntroScene struct {
-	manager     *scenes.SceneManager
-	resourceMgr *resources.ResourceManager
-	startTime   time.Time
-	minTime     float64
-	maxTime     float64
-	finished    bool
+	manager      *scenes.SceneManager
+	resourceMgr  *resources.ResourceManager
+	startTime    time.Time
+	minTime      float64
+	maxTime      float64
+	finished     bool
 	studioScreen *ebiten.Image
 }
 
