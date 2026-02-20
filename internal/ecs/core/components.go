@@ -185,8 +185,9 @@ const (
 type PowerUpType int
 
 const (
-	PowerUpDoubleShot PowerUpType = iota // Double shot weapon
-	PowerUpExtraLife                     // Extra life
+	PowerUpDoubleShot    PowerUpType = iota // Double shot weapon
+	PowerUpExtraLife                        // Extra life
+	PowerUpInvincibility                    // Temporary invincibility (duration from PowerUpTypeData)
 )
 
 // EasingType represents easing functions for animations
