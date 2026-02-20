@@ -30,6 +30,8 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 
 	// Boss lifecycle from stage state
 	st := g.stageStateMachine.State()
+	// Temporary debug: remove after verifying overlay and state machine
+	fmt.Printf("StageState=%v BossExists=%v\n", st, g.findBossEntity() != nil)
 	switch st {
 	case stage.StageStateBossSpawning:
 		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)

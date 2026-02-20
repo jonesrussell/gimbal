@@ -97,9 +97,6 @@ func (g *ECSGame) Update() error {
 		return err
 	}
 
-	// Process queued events (score updates, damage events, etc.)
-	g.eventSystem.ProcessEvents()
-
 	g.updateHUD()
 	g.endPerformanceMonitoring()
 
