@@ -58,17 +58,42 @@ type LevelChangedEvent struct {
 	NewLevel int
 }
 
+// Stage progression events
+type WaveStartedEvent struct {
+	WaveIndex int
+}
+
+type WaveCompletedEvent struct {
+	WaveIndex int
+}
+
+type BossSpawnRequestedEvent struct{}
+
+type BossSpawnedEvent struct{}
+
+type BossDefeatedEvent struct{}
+
+type StageCompletedEvent struct {
+	StageNumber int
+}
+
 // Event types for the game
 var (
-	PlayerMovedEventType    = events.NewEventType[PlayerMovedEvent]()
-	StarCollectedEventType  = events.NewEventType[StarCollectedEvent]()
-	ScoreChangedEventType   = events.NewEventType[ScoreChangedEvent]()
-	GameStateEventType      = events.NewEventType[GameStateEvent]()
-	PlayerDamagedEventType  = events.NewEventType[PlayerDamagedEvent]()
-	GameOverEventType       = events.NewEventType[GameOverEvent]()
-	LifeAddedEventType      = events.NewEventType[LifeAddedEvent]()
-	EnemyDestroyedEventType = events.NewEventType[EnemyDestroyedEvent]()
-	LevelChangedEventType   = events.NewEventType[LevelChangedEvent]()
+	PlayerMovedEventType        = events.NewEventType[PlayerMovedEvent]()
+	StarCollectedEventType      = events.NewEventType[StarCollectedEvent]()
+	ScoreChangedEventType       = events.NewEventType[ScoreChangedEvent]()
+	GameStateEventType          = events.NewEventType[GameStateEvent]()
+	PlayerDamagedEventType      = events.NewEventType[PlayerDamagedEvent]()
+	GameOverEventType           = events.NewEventType[GameOverEvent]()
+	LifeAddedEventType          = events.NewEventType[LifeAddedEvent]()
+	EnemyDestroyedEventType     = events.NewEventType[EnemyDestroyedEvent]()
+	LevelChangedEventType       = events.NewEventType[LevelChangedEvent]()
+	WaveStartedEventType        = events.NewEventType[WaveStartedEvent]()
+	WaveCompletedEventType      = events.NewEventType[WaveCompletedEvent]()
+	BossSpawnRequestedEventType = events.NewEventType[BossSpawnRequestedEvent]()
+	BossSpawnedEventType        = events.NewEventType[BossSpawnedEvent]()
+	BossDefeatedEventType       = events.NewEventType[BossDefeatedEvent]()
+	StageCompletedEventType     = events.NewEventType[StageCompletedEvent]()
 )
 
 // EventSystem manages game events
@@ -203,6 +228,66 @@ func (evt *EventSystem) SubscribeToLevelChanged(callback events.Subscriber[Level
 	LevelChangedEventType.Subscribe(evt.world, callback)
 }
 
+// EmitWaveStarted emits a wave started event
+func (evt *EventSystem) EmitWaveStarted(waveIndex int) {
+	WaveStartedEventType.Publish(evt.world, WaveStartedEvent{WaveIndex: waveIndex})
+}
+
+// SubscribeToWaveStarted subscribes to wave started events
+func (evt *EventSystem) SubscribeToWaveStarted(callback events.Subscriber[WaveStartedEvent]) {
+	WaveStartedEventType.Subscribe(evt.world, callback)
+}
+
+// EmitWaveCompleted emits a wave completed event
+func (evt *EventSystem) EmitWaveCompleted(waveIndex int) {
+	WaveCompletedEventType.Publish(evt.world, WaveCompletedEvent{WaveIndex: waveIndex})
+}
+
+// SubscribeToWaveCompleted subscribes to wave completed events
+func (evt *EventSystem) SubscribeToWaveCompleted(callback events.Subscriber[WaveCompletedEvent]) {
+	WaveCompletedEventType.Subscribe(evt.world, callback)
+}
+
+// EmitBossSpawnRequested emits a boss spawn requested event
+func (evt *EventSystem) EmitBossSpawnRequested() {
+	BossSpawnRequestedEventType.Publish(evt.world, BossSpawnRequestedEvent{})
+}
+
+// SubscribeToBossSpawnRequested subscribes to boss spawn requested events
+func (evt *EventSystem) SubscribeToBossSpawnRequested(callback events.Subscriber[BossSpawnRequestedEvent]) {
+	BossSpawnRequestedEventType.Subscribe(evt.world, callback)
+}
+
+// EmitBossSpawned emits a boss spawned event
+func (evt *EventSystem) EmitBossSpawned() {
+	BossSpawnedEventType.Publish(evt.world, BossSpawnedEvent{})
+}
+
+// SubscribeToBossSpawned subscribes to boss spawned events
+func (evt *EventSystem) SubscribeToBossSpawned(callback events.Subscriber[BossSpawnedEvent]) {
+	BossSpawnedEventType.Subscribe(evt.world, callback)
+}
+
+// EmitBossDefeated emits a boss defeated event
+func (evt *EventSystem) EmitBossDefeated() {
+	BossDefeatedEventType.Publish(evt.world, BossDefeatedEvent{})
+}
+
+// SubscribeToBossDefeated subscribes to boss defeated events
+func (evt *EventSystem) SubscribeToBossDefeated(callback events.Subscriber[BossDefeatedEvent]) {
+	BossDefeatedEventType.Subscribe(evt.world, callback)
+}
+
+// EmitStageCompleted emits a stage completed event
+func (evt *EventSystem) EmitStageCompleted(stageNumber int) {
+	StageCompletedEventType.Publish(evt.world, StageCompletedEvent{StageNumber: stageNumber})
+}
+
+// SubscribeToStageCompleted subscribes to stage completed events
+func (evt *EventSystem) SubscribeToStageCompleted(callback events.Subscriber[StageCompletedEvent]) {
+	StageCompletedEventType.Subscribe(evt.world, callback)
+}
+
 // ProcessEvents processes all pending events
 func (evt *EventSystem) ProcessEvents() {
 	PlayerMovedEventType.ProcessEvents(evt.world)
@@ -214,4 +299,10 @@ func (evt *EventSystem) ProcessEvents() {
 	LifeAddedEventType.ProcessEvents(evt.world)
 	EnemyDestroyedEventType.ProcessEvents(evt.world)
 	LevelChangedEventType.ProcessEvents(evt.world)
+	WaveStartedEventType.ProcessEvents(evt.world)
+	WaveCompletedEventType.ProcessEvents(evt.world)
+	BossSpawnRequestedEventType.ProcessEvents(evt.world)
+	BossSpawnedEventType.ProcessEvents(evt.world)
+	BossDefeatedEventType.ProcessEvents(evt.world)
+	StageCompletedEventType.ProcessEvents(evt.world)
 }

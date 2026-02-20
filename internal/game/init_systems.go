@@ -14,6 +14,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/gyruss"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/health"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/movement"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/stage"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/weapon"
 )
 
@@ -51,8 +52,8 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 
 	g.createRemainingSystems(ctx)
 
-	// Load initial stage into Gyruss system
-	if stageErr := g.gyrussSystem.LoadStage(1); stageErr != nil {
+	// Load initial stage via stage state machine (delegates to GyrussSystem)
+	if stageErr := g.stageStateMachine.LoadStage(1); stageErr != nil {
 		g.logger.Warn("Failed to load initial stage", "error", stageErr)
 	}
 
@@ -74,8 +75,18 @@ func (g *ECSGame) createBasicSystems() error {
 		ResourceMgr: g.resourceManager,
 		Logger:      g.logger,
 		AssetsFS:    assets.Assets,
+		EventSystem: g.eventSystem,
 	})
 	g.logger.Debug("Gyruss system created")
+
+	// Create stage state machine (authoritative owner of wave/boss/stage progression)
+	g.stageStateMachine = stage.NewStageStateMachine(&stage.Config{
+		EventSystem:  g.eventSystem,
+		WaveManager:  g.gyrussSystem.GetWaveManager(),
+		GyrussSystem: g.gyrussSystem,
+		Logger:       g.logger,
+	})
+	g.logger.Debug("Stage state machine created")
 
 	return nil
 }

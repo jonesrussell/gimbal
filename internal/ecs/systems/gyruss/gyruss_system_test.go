@@ -11,6 +11,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 )
 
 type testLogger struct{}
@@ -41,6 +42,7 @@ func createTestGyrussSystem(t *testing.T) *GyrussSystem {
 		ResourceMgr: resourceMgr,
 		Logger:      logger,
 		AssetsFS:    assets.Assets,
+		EventSystem: nil, // optional for tests
 	})
 }
 
@@ -52,9 +54,6 @@ func TestNewGyrussSystem(t *testing.T) {
 	}
 	if gs.currentStage != 1 {
 		t.Errorf("Expected initial stage 1, got %d", gs.currentStage)
-	}
-	if gs.bossSpawned {
-		t.Error("Expected bossSpawned to be false initially")
 	}
 }
 
@@ -94,70 +93,39 @@ func TestGyrussSystem_GetCurrentStage(t *testing.T) {
 	}
 }
 
-func TestGyrussSystem_IsBossDefeated_FalseWhenBossNotSpawned(t *testing.T) {
-	gs := createTestGyrussSystem(t)
-	// No boss entity in world; old semantics would have made IsBossDefeated true.
-	// New semantics: defeated only when we spawned a boss and it no longer exists.
-	if gs.IsBossDefeated() {
-		t.Error("Expected IsBossDefeated to be false when bossSpawned is false")
-	}
-}
-
-func TestGyrussSystem_IsBossActive(t *testing.T) {
-	gs := createTestGyrussSystem(t)
-
-	if gs.IsBossActive() {
-		t.Error("Expected boss to not be active initially")
-	}
-
-	// Boss spawned but no boss entity = defeated
-	gs.bossSpawned = true
-	if gs.IsBossActive() {
-		t.Error("Expected boss to not be active when spawned but no entity exists")
-	}
-}
-
-func TestGyrussSystem_WasBossSpawned(t *testing.T) {
-	gs := createTestGyrussSystem(t)
-
-	if gs.WasBossSpawned() {
-		t.Error("Expected boss not spawned initially")
-	}
-
-	gs.bossSpawned = true
-	if !gs.WasBossSpawned() {
-		t.Error("Expected boss spawned to be true")
-	}
-}
-
-func TestGyrussSystem_IsStageComplete(t *testing.T) {
-	gs := createTestGyrussSystem(t)
-
-	// Stage not complete - boss not spawned
-	if gs.IsStageComplete() {
-		t.Error("Expected stage not complete when boss not spawned")
-	}
-
-	// Boss spawned and defeated (no boss entity) = stage complete
-	gs.bossSpawned = true
-	if !gs.IsStageComplete() {
-		t.Error("Expected stage complete when boss spawned and defeated")
-	}
-}
-
 func TestGyrussSystem_Reset(t *testing.T) {
 	gs := createTestGyrussSystem(t)
-
-	gs.bossSpawned = true
-	gs.bossTimer = 5.0
-
-	gs.Reset()
-
-	if gs.bossSpawned {
-		t.Error("Expected bossSpawned to be reset to false")
+	if err := gs.LoadStage(1); err != nil {
+		t.Fatalf("LoadStage(1): %v", err)
 	}
-	if gs.bossTimer != 0 {
-		t.Error("Expected bossTimer to be reset to 0")
+	gs.Reset()
+	// Wave manager should be reset (no direct boss state to clear)
+	if gs.GetWaveManager().GetStageConfig() == nil {
+		t.Error("Reset should not clear loaded stage config")
+	}
+}
+
+func TestGyrussSystem_SpawnBoss_CreatesBossWhenEnabled(t *testing.T) {
+	gs := createTestGyrussSystem(t)
+	if err := gs.LoadStage(1); err != nil {
+		t.Fatalf("LoadStage(1): %v", err)
+	}
+	ctx := context.Background()
+	gs.SpawnBoss(ctx)
+	// Stage 1 has boss enabled; should have created a boss entity
+	entries := core.GetEnemyEntries(gs.world)
+	var foundBoss bool
+	for _, e := range entries {
+		if e.HasComponent(core.EnemyTypeID) {
+			typeID := core.EnemyTypeID.Get(e)
+			if enemy.EnemyType(*typeID) == enemy.EnemyTypeBoss {
+				foundBoss = true
+				break
+			}
+		}
+	}
+	if !foundBoss {
+		t.Error("Expected SpawnBoss to create a boss entity when stage has boss enabled")
 	}
 }
 

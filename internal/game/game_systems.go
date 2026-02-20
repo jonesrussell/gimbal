@@ -71,6 +71,9 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 		return err
 	}
 
+	// Update stage state machine (drives wave/boss transitions; reads wave manager counts)
+	g.stageStateMachine.Update(ctx, deltaTime)
+
 	// Update weapon system (player weapons)
 	weaponUpdateFunc := func() error {
 		g.weaponSystem.Update(deltaTime)
