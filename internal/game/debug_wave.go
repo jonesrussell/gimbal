@@ -8,6 +8,7 @@ import (
 	v2text "github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/stage"
 )
 
@@ -30,7 +31,8 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 
 	// Boss lifecycle from stage state (StageStateMachine is single source of truth)
 	st := g.stageStateMachine.State()
-	g.logger.Debug("UI reading stage state", "state", st)
+	bossExists := g.findBossEntity() != nil
+	dbg.Log(dbg.State, "Overlay sees state=%v bossExists=%v", st, bossExists)
 	switch st {
 	case stage.StageStateBossSpawning:
 		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
