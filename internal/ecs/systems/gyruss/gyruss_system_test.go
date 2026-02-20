@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
@@ -182,5 +183,23 @@ func TestGyrussSystem_GetPowerUpSystem(t *testing.T) {
 	ps := gs.GetPowerUpSystem()
 	if ps == nil {
 		t.Fatal("Expected power-up system to be returned")
+	}
+}
+
+func TestGyrussSystem_DestroyEnemy_RemovesEntity(t *testing.T) {
+	gs := createTestGyrussSystem(t)
+
+	entity := gs.world.Create(core.EnemyTag)
+	if !gs.world.Valid(entity) {
+		t.Fatal("Expected enemy entity to exist after Create")
+	}
+
+	points := gs.DestroyEnemy(entity)
+
+	if gs.world.Valid(entity) {
+		t.Error("Expected entity to be removed after DestroyEnemy")
+	}
+	if points <= 0 {
+		t.Errorf("Expected positive points from DestroyEnemy, got %d", points)
 	}
 }

@@ -6,6 +6,11 @@ tasks:
     cmds:
       - go test ./... -v -race -coverprofile=coverage.out -timeout=60s
 
+  ci:
+    desc: Run tests as in CI (includes integration)
+    cmds:
+      - go test ./... -v -race -tags=integration -timeout=60s
+
   short:
     desc: Run fast tests (no race)
     cmds:
