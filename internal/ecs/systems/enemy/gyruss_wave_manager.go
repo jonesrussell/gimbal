@@ -203,13 +203,7 @@ func (gwm *GyrussWaveManager) checkWaveCompletion() {
 		return
 	}
 
-	// Check timeout
-	timeout := time.Duration(wave.Timing.Timeout * float64(time.Second))
-	if timeout > 0 && gwm.waveTimer >= timeout {
-		gwm.completeWave()
-		return
-	}
-
+	// Wave completes only when all spawned and no active enemies (world-driven).
 	// Check if all groups are done spawning
 	allSpawned := gwm.currentGroupIndex >= len(wave.SpawnSequence)
 
