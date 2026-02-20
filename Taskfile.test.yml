@@ -16,6 +16,11 @@ tasks:
     cmds:
       - go test ./... -v -short -timeout=30s
 
+  race:
+    desc: Run all tests with race detector
+    cmds:
+      - go test ./... -v -race -timeout=60s
+
   coverage:
     desc: Generate HTML coverage report
     cmds:
