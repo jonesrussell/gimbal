@@ -21,7 +21,7 @@ linters:
     - gocyclo
     - goheader
     - goprintffuncname
-    - gosec # Enabled: Security linter with relaxed settings for desktop apps
+    # - gosec # Disabled: panics on package "core" (gosec GetConstantInt64 bug); re-enable when fixed
     - lll
     - misspell
     - nakedret
