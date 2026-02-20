@@ -197,7 +197,7 @@ func TestGyrussWaveManager_LevelStartThenSpawning(t *testing.T) {
 		StageNumber: 1,
 		Waves: []managers.GyrussWave{
 			{
-				WaveID:      "wave_1",
+				WaveID: "wave_1",
 				SpawnSequence: []managers.EnemyGroupConfig{
 					{EnemyType: "basic", Count: 2, SpawnDelay: 0, SpawnInterval: 0},
 				},
@@ -246,8 +246,8 @@ func TestGyrussWaveManager_SpawnFlowAndWaveComplete(t *testing.T) {
 		StageNumber: 1,
 		Waves: []managers.GyrussWave{
 			{
-				WaveID:      "wave_1",
-				OnClear:     "boss",
+				WaveID:  "wave_1",
+				OnClear: "boss",
 				SpawnSequence: []managers.EnemyGroupConfig{
 					{EnemyType: "basic", Count: 2, SpawnDelay: 0, SpawnInterval: 0},
 				},
