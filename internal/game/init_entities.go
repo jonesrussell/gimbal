@@ -40,16 +40,5 @@ func (g *ECSGame) createEntities(ctx context.Context) error {
 	g.starEntities = core.CreateStarField(g.world, starSprite, g.config)
 	g.logger.Debug("Star entities created", "count", len(g.starEntities))
 
-	// Log star positions for debugging
-	for i, entity := range g.starEntities {
-		if i < 5 { // Only log first 5 stars
-			entry := g.world.Entry(entity)
-			if entry.Valid() {
-				pos := core.Position.Get(entry)
-				g.logger.Debug("Star position", "star_id", i, "pos", pos)
-			}
-		}
-	}
-
 	return nil
 }

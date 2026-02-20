@@ -1,6 +1,9 @@
 package logger
 
-// shouldLog determines if a message should be logged based on deduplication rules
+// shouldLog determines if a message should be logged based on deduplication rules.
+// Dedup key is msg + first field value (if the first field is a string). Same key and
+// equal field values skip logging. Errors are never deduplicated (caller does not use shouldLog).
+// lastLogs is unbounded; acceptable for a single process/game session.
 func (l *Logger) shouldLog(msg string, fields ...any) bool {
 	// Don't deduplicate if there are no fields
 	if len(fields) == 0 {

@@ -12,12 +12,8 @@ import (
 func (g *ECSGame) setupEventSubscriptions() {
 	// Initialize HUD presenter with current game state
 	g.initializeHUDPresenter()
-	// Subscribe to player movement events
-	g.eventSystem.SubscribeToPlayerMoved(func(w donburi.World, event events.PlayerMovedEvent) {
-		g.logger.Debug("Player moved",
-			"position", event.Position,
-			"angle", event.Angle)
-	})
+	// Subscribe to player movement events (no per-move logging to avoid 60/s spam)
+	g.eventSystem.SubscribeToPlayerMoved(func(w donburi.World, event events.PlayerMovedEvent) {})
 
 	// Subscribe to game state events
 	g.eventSystem.SubscribeToGameState(func(w donburi.World, event events.GameStateEvent) {

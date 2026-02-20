@@ -175,6 +175,5 @@ func (s *VictoryScene) playVictoryFanfare() {
 		return
 	}
 
-	// Play victory fanfare
-	s.manager.GetLogger().Debug("Victory fanfare should play")
+	// Play victory fanfare (audio player may be nil if audio disabled)
 }

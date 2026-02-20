@@ -165,8 +165,6 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 	// Clear screen
 	screen.Fill(color.Black)
 
-	s.manager.GetLogger().Debug("PlayingScene.Draw called", "screen_size", screen.Bounds())
-
 	// Apply screen shake if active
 	if s.screenShake > 0 {
 		// Get image from pool instead of creating new one
@@ -194,8 +192,6 @@ func (s *PlayingScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *PlayingScene) drawGameContent(screen *ebiten.Image) {
-	s.manager.GetLogger().Debug("drawGameContent called", "screen_size", screen.Bounds())
-
 	// Use optimized render system if available
 	if renderOptimizer := s.manager.GetRenderOptimizer(); renderOptimizer != nil {
 		renderOptimizer.OptimizedRenderSystem(s.manager.GetWorld(), screen)
@@ -219,35 +215,9 @@ func (s *PlayingScene) TriggerScreenShake() {
 	s.screenShake = 1.0 // Set shake intensity
 }
 
-// drawDebugInfo renders debug information
-func (s *PlayingScene) drawDebugInfo(screen *ebiten.Image) {
-	// Get player info for debug display
-	players := make([]donburi.Entity, 0)
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.PlayerTag),
-			filter.Contains(core.Position),
-			filter.Contains(core.Orbital),
-		),
-	).Each(s.manager.GetWorld(), func(entry *donburi.Entry) {
-		players = append(players, entry.Entity())
-	})
-
-	if len(players) > 0 {
-		playerEntry := s.manager.GetWorld().Entry(players[0])
-		if playerEntry.Valid() {
-			pos := core.Position.Get(playerEntry)
-			orb := core.Orbital.Get(playerEntry)
-
-			// Log debug info
-			s.manager.GetLogger().Debug("Debug Info",
-				"player_pos", fmt.Sprintf("(%.1f, %.1f)", pos.X, pos.Y),
-				"player_angle", fmt.Sprintf("%.1f°", orb.OrbitalAngle),
-				"entity_count", s.manager.GetWorld().Len(),
-			)
-		}
-	}
-}
+// drawDebugInfo renders debug information when Config.Debug is enabled.
+// Debug overlay (FPS, entity count, etc.) is drawn by the ECS debug renderer; this is a no-op placeholder.
+func (s *PlayingScene) drawDebugInfo(screen *ebiten.Image) {}
 
 func (s *PlayingScene) Enter() {
 	s.manager.GetLogger().Debug("Entering playing scene")

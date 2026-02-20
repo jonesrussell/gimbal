@@ -214,8 +214,6 @@ func (s *StageIntroScene) playWhooshSound() {
 
 	// Play whoosh sound effect (one-shot, not music)
 	// Note: For sound effects, we'd need a separate sound effect player
-	// For now, we'll just log that it should play
-	s.manager.GetLogger().Debug("Stage intro whoosh sound should play")
 }
 
 // loadStage loads the stage into the game system
@@ -223,5 +221,4 @@ func (s *StageIntroScene) loadStage() {
 	// The stage should already be loaded by the stage transition scene
 	// or by the game system when starting. This is a placeholder for
 	// any additional stage setup needed.
-	s.manager.GetLogger().Debug("Stage intro complete, loading stage", "stage", s.stageNumber)
 }

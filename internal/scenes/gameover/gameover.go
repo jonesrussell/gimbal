@@ -187,8 +187,7 @@ func (s *GameOverScene) playGameOverSound() {
 		return
 	}
 
-	// Play game over sound effect
-	s.manager.GetLogger().Debug("Game over sound should play")
+	// Play game over sound effect (audio player may be nil if audio disabled)
 }
 
 func (s *GameOverScene) playContinueTick() {
@@ -201,8 +200,7 @@ func (s *GameOverScene) playContinueTick() {
 		return
 	}
 
-	// Play continue tick sound effect
-	s.manager.GetLogger().Debug("Continue tick sound should play")
+	// Play continue tick sound effect (audio player may be nil if audio disabled)
 }
 
 func (s *GameOverScene) GetType() scenes.SceneType {
