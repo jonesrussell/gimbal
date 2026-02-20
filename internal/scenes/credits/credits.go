@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	scrollSpeed   = 30.0 // pixels per second
+	scrollSpeed   = 90.0 // pixels per second
 	lineSpacing   = 40.0
 	creditsStartY = 600.0  // Start below screen
 	creditsEndY   = -100.0 // End above screen
