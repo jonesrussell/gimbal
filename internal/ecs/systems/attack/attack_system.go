@@ -210,7 +210,7 @@ func (lre *LoopbackRushExecutor) Execute(entry *donburi.Entry, data *core.Attack
 	pos := core.Position.Get(entry)
 	center := lre.system.GetScreenCenter()
 
-	// Calculate distance to center
+	// Distance and direction to center
 	dx := center.X - pos.X
 	dy := center.Y - pos.Y
 	distToCenter := math.Sqrt(dx*dx + dy*dy)
@@ -220,19 +220,40 @@ func (lre *LoopbackRushExecutor) Execute(entry *donburi.Entry, data *core.Attack
 		speed = 350.0
 	}
 
+	moveDistance := speed * deltaTime
+
 	if distToCenter > 30 {
-		// Rush toward center
-		moveDistance := math.Min(speed*deltaTime, distToCenter)
-		pos.X += (dx / distToCenter) * moveDistance
-		pos.Y += (dy / distToCenter) * moveDistance
-	} else {
-		// Passed through center, continue outward and loop back
-		// This creates the loopback effect
-		angle := math.Atan2(pos.Y-center.Y, pos.X-center.X)
-		moveDistance := speed * deltaTime
-		pos.X += math.Cos(angle) * moveDistance
-		pos.Y += math.Sin(angle) * moveDistance
+		// Approach phase: rush toward center; store approach direction for when we cross
+		data.LoopbackRushPassedCenter = false // reset for this approach
+		ax := dx / distToCenter
+		ay := dy / distToCenter
+		step := math.Min(moveDistance, distToCenter)
+		pos.X += ax * step
+		pos.Y += ay * step
+		// Store approach dir for the frame we cross (we'll set outward = same direction = through and out)
+		data.LoopbackRushOutwardDir = common.Point{X: ax, Y: ay}
+		core.AttackPattern.SetValue(entry, *data)
+		return
 	}
+
+	// Within 30px of center: only use stored outward dir (set when we were in approach phase)
+	if !data.LoopbackRushPassedCenter {
+		data.LoopbackRushPassedCenter = true
+		// Outward = approach direction from last frame (through center and out); fallback = away from center
+		if data.LoopbackRushOutwardDir.X == 0 && data.LoopbackRushOutwardDir.Y == 0 {
+			if distToCenter >= 1 {
+				data.LoopbackRushOutwardDir = common.Point{X: -dx / distToCenter, Y: -dy / distToCenter}
+			} else {
+				data.LoopbackRushOutwardDir = common.Point{X: 1, Y: 0}
+			}
+		}
+		core.AttackPattern.SetValue(entry, *data)
+	}
+
+	// Move outward using stored direction (no angle-from-position; prevents runaway)
+	out := data.LoopbackRushOutwardDir
+	pos.X += out.X * moveDistance
+	pos.Y += out.Y * moveDistance
 }
 
 func (lre *LoopbackRushExecutor) IsComplete(entry *donburi.Entry, data *core.AttackPatternData) bool {

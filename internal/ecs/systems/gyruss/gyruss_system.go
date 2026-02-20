@@ -104,6 +104,45 @@ func (gs *GyrussSystem) LoadStage(stageNumber int) error {
 // offScreenEnemyMargin is the margin past screen bounds beyond which enemies are removed (matches behavior retreating_state)
 const offScreenEnemyMargin = 100.0
 
+// maxPositionRadius is the maximum distance from screen center we allow for bosses (defensive clamp)
+const maxPositionRadius = 2000.0
+
+// clampBossPosition prevents runaway coordinates: clamp boss position to a finite box around the screen
+func (gs *GyrussSystem) clampBossPosition() {
+	w := float64(gs.gameConfig.ScreenSize.Width)
+	h := float64(gs.gameConfig.ScreenSize.Height)
+	centerX := w / 2
+	centerY := h / 2
+	limit := maxPositionRadius
+	minX := centerX - limit
+	maxX := centerX + limit
+	minY := centerY - limit
+	maxY := centerY + limit
+
+	query.NewQuery(
+		filter.And(
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+			filter.Contains(core.EnemyTypeID),
+		),
+	).Each(gs.world, func(entry *donburi.Entry) {
+		if enemy.EnemyType(*core.EnemyTypeID.Get(entry)) != enemy.EnemyTypeBoss {
+			return
+		}
+		pos := core.Position.Get(entry)
+		if pos.X < minX {
+			pos.X = minX
+		} else if pos.X > maxX {
+			pos.X = maxX
+		}
+		if pos.Y < minY {
+			pos.Y = minY
+		} else if pos.Y > maxY {
+			pos.Y = maxY
+		}
+	})
+}
+
 // removeOffScreenEnemies removes enemy entities that have moved off-screen (e.g. after retreat), so wave completion can trigger
 func (gs *GyrussSystem) removeOffScreenEnemies() {
 	w := float64(gs.gameConfig.ScreenSize.Width)
@@ -169,6 +208,9 @@ func (gs *GyrussSystem) Update(ctx context.Context, deltaTime float64) error {
 	if err := gs.attackSystem.Update(ctx, deltaTime); err != nil {
 		return err
 	}
+
+	// Defensive clamp: prevent boss position runaway (e.g. from loopback rush bug)
+	gs.clampBossPosition()
 
 	// Update fire patterns
 	if err := gs.fireSystem.Update(ctx, deltaTime); err != nil {
@@ -265,7 +307,9 @@ func (gs *GyrussSystem) DestroyEnemy(entity donburi.Entity) int {
 
 	// Emit BossDefeated before removing so StageStateMachine can transition
 	if isBoss && gs.eventSystem != nil {
+		log.Printf("[BOSS_DEBUG] GyrussSystem.DestroyEnemy: boss killed, about to EmitBossDefeated (eventSystem=%p)", gs.eventSystem)
 		gs.eventSystem.EmitBossDefeated()
+		log.Printf("[BOSS_DEBUG] GyrussSystem.DestroyEnemy: EmitBossDefeated done")
 		dbg.Log(dbg.Event, "EmitBossDefeated (world=%p eventSystem=%p)", gs.world, gs.eventSystem)
 	}
 

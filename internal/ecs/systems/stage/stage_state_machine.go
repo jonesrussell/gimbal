@@ -2,6 +2,7 @@ package stage
 
 import (
 	"context"
+	"log"
 
 	"github.com/yohamta/donburi"
 
@@ -67,17 +68,21 @@ func NewStageStateMachine(cfg *Config) *StageStateMachine {
 }
 
 func (ssm *StageStateMachine) onBossDefeated(_ donburi.World, _ events.BossDefeatedEvent) {
+	log.Printf("[BOSS_DEBUG] StageStateMachine.onBossDefeated called (state=%v stageNumber=%d)", ssm.state, ssm.stageNumber)
 	dbg.Log(dbg.Event, "StageStateMachine.onBossDefeated fired (state=%v)", ssm.state)
 	// Accept both BossActive and BossSpawning so we never get stuck if the boss
 	// is defeated while state is still BossSpawning (e.g. same-frame or ordering edge case).
 	if ssm.state != StageStateBossActive && ssm.state != StageStateBossSpawning {
+		log.Printf("[BOSS_DEBUG] StageStateMachine.onBossDefeated IGNORED (state %v not BossActive/BossSpawning)", ssm.state)
 		return
 	}
 	old := ssm.state
 	ssm.state = StageStateBossDefeated
+	log.Printf("[BOSS_DEBUG] StageStateMachine: %v → BossDefeated, emitting StageCompleted(%d)", old, ssm.stageNumber)
 	dbg.Log(dbg.State, "StageStateMachine: %v → %v", old, StageStateBossDefeated)
 	ssm.eventSystem.EmitStageCompleted(ssm.stageNumber)
 	ssm.state = StageStateStageCompleted
+	log.Printf("[BOSS_DEBUG] StageStateMachine: → StageCompleted (IsStageCompleted=true)")
 	dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateBossDefeated, StageStateStageCompleted)
 }
 

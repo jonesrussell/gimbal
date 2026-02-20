@@ -258,6 +258,10 @@ type AttackPatternData struct {
 	ReturnPosition common.Point      // Position to return to
 	IsActive       bool              // Whether attack is currently active
 	PairEntityID   int               // Partner entity ID for paired attacks
+
+	// LoopbackRush state: only switch to outward when we cross from >30 to <=30
+	LoopbackRushPassedCenter bool        // true once we've entered the near-center zone (so we move outward)
+	LoopbackRushOutwardDir   common.Point // normalized direction for outward phase (set when crossing)
 }
 
 // FirePatternData stores firing behavior configuration

@@ -2,6 +2,7 @@ package collision
 
 import (
 	"context"
+	"log"
 
 	"github.com/yohamta/donburi"
 
@@ -105,8 +106,12 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 
 	// Check collision
 	if cs.checkCollision(*playerPos, *playerSize, *enemyPos, *enemySize) {
-		// Remove enemy immediately
-		cs.world.Remove(enemyEntity)
+		// Destroy enemy via same path as projectile hit (awards points, emits BossDefeated if boss)
+		points := cs.enemySystem.DestroyEnemy(enemyEntity)
+		if err := cs.eventSystem.EmitEnemyDestroyed(ctx, enemyEntity, points); err != nil {
+			log.Printf("[ERROR] Failed to emit enemy destroyed event: %v", err)
+		}
+		dbg.Log(dbg.Event, "Enemy destroyed by player collision (points=%d)", points)
 
 		// Damage player (1 damage per enemy collision) with proper context propagation
 		cs.healthSystem.DamagePlayer(ctx, playerEntity, 1)

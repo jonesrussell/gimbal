@@ -152,6 +152,13 @@ func (rs *RetreatingState) retreatOffScreen(entry *donburi.Entry, deltaTime floa
 	dy := pos.Y - centerY
 	distance := math.Sqrt(dx*dx + dy*dy)
 
+	// Don't amplify runaway: if already far off-screen, skip movement (another system can remove)
+	maxReasonableDist := math.Sqrt(float64(rs.config.ScreenSize.Width*rs.config.ScreenSize.Width+
+		rs.config.ScreenSize.Height*rs.config.ScreenSize.Height)) * 2
+	if distance > maxReasonableDist {
+		return
+	}
+
 	if distance < 1 {
 		// At center, pick random direction
 		dx = 1
