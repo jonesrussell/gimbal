@@ -32,7 +32,8 @@ jobs:
             libxi-dev \
             libxxf86vm-dev \
             libasound2-dev \
-            pkg-config
+            pkg-config \
+            xvfb
 
       - name: Build
         run: go build ./...
@@ -48,4 +49,4 @@ jobs:
           version: v2.10.1
 
       - name: Test
-        run: go test ./... -v -race -tags=integration -timeout=60s
+        run: xvfb-run -a go test ./... -v -race -tags=integration -timeout=60s
