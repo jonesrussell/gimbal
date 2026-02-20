@@ -2,10 +2,11 @@ package game
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jonesrussell/gimbal/internal/config"
-	"github.com/jonesrussell/gimbal/internal/errors"
+	gameerrors "github.com/jonesrussell/gimbal/internal/errors"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
@@ -24,7 +25,7 @@ func (g *ECSGame) updateCoreSystems() error {
 	// Check if quit has been requested by a scene
 	if g.sceneManager.IsQuitRequested() {
 		g.logger.Info("Quit requested, stopping game loop")
-		return errors.NewGameError(errors.StateTransition, "application shutdown requested")
+		return gameerrors.NewGameError(gameerrors.StateTransition, "application shutdown requested")
 	}
 
 	if err := g.ui.Update(); err != nil {
@@ -99,6 +100,11 @@ func (g *ECSGame) updateSystemWithTiming(systemName string, updateFn func() erro
 	dur := time.Since(start)
 
 	if err != nil {
+		// Collision timeout is non-fatal: one slow frame should not exit the game
+		if errors.Is(err, context.DeadlineExceeded) {
+			g.logger.Warn("System exceeded time budget, continuing", "system", systemName, "error", err)
+			return nil
+		}
 		g.logger.Error("System update failed", "system", systemName, "error", err)
 		return err
 	}
