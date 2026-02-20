@@ -83,7 +83,6 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 	// Check for level completion (boss killed)
 	g.checkLevelCompletion()
 
-	g.logger.Debug("ECS systems updated", "delta", deltaTime)
 	return nil
 }
 

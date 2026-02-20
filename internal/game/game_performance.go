@@ -2,7 +2,6 @@ package game
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/jonesrussell/gimbal/internal/config"
 )
 
 // updatePerformanceMonitoring handles performance monitoring for the frame
@@ -12,17 +11,9 @@ func (g *ECSGame) updatePerformanceMonitoring() {
 	}
 }
 
-// updateDebugLogging handles periodic debug logging
+// updateDebugLogging handles periodic debug logging (no per-tick log to avoid spam)
 func (g *ECSGame) updateDebugLogging() {
 	g.frameCount++
-	if g.frameCount%config.DebugLogInterval == 0 {
-		g.logger.Debug("Game loop running",
-			"frame", g.frameCount,
-			"scene", g.sceneManager.GetCurrentScene(),
-			"entities", g.world.Len(),
-			"fps", ebiten.ActualFPS(),
-			"player_valid", g.playerEntity != 0)
-	}
 }
 
 // updateDebugInput handles debug key input

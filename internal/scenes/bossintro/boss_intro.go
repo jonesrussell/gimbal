@@ -198,6 +198,5 @@ func (b *BossIntroOverlay) playWarningSound() {
 		return
 	}
 
-	// Play warning sound effect
-	b.manager.GetLogger().Debug("Boss intro warning sound should play")
+	// Play warning sound effect (audio player may be nil if audio disabled)
 }

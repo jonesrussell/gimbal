@@ -8,7 +8,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/yohamta/donburi v1.15.7
-	go.uber.org/zap v1.27.0
 	golang.org/x/image v0.29.0
 )
 
@@ -35,7 +34,6 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/tdewolff/parse/v2 v2.7.15 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
 )

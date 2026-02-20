@@ -166,13 +166,11 @@ func (s *StageTransitionScene) playWarpSound() {
 		return
 	}
 
-	// Play warp sound effect
-	s.manager.GetLogger().Debug("Stage transition warp sound should play")
+	// Play warp sound effect (audio player may be nil if audio disabled)
 }
 
 // loadNextStage loads the next stage into the game system
 func (s *StageTransitionScene) loadNextStage() {
 	// The stage loading is handled by the game's level completion system
 	// This is called to ensure the stage is ready before showing the intro
-	s.manager.GetLogger().Debug("Stage transition complete, next stage should be loaded")
 }

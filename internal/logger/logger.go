@@ -3,13 +3,13 @@ package logger
 import (
 	"context"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/kelseyhightower/envconfig"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // Config holds logger configuration
@@ -32,22 +32,79 @@ func (w *syncWriter) Write(p []byte) (n int, err error) {
 	return w.Writer.Write(p)
 }
 
-// Logger wraps zap.Logger with additional functionality
+// multiHandler forwards log records to multiple handlers (e.g. console + file).
+type multiHandler struct {
+	handlers []slog.Handler
+}
+
+func (m *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+// Handle forwards the record to all enabled handlers. Implements slog.Handler.
+//
+//nolint:gocritic // slog.Handler.Handle requires Record by value
+func (m *multiHandler) Handle(ctx context.Context, r slog.Record) error {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, r.Level) {
+			if err := h.Handle(ctx, r); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (m *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	out := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		out[i] = h.WithAttrs(attrs)
+	}
+	return &multiHandler{handlers: out}
+}
+
+func (m *multiHandler) WithGroup(name string) slog.Handler {
+	out := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		out[i] = h.WithGroup(name)
+	}
+	return &multiHandler{handlers: out}
+}
+
+// Logger wraps slog with deduplication and optional file for Sync.
 type Logger struct {
-	*zap.Logger
+	slog     *slog.Logger
 	lastLogs map[string]any
 	mu       sync.RWMutex
 	file     *os.File
 }
 
-// NewWithConfig creates a new logger instance with custom configuration
+// parseLevel maps a string (e.g. "DEBUG", "INFO") to slog.Level. Defaults to Debug.
+func parseLevel(s string) slog.Level {
+	switch strings.ToUpper(strings.TrimSpace(s)) {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "INFO":
+		return slog.LevelInfo
+	case "WARN", "WARNING":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelDebug
+	}
+}
+
+// NewWithConfig creates a new logger instance with custom configuration.
 func NewWithConfig(config *Config) (*Logger, error) {
-	// If no config provided, create default config
 	if config == nil {
 		config = &Config{}
-		// Use envconfig to load defaults
 		if err := envconfig.Process("", config); err != nil {
-			// Fallback to hardcoded defaults if envconfig fails
 			config = &Config{
 				LogFile:    "logs/gimbal.log",
 				LogLevel:   "DEBUG",
@@ -57,140 +114,54 @@ func NewWithConfig(config *Config) (*Logger, error) {
 		}
 	}
 
-	level, err := zapcore.ParseLevel(config.LogLevel)
-	if err != nil {
-		level = zapcore.DebugLevel
+	level := parseLevel(config.LogLevel)
+	opts := &slog.HandlerOptions{
+		Level:     level,
+		AddSource: true,
 	}
 
-	cores, logFile, err := createLoggerCores(config, level)
-	if err != nil {
-		return nil, err
-	}
+	var handlers []slog.Handler
 
-	zapLogger := createZapLogger(cores)
-	logger := createLogger(zapLogger, logFile)
-
-	// Log initial message
-	logger.logInitialization(config)
-
-	return logger, nil
-}
-
-// createLoggerCores creates and configures the logger cores
-func createLoggerCores(config *Config, level zapcore.Level) ([]zapcore.Core, *os.File, error) {
-	var cores []zapcore.Core
-	var logFile *os.File
-	var err error
-
-	// Add console core if enabled
 	if config.ConsoleOut {
-		consoleCore := createConsoleCore(level)
-		cores = append(cores, consoleCore)
+		handlers = append(handlers, slog.NewTextHandler(&syncWriter{Writer: os.Stdout}, opts))
 	}
 
-	// Add file core if enabled
+	var logFile *os.File
 	if config.FileOut && config.LogFile != "" {
+		var err error
 		logFile, err = createLogFile(config.LogFile)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-
-		fileCore := createFileCore(logFile, level)
-		cores = append(cores, fileCore)
+		handlers = append(handlers, slog.NewJSONHandler(&syncWriter{Writer: logFile}, opts))
 	}
 
-	// If no cores configured, default to console
-	if len(cores) == 0 {
-		consoleCore := createConsoleCore(level)
-		cores = append(cores, consoleCore)
+	if len(handlers) == 0 {
+		handlers = append(handlers, slog.NewTextHandler(&syncWriter{Writer: os.Stdout}, opts))
 	}
 
-	return cores, logFile, nil
-}
-
-// createConsoleCore creates a console output core
-func createConsoleCore(level zapcore.Level) zapcore.Core {
-	consoleEncoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "ts",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		FunctionKey:    zapcore.OmitKey,
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseColorLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
+	var rootHandler slog.Handler = &multiHandler{handlers: handlers}
+	if len(handlers) == 1 {
+		rootHandler = handlers[0]
 	}
 
-	return zapcore.NewCore(
-		zapcore.NewConsoleEncoder(consoleEncoderConfig),
-		zapcore.AddSync(&syncWriter{Writer: os.Stdout}),
-		level,
-	)
-}
-
-// createFileCore creates a file output core
-func createFileCore(logFile *os.File, level zapcore.Level) zapcore.Core {
-	fileEncoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "timestamp",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		FunctionKey:    zapcore.OmitKey,
-		MessageKey:     "message",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
-
-	return zapcore.NewCore(
-		zapcore.NewJSONEncoder(fileEncoderConfig),
-		zapcore.AddSync(&syncWriter{Writer: logFile}),
-		level,
-	)
-}
-
-// createLogFile creates and opens the log file
-func createLogFile(logFilePath string) (*os.File, error) {
-	// Ensure log directory exists
-	logDir := filepath.Dir(logFilePath)
-	if mkdirErr := os.MkdirAll(logDir, 0o755); mkdirErr != nil {
-		return nil, mkdirErr
-	}
-
-	// Open log file (create if doesn't exist, append if exists)
-	return os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-}
-
-// createZapLogger creates the zap logger with cores
-func createZapLogger(cores []zapcore.Core) *zap.Logger {
-	// Create multi-core
-	core := zapcore.NewTee(cores...)
-
-	// Create logger with development options
-	return zap.New(core,
-		zap.Development(),
-		zap.AddCaller(),
-		zap.AddStacktrace(zapcore.ErrorLevel),
-	)
-}
-
-// createLogger creates the Logger wrapper
-func createLogger(zapLogger *zap.Logger, logFile *os.File) *Logger {
-	return &Logger{
-		Logger:   zapLogger,
+	l := &Logger{
+		slog:     slog.New(rootHandler),
 		lastLogs: make(map[string]any),
 		file:     logFile,
 	}
+	l.logInitialization(config)
+	return l, nil
 }
 
-// logInitialization logs the initial logger setup message
+func createLogFile(logFilePath string) (*os.File, error) {
+	logDir := filepath.Dir(logFilePath)
+	if err := os.MkdirAll(logDir, 0o755); err != nil {
+		return nil, err
+	}
+	return os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+}
+
 func (l *Logger) logInitialization(config *Config) {
 	l.Info("Logger initialized",
 		"log_file", config.LogFile,
@@ -199,83 +170,71 @@ func (l *Logger) logInitialization(config *Config) {
 		"file_output", config.FileOut)
 }
 
-// Debug logs a debug message
+// toSlogArgs converts key-value pairs to slog-friendly args (same format: key, value, ...).
+func toSlogArgs(fields ...any) []any { return fields }
+
+// Debug logs a debug message.
 func (l *Logger) Debug(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Debug(msg, toZapFields(fields...)...)
+	l.slog.Debug(msg, toSlogArgs(fields...)...)
 }
 
-// Info logs an info message
+// Info logs an info message.
 func (l *Logger) Info(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Info(msg, toZapFields(fields...)...)
+	l.slog.Info(msg, toSlogArgs(fields...)...)
 }
 
-// Warn logs a warning message
+// Warn logs a warning message.
 func (l *Logger) Warn(msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Warn(msg, toZapFields(fields...)...)
+	l.slog.Warn(msg, toSlogArgs(fields...)...)
 }
 
-// Error logs an error message
+// Error logs an error message. Errors are never deduplicated.
 func (l *Logger) Error(msg string, fields ...any) {
-	// Always log errors, don't deduplicate them
-	l.Logger.Error(msg, toZapFields(fields...)...)
+	l.slog.Error(msg, toSlogArgs(fields...)...)
 }
 
-// DebugContext logs a debug message with context
+// DebugContext logs a debug message with context (context is not yet used for correlation).
 func (l *Logger) DebugContext(ctx context.Context, msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Debug(msg, toZapFields(fields...)...)
+	l.slog.DebugContext(ctx, msg, toSlogArgs(fields...)...)
 }
 
-// InfoContext logs an info message with context
+// InfoContext logs an info message with context.
 func (l *Logger) InfoContext(ctx context.Context, msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Info(msg, toZapFields(fields...)...)
+	l.slog.InfoContext(ctx, msg, toSlogArgs(fields...)...)
 }
 
-// WarnContext logs a warning message with context
+// WarnContext logs a warning message with context.
 func (l *Logger) WarnContext(ctx context.Context, msg string, fields ...any) {
 	if !l.shouldLog(msg, fields...) {
 		return
 	}
-	l.Logger.Warn(msg, toZapFields(fields...)...)
+	l.slog.WarnContext(ctx, msg, toSlogArgs(fields...)...)
 }
 
-// ErrorContext logs an error message with context
+// ErrorContext logs an error message with context.
 func (l *Logger) ErrorContext(ctx context.Context, msg string, fields ...any) {
-	// Always log errors, don't deduplicate them
-	l.Logger.Error(msg, toZapFields(fields...)...)
+	l.slog.ErrorContext(ctx, msg, toSlogArgs(fields...)...)
 }
 
-// toZapFields converts interface slice to zap.Field slice
-func toZapFields(fields ...any) []zap.Field {
-	zapFields := make([]zap.Field, 0, len(fields))
-	for i := 0; i < len(fields); i += 2 {
-		if i+1 < len(fields) {
-			key, ok := fields[i].(string)
-			if !ok {
-				continue
-			}
-			zapFields = append(zapFields, zap.Any(key, fields[i+1]))
-		}
-	}
-	return zapFields
-}
-
-// Sync ensures all buffered logs are written.
-// The log file is not closed so that any late writes (e.g. from deferred cleanup) do not get "file already closed".
+// Sync flushes any buffered logs. If file output is used, syncs the file.
 func (l *Logger) Sync() error {
-	return l.Logger.Sync()
+	if l.file != nil {
+		return l.file.Sync()
+	}
+	return nil
 }
