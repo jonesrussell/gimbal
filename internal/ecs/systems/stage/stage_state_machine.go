@@ -2,6 +2,7 @@ package stage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/yohamta/donburi"
 
@@ -70,6 +71,8 @@ func NewStageStateMachine(cfg *Config) *StageStateMachine {
 }
 
 func (ssm *StageStateMachine) onBossDefeated(_ donburi.World, _ events.BossDefeatedEvent) {
+	fmt.Println("StageStateMachine: onBossDefeated fired")
+	ssm.logger.Debug("StageStateMachine: onBossDefeated fired", "state", ssm.state)
 	// Accept both BossActive and BossSpawning so we never get stuck if the boss
 	// is defeated while state is still BossSpawning (e.g. same-frame or ordering edge case).
 	if ssm.state != StageStateBossActive && ssm.state != StageStateBossSpawning {
@@ -118,6 +121,7 @@ func (ssm *StageStateMachine) Update(ctx context.Context, deltaTime float64) {
 		return
 	default:
 	}
+	ssm.logger.Debug("StageStateMachine.Update", "state", ssm.state)
 
 	switch ssm.state {
 	case StageStatePreWave:

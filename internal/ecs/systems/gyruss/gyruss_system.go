@@ -3,6 +3,7 @@ package gyruss
 import (
 	"context"
 	"embed"
+	"fmt"
 
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
@@ -295,6 +296,7 @@ func (gs *GyrussSystem) DestroyEnemy(entity donburi.Entity) int {
 	// Emit BossDefeated before removing so StageStateMachine can transition
 	if isBoss && gs.eventSystem != nil {
 		gs.eventSystem.EmitBossDefeated()
+		fmt.Println("GyrussSystem: EmitBossDefeated called")
 	}
 
 	// Remove the entity

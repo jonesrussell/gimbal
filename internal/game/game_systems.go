@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jonesrussell/gimbal/internal/config"
@@ -43,6 +44,7 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 	if !isPlayingScene {
 		return nil
 	}
+	fmt.Printf("Gameplay using EventSystem %p\n", g.eventSystem)
 
 	deltaTime := config.DeltaTime
 

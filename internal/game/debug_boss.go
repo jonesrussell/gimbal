@@ -40,16 +40,24 @@ func (g *ECSGame) findBossEntity() *donburi.Entry {
 	return bossEntry
 }
 
-// drawBossStatus draws boss spawn/defeat status when boss entity not found
+// drawBossStatus draws boss spawn/defeat status when boss entity not found.
+// Uses StageStateMachine as single source of truth; when entity is gone but state
+// is still BossActive, show Defeated (event not yet processed or same-frame).
 func (g *ECSGame) drawBossStatus(screen *ebiten.Image, x, screenHeight, lineHeight float64) {
 	if g.stageStateMachine == nil {
 		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
 		return
 	}
 	st := g.stageStateMachine.State()
-	if st == stage.StageStateBossDefeated || st == stage.StageStateStageCompleted {
+	switch st {
+	case stage.StageStateBossDefeated, stage.StageStateStageCompleted:
 		g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
-	} else {
+	case stage.StageStateBossActive:
+		// Entity gone but state not yet transitioned (same-frame or event pending)
+		g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
+	case stage.StageStateBossSpawning:
+		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
+	default:
 		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
 	}
 }
