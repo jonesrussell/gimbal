@@ -25,4 +25,4 @@ g.logger.Error("System failed", "system", name, "error", err)
 
 ## Testing
 - Run specific tests: `go test ./internal/input/...`
-- Run all with race detection: `task tests:all`
+- Run all with race detection: `task test:race` or `task test:all`

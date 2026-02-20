@@ -129,6 +129,37 @@ func (gs *GyrussSystem) LoadStage(stageNumber int) error {
 	return nil
 }
 
+// offScreenEnemyMargin is the margin past screen bounds beyond which enemies are removed (matches behavior retreating_state)
+const offScreenEnemyMargin = 100.0
+
+// removeOffScreenEnemies removes enemy entities that have moved off-screen (e.g. after retreat), so wave completion can trigger
+func (gs *GyrussSystem) removeOffScreenEnemies() {
+	w := float64(gs.gameConfig.ScreenSize.Width)
+	h := float64(gs.gameConfig.ScreenSize.Height)
+	var toRemove []donburi.Entity
+	query.NewQuery(
+		filter.And(
+			filter.Contains(core.EnemyTag),
+			filter.Contains(core.Position),
+		),
+	).Each(gs.world, func(entry *donburi.Entry) {
+		if entry.HasComponent(core.EnemyTypeID) {
+			typeID := core.EnemyTypeID.Get(entry)
+			if enemy.EnemyType(*typeID) == enemy.EnemyTypeBoss {
+				return
+			}
+		}
+		pos := core.Position.Get(entry)
+		if pos.X < -offScreenEnemyMargin || pos.X > w+offScreenEnemyMargin ||
+			pos.Y < -offScreenEnemyMargin || pos.Y > h+offScreenEnemyMargin {
+			toRemove = append(toRemove, entry.Entity())
+		}
+	})
+	for _, e := range toRemove {
+		gs.world.Remove(e)
+	}
+}
+
 // Update updates all Gyruss systems
 func (gs *GyrussSystem) Update(ctx context.Context, deltaTime float64) error {
 	// Check for cancellation
@@ -137,6 +168,9 @@ func (gs *GyrussSystem) Update(ctx context.Context, deltaTime float64) error {
 		return ctx.Err()
 	default:
 	}
+
+	// Remove enemies that retreated off-screen so wave completion can trigger without waiting for timeout
+	gs.removeOffScreenEnemies()
 
 	// Update wave manager
 	gs.waveManager.Update(deltaTime)

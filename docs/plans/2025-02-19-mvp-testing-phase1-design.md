@@ -42,7 +42,7 @@ Gimbal is a Gyruss-style arcade game (Go, Ebiten, Donburi). This design establis
 **CI**
 
 - **Location:** `.github/workflows/ci.yml` (or equivalent).
-- **Steps (order):** checkout → setup Go (match `go.mod`) → `go build ./...` → `task lint` → `go test ./... -race -tags=integration -timeout=60s` (or `task tests:all` with integration enabled). Fail job on any failure.
+- **Steps (order):** checkout → setup Go (match `go.mod`) → `go build ./...` → `task lint` → `go test ./... -race -tags=integration -timeout=60s` (or `task test:all` with integration enabled). Fail job on any failure.
 - **Triggers:** Push and PRs to default branch.
 - **Caching:** Optional (e.g. Go module cache); not required for Phase 1.
 
