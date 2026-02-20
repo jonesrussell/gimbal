@@ -1,7 +1,6 @@
 package core //nolint:testpackage // Testing from same package to access unexported functions
 
 import (
-	"context"
 	"testing"
 )
 
@@ -66,22 +65,8 @@ func TestImagePool_createKey(t *testing.T) {
 	}
 }
 
-// noOpLogger is a test logger that does nothing
-type noOpLogger struct{}
-
-func (n *noOpLogger) Debug(msg string, fields ...any)                             {}
-func (n *noOpLogger) Info(msg string, fields ...any)                              {}
-func (n *noOpLogger) Warn(msg string, fields ...any)                              {}
-func (n *noOpLogger) Error(msg string, fields ...any)                             {}
-func (n *noOpLogger) DebugContext(ctx context.Context, msg string, fields ...any) {}
-func (n *noOpLogger) InfoContext(ctx context.Context, msg string, fields ...any)  {}
-func (n *noOpLogger) WarnContext(ctx context.Context, msg string, fields ...any)  {}
-func (n *noOpLogger) ErrorContext(ctx context.Context, msg string, fields ...any) {}
-func (n *noOpLogger) Sync() error                                                 { return nil }
-
 func TestNewImagePool(t *testing.T) {
-	logger := &noOpLogger{}
-	pool := NewImagePool(logger)
+	pool := NewImagePool()
 
 	if pool == nil {
 		t.Fatal("NewImagePool() returned nil")
@@ -89,14 +74,10 @@ func TestNewImagePool(t *testing.T) {
 	if pool.pool == nil {
 		t.Error("NewImagePool() pool map is nil")
 	}
-	if pool.logger != logger {
-		t.Error("NewImagePool() logger not set correctly")
-	}
 }
 
 func TestImagePool_GetImage(t *testing.T) {
-	logger := &noOpLogger{}
-	pool := NewImagePool(logger)
+	pool := NewImagePool()
 
 	tests := []struct {
 		name   string
@@ -134,8 +115,7 @@ func TestImagePool_GetImage(t *testing.T) {
 }
 
 func TestImagePool_ReturnImage(t *testing.T) {
-	logger := &noOpLogger{}
-	pool := NewImagePool(logger)
+	pool := NewImagePool()
 
 	// Get an image
 	img := pool.GetImage(100, 100)
@@ -172,8 +152,7 @@ func TestImagePool_ReturnImage(t *testing.T) {
 }
 
 func TestImagePool_GetPoolStats(t *testing.T) {
-	logger := &noOpLogger{}
-	pool := NewImagePool(logger)
+	pool := NewImagePool()
 
 	// Initially should be empty
 	stats := pool.GetPoolStats()
@@ -209,8 +188,7 @@ func TestImagePool_GetPoolStats(t *testing.T) {
 }
 
 func TestImagePool_Cleanup(t *testing.T) {
-	logger := &noOpLogger{}
-	pool := NewImagePool(logger)
+	pool := NewImagePool()
 
 	// Add images to pool
 	img1 := pool.GetImage(100, 100)
@@ -238,8 +216,7 @@ func TestImagePool_Cleanup(t *testing.T) {
 }
 
 func TestImagePool_GetImageReuseFromPool(t *testing.T) {
-	logger := &noOpLogger{}
-	pool := NewImagePool(logger)
+	pool := NewImagePool()
 
 	// Create and return an image
 	img1 := pool.GetImage(150, 150)

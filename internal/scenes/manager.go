@@ -3,6 +3,8 @@
 package scenes
 
 import (
+	"log"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/yohamta/donburi"
@@ -17,11 +19,9 @@ import (
 )
 
 // SceneManagerConfig groups all dependencies for SceneManager
-// to avoid argument limit lint violations
 type SceneManagerConfig struct {
 	World        donburi.World
 	Config       *config.GameConfig
-	Logger       common.Logger
 	InputHandler common.GameInputHandler
 	Font         text.Face
 	ScoreManager *managers.ScoreManager
@@ -58,7 +58,6 @@ type SceneManager struct {
 	scenes          map[SceneType]Scene
 	world           donburi.World
 	config          *config.GameConfig
-	logger          common.Logger
 	inputHandler    common.GameInputHandler
 	onResume        func()                 // Callback to unpause game state
 	healthSystem    common.HealthProvider  // Health system interface for scenes to access
@@ -76,14 +75,11 @@ func NewSceneManager(cfg *SceneManagerConfig) *SceneManager {
 		scenes:       make(map[SceneType]Scene),
 		world:        cfg.World,
 		config:       cfg.Config,
-		logger:       cfg.Logger,
 		inputHandler: cfg.InputHandler,
 		font:         cfg.Font,
 		resourceMgr:  cfg.ResourceMgr,
 	}
-
-	// Initialize debug renderer
-	sceneMgr.debugRenderer = debug.NewDebugRenderer(cfg.Config, cfg.Logger)
+	sceneMgr.debugRenderer = debug.NewDebugRenderer(cfg.Config)
 	sceneMgr.debugRenderer.SetFont(cfg.Font)
 
 	// Register all scenes using factory functions
@@ -167,34 +163,21 @@ func (sceneMgr *SceneManager) SetInitialScene(sceneType SceneType) error {
 	if scene, exists := sceneMgr.scenes[sceneType]; exists {
 		sceneMgr.currentScene = scene
 		sceneMgr.currentScene.Enter()
-		sceneMgr.logger.Debug("Initial scene set", "scene_type", sceneType)
 		return nil
-	} else {
-		sceneMgr.logger.Error("Scene not found for initial scene", "scene_type", sceneType)
-		return errors.NewGameError(errors.SceneNotFound, "initial scene not found")
 	}
+	log.Printf("[ERROR] Scene not found for initial scene: scene_type=%v", sceneType)
+	return errors.NewGameError(errors.SceneNotFound, "initial scene not found")
 }
 
 func (sceneMgr *SceneManager) SwitchScene(sceneType SceneType) {
 	if scene, exists := sceneMgr.scenes[sceneType]; exists {
 		if sceneMgr.currentScene != nil {
-			sceneMgr.logger.Debug("Switching scene",
-				"from", sceneMgr.currentScene.GetType(),
-				"to", sceneType)
 			sceneMgr.currentScene.Exit()
-		} else {
-			sceneMgr.logger.Debug("Setting initial scene", "scene_type", sceneType)
 		}
 		sceneMgr.currentScene = scene
-		if sceneType == ScenePlaying {
-			sceneMgr.logger.Debug("Entering gameplay scene",
-				"player_entity", sceneMgr.world, // Replace with actual player entity if accessible
-				"health_system", sceneMgr.healthSystem != nil,
-				"resource_mgr", sceneMgr.resourceMgr != nil)
-		}
 		sceneMgr.currentScene.Enter()
 	} else {
-		sceneMgr.logger.Error("Scene not found", "scene_type", sceneType)
+		log.Printf("[ERROR] Scene not found: scene_type=%v", sceneType)
 	}
 }
 
@@ -208,10 +191,6 @@ func (sceneMgr *SceneManager) GetWorld() donburi.World {
 
 func (sceneMgr *SceneManager) GetConfig() *config.GameConfig {
 	return sceneMgr.config
-}
-
-func (sceneMgr *SceneManager) GetLogger() common.Logger {
-	return sceneMgr.logger
 }
 
 func (sceneMgr *SceneManager) GetInputHandler() common.GameInputHandler {
@@ -285,9 +264,7 @@ func (sceneMgr *SceneManager) SetImagePool(pool *core.ImagePool) {
 // This allows proper cleanup of resources instead of using os.Exit().
 func (sceneMgr *SceneManager) RequestQuit() {
 	sceneMgr.quitRequested = true
-	if sceneMgr.logger != nil {
-		sceneMgr.logger.Info("Quit requested, initiating graceful shutdown")
-	}
+	log.Printf("[INFO] Quit requested, initiating graceful shutdown")
 }
 
 // IsQuitRequested returns whether a quit has been requested.

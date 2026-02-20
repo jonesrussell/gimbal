@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/yohamta/donburi"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 )
@@ -27,15 +29,11 @@ type GameStateManagerForHealth interface {
 }
 
 // HealthSystem manages player health, invincibility, and respawning
-// Restore original fields: world, gameConfig, eventSystem, gameStateManager, logger, lastUpdate
-// Remove registry/context fields and methods
-// Only keep the minimal interface wrapper for collision
 type HealthSystem struct {
 	world            donburi.World
 	config           *config.GameConfig
 	eventSystem      EventSystemForHealth
 	gameStateManager GameStateManagerForHealth
-	logger           common.Logger
 	lastUpdate       time.Time
 }
 
@@ -45,14 +43,12 @@ func NewHealthSystem(
 	cfg *config.GameConfig,
 	eventSystem EventSystemForHealth,
 	gameStateManager GameStateManagerForHealth,
-	logger common.Logger,
 ) *HealthSystem {
 	return &HealthSystem{
 		world:            world,
 		config:           cfg,
 		eventSystem:      eventSystem,
 		gameStateManager: gameStateManager,
-		logger:           logger,
 		lastUpdate:       time.Now(),
 	}
 }
@@ -114,7 +110,7 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 	if hs.config.Debug && hs.config.Invincible {
 		// Check if this is the player entity
 		if entry.HasComponent(core.PlayerTag) {
-			hs.logger.Debug("Player damage prevented by invincible flag (DEBUG mode)")
+			dbg.Log(dbg.State, "Player damage prevented by invincible flag (DEBUG mode)")
 			return nil // Player is invincible, no damage taken
 		}
 	}
@@ -137,7 +133,7 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 	// Update health component
 	core.Health.SetValue(entry, *health)
 
-	hs.logger.Debug("Entity damaged", "damage", damage, "remaining_health", health.Current)
+	dbg.Log(dbg.Event, "Entity damaged (damage=%d remaining_health=%d)", damage, health.Current)
 
 	// Check if entity should respawn or game over
 	if health.Current > 0 {
@@ -145,7 +141,7 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 			return err
 		}
 	} else {
-		hs.logger.Debug("Game over - no health remaining")
+		dbg.Log(dbg.State, "Game over - no health remaining")
 	}
 
 	return nil
@@ -173,7 +169,7 @@ func (hs *HealthSystem) HealEntity(ctx context.Context, entity donburi.Entity, a
 
 	core.Health.SetValue(entry, *health)
 
-	hs.logger.Debug("Entity healed", "amount", amount, "new_health", health.Current)
+	dbg.Log(dbg.Event, "Entity healed (amount=%d new_health=%d)", amount, health.Current)
 	return nil
 }
 
@@ -233,7 +229,7 @@ func (hs *HealthSystem) respawnEntity(ctx context.Context, entity donburi.Entity
 	health.InvincibilityTime = health.InvincibilityDuration
 	core.Health.SetValue(entry, *health)
 
-	hs.logger.Debug("Entity respawned with invincibility")
+	dbg.Log(dbg.State, "Entity respawned with invincibility")
 	return nil
 }
 
@@ -241,7 +237,7 @@ func (hs *HealthSystem) respawnEntity(ctx context.Context, entity donburi.Entity
 // This method implements the collision.HealthSystemInterface.
 func (hs *HealthSystem) DamagePlayer(ctx context.Context, entity donburi.Entity, damage int) {
 	if err := hs.DamageEntity(ctx, entity, damage); err != nil {
-		hs.logger.Error("Failed to damage entity", "error", err, "entity", entity)
+		log.Printf("[ERROR] Failed to damage entity: %v", err)
 	}
 }
 

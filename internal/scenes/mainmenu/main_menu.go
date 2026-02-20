@@ -5,6 +5,7 @@ package mainmenu
 import (
 	"context"
 	"image/color"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -40,7 +41,7 @@ func NewMenuScene(manager *scenes.SceneManager, font text.Face) *MenuScene {
 		}},
 		{Text: "Options", Action: func() { manager.SwitchScene(scenes.SceneOptions) }},
 		{Text: "Credits", Action: func() { manager.SwitchScene(scenes.SceneCredits) }},
-		{Text: "Quit", Action: func() { manager.GetLogger().Debug("Quitting game"); manager.RequestQuit() }},
+		{Text: "Quit", Action: func() { manager.RequestQuit() }},
 	}
 	config := menu.DefaultMenuConfig()
 	config.MenuY = float64(manager.GetConfig().ScreenSize.Height) / 2
@@ -78,14 +79,12 @@ func (s *MenuScene) drawTitle(screen *ebiten.Image) {
 
 // Enter is called when the scene becomes active
 func (s *MenuScene) Enter() {
-	s.manager.GetLogger().Debug("Entering menu scene")
 	s.menu.Reset()
 	s.startMenuMusic()
 }
 
 // Exit is called when the scene becomes inactive
 func (s *MenuScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting menu scene")
 	s.stopMenuMusic()
 }
 
@@ -98,20 +97,16 @@ func (s *MenuScene) startMenuMusic() {
 
 	audioPlayer := resourceMgr.GetAudioPlayer()
 	if audioPlayer == nil {
-		s.manager.GetLogger().Debug("Audio player not available, skipping menu music")
 		return
 	}
 
 	musicRes, ok := resourceMgr.GetAudio(context.Background(), "game_music_main")
 	if !ok {
-		s.manager.GetLogger().Debug("Menu music not loaded, skipping")
 		return
 	}
 
 	if err := audioPlayer.PlayMusic("game_music_main", musicRes, 0.7); err != nil {
-		s.manager.GetLogger().Warn("Failed to play menu music", "error", err)
-	} else {
-		s.manager.GetLogger().Debug("Menu music started")
+		log.Printf("[WARN] Failed to play menu music: error=%v", err)
 	}
 }
 

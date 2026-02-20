@@ -27,7 +27,6 @@ func TestStage1Completes(t *testing.T) {
 		EventSystem:  eventSystem,
 		WaveManager:  gs.GetWaveManager(),
 		GyrussSystem: gs,
-		Logger:       &testLogger{},
 	})
 	if err := ssm.LoadStage(1); err != nil {
 		t.Fatalf("LoadStage(1): %v", err)
@@ -80,14 +79,12 @@ func createTestGyrussSystemWithEventSystem(t *testing.T, world donburi.World, ev
 	gameConfig := &config.GameConfig{
 		ScreenSize: config.Size{Width: 800, Height: 600},
 	}
-	logger := &testLogger{}
 	ctx := context.Background()
-	resourceMgr := resources.NewResourceManager(ctx, logger)
+	resourceMgr := resources.NewResourceManager(ctx)
 	return NewGyrussSystem(&GyrussSystemConfig{
 		World:       world,
 		GameConfig:  gameConfig,
 		ResourceMgr: resourceMgr,
-		Logger:      logger,
 		AssetsFS:    assets.Assets,
 		EventSystem: eventSystem,
 	})

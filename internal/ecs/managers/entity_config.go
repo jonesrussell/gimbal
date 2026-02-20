@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jonesrussell/gimbal/assets"
-	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 // PlayerConfig defines player entity configuration
@@ -45,16 +44,14 @@ type EnemyConfigs struct {
 }
 
 // LoadPlayerConfig loads player configuration from the embedded assets
-func LoadPlayerConfig(_ context.Context, logger common.Logger) (*PlayerConfig, error) {
+func LoadPlayerConfig(ctx context.Context) (*PlayerConfig, error) {
 	data, err := assets.Assets.ReadFile("entities/player.json")
 	if err != nil {
-		logger.Warn("Failed to load player.json, using defaults", "error", err)
 		return defaultPlayerConfig(), nil
 	}
 
 	var config PlayerConfig
 	if unmarshalErr := json.Unmarshal(data, &config); unmarshalErr != nil {
-		logger.Warn("Failed to parse player.json, using defaults", "error", unmarshalErr)
 		return defaultPlayerConfig(), nil
 	}
 

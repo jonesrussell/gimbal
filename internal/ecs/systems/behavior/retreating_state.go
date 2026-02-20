@@ -5,23 +5,19 @@ import (
 
 	"github.com/yohamta/donburi"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // RetreatingState handles retreat movement back to orbit or off-screen
 type RetreatingState struct {
 	config *config.GameConfig
-	logger common.Logger
 }
 
 // NewRetreatingState creates a new retreating state handler
-func NewRetreatingState(cfg *config.GameConfig, logger common.Logger) *RetreatingState {
-	return &RetreatingState{
-		config: cfg,
-		logger: logger,
-	}
+func NewRetreatingState(cfg *config.GameConfig) *RetreatingState {
+	return &RetreatingState{config: cfg}
 }
 
 // StateType returns the state type
@@ -31,7 +27,7 @@ func (rs *RetreatingState) StateType() core.BehaviorStateType {
 
 // Enter is called when transitioning into this state
 func (rs *RetreatingState) Enter(entry *donburi.Entry, data *core.BehaviorStateData) {
-	rs.logger.Debug("Entering retreat state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Entering retreat state")
 
 	// Set up retreat parameters
 	if entry.HasComponent(core.RetreatTimer) {
@@ -184,7 +180,7 @@ func (rs *RetreatingState) retreatOffScreen(entry *donburi.Entry, deltaTime floa
 
 // Exit is called when transitioning out of this state
 func (rs *RetreatingState) Exit(entry *donburi.Entry, data *core.BehaviorStateData) {
-	rs.logger.Debug("Exiting retreat state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Exiting retreat state")
 
 	// Reset retreat flag
 	if entry.HasComponent(core.RetreatTimer) {

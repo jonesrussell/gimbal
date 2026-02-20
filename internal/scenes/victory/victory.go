@@ -140,7 +140,6 @@ func (s *VictoryScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *VictoryScene) Enter() {
-	s.manager.GetLogger().Debug("Entering victory scene")
 	s.startTime = time.Now()
 	s.scrollOffset = 0
 	s.starfield.Reset()
@@ -158,7 +157,6 @@ func (s *VictoryScene) Enter() {
 }
 
 func (s *VictoryScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting victory scene")
 }
 
 func (s *VictoryScene) GetType() scenes.SceneType {

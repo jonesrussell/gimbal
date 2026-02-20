@@ -2,6 +2,7 @@ package behavior
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/yohamta/donburi"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -17,7 +19,6 @@ import (
 type BehaviorSystem struct {
 	world         donburi.World
 	config        *config.GameConfig
-	logger        common.Logger
 	stateRegistry *StateRegistry
 	screenCenter  common.Point
 }
@@ -26,12 +27,10 @@ type BehaviorSystem struct {
 func NewBehaviorSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	logger common.Logger,
 ) *BehaviorSystem {
 	bs := &BehaviorSystem{
 		world:         world,
 		config:        cfg,
-		logger:        logger,
 		stateRegistry: NewStateRegistry(),
 		screenCenter: common.Point{
 			X: float64(cfg.ScreenSize.Width) / 2,
@@ -39,7 +38,6 @@ func NewBehaviorSystem(
 		},
 	}
 
-	// Register all state handlers
 	bs.registerStates()
 
 	return bs
@@ -47,11 +45,11 @@ func NewBehaviorSystem(
 
 // registerStates registers all state handlers
 func (bs *BehaviorSystem) registerStates() {
-	bs.stateRegistry.Register(NewEnteringState(bs.logger))
-	bs.stateRegistry.Register(NewOrbitingState(bs.config, bs.logger))
-	bs.stateRegistry.Register(NewAttackingState(bs.config, bs.logger))
-	bs.stateRegistry.Register(NewRetreatingState(bs.config, bs.logger))
-	bs.stateRegistry.Register(NewHoveringState(bs.config, bs.logger))
+	bs.stateRegistry.Register(NewEnteringState())
+	bs.stateRegistry.Register(NewOrbitingState(bs.config))
+	bs.stateRegistry.Register(NewAttackingState(bs.config))
+	bs.stateRegistry.Register(NewRetreatingState(bs.config))
+	bs.stateRegistry.Register(NewHoveringState(bs.config))
 }
 
 // Update processes all entities with behavior states
@@ -80,9 +78,7 @@ func (bs *BehaviorSystem) updateEntity(entry *donburi.Entry, deltaTime float64) 
 	// Get current state handler
 	handler := bs.stateRegistry.Get(behaviorData.CurrentState)
 	if handler == nil {
-		bs.logger.Warn("No handler for state",
-			"state", behaviorData.CurrentState,
-			"entity", entry.Entity())
+		log.Printf("[WARN] No handler for state state=%v entity=%v", behaviorData.CurrentState, entry.Entity())
 		return
 	}
 
@@ -120,19 +116,14 @@ func (bs *BehaviorSystem) transitionState(
 	// Get next state handler
 	nextHandler := bs.stateRegistry.Get(nextState)
 	if nextHandler == nil {
-		bs.logger.Warn("No handler for next state",
-			"state", nextState,
-			"entity", entry.Entity())
+		log.Printf("[WARN] No handler for next state state=%v entity=%v", nextState, entry.Entity())
 		return
 	}
 
 	// Enter next state
 	nextHandler.Enter(entry, data)
 
-	bs.logger.Debug("State transition",
-		"entity", entry.Entity(),
-		"from", data.PreviousState,
-		"to", data.CurrentState)
+	dbg.Log(dbg.State, "Behavior state transition %v → %v", data.PreviousState, data.CurrentState)
 }
 
 // GetScreenCenter returns the screen center

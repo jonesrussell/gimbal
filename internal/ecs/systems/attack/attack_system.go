@@ -17,7 +17,6 @@ import (
 type AttackSystem struct {
 	world        donburi.World
 	config       *config.GameConfig
-	logger       common.Logger
 	screenCenter common.Point
 	executors    map[core.AttackPatternType]AttackExecutor
 }
@@ -32,12 +31,10 @@ type AttackExecutor interface {
 func NewAttackSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	logger common.Logger,
 ) *AttackSystem {
 	as := &AttackSystem{
 		world:  world,
 		config: cfg,
-		logger: logger,
 		screenCenter: common.Point{
 			X: float64(cfg.ScreenSize.Width) / 2,
 			Y: float64(cfg.ScreenSize.Height) / 2,

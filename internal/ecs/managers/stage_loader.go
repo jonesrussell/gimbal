@@ -4,24 +4,21 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"log"
 	"path/filepath"
-
-	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 // StageLoader loads stage configurations from JSON files
 type StageLoader struct {
-	logger    common.Logger
 	assetsFS  embed.FS
 	stagePath string
 }
 
 // NewStageLoader creates a new stage loader
-func NewStageLoader(logger common.Logger, assetsFS embed.FS) *StageLoader {
+func NewStageLoader(assetsFS embed.FS) *StageLoader {
 	return &StageLoader{
-		logger:    logger,
 		assetsFS:  assetsFS,
-		stagePath: "stages", // Embedded paths are relative to the embed directive, not including "assets/"
+		stagePath: "stages",
 	}
 }
 
@@ -32,25 +29,15 @@ func (sl *StageLoader) LoadStage(stageNumber int) (*StageConfig, error) {
 
 	data, err := sl.assetsFS.ReadFile(fullPath)
 	if err != nil {
-		sl.logger.Warn("Stage file not found, using default",
-			"stage", stageNumber,
-			"path", fullPath,
-			"error", err)
+		log.Printf("[WARN] Stage file not found, using default: stage=%d path=%s error=%v", stageNumber, fullPath, err)
 		return sl.createDefaultStage(stageNumber), nil
 	}
 
 	var config StageConfig
 	if unmarshalErr := json.Unmarshal(data, &config); unmarshalErr != nil {
-		sl.logger.Error("Failed to parse stage config",
-			"stage", stageNumber,
-			"error", unmarshalErr)
+		log.Printf("[ERROR] Failed to parse stage config: stage=%d error=%v", stageNumber, unmarshalErr)
 		return nil, fmt.Errorf("failed to parse stage %d: %w", stageNumber, unmarshalErr)
 	}
-
-	sl.logger.Debug("Stage loaded",
-		"stage", stageNumber,
-		"name", config.Metadata.Name,
-		"waves", len(config.Waves))
 
 	return &config, nil
 }

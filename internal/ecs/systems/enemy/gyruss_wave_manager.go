@@ -7,7 +7,7 @@ import (
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
-	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
@@ -15,7 +15,6 @@ import (
 // GyrussWaveManager manages Gyruss-style wave spawning from stage configuration
 type GyrussWaveManager struct {
 	world       donburi.World
-	logger      common.Logger
 	stageConfig *managers.StageConfig
 
 	// Wave state
@@ -32,11 +31,8 @@ type GyrussWaveManager struct {
 }
 
 // NewGyrussWaveManager creates a new Gyruss-style wave manager
-func NewGyrussWaveManager(world donburi.World, logger common.Logger) *GyrussWaveManager {
-	return &GyrussWaveManager{
-		world:  world,
-		logger: logger,
-	}
+func NewGyrussWaveManager(world donburi.World) *GyrussWaveManager {
+	return &GyrussWaveManager{world: world}
 }
 
 // LoadStage loads a stage configuration
@@ -44,10 +40,7 @@ func (gwm *GyrussWaveManager) LoadStage(config *managers.StageConfig) {
 	gwm.stageConfig = config
 	gwm.Reset()
 
-	gwm.logger.Debug("Gyruss stage loaded",
-		"stage", config.StageNumber,
-		"name", config.Metadata.Name,
-		"waves", len(config.Waves))
+	dbg.Log(dbg.System, "Gyruss stage loaded (stage=%d waves=%d)", config.StageNumber, len(config.Waves))
 }
 
 // Reset resets the wave manager state
@@ -99,10 +92,7 @@ func (gwm *GyrussWaveManager) StartWave(waveIndex int) {
 	gwm.isSpawning = true
 
 	wave := &gwm.stageConfig.Waves[waveIndex]
-	gwm.logger.Debug("Gyruss wave started",
-		"wave_id", wave.WaveID,
-		"description", wave.Description,
-		"groups", len(wave.SpawnSequence))
+	dbg.Log(dbg.System, "Gyruss wave started (wave_index=%d groups=%d)", waveIndex, len(wave.SpawnSequence))
 }
 
 // ShouldSpawnEnemy returns true if an enemy should be spawned and the spawn config

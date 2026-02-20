@@ -1,6 +1,9 @@
 package game
 
 import (
+	"log"
+
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
@@ -16,7 +19,7 @@ func (g *ECSGame) checkLevelCompletion() {
 // handleLevelComplete handles level completion actions
 func (g *ECSGame) handleLevelComplete() {
 	currentStage := g.stageStateMachine.StageNumber()
-	g.logger.Debug("Stage complete", "stage", currentStage)
+	dbg.Log(dbg.State, "Stage complete (stage=%d)", currentStage)
 
 	// Check if final stage (stage 6)
 	if currentStage >= 6 {
@@ -30,7 +33,7 @@ func (g *ECSGame) handleLevelComplete() {
 
 	// Load next stage via stage state machine (delegates to GyrussSystem)
 	if err := g.stageStateMachine.LoadNextStage(); err != nil {
-		g.logger.Error("Failed to load next stage", "error", err)
+		log.Printf("[ERROR] Failed to load next stage: %v", err)
 		// Still switch scene so the game doesn't hang; next play will retry same stage
 	}
 

@@ -5,22 +5,18 @@ import (
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
-
-	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 // ImagePool manages reusable ebiten.Image instances
 type ImagePool struct {
-	pool   map[string][]*ebiten.Image
-	mutex  sync.RWMutex
-	logger common.Logger
+	pool  map[string][]*ebiten.Image
+	mutex sync.RWMutex
 }
 
-// NewImagePool creates a new image resource pool with the provided logger
-func NewImagePool(logger common.Logger) *ImagePool {
+// NewImagePool creates a new image resource pool
+func NewImagePool() *ImagePool {
 	return &ImagePool{
-		pool:   make(map[string][]*ebiten.Image),
-		logger: logger,
+		pool: make(map[string][]*ebiten.Image),
 	}
 }
 
@@ -36,13 +32,10 @@ func (ip *ImagePool) GetImage(width, height int) *ebiten.Image {
 		// Pop the last image from the pool
 		image := images[len(images)-1]
 		ip.pool[key] = images[:len(images)-1]
-		ip.logger.Debug("Image reused from pool", "size", key)
 		return image
 	}
 
-	// Create new image
 	image := ebiten.NewImage(width, height)
-	ip.logger.Debug("New image created", "size", key)
 	return image
 }
 
@@ -61,9 +54,7 @@ func (ip *ImagePool) ReturnImage(image *ebiten.Image) {
 	// Clear the image before returning to pool
 	image.Clear()
 
-	// Add to pool
 	ip.pool[key] = append(ip.pool[key], image)
-	ip.logger.Debug("Image returned to pool", "size", key, "pool_size", len(ip.pool[key]))
 }
 
 // createKey creates a string key for the image dimensions
@@ -82,7 +73,6 @@ func (ip *ImagePool) Cleanup() {
 		ip.pool[key] = nil
 	}
 
-	ip.logger.Info("Image pool cleaned up", "total_images", totalImages)
 	ip.pool = make(map[string][]*ebiten.Image)
 }
 

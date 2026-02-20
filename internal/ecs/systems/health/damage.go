@@ -3,6 +3,7 @@ package health
 import (
 	"github.com/yohamta/donburi"
 
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -21,5 +22,5 @@ func (hs *HealthSystem) AddLife(playerEntity donburi.Entity) {
 
 	core.Health.SetValue(playerEntry, *health)
 
-	hs.logger.Debug("Life added to player", "new_lives", health.Current)
+	dbg.Log(dbg.Event, "Life added to player (new_lives=%d)", health.Current)
 }

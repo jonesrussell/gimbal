@@ -15,28 +15,14 @@ import (
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 )
 
-type testLogger struct{}
-
-func (m *testLogger) Debug(_ string, _ ...any)                           {}
-func (m *testLogger) DebugContext(_ context.Context, _ string, _ ...any) {}
-func (m *testLogger) Info(_ string, _ ...any)                            {}
-func (m *testLogger) InfoContext(_ context.Context, _ string, _ ...any)  {}
-func (m *testLogger) Warn(_ string, _ ...any)                            {}
-func (m *testLogger) WarnContext(_ context.Context, _ string, _ ...any)  {}
-func (m *testLogger) Error(_ string, _ ...any)                           {}
-func (m *testLogger) ErrorContext(_ context.Context, _ string, _ ...any) {}
-func (m *testLogger) Sync() error                                        { return nil }
-
 func TestNewGyrussSpawner(t *testing.T) {
 	world := donburi.NewWorld()
 	gameConfig := &config.GameConfig{
 		ScreenSize: config.Size{Width: 800, Height: 600},
 	}
-	logger := &testLogger{}
 	ctx := context.Background()
-	resourceMgr := resources.NewResourceManager(ctx, logger)
-
-	spawner := NewGyrussSpawner(world, gameConfig, resourceMgr, logger)
+	resourceMgr := resources.NewResourceManager(ctx)
+	spawner := NewGyrussSpawner(world, gameConfig, resourceMgr)
 
 	if spawner == nil {
 		t.Fatal("Expected spawner to be created")
@@ -55,10 +41,9 @@ func TestGyrussSpawner_GetEnemyType(t *testing.T) {
 	gameConfig := &config.GameConfig{
 		ScreenSize: config.Size{Width: 800, Height: 600},
 	}
-	logger := &testLogger{}
 	ctx := context.Background()
-	resourceMgr := resources.NewResourceManager(ctx, logger)
-	spawner := NewGyrussSpawner(world, gameConfig, resourceMgr, logger)
+	resourceMgr := resources.NewResourceManager(ctx)
+	spawner := NewGyrussSpawner(world, gameConfig, resourceMgr)
 
 	tests := []struct {
 		typeStr  string
@@ -84,10 +69,9 @@ func TestGyrussSpawner_GetHealthForType(t *testing.T) {
 	gameConfig := &config.GameConfig{
 		ScreenSize: config.Size{Width: 800, Height: 600},
 	}
-	logger := &testLogger{}
 	ctx := context.Background()
-	resourceMgr := resources.NewResourceManager(ctx, logger)
-	spawner := NewGyrussSpawner(world, gameConfig, resourceMgr, logger)
+	resourceMgr := resources.NewResourceManager(ctx)
+	spawner := NewGyrussSpawner(world, gameConfig, resourceMgr)
 
 	tests := []struct {
 		typeStr  string
@@ -109,9 +93,8 @@ func TestGyrussSpawner_GetHealthForType(t *testing.T) {
 
 func TestGyrussSpawner_GetOrbitRadius(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &testLogger{}
 	ctx := context.Background()
-	resourceMgr := resources.NewResourceManager(ctx, logger)
+	resourceMgr := resources.NewResourceManager(ctx)
 
 	tests := []struct {
 		width    int
@@ -127,7 +110,7 @@ func TestGyrussSpawner_GetOrbitRadius(t *testing.T) {
 		gameConfig := &config.GameConfig{
 			ScreenSize: config.Size{Width: tt.width, Height: tt.height},
 		}
-		spawner := NewGyrussSpawner(world, gameConfig, resourceMgr, logger)
+		spawner := NewGyrussSpawner(world, gameConfig, resourceMgr)
 		result := spawner.getOrbitRadius()
 		if result != tt.expected {
 			t.Errorf("getOrbitRadius() with %dx%d = %f, expected %f",
@@ -141,10 +124,9 @@ func TestGyrussSpawner_SpawnIndexOrbitAngle(t *testing.T) {
 	gameConfig := &config.GameConfig{
 		ScreenSize: config.Size{Width: 800, Height: 600},
 	}
-	logger := &testLogger{}
 	ctx := context.Background()
-	resourceMgr := resources.NewResourceManager(ctx, logger)
-	spawner := NewGyrussSpawner(world, gameConfig, resourceMgr, logger)
+	resourceMgr := resources.NewResourceManager(ctx)
+	spawner := NewGyrussSpawner(world, gameConfig, resourceMgr)
 
 	groupConfig := managers.EnemyGroupConfig{
 		EnemyType: "basic",

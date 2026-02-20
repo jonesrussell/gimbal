@@ -2,12 +2,14 @@ package game
 
 import (
 	"context"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
@@ -28,7 +30,6 @@ type ECSGame struct {
 	world        donburi.World
 	config       *config.GameConfig
 	inputHandler common.GameInputHandler
-	logger       common.Logger
 
 	// Context for game lifecycle
 	ctx    context.Context
@@ -79,10 +80,15 @@ type ECSGame struct {
 	renderDebugger  *debug.RenderingDebugger
 	showDebugInfo   bool
 	debugKeyPressed bool
+	traceKeyPressed bool
 }
 
 // Update updates the game state
 func (g *ECSGame) Update() error {
+	wasEnabled := dbg.IsEnabled()
+	if dbg.TraceRequested() {
+		dbg.Enable()
+	}
 	g.updatePerformanceMonitoring()
 	g.updateDebugLogging()
 	g.updateDebugInput()
@@ -100,6 +106,12 @@ func (g *ECSGame) Update() error {
 	g.updateHUD()
 	g.endPerformanceMonitoring()
 
+	if dbg.TraceRequested() {
+		if !wasEnabled {
+			dbg.Disable()
+		}
+		dbg.ClearTrace()
+	}
 	return nil
 }
 
@@ -132,8 +144,6 @@ func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 
 // Cleanup cleans up resources
 func (g *ECSGame) Cleanup(ctx context.Context) {
-	g.logger.Debug("Cleaning up ECS game")
-
 	// Cancel the game context to signal shutdown to all systems
 	if g.cancel != nil {
 		g.cancel()
@@ -142,7 +152,7 @@ func (g *ECSGame) Cleanup(ctx context.Context) {
 	// Clean up resources
 	if g.resourceManager != nil {
 		if err := g.resourceManager.Cleanup(ctx); err != nil {
-			g.logger.Error("Failed to cleanup resource manager", "error", err)
+			log.Printf("[ERROR] Failed to cleanup resource manager: %v", err)
 		}
 	}
 

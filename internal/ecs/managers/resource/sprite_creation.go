@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"image/color"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -31,7 +32,6 @@ func (rm *ResourceManager) CreateSprite(
 	// Check if already created
 	if resource, exists := rm.resources[name]; exists {
 		if sprite, ok := resource.Data.(*ebiten.Image); ok {
-			rm.logger.Debug("[SPRITE_CACHE] Sprite reused", "name", name)
 			return sprite, nil
 		}
 	}
@@ -47,7 +47,6 @@ func (rm *ResourceManager) CreateSprite(
 		Data: sprite,
 	}
 
-	rm.logger.Debug("[SPRITE_CREATE] Sprite created", "name", name, "size", fmt.Sprintf("%dx%d", width, height))
 	return sprite, nil
 }
 
@@ -59,7 +58,7 @@ func (rm *ResourceManager) loadSpriteWithFallback(ctx context.Context, config Sp
 
 	_, err := rm.LoadSprite(ctx, config.Name, config.Path)
 	if err != nil {
-		rm.logger.Warn("Failed to load sprite, using placeholder", "name", config.Name, "error", err)
+		log.Printf("[WARN] Failed to load sprite, using placeholder: name=%s error=%v", config.Name, err)
 		_, err = rm.CreateSprite(config.Name, config.FallbackWidth, config.FallbackHeight, config.FallbackColor)
 		if err != nil {
 			return errors.NewGameErrorWithCause(
@@ -215,7 +214,7 @@ func (rm *ResourceManager) loadUISprites(ctx context.Context) error {
 
 	for _, cfg := range spriteConfigs {
 		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
-			rm.logger.Warn("Failed to load UI sprite, using fallback", "name", cfg.Name, "error", err)
+			log.Printf("[WARN] Failed to load UI sprite, using fallback: name=%s error=%v", cfg.Name, err)
 			// Continue with fallback
 		}
 	}
@@ -249,7 +248,7 @@ func (rm *ResourceManager) loadCutsceneSprites(ctx context.Context) error {
 
 	for _, cfg := range spriteConfigs {
 		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
-			rm.logger.Warn("Failed to load cutscene sprite, using fallback", "name", cfg.Name, "error", err)
+			log.Printf("[WARN] Failed to load cutscene sprite, using fallback: name=%s error=%v", cfg.Name, err)
 			// Continue with fallback
 		}
 	}
@@ -269,7 +268,7 @@ func (rm *ResourceManager) loadPlanetSprites(ctx context.Context) error {
 			FallbackColor:  color.RGBA{0, 128, 255, 255}, // Blue fallback
 		}
 		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
-			rm.logger.Warn("Failed to load planet sprite, using fallback", "planet", planet, "error", err)
+			log.Printf("[WARN] Failed to load planet sprite, using fallback: planet=%s error=%v", planet, err)
 			// Continue with fallback
 		}
 	}
@@ -289,7 +288,7 @@ func (rm *ResourceManager) loadBossPortraitSprites(ctx context.Context) error {
 			FallbackColor:  color.RGBA{255, 0, 0, 255}, // Red fallback
 		}
 		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
-			rm.logger.Warn("Failed to load boss portrait sprite, using fallback", "boss", boss, "error", err)
+			log.Printf("[WARN] Failed to load boss portrait sprite, using fallback: boss=%s error=%v", boss, err)
 			// Continue with fallback
 		}
 	}
@@ -317,7 +316,7 @@ func (rm *ResourceManager) loadEndingSprites(ctx context.Context) error {
 
 	for _, cfg := range spriteConfigs {
 		if err := rm.loadSpriteWithFallback(ctx, cfg); err != nil {
-			rm.logger.Warn("Failed to load ending sprite, using fallback", "name", cfg.Name, "error", err)
+			log.Printf("[WARN] Failed to load ending sprite, using fallback: name=%s error=%v", cfg.Name, err)
 			// Continue with fallback
 		}
 	}
@@ -343,29 +342,28 @@ func (rm *ResourceManager) LoadAllSprites(ctx context.Context) error {
 
 	// Load UI sprites (title logo, menu frame, etc.)
 	if err := rm.loadUISprites(ctx); err != nil {
-		rm.logger.Warn("Failed to load some UI sprites, continuing", "error", err)
+		log.Printf("[WARN] Failed to load some UI sprites, continuing: error=%v", err)
 	}
 
 	// Load cutscene sprites
 	if err := rm.loadCutsceneSprites(ctx); err != nil {
-		rm.logger.Warn("Failed to load some cutscene sprites, continuing", "error", err)
+		log.Printf("[WARN] Failed to load some cutscene sprites, continuing: error=%v", err)
 	}
 
 	// Load planet sprites
 	if err := rm.loadPlanetSprites(ctx); err != nil {
-		rm.logger.Warn("Failed to load some planet sprites, continuing", "error", err)
+		log.Printf("[WARN] Failed to load some planet sprites, continuing: error=%v", err)
 	}
 
 	// Load boss portrait sprites
 	if err := rm.loadBossPortraitSprites(ctx); err != nil {
-		rm.logger.Warn("Failed to load some boss portrait sprites, continuing", "error", err)
+		log.Printf("[WARN] Failed to load some boss portrait sprites, continuing: error=%v", err)
 	}
 
 	// Load ending sprites
 	if err := rm.loadEndingSprites(ctx); err != nil {
-		rm.logger.Warn("Failed to load some ending sprites, continuing", "error", err)
+		log.Printf("[WARN] Failed to load some ending sprites, continuing: error=%v", err)
 	}
 
-	rm.logger.Info("[SPRITE_LOAD] All sprites loaded successfully")
 	return nil
 }

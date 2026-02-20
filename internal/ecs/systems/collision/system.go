@@ -22,7 +22,6 @@ type CollisionSystemConfig struct {
 	EventSystem  EventSystemInterface
 	ScoreManager *managers.ScoreManager
 	EnemySystem  EnemySystemInterface
-	Logger       common.Logger
 }
 
 // CollisionSystem manages collision detection and response with proper type safety
@@ -33,7 +32,6 @@ type CollisionSystem struct {
 	eventSystem  EventSystemInterface
 	scoreManager *managers.ScoreManager
 	enemySystem  EnemySystemInterface
-	logger       common.Logger
 
 	// Spatial partitioning for O(1) collision lookups
 	enemyHash      *SpatialHash
@@ -52,7 +50,6 @@ func NewCollisionSystem(cfg *CollisionSystemConfig) *CollisionSystem {
 		eventSystem:    cfg.EventSystem,
 		scoreManager:   cfg.ScoreManager,
 		enemySystem:    cfg.EnemySystem,
-		logger:         cfg.Logger,
 		enemyHash:      NewSpatialHash(screenWidth, screenHeight),
 		projectileHash: NewSpatialHash(screenWidth, screenHeight),
 	}

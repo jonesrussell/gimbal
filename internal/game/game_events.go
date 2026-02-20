@@ -3,6 +3,7 @@ package game
 import (
 	"github.com/yohamta/donburi"
 
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 	"github.com/jonesrussell/gimbal/internal/ui/presenter"
@@ -17,26 +18,23 @@ func (g *ECSGame) setupEventSubscriptions() {
 
 	// Subscribe to game state events
 	g.eventSystem.SubscribeToGameState(func(w donburi.World, event events.GameStateEvent) {
-		g.logger.Debug("Game state changed", "is_paused", event.IsPaused)
+		dbg.Log(dbg.Event, "Game state changed (is_paused=%v)", event.IsPaused)
 	})
 
 	// Subscribe to score changes
 	g.eventSystem.SubscribeToScoreChanged(func(w donburi.World, event events.ScoreChangedEvent) {
-		g.logger.Debug("Score changed",
-			"old_score", event.OldScore,
-			"new_score", event.NewScore,
-			"delta", event.Delta)
+		dbg.Log(dbg.Event, "Score changed (old=%d new=%d delta=%d)", event.OldScore, event.NewScore, event.Delta)
 	})
 
 	// Subscribe to game over events
 	g.eventSystem.SubscribeToGameOver(func(w donburi.World, event events.GameOverEvent) {
-		g.logger.Debug("Game over triggered", "reason", event.Reason)
+		dbg.Log(dbg.Event, "Game over triggered (reason=%s)", event.Reason)
 		g.sceneManager.SwitchScene(scenes.SceneGameOver)
 	})
 
 	// Subscribe to player damage events for screen shake
 	g.eventSystem.SubscribeToPlayerDamaged(func(w donburi.World, event events.PlayerDamagedEvent) {
-		g.logger.Debug("Player damaged", "damage", event.Damage, "remaining_lives", event.RemainingLives)
+		dbg.Log(dbg.Event, "Player damaged (damage=%d remaining_lives=%d)", event.Damage, event.RemainingLives)
 		// TODO: Re-enable after PlayingScene is moved to gameplay package
 		// Trigger screen shake if we're in the playing scene
 		// if g.sceneManager.GetCurrentScene().GetType() == scenes.ScenePlaying {
@@ -49,11 +47,7 @@ func (g *ECSGame) setupEventSubscriptions() {
 	// Subscribe to enemy destroyed events for scoring
 	g.eventSystem.SubscribeToEnemyDestroyed(func(w donburi.World, event events.EnemyDestroyedEvent) {
 		g.scoreManager.AddScore(event.Points)
-		g.logger.Debug(
-			"Score added from enemy destruction",
-			"points", event.Points,
-			"total_score", g.scoreManager.GetScore(),
-		)
+		dbg.Log(dbg.Event, "Score added from enemy (points=%d total=%d)", event.Points, g.scoreManager.GetScore())
 	})
 }
 
@@ -75,5 +69,5 @@ func (g *ECSGame) initializeHUDPresenter() {
 
 	// Subscribe to events
 	g.hudPresenter.Subscribe(g.eventSystem)
-	g.logger.Debug("HUD presenter initialized and subscribed to events")
+	dbg.Log(dbg.System, "HUD presenter initialized and subscribed to events")
 }

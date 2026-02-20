@@ -2,11 +2,10 @@ package stage
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/yohamta/donburi"
 
-	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
@@ -37,7 +36,6 @@ type Config struct {
 	EventSystem  *events.EventSystem
 	WaveManager  *enemy.GyrussWaveManager
 	GyrussSystem GyrussSystemForStage
-	Logger       common.Logger
 }
 
 // StageStateMachine owns stage progression, wave index, and boss lifecycle
@@ -45,7 +43,6 @@ type StageStateMachine struct {
 	eventSystem    *events.EventSystem
 	waveManager    *enemy.GyrussWaveManager
 	gyrussSystem   GyrussSystemForStage
-	logger         common.Logger
 	state          StageState
 	waveIndex      int
 	stageNumber    int
@@ -62,7 +59,6 @@ func NewStageStateMachine(cfg *Config) *StageStateMachine {
 		eventSystem:  cfg.EventSystem,
 		waveManager:  cfg.WaveManager,
 		gyrussSystem: cfg.GyrussSystem,
-		logger:       cfg.Logger,
 		state:        StageStatePreWave,
 		preWaveDelay: levelStartDelaySec,
 	}
@@ -71,17 +67,18 @@ func NewStageStateMachine(cfg *Config) *StageStateMachine {
 }
 
 func (ssm *StageStateMachine) onBossDefeated(_ donburi.World, _ events.BossDefeatedEvent) {
-	fmt.Println("StageStateMachine: onBossDefeated fired")
-	ssm.logger.Debug("StageStateMachine: onBossDefeated fired", "state", ssm.state)
+	dbg.Log(dbg.Event, "StageStateMachine.onBossDefeated fired (state=%v)", ssm.state)
 	// Accept both BossActive and BossSpawning so we never get stuck if the boss
 	// is defeated while state is still BossSpawning (e.g. same-frame or ordering edge case).
 	if ssm.state != StageStateBossActive && ssm.state != StageStateBossSpawning {
 		return
 	}
+	old := ssm.state
 	ssm.state = StageStateBossDefeated
+	dbg.Log(dbg.State, "StageStateMachine: %v → %v", old, StageStateBossDefeated)
 	ssm.eventSystem.EmitStageCompleted(ssm.stageNumber)
 	ssm.state = StageStateStageCompleted
-	ssm.logger.Debug("Stage completed", "stage", ssm.stageNumber)
+	dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateBossDefeated, StageStateStageCompleted)
 }
 
 // LoadStage delegates to GyrussSystem then resets state to PreWave
@@ -121,7 +118,6 @@ func (ssm *StageStateMachine) Update(ctx context.Context, deltaTime float64) {
 		return
 	default:
 	}
-	ssm.logger.Debug("StageStateMachine.Update", "state", ssm.state)
 
 	switch ssm.state {
 	case StageStatePreWave:
@@ -145,7 +141,7 @@ func (ssm *StageStateMachine) updatePreWave(deltaTime float64) {
 	ssm.waveManager.StartWave(ssm.waveIndex)
 	ssm.eventSystem.EmitWaveStarted(ssm.waveIndex)
 	ssm.state = StageStateWaveInProgress
-	ssm.logger.Debug("Wave started", "wave_index", ssm.waveIndex)
+	dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStatePreWave, StageStateWaveInProgress)
 }
 
 func (ssm *StageStateMachine) updateWaveInProgress() {
@@ -154,7 +150,7 @@ func (ssm *StageStateMachine) updateWaveInProgress() {
 	}
 	ssm.eventSystem.EmitWaveCompleted(ssm.waveIndex)
 	ssm.state = StageStateWaveCompleted
-	ssm.logger.Debug("Wave completed", "wave_index", ssm.waveIndex)
+	dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateWaveInProgress, StageStateWaveCompleted)
 }
 
 func (ssm *StageStateMachine) updateWaveCompleted() {
@@ -166,10 +162,12 @@ func (ssm *StageStateMachine) updateWaveCompleted() {
 			ssm.preWaveTimer = 0
 			ssm.preWaveDelay = interWaveDelay
 			ssm.state = StageStatePreWave
+			dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateWaveCompleted, StageStatePreWave)
 		} else {
 			ssm.waveManager.StartWave(ssm.waveIndex)
 			ssm.eventSystem.EmitWaveStarted(ssm.waveIndex)
 			ssm.state = StageStateWaveInProgress
+			dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateWaveCompleted, StageStateWaveInProgress)
 		}
 		return
 	}
@@ -178,8 +176,10 @@ func (ssm *StageStateMachine) updateWaveCompleted() {
 		ssm.eventSystem.EmitBossSpawnRequested()
 		ssm.bossSpawnTimer = 0
 		ssm.state = StageStateBossSpawning
+		dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateWaveCompleted, StageStateBossSpawning)
 	} else {
 		ssm.state = StageStateStageCompleted
+		dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateWaveCompleted, StageStateStageCompleted)
 		ssm.eventSystem.EmitStageCompleted(ssm.stageNumber)
 	}
 }
@@ -188,6 +188,7 @@ func (ssm *StageStateMachine) updateBossSpawning(ctx context.Context, deltaTime 
 	bossConfig := ssm.waveManager.GetBossConfig()
 	if bossConfig == nil || !bossConfig.Enabled {
 		ssm.state = StageStateStageCompleted
+		dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateBossSpawning, StageStateStageCompleted)
 		ssm.eventSystem.EmitStageCompleted(ssm.stageNumber)
 		return
 	}
@@ -198,7 +199,7 @@ func (ssm *StageStateMachine) updateBossSpawning(ctx context.Context, deltaTime 
 	ssm.gyrussSystem.SpawnBoss(ctx)
 	ssm.eventSystem.EmitBossSpawned()
 	ssm.state = StageStateBossActive
-	ssm.logger.Debug("Boss spawned")
+	dbg.Log(dbg.State, "StageStateMachine: %v → %v", StageStateBossSpawning, StageStateBossActive)
 }
 
 func (ssm *StageStateMachine) getWaveInterWaveDelay(index int) float64 {

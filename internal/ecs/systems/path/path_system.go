@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -16,7 +17,6 @@ import (
 type PathSystem struct {
 	world        donburi.World
 	config       *config.GameConfig
-	logger       common.Logger
 	registry     *PathRegistry
 	screenCenter common.Point
 }
@@ -25,12 +25,10 @@ type PathSystem struct {
 func NewPathSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	logger common.Logger,
 ) *PathSystem {
 	return &PathSystem{
 		world:    world,
 		config:   cfg,
-		logger:   logger,
 		registry: NewPathRegistry(),
 		screenCenter: common.Point{
 			X: float64(cfg.ScreenSize.Width) / 2,
@@ -153,8 +151,7 @@ func (ps *PathSystem) onPathComplete(entry *donburi.Entry) {
 		behaviorData.StateTime = 0
 		core.BehaviorState.SetValue(entry, *behaviorData)
 
-		ps.logger.Debug("Entry path complete, transitioning to orbiting",
-			"entity", entry.Entity())
+		dbg.Log(dbg.State, "Entry path complete, transitioning to orbiting")
 	}
 
 	// Ensure scale is at target

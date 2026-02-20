@@ -1,7 +1,6 @@
 package scenes //nolint:testpackage // Testing from same package to access unexported fields
 
 import (
-	"context"
 	"testing"
 )
 
@@ -65,10 +64,9 @@ func TestSceneManager_IsQuitRequested(t *testing.T) {
 }
 
 func TestSceneManager_RequestQuit_WithLogger(t *testing.T) {
-	// Test RequestQuit when logger is set (should log)
+	// Test RequestQuit sets the flag (logging is via log.Printf)
 	sm := &SceneManager{
 		quitRequested: false,
-		logger:        &testLogger{},
 	}
 
 	if sm.IsQuitRequested() {
@@ -81,16 +79,3 @@ func TestSceneManager_RequestQuit_WithLogger(t *testing.T) {
 		t.Error("Expected quit to be requested after RequestQuit()")
 	}
 }
-
-// testLogger is a minimal logger for testing
-type testLogger struct{}
-
-func (t *testLogger) Debug(msg string, fields ...any)                             {}
-func (t *testLogger) Info(msg string, fields ...any)                              {}
-func (t *testLogger) Warn(msg string, fields ...any)                              {}
-func (t *testLogger) Error(msg string, fields ...any)                             {}
-func (t *testLogger) DebugContext(ctx context.Context, msg string, fields ...any) {}
-func (t *testLogger) InfoContext(ctx context.Context, msg string, fields ...any)  {}
-func (t *testLogger) WarnContext(ctx context.Context, msg string, fields ...any)  {}
-func (t *testLogger) ErrorContext(ctx context.Context, msg string, fields ...any) {}
-func (t *testLogger) Sync() error                                                 { return nil }

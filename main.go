@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -89,11 +90,10 @@ func (a *Application) Initialize(ctx context.Context) error {
 
 // Run starts the application
 func (a *Application) Run() error {
-	logger := a.container.GetLogger()
 	gameInstance := a.container.GetGame()
 
 	// Log system information
-	a.logSystemInfo(logger)
+	a.logSystemInfo()
 
 	// Configure and run the game
 	gameRunner := game.NewRunner(a.config.Game, gameInstance)
@@ -109,7 +109,7 @@ func (a *Application) Run() error {
 			strings.Contains(strings.ToLower(errMsg), "pulse") ||
 			strings.Contains(strings.ToLower(errMsg), "jack") {
 			// Audio is optional - log warning but don't fail
-			logger.Warn("Audio initialization failed (audio is optional), game will run without audio", "error", err)
+			log.Printf("[WARN] Audio initialization failed (audio is optional), game will run without audio: %v", err)
 			// Return nil to indicate success (game can run without audio)
 			return nil
 		}
@@ -185,18 +185,11 @@ func isWSL() bool {
 }
 
 // logSystemInfo logs system and runtime information
-func (a *Application) logSystemInfo(logger interface{ Info(string, ...interface{}) }) {
+func (a *Application) logSystemInfo() {
 	info := a.config.GetSystemInfo()
-	logger.Info("Starting Gimbal",
-		"version", info.Version,
-		"goos", info.GOOS,
-		"goarch", info.GOARCH,
-		"num_cpu", info.NumCPU,
-		"go_version", info.GoVersion,
-		"log_level", info.LogLevel,
-		"window_width", a.config.Game.WindowWidth,
-		"window_height", a.config.Game.WindowHeight,
-	)
+	log.Printf("[INFO] Starting Gimbal version=%s goos=%s goarch=%s num_cpu=%d %dx%d",
+		info.Version, info.GOOS, info.GOARCH, info.NumCPU,
+		a.config.Game.WindowWidth, a.config.Game.WindowHeight)
 }
 
 // registerScenes explicitly registers all scene factories.

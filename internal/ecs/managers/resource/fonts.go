@@ -21,12 +21,10 @@ func (rm *ResourceManager) loadDefaultFont(ctx context.Context) error {
 
 	fontBytes, err := assets.Assets.ReadFile("fonts/PressStart2P.ttf")
 	if err != nil {
-		rm.logger.Error("failed to read font", "error", err)
 		return err
 	}
 	fontTTF, err := opentype.Parse(fontBytes)
 	if err != nil {
-		rm.logger.Error("failed to parse font", "error", err)
 		return err
 	}
 	otFace, err := opentype.NewFace(fontTTF, &opentype.FaceOptions{
@@ -35,7 +33,6 @@ func (rm *ResourceManager) loadDefaultFont(ctx context.Context) error {
 		Hinting: font.HintingFull,
 	})
 	if err != nil {
-		rm.logger.Error("failed to create opentype face", "error", err)
 		return err
 	}
 	rm.defaultFont = text.NewGoXFace(otFace)

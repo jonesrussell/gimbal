@@ -152,10 +152,6 @@ func (s *StageIntroScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *StageIntroScene) Enter() {
-	s.manager.GetLogger().Debug("Entering stage intro scene",
-		"stage", s.stageNumber,
-		"from", s.fromPlanet,
-		"to", s.toPlanet)
 	s.startTime = time.Now()
 	s.soundPlayed = false
 
@@ -194,9 +190,7 @@ func (s *StageIntroScene) Enter() {
 	}
 }
 
-func (s *StageIntroScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting stage intro scene")
-}
+func (s *StageIntroScene) Exit() {}
 
 func (s *StageIntroScene) GetType() scenes.SceneType {
 	return scenes.SceneStageIntro

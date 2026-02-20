@@ -14,35 +14,21 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
 )
 
-type testLogger struct{}
-
-func (m *testLogger) Debug(_ string, _ ...any)                           {}
-func (m *testLogger) DebugContext(_ context.Context, _ string, _ ...any) {}
-func (m *testLogger) Info(_ string, _ ...any)                            {}
-func (m *testLogger) InfoContext(_ context.Context, _ string, _ ...any)  {}
-func (m *testLogger) Warn(_ string, _ ...any)                            {}
-func (m *testLogger) WarnContext(_ context.Context, _ string, _ ...any)  {}
-func (m *testLogger) Error(_ string, _ ...any)                           {}
-func (m *testLogger) ErrorContext(_ context.Context, _ string, _ ...any) {}
-func (m *testLogger) Sync() error                                        { return nil }
-
 func createTestGyrussSystem(t *testing.T) *GyrussSystem {
 	t.Helper()
 	world := donburi.NewWorld()
 	gameConfig := &config.GameConfig{
 		ScreenSize: config.Size{Width: 800, Height: 600},
 	}
-	logger := &testLogger{}
 	ctx := context.Background()
-	resourceMgr := resources.NewResourceManager(ctx, logger)
+	resourceMgr := resources.NewResourceManager(ctx)
 
 	return NewGyrussSystem(&GyrussSystemConfig{
 		World:       world,
 		GameConfig:  gameConfig,
 		ResourceMgr: resourceMgr,
-		Logger:      logger,
 		AssetsFS:    assets.Assets,
-		EventSystem: nil, // optional for tests
+		EventSystem: nil,
 	})
 }
 

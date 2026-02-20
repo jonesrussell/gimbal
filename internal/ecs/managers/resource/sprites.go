@@ -23,7 +23,6 @@ func (rm *ResourceManager) LoadSprite(ctx context.Context, name, path string) (*
 
 	// Try cache first
 	if cached := rm.getCachedSprite(name); cached != nil {
-		rm.logger.Debug("[SPRITE_CACHE] Sprite reused from cache", "name", name)
 		return cached, nil
 	}
 
@@ -46,8 +45,6 @@ func (rm *ResourceManager) getCachedSprite(name string) *ebiten.Image {
 
 // loadAndCacheSprite loads sprite from assets and caches it
 func (rm *ResourceManager) loadAndCacheSprite(ctx context.Context, name, path string) (*ebiten.Image, error) {
-	rm.logger.Debug("[SPRITE_LOAD] Loading sprite from embed", "name", name, "path", path)
-
 	// Load from embedded assets
 	imageData, err := rm.loadSpriteFile(path)
 	if err != nil {
@@ -63,7 +60,6 @@ func (rm *ResourceManager) loadAndCacheSprite(ctx context.Context, name, path st
 	// Cache the sprite
 	rm.cacheSprite(name, sprite)
 
-	rm.logger.Debug("[SPRITE_LOAD] Sprite loaded successfully", "name", name)
 	return sprite, nil
 }
 
@@ -71,11 +67,9 @@ func (rm *ResourceManager) loadAndCacheSprite(ctx context.Context, name, path st
 func (rm *ResourceManager) loadSpriteFile(path string) ([]byte, error) {
 	imageData, err := assets.Assets.ReadFile(path)
 	if err != nil {
-		rm.logger.Error("[SPRITE_ERROR] Failed to read sprite file", "path", path, "error", err)
 		return nil, errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to read sprite file", err)
 	}
 
-	rm.logger.Debug("[SPRITE_LOAD] Sprite file read successfully", "path", path, "size", len(imageData))
 	return imageData, nil
 }
 
@@ -85,7 +79,6 @@ func (rm *ResourceManager) decodePNGData(name, path string, imageData []byte) (*
 	// This ensures we handle transparency correctly
 	img, err := png.Decode(bytes.NewReader(imageData))
 	if err != nil {
-		rm.logger.Error("[SPRITE_ERROR] Failed to decode PNG sprite", "name", name, "path", path, "error", err)
 		return nil, errors.NewGameErrorWithCause(errors.AssetInvalid, "failed to decode sprite", err)
 	}
 
@@ -101,8 +94,6 @@ func (rm *ResourceManager) decodePNGData(name, path string, imageData []byte) (*
 	}
 
 	sprite := ebiten.NewImageFromImage(finalImg)
-	rm.logger.Debug("[SPRITE_DECODE] Sprite decoded successfully", "name", name, "bounds", img.Bounds())
-
 	return sprite, nil
 }
 

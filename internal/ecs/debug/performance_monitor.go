@@ -1,39 +1,32 @@
 package debug
 
 import (
+	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-
-	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 // PerformanceMonitor tracks detailed performance metrics
 type PerformanceMonitor struct {
-	logger common.Logger
-
-	// Frame timing
 	frameTimes     []time.Duration
 	frameTimeIndex int
 	maxFrameTimes  int
 
-	// System timing
 	systemTimes map[string][]time.Duration
 	lastUpdate  time.Time
 
-	// Performance thresholds
 	slowFrameThreshold  time.Duration
 	slowSystemThreshold time.Duration
 }
 
 // NewPerformanceMonitor creates a new performance monitor
-func NewPerformanceMonitor(logger common.Logger) *PerformanceMonitor {
+func NewPerformanceMonitor() *PerformanceMonitor {
 	return &PerformanceMonitor{
-		logger:              logger,
-		frameTimes:          make([]time.Duration, 60), // Track 60 frames
+		frameTimes:          make([]time.Duration, 60),
 		maxFrameTimes:       60,
 		systemTimes:         make(map[string][]time.Duration),
-		slowFrameThreshold:  16 * time.Millisecond, // 60 FPS = 16.67ms per frame
+		slowFrameThreshold:  16 * time.Millisecond,
 		slowSystemThreshold: 5 * time.Millisecond,
 	}
 }
@@ -49,12 +42,8 @@ func (pm *PerformanceMonitor) EndFrame() {
 	pm.frameTimes[pm.frameTimeIndex] = frameTime
 	pm.frameTimeIndex = (pm.frameTimeIndex + 1) % pm.maxFrameTimes
 
-	// Log slow frames
 	if frameTime > pm.slowFrameThreshold {
-		pm.logger.Warn("Slow frame detected",
-			"frame_time", frameTime,
-			"threshold", pm.slowFrameThreshold,
-			"fps", ebiten.ActualFPS())
+		log.Printf("[WARN] Slow frame: frame_time=%v threshold=%v fps=%f", frameTime, pm.slowFrameThreshold, ebiten.ActualFPS())
 	}
 }
 
@@ -71,12 +60,8 @@ func (pm *PerformanceMonitor) RecordSystemTime(systemName string, duration time.
 	}
 	times[0] = duration
 
-	// Log slow systems
 	if duration > pm.slowSystemThreshold {
-		pm.logger.Warn("Slow system detected",
-			"system", systemName,
-			"duration", duration,
-			"threshold", pm.slowSystemThreshold)
+		log.Printf("[WARN] Slow system: system=%s duration=%v threshold=%v", systemName, duration, pm.slowSystemThreshold)
 	}
 }
 

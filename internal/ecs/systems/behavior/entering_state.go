@@ -3,18 +3,16 @@ package behavior
 import (
 	"github.com/yohamta/donburi"
 
-	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // EnteringState handles the entry path phase
-type EnteringState struct {
-	logger common.Logger
-}
+type EnteringState struct{}
 
 // NewEnteringState creates a new entering state handler
-func NewEnteringState(logger common.Logger) *EnteringState {
-	return &EnteringState{logger: logger}
+func NewEnteringState() *EnteringState {
+	return &EnteringState{}
 }
 
 // StateType returns the state type
@@ -24,7 +22,7 @@ func (es *EnteringState) StateType() core.BehaviorStateType {
 
 // Enter is called when transitioning into this state
 func (es *EnteringState) Enter(entry *donburi.Entry, data *core.BehaviorStateData) {
-	es.logger.Debug("Entering entry state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Entering entry state")
 }
 
 // Update is called every frame while in this state
@@ -35,7 +33,7 @@ func (es *EnteringState) Update(entry *donburi.Entry, data *core.BehaviorStateDa
 
 // Exit is called when transitioning out of this state
 func (es *EnteringState) Exit(entry *donburi.Entry, data *core.BehaviorStateData) {
-	es.logger.Debug("Exiting entry state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Exiting entry state")
 }
 
 // NextState determines the next state

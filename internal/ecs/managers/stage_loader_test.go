@@ -1,29 +1,14 @@
 package managers_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/jonesrussell/gimbal/assets"
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
 
-type noopLogger struct{}
-
-func (noopLogger) Debug(string, ...any)                         {}
-func (noopLogger) Info(string, ...any)                          {}
-func (noopLogger) Warn(string, ...any)                          {}
-func (noopLogger) Error(string, ...any)                         {}
-func (noopLogger) DebugContext(context.Context, string, ...any) {}
-func (noopLogger) InfoContext(context.Context, string, ...any)  {}
-func (noopLogger) WarnContext(context.Context, string, ...any)  {}
-func (noopLogger) ErrorContext(context.Context, string, ...any) {}
-func (noopLogger) Sync() error                                  { return nil }
-
 func TestStageLoader_LoadStage_AssetValidation(t *testing.T) {
-	var logger common.Logger = noopLogger{}
-	loader := managers.NewStageLoader(logger, assets.Assets)
+	loader := managers.NewStageLoader(assets.Assets)
 	total := loader.GetTotalStages()
 
 	for stageNum := 1; stageNum <= total; stageNum++ {

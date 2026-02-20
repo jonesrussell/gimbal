@@ -16,11 +16,9 @@ import (
 )
 
 // MovementSystem updates entity positions based on velocity or input
-// It is responsible for moving the player, starfield, and any other moving entities.
 type MovementSystem struct {
 	world        donburi.World
 	config       *config.GameConfig
-	logger       common.Logger
 	inputHandler common.GameInputHandler
 }
 
@@ -28,13 +26,11 @@ type MovementSystem struct {
 func NewMovementSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	logger common.Logger,
 	inputHandler common.GameInputHandler,
 ) *MovementSystem {
 	return &MovementSystem{
 		world:        world,
 		config:       cfg,
-		logger:       logger,
 		inputHandler: inputHandler,
 	}
 }
@@ -108,20 +104,6 @@ func (ms *MovementSystem) updatePlayerMovement(deltaTime float64) {
 		}
 
 		orbital.FacingAngle = internalmath.Angle(facingAngle)
-
-		// DEBUG: Log the facing angle calculation
-		ms.logger.Debug("Facing angle calculation",
-			"orbital_angle", orbital.OrbitalAngle,
-			"calculated_facing", facingAngle,
-			"final_facing", orbital.FacingAngle,
-			"position", pos,
-			"center", orbital.Center)
-
-		ms.logger.Debug("Player orbital movement updated",
-			"input", movementInput,
-			"orbital_angle", orbital.OrbitalAngle,
-			"position", pos,
-			"facing_angle", orbital.FacingAngle)
 	})
 }
 
