@@ -21,6 +21,7 @@ import (
 // createCoreSystems creates core ECS systems
 func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 	g.eventSystem = events.NewEventSystem(g.world)
+	fmt.Printf("EventSystem created at %p\n", g.eventSystem)
 	g.logger.Debug("Event system created")
 	g.resourceManager = resources.NewResourceManager(ctx, g.logger)
 	g.logger.Debug("Resource manager created")
@@ -86,6 +87,7 @@ func (g *ECSGame) createBasicSystems() error {
 		GyrussSystem: g.gyrussSystem,
 		Logger:       g.logger,
 	})
+	fmt.Printf("StageStateMachine using EventSystem %p\n", g.eventSystem)
 	g.logger.Debug("Stage state machine created")
 
 	return nil
