@@ -2,6 +2,8 @@ package game
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/jonesrussell/gimbal/internal/dbg"
 )
 
 // updatePerformanceMonitoring handles performance monitoring for the frame
@@ -27,6 +29,12 @@ func (g *ECSGame) updateDebugInput() {
 		g.logger.Debug("Debug overlay toggled", "enabled", g.showDebugInfo)
 	} else if !ebiten.IsKeyPressed(ebiten.KeyF3) {
 		g.debugKeyPressed = false
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyF4) && !g.traceKeyPressed {
+		dbg.Trace()
+		g.traceKeyPressed = true
+	} else if !ebiten.IsKeyPressed(ebiten.KeyF4) {
+		g.traceKeyPressed = false
 	}
 }
 

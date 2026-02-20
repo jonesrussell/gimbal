@@ -8,6 +8,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
@@ -76,13 +77,17 @@ type ECSGame struct {
 	perfMonitor     *debug.PerformanceMonitor
 
 	// Debug system
-	renderDebugger  *debug.RenderingDebugger
-	showDebugInfo   bool
-	debugKeyPressed bool
+	renderDebugger   *debug.RenderingDebugger
+	showDebugInfo    bool
+	debugKeyPressed  bool
+	traceKeyPressed  bool
 }
 
 // Update updates the game state
 func (g *ECSGame) Update() error {
+	if dbg.TraceRequested() {
+		dbg.Enable()
+	}
 	g.updatePerformanceMonitoring()
 	g.updateDebugLogging()
 	g.updateDebugInput()
@@ -100,6 +105,10 @@ func (g *ECSGame) Update() error {
 	g.updateHUD()
 	g.endPerformanceMonitoring()
 
+	if dbg.TraceRequested() {
+		dbg.Disable()
+		dbg.ClearTrace()
+	}
 	return nil
 }
 
