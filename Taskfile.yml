@@ -7,7 +7,7 @@ includes:
     taskfile: ./Taskfile.build.yml
     optional: false
     internal: false
-  tests:
+  test:
     taskfile: ./Taskfile.test.yml
     optional: false
     internal: false
@@ -150,7 +150,7 @@ tasks:
     cmds:
       - task: lint:all
       - task: deadcode:check
-      - task: tests:short
+      - task: test:short
       - task: builds:current
 
   vuln:
@@ -167,7 +167,7 @@ tasks:
     desc: Run lint, test, and vuln (CI gate)
     cmds:
       - task: lint
-      - task: tests:short
+      - task: test:short
       - task: vuln
 
   ci:all:
@@ -176,7 +176,7 @@ tasks:
       - task: deps:verify
       - task: generate:all
       - task: lint:all
-      - task: tests:coverage
+      - task: test:coverage
       - task: builds:all
 
   help:
