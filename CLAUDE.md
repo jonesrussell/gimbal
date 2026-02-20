@@ -67,7 +67,7 @@ The `app/Container` manages all dependencies with ordered initialization:
 - `attack/` - Rush attack patterns (single_rush, paired_rush, loopback_rush, suicide_dive)
 - `fire/` - Enemy projectile patterns (single_shot, burst, spray)
 - `animation/` - Scale animations with easing
-- `powerup/` - Power-up spawning and collection (double_shot, extra_life)
+- `powerup/` - Power-up spawning and collection (double_shot, extra_life, invincibility)
 
 **Other Systems**:
 - `collision/` - Entity collision detection with timeout protection
@@ -89,6 +89,7 @@ Scenes implement the `Scene` interface (Update, Draw, Enter, Exit, GetType) and 
 ### Configuration
 - Game constants: `config/constants.go` (game-wide), `ecs/constants.go` (ECS-specific), `game/constants.go` (game loop)
 - Runtime config: Functional options (`WithDebug()`, `WithSpeed()`)
+- **Invincibility:** Developer God mode: `-invincible` when `DEBUG=true`, or pause menu "God mode" when Debug. Player invincibility: power-up type `PowerUpInvincibility` (temporary; same Health invincibility as i-frames).
 - Entity configs: JSON files in `assets/entities/` (player.json)
 - Stage configs: JSON files in `assets/stages/` (stage_01.json through stage_06.json)
 
