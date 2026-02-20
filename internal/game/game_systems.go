@@ -47,6 +47,7 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 	if g.frameCount%30 == 0 {
 		dbg.Log(dbg.System, "=== FRAME %d ===", g.frameCount)
 	}
+	dbg.Log(dbg.System, "updateGameplaySystems start")
 
 	deltaTime := config.DeltaTime
 

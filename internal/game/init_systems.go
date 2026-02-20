@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jonesrussell/gimbal/assets"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/debug"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
@@ -21,7 +22,7 @@ import (
 // createCoreSystems creates core ECS systems
 func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 	g.eventSystem = events.NewEventSystem(g.world)
-	fmt.Printf("EventSystem created at %p\n", g.eventSystem)
+	dbg.Log(dbg.World, "EventSystem created at %p", g.eventSystem)
 	g.logger.Debug("Event system created")
 	g.resourceManager = resources.NewResourceManager(ctx, g.logger)
 	g.logger.Debug("Resource manager created")
@@ -87,7 +88,7 @@ func (g *ECSGame) createBasicSystems() error {
 		GyrussSystem: g.gyrussSystem,
 		Logger:       g.logger,
 	})
-	fmt.Printf("StageStateMachine using EventSystem %p\n", g.eventSystem)
+	dbg.Log(dbg.World, "StageStateMachine using EventSystem %p", g.eventSystem)
 	g.logger.Debug("Stage state machine created")
 
 	return nil
