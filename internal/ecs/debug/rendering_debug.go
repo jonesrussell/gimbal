@@ -3,6 +3,7 @@ package debug
 import (
 	"fmt"
 	"image/color"
+	"log"
 	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -12,7 +13,6 @@ import (
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -20,25 +20,23 @@ import (
 type RenderingDebugger struct {
 	enabled     bool
 	font        v2text.Face
-	logger      common.Logger
 	drawCalls   int
 	entityCount int
 	spriteCount int
 }
 
 // NewRenderingDebugger creates a new rendering debugger
-func NewRenderingDebugger(font v2text.Face, logger common.Logger) *RenderingDebugger {
+func NewRenderingDebugger(font v2text.Face) *RenderingDebugger {
 	return &RenderingDebugger{
 		enabled: false,
 		font:    font,
-		logger:  logger,
 	}
 }
 
 // Toggle enables/disables rendering debug mode
 func (rd *RenderingDebugger) Toggle() {
 	rd.enabled = !rd.enabled
-	rd.logger.Debug("Rendering debug toggled", "enabled", rd.enabled)
+	log.Printf("[DEBUG] Rendering debug toggled enabled=%v", rd.enabled)
 }
 
 // IsEnabled returns whether rendering debug is active
@@ -117,13 +115,8 @@ func (rd *RenderingDebugger) analyzeRendering(world donburi.World) {
 	})
 
 	// Log analysis
-	rd.logger.Debug("Rendering analysis",
-		"entities_with_sprite", entitiesWithSprite,
-		"entities_with_size", entitiesWithSize,
-		"entities_with_scale", entitiesWithScale,
-		"entities_with_rotation", entitiesWithRotation,
-		"draw_calls", rd.drawCalls,
-	)
+	log.Printf("[DEBUG] Rendering analysis entities_with_sprite=%d entities_with_size=%d entities_with_scale=%d entities_with_rotation=%d draw_calls=%d",
+		entitiesWithSprite, entitiesWithSize, entitiesWithScale, entitiesWithRotation, rd.drawCalls)
 }
 
 // drawRenderingStats draws rendering statistics

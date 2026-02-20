@@ -85,6 +85,7 @@ type ECSGame struct {
 
 // Update updates the game state
 func (g *ECSGame) Update() error {
+	wasEnabled := dbg.IsEnabled()
 	if dbg.TraceRequested() {
 		dbg.Enable()
 	}
@@ -106,7 +107,9 @@ func (g *ECSGame) Update() error {
 	g.endPerformanceMonitoring()
 
 	if dbg.TraceRequested() {
-		dbg.Disable()
+		if !wasEnabled {
+			dbg.Disable()
+		}
 		dbg.ClearTrace()
 	}
 	return nil

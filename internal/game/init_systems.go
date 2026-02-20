@@ -109,7 +109,7 @@ func (g *ECSGame) registerAllSystems(ctx context.Context) error {
 	if err != nil {
 		log.Printf("[WARN] Failed to get font for debugger, debug overlay disabled: %v", err)
 	} else {
-		g.renderDebugger = debug.NewRenderingDebugger(font, nil)
+		g.renderDebugger = debug.NewRenderingDebugger(font)
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package collision
 
 import (
 	"context"
+	"log"
 
 	"github.com/yohamta/donburi"
 
@@ -111,7 +112,7 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 
 			// Emit enemy destroyed event (includes points)
 			if err := cs.eventSystem.EmitEnemyDestroyed(ctx, enemyEntity, points); err != nil {
-				cs.logger.Error("Failed to emit enemy destroyed event", "error", err)
+				log.Printf("[ERROR] Failed to emit enemy destroyed event: %v", err)
 			}
 
 			dbg.Log(dbg.Event, "Enemy destroyed (points=%d)", points)
