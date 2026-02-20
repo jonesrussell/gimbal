@@ -94,6 +94,15 @@ func TestGyrussSystem_GetCurrentStage(t *testing.T) {
 	}
 }
 
+func TestGyrussSystem_IsBossDefeated_FalseWhenBossNotSpawned(t *testing.T) {
+	gs := createTestGyrussSystem(t)
+	// No boss entity in world; old semantics would have made IsBossDefeated true.
+	// New semantics: defeated only when we spawned a boss and it no longer exists.
+	if gs.IsBossDefeated() {
+		t.Error("Expected IsBossDefeated to be false when bossSpawned is false")
+	}
+}
+
 func TestGyrussSystem_IsBossActive(t *testing.T) {
 	gs := createTestGyrussSystem(t)
 

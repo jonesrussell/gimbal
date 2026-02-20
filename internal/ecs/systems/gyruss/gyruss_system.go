@@ -283,9 +283,11 @@ func (gs *GyrussSystem) WasBossSpawned() bool {
 	return gs.bossSpawned
 }
 
-// IsBossDefeated returns whether boss has been defeated
+// IsBossDefeated returns whether boss has been defeated (boss was spawned and no longer exists).
 func (gs *GyrussSystem) IsBossDefeated() bool {
-	// Check if boss entity still exists
+	if !gs.bossSpawned {
+		return false
+	}
 	bossExists := false
 	query.NewQuery(
 		filter.And(
