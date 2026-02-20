@@ -72,6 +72,11 @@ func (ps *PowerUpSystem) createSprites() {
 	lifeSprite := ebiten.NewImage(PowerUpSize, PowerUpSize)
 	lifeSprite.Fill(color.RGBA{R: 0, G: 255, B: 0, A: 255})
 	ps.sprites[core.PowerUpExtraLife] = lifeSprite
+
+	// Invincibility sprite (white)
+	invincibleSprite := ebiten.NewImage(PowerUpSize, PowerUpSize)
+	invincibleSprite.Fill(color.RGBA{R: 255, G: 255, B: 255, A: 255})
+	ps.sprites[core.PowerUpInvincibility] = invincibleSprite
 }
 
 // Update processes power-up logic
@@ -196,8 +201,24 @@ func (ps *PowerUpSystem) collectPowerUp(playerEntry *donburi.Entry, data *core.P
 			if health.Current > health.Maximum {
 				health.Maximum = health.Current
 			}
+			core.Health.SetValue(playerEntry, *health)
 			ps.logger.Info("Extra life collected", "lives", health.Current)
 		}
+
+	case core.PowerUpInvincibility:
+		duration := data.Duration
+		if duration <= 0 {
+			duration = 5 * time.Second
+		}
+		if playerEntry.HasComponent(core.Health) {
+			health := core.Health.Get(playerEntry)
+			health.IsInvincible = true
+			if duration > health.InvincibilityTime {
+				health.InvincibilityTime = duration
+			}
+			core.Health.SetValue(playerEntry, *health)
+		}
+		ps.logger.Info("Invincibility power-up collected", "duration", duration)
 	}
 }
 
