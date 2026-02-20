@@ -26,9 +26,10 @@ task builds:web                 # Build for WebAssembly
 task builds:all                 # Build all platforms
 
 # Testing
-task tests:all                  # All tests with race detection
-task tests:short                # Fast tests only
-task tests:coverage             # Generate HTML coverage report
+task test:all                   # All tests with race and coverage
+task test:short                 # Fast tests only
+task test:race                  # All tests with race detector
+task test:coverage              # Generate HTML coverage report
 go test ./internal/input/...    # Run specific package tests
 
 # Code Quality

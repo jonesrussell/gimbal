@@ -165,7 +165,7 @@ git commit -m "test: collision outcome — enemy destroyed and entity removed"
 
 **Step 3: Ensure CI runs integration tests**
 
-- In `.github/workflows/ci.yml`, test step must include `-tags=integration`. If using `task tests:all`, add a task or use explicit `go test ./... -race -tags=integration -timeout=60s`.
+- In `.github/workflows/ci.yml`, test step must include `-tags=integration`. If using `task test:all`, add a task or use explicit `go test ./... -race -tags=integration -timeout=60s`.
 - Run full test suite locally: `go test ./... -race -tags=integration -timeout=60s`
 - Expected: All PASS including integration test.
 

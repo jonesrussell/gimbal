@@ -27,6 +27,6 @@ alwaysApply: false
 ## Code Quality Checks
 ```bash
 task lint          # Check for issues
-task tests:all     # Run all tests
+task test:all      # Run all tests
 go build ./...     # Verify compilation
 ```

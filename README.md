@@ -185,16 +185,19 @@ The game uses the Donburi ECS framework for a flexible, data-driven architecture
 
 ```bash
 # Run all tests
-task tests:all
+task test:all
 
 # Run fast tests only
-task tests:short
+task test:short
+
+# Run all tests with race detector
+task test:race
 
 # Run with coverage
 go test ./... -cover
 
 # Generate HTML coverage report
-task tests:coverage
+task test:coverage
 ```
 
 ### Test Coverage
