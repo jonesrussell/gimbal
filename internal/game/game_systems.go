@@ -74,6 +74,9 @@ func (g *ECSGame) updateGameplaySystems(ctx context.Context) error {
 	// Update stage state machine (drives wave/boss transitions; reads wave manager counts)
 	g.stageStateMachine.Update(ctx, deltaTime)
 
+	// Process queued events so onBossDefeated runs before level completion check (same frame)
+	g.eventSystem.ProcessEvents()
+
 	// Update weapon system (player weapons)
 	weaponUpdateFunc := func() error {
 		g.weaponSystem.Update(deltaTime)
