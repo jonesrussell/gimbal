@@ -32,10 +32,16 @@ tasks:
       - task: help
 
   dev:run:
-    desc: Run in development mode (debug, pprof)
+    desc: Run in development mode (debug, pprof). Use CLI_ARGS for flags, e.g. task dev:run -- -invincible
     aliases: [dev]
     cmds:
       - DEBUG={{.DEBUG}} LOG_LEVEL={{.DEV_LOG_LEVEL}} go run -tags dev . {{.CLI_ARGS}}
+
+  dev:invincible:
+    desc: Run in development mode with God mode (debug + invincible)
+    aliases: [dev:god]
+    cmds:
+      - DEBUG={{.DEBUG}} LOG_LEVEL={{.DEV_LOG_LEVEL}} go run -tags dev . -invincible
 
   dev:hot:
     desc: Run with hot reloading (Air)
