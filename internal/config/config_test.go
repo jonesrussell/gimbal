@@ -1,3 +1,4 @@
+//nolint:testpackage // Testing GameConfig and SetDevInvincible from same package
 package config
 
 import (

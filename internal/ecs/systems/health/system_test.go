@@ -1,3 +1,4 @@
+//nolint:testpackage // White box tests need access to HealthSystem and DamageEntity
 package health
 
 import (
@@ -49,12 +50,12 @@ func TestDamageEntity_DevInvinciblePreventsDamage(t *testing.T) {
 		t.Fatalf("DamageEntity: %v", err)
 	}
 
-	current, max, ok := hs.GetHealth(ctx, entity)
+	current, maxHealth, ok := hs.GetHealth(ctx, entity)
 	if !ok {
 		t.Fatal("GetHealth failed")
 	}
-	if current != 3 || max != 3 {
-		t.Errorf("Dev invincible should prevent damage: got health %d/%d, want 3/3", current, max)
+	if current != 3 || maxHealth != 3 {
+		t.Errorf("Dev invincible should prevent damage: got health %d/%d, want 3/3", current, maxHealth)
 	}
 }
 
@@ -78,12 +79,12 @@ func TestDamageEntity_IsInvinciblePreventsDamage(t *testing.T) {
 		t.Fatalf("DamageEntity: %v", err)
 	}
 
-	current, max, ok := hs.GetHealth(ctx, entity)
+	current, maxHealth, ok := hs.GetHealth(ctx, entity)
 	if !ok {
 		t.Fatal("GetHealth failed")
 	}
-	if current != 3 || max != 3 {
-		t.Errorf("IsInvincible should prevent damage: got health %d/%d, want 3/3", current, max)
+	if current != 3 || maxHealth != 3 {
+		t.Errorf("IsInvincible should prevent damage: got health %d/%d, want 3/3", current, maxHealth)
 	}
 }
 
@@ -105,12 +106,12 @@ func TestDamageEntity_AppliesDamageWhenNotInvincible(t *testing.T) {
 		t.Fatalf("DamageEntity: %v", err)
 	}
 
-	current, max, ok := hs.GetHealth(ctx, entity)
+	current, maxHealth, ok := hs.GetHealth(ctx, entity)
 	if !ok {
 		t.Fatal("GetHealth failed")
 	}
-	if current != 2 || max != 3 {
-		t.Errorf("Damage should apply when not invincible: got health %d/%d, want 2/3", current, max)
+	if current != 2 || maxHealth != 3 {
+		t.Errorf("Damage should apply when not invincible: got health %d/%d, want 2/3", current, maxHealth)
 	}
 
 	// Entity should now be invincible (i-frames)
