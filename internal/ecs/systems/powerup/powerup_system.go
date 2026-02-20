@@ -265,8 +265,11 @@ func (ps *PowerUpSystem) SpawnPowerUp(position common.Point, powerUpType core.Po
 	angle := math.Atan2(dy, dx) * 180 / math.Pi
 
 	duration := time.Duration(0)
-	if powerUpType == core.PowerUpDoubleShot {
+	switch powerUpType {
+	case core.PowerUpDoubleShot:
 		duration = 10 * time.Second
+	case core.PowerUpInvincibility:
+		duration = 5 * time.Second
 	}
 
 	core.PowerUpData.SetValue(entry, core.PowerUpTypeData{
@@ -287,11 +290,14 @@ func (ps *PowerUpSystem) SpawnPowerUp(position common.Point, powerUpType core.Po
 func (ps *PowerUpSystem) TrySpawnPowerUp(position common.Point) {
 	//nolint:gosec // Game logic randomness is acceptable
 	if rand.Float64() < PowerUpDropChance {
-		//nolint:gosec // Weighted random selection (70% double shot, 30% extra life)
-		if rand.Float64() < 0.7 {
+		//nolint:gosec // Weighted random: 60% double shot, 25% extra life, 15% invincibility
+		r := rand.Float64()
+		if r < 0.60 {
 			ps.SpawnPowerUp(position, core.PowerUpDoubleShot)
-		} else {
+		} else if r < 0.85 {
 			ps.SpawnPowerUp(position, core.PowerUpExtraLife)
+		} else {
+			ps.SpawnPowerUp(position, core.PowerUpInvincibility)
 		}
 	}
 }
