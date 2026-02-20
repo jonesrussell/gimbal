@@ -6,6 +6,7 @@ import (
 	"github.com/yohamta/donburi"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -113,7 +114,7 @@ func (cs *CollisionSystem) handleProjectileEnemyCollision(
 				cs.logger.Error("Failed to emit enemy destroyed event", "error", err)
 			}
 
-			cs.logger.Debug("Enemy destroyed", "points", points)
+			dbg.Log(dbg.Event, "Enemy destroyed (points=%d)", points)
 		}
 	}
 
@@ -156,7 +157,7 @@ func (cs *CollisionSystem) checkEnemyProjectilePlayerCollisions(ctx context.Cont
 			// Damage the player (1 damage per projectile hit) with proper context propagation
 			cs.healthSystem.DamagePlayer(ctx, playerEntity, 1)
 
-			cs.logger.Debug("Player hit by enemy projectile")
+			dbg.Log(dbg.Event, "Player hit by enemy projectile")
 		}
 	}
 

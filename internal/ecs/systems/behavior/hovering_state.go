@@ -8,6 +8,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -36,7 +37,7 @@ func (hs *HoveringState) StateType() core.BehaviorStateType {
 
 // Enter is called when transitioning into this state
 func (hs *HoveringState) Enter(entry *donburi.Entry, data *core.BehaviorStateData) {
-	hs.logger.Debug("Entering hover state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Entering hover state")
 }
 
 // Update is called every frame while in this state
@@ -80,7 +81,7 @@ func (hs *HoveringState) updateHoverPosition(entry *donburi.Entry, data *core.Be
 
 // Exit is called when transitioning out of this state
 func (hs *HoveringState) Exit(entry *donburi.Entry, data *core.BehaviorStateData) {
-	hs.logger.Debug("Exiting hover state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Exiting hover state")
 }
 
 // NextState determines the next state

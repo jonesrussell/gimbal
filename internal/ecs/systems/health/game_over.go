@@ -5,6 +5,7 @@ import (
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -57,5 +58,5 @@ func (hs *HealthSystem) triggerGameOver(reason string) {
 	if hs.eventSystem != nil {
 		hs.eventSystem.EmitGameOver()
 	}
-	hs.logger.Debug("Game over", "reason", reason)
+	dbg.Log(dbg.State, "Game over (reason=%s)", reason)
 }

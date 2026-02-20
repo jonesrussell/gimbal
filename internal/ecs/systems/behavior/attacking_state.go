@@ -8,6 +8,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -32,7 +33,7 @@ func (as *AttackingState) StateType() core.BehaviorStateType {
 
 // Enter is called when transitioning into this state
 func (as *AttackingState) Enter(entry *donburi.Entry, data *core.BehaviorStateData) {
-	as.logger.Debug("Entering attack state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Entering attack state")
 
 	// Increment attack count
 	data.AttackCount++
@@ -142,7 +143,7 @@ func (as *AttackingState) executeAttackMovement(pos *common.Point, attackData *c
 
 // Exit is called when transitioning out of this state
 func (as *AttackingState) Exit(entry *donburi.Entry, data *core.BehaviorStateData) {
-	as.logger.Debug("Exiting attack state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Exiting attack state")
 
 	// Mark attack as inactive
 	if entry.HasComponent(core.AttackPattern) {

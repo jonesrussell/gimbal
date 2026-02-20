@@ -108,20 +108,6 @@ func (ms *MovementSystem) updatePlayerMovement(deltaTime float64) {
 		}
 
 		orbital.FacingAngle = internalmath.Angle(facingAngle)
-
-		// DEBUG: Log the facing angle calculation
-		ms.logger.Debug("Facing angle calculation",
-			"orbital_angle", orbital.OrbitalAngle,
-			"calculated_facing", facingAngle,
-			"final_facing", orbital.FacingAngle,
-			"position", pos,
-			"center", orbital.Center)
-
-		ms.logger.Debug("Player orbital movement updated",
-			"input", movementInput,
-			"orbital_angle", orbital.OrbitalAngle,
-			"position", pos,
-			"facing_angle", orbital.FacingAngle)
 	})
 }
 

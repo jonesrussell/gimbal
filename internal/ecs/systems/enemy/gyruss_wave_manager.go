@@ -8,6 +8,7 @@ import (
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
@@ -44,10 +45,7 @@ func (gwm *GyrussWaveManager) LoadStage(config *managers.StageConfig) {
 	gwm.stageConfig = config
 	gwm.Reset()
 
-	gwm.logger.Debug("Gyruss stage loaded",
-		"stage", config.StageNumber,
-		"name", config.Metadata.Name,
-		"waves", len(config.Waves))
+	dbg.Log(dbg.System, "Gyruss stage loaded (stage=%d waves=%d)", config.StageNumber, len(config.Waves))
 }
 
 // Reset resets the wave manager state
@@ -99,10 +97,7 @@ func (gwm *GyrussWaveManager) StartWave(waveIndex int) {
 	gwm.isSpawning = true
 
 	wave := &gwm.stageConfig.Waves[waveIndex]
-	gwm.logger.Debug("Gyruss wave started",
-		"wave_id", wave.WaveID,
-		"description", wave.Description,
-		"groups", len(wave.SpawnSequence))
+	dbg.Log(dbg.System, "Gyruss wave started (wave_index=%d groups=%d)", waveIndex, len(wave.SpawnSequence))
 }
 
 // ShouldSpawnEnemy returns true if an enemy should be spawned and the spawn config

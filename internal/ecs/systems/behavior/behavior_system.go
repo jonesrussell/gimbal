@@ -10,6 +10,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -129,10 +130,7 @@ func (bs *BehaviorSystem) transitionState(
 	// Enter next state
 	nextHandler.Enter(entry, data)
 
-	bs.logger.Debug("State transition",
-		"entity", entry.Entity(),
-		"from", data.PreviousState,
-		"to", data.CurrentState)
+	dbg.Log(dbg.State, "Behavior state transition %v → %v", data.PreviousState, data.CurrentState)
 }
 
 // GetScreenCenter returns the screen center

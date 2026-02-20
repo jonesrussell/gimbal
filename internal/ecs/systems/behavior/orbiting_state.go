@@ -8,6 +8,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -32,7 +33,7 @@ func (os *OrbitingState) StateType() core.BehaviorStateType {
 
 // Enter is called when transitioning into this state
 func (os *OrbitingState) Enter(entry *donburi.Entry, data *core.BehaviorStateData) {
-	os.logger.Debug("Entering orbit state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Entering orbit state")
 
 	// Initialize orbital data if not present
 	if !entry.HasComponent(core.Orbital) {
@@ -98,7 +99,7 @@ func (os *OrbitingState) updateOrbitalPosition(entry *donburi.Entry, data *core.
 
 // Exit is called when transitioning out of this state
 func (os *OrbitingState) Exit(entry *donburi.Entry, data *core.BehaviorStateData) {
-	os.logger.Debug("Exiting orbit state", "entity", entry.Entity())
+	dbg.Log(dbg.State, "Exiting orbit state")
 }
 
 // NextState determines the next state

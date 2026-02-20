@@ -7,6 +7,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -110,7 +111,7 @@ func (cs *CollisionSystem) handlePlayerEnemyCollision(
 		// Damage player (1 damage per enemy collision) with proper context propagation
 		cs.healthSystem.DamagePlayer(ctx, playerEntity, 1)
 
-		cs.logger.Debug("Player damaged by enemy collision")
+		dbg.Log(dbg.Event, "Player damaged by enemy collision")
 	}
 
 	return nil

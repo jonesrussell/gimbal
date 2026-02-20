@@ -11,6 +11,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
@@ -192,11 +193,7 @@ func (gs *GyrussSpawner) SpawnEnemy(ctx context.Context, groupConfig *managers.E
 		MaxSpeed: groupConfig.AttackPattern.RushSpeed,
 	})
 
-	gs.logger.Debug("Gyruss enemy spawned",
-		"type", groupConfig.EnemyType,
-		"spawn_index", spawnIndex,
-		"path_type", groupConfig.EntryPath.Type,
-		"behavior", groupConfig.Behavior.PostEntry)
+	dbg.Log(dbg.Spawn, "Gyruss enemy spawned (type=%s)", groupConfig.EnemyType)
 
 	return entity
 }
@@ -319,10 +316,7 @@ func (gs *GyrussSpawner) SpawnBoss(ctx context.Context, bossConfig *managers.Sta
 		MaxSpeed: bossConfig.AttackPattern.RushSpeed,
 	})
 
-	gs.logger.Debug("Gyruss boss spawned",
-		"type", bossConfig.BossType,
-		"health", bossConfig.Health,
-		"size", bossConfig.Size)
+	dbg.Log(dbg.Spawn, "Gyruss boss entity created (type=%s)", bossConfig.BossType)
 
 	return entity
 }
@@ -403,7 +397,7 @@ func (gs *GyrussSpawner) getSprite(ctx context.Context, typeStr string) *ebiten.
 	sprite.Fill(clr)
 
 	gs.enemySprites[typeStr] = sprite
-	gs.logger.Debug("Created placeholder sprite", "type", typeStr)
+	dbg.Log(dbg.System, "Created placeholder sprite (type=%s)", typeStr)
 
 	return sprite
 }

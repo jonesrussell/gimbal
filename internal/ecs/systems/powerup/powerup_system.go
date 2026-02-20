@@ -14,6 +14,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -183,7 +184,7 @@ func (ps *PowerUpSystem) checkCollection() {
 
 // collectPowerUp applies the power-up effect
 func (ps *PowerUpSystem) collectPowerUp(playerEntry *donburi.Entry, data *core.PowerUpTypeData) {
-	ps.logger.Debug("Power-up collected", "type", data.Type)
+	dbg.Log(dbg.Event, "Power-up collected (type=%v)", data.Type)
 
 	switch data.Type {
 	case core.PowerUpDoubleShot:
@@ -281,9 +282,7 @@ func (ps *PowerUpSystem) SpawnPowerUp(position common.Point, powerUpType core.Po
 		MaxLifeTime:  time.Duration(PowerUpLifetime * float64(time.Second)),
 	})
 
-	ps.logger.Debug("Power-up spawned",
-		"type", powerUpType,
-		"position", position)
+	dbg.Log(dbg.Spawn, "Power-up spawned (type=%v)", powerUpType)
 }
 
 // TrySpawnPowerUp attempts to spawn a power-up with configured drop chance

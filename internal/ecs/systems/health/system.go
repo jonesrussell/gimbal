@@ -10,6 +10,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/collision"
 )
@@ -114,7 +115,7 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 	if hs.config.Debug && hs.config.Invincible {
 		// Check if this is the player entity
 		if entry.HasComponent(core.PlayerTag) {
-			hs.logger.Debug("Player damage prevented by invincible flag (DEBUG mode)")
+			dbg.Log(dbg.State, "Player damage prevented by invincible flag (DEBUG mode)")
 			return nil // Player is invincible, no damage taken
 		}
 	}
@@ -137,7 +138,7 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 	// Update health component
 	core.Health.SetValue(entry, *health)
 
-	hs.logger.Debug("Entity damaged", "damage", damage, "remaining_health", health.Current)
+	dbg.Log(dbg.Event, "Entity damaged (damage=%d remaining_health=%d)", damage, health.Current)
 
 	// Check if entity should respawn or game over
 	if health.Current > 0 {
@@ -145,7 +146,7 @@ func (hs *HealthSystem) DamageEntity(ctx context.Context, entity donburi.Entity,
 			return err
 		}
 	} else {
-		hs.logger.Debug("Game over - no health remaining")
+		dbg.Log(dbg.State, "Game over - no health remaining")
 	}
 
 	return nil
@@ -173,7 +174,7 @@ func (hs *HealthSystem) HealEntity(ctx context.Context, entity donburi.Entity, a
 
 	core.Health.SetValue(entry, *health)
 
-	hs.logger.Debug("Entity healed", "amount", amount, "new_health", health.Current)
+	dbg.Log(dbg.Event, "Entity healed (amount=%d new_health=%d)", amount, health.Current)
 	return nil
 }
 
@@ -233,7 +234,7 @@ func (hs *HealthSystem) respawnEntity(ctx context.Context, entity donburi.Entity
 	health.InvincibilityTime = health.InvincibilityDuration
 	core.Health.SetValue(entry, *health)
 
-	hs.logger.Debug("Entity respawned with invincibility")
+	dbg.Log(dbg.State, "Entity respawned with invincibility")
 	return nil
 }
 

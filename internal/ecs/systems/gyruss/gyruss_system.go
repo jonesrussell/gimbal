@@ -107,7 +107,6 @@ func (gs *GyrussSystem) createSubsystems(cfg *GyrussSystemConfig) {
 	// Power-up system
 	gs.powerUpSystem = powerup.NewPowerUpSystem(cfg.World, cfg.GameConfig, cfg.Logger)
 
-	gs.logger.Debug("Gyruss subsystems created")
 }
 
 // LoadStage loads a stage by number
@@ -303,7 +302,7 @@ func (gs *GyrussSystem) DestroyEnemy(entity donburi.Entity) int {
 	// Remove the entity
 	gs.world.Remove(entity)
 
-	gs.logger.Debug("Enemy destroyed", "entity", entity, "points", points)
+	dbg.Log(dbg.Event, "Enemy destroyed (points=%d)", points)
 	return points
 }
 
@@ -325,7 +324,7 @@ func (gs *GyrussSystem) GetPowerUpSystem() *powerup.PowerUpSystem {
 // Reset resets the Gyruss system state for a new game
 func (gs *GyrussSystem) Reset() {
 	gs.waveManager.Reset()
-	gs.logger.Debug("Gyruss system reset")
+	dbg.Log(dbg.System, "Gyruss system reset")
 }
 
 // LoadNextStage advances to and loads the next stage

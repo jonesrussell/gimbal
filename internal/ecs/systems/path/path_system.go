@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
@@ -153,8 +154,7 @@ func (ps *PathSystem) onPathComplete(entry *donburi.Entry) {
 		behaviorData.StateTime = 0
 		core.BehaviorState.SetValue(entry, *behaviorData)
 
-		ps.logger.Debug("Entry path complete, transitioning to orbiting",
-			"entity", entry.Entity())
+		dbg.Log(dbg.State, "Entry path complete, transitioning to orbiting")
 	}
 
 	// Ensure scale is at target
