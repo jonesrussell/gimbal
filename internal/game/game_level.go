@@ -1,6 +1,7 @@
 package game
 
 import (
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 )
 
@@ -16,7 +17,7 @@ func (g *ECSGame) checkLevelCompletion() {
 // handleLevelComplete handles level completion actions
 func (g *ECSGame) handleLevelComplete() {
 	currentStage := g.stageStateMachine.StageNumber()
-	g.logger.Debug("Stage complete", "stage", currentStage)
+	dbg.Log(dbg.State, "Stage complete (stage=%d)", currentStage)
 
 	// Check if final stage (stage 6)
 	if currentStage >= 6 {

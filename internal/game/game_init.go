@@ -90,12 +90,6 @@ func NewECSGame(
 	logger common.Logger,
 	inputHandler common.GameInputHandler,
 ) (*ECSGame, error) {
-	logger.Debug("Creating new ECS game instance",
-		"screen_size", gameConfig.ScreenSize,
-		"player_size", gameConfig.PlayerSize,
-		"num_stars", gameConfig.NumStars,
-	)
-
 	// Create ECS world
 	world := donburi.NewWorld()
 
@@ -139,6 +133,5 @@ func (g *ECSGame) loadAssets(ctx context.Context) error {
 		g.logger.Warn("Failed to load audio, continuing without it", "error", err)
 	}
 
-	g.logger.Debug("Assets loaded successfully", "resource_count", g.resourceManager.GetResourceCount())
 	return nil
 }

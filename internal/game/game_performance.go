@@ -26,7 +26,7 @@ func (g *ECSGame) updateDebugInput() {
 			g.renderDebugger.Toggle()
 		}
 		g.debugKeyPressed = true
-		g.logger.Debug("Debug overlay toggled", "enabled", g.showDebugInfo)
+		dbg.Log(dbg.System, "Debug overlay toggled (enabled=%v)", g.showDebugInfo)
 	} else if !ebiten.IsKeyPressed(ebiten.KeyF3) {
 		g.debugKeyPressed = false
 	}

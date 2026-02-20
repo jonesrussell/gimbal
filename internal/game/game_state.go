@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 )
 
@@ -62,10 +63,10 @@ func (gsm *GameStateManager) TogglePause() {
 	gsm.state.IsPaused = !gsm.state.IsPaused
 	if gsm.state.IsPaused {
 		gsm.eventSystem.EmitGamePaused()
-		gsm.logger.Debug("Game paused")
+		dbg.Log(dbg.State, "Game paused")
 	} else {
 		gsm.eventSystem.EmitGameResumed()
-		gsm.logger.Debug("Game resumed")
+		dbg.Log(dbg.State, "Game resumed")
 	}
 }
 
@@ -75,10 +76,10 @@ func (gsm *GameStateManager) SetPaused(paused bool) {
 		gsm.state.IsPaused = paused
 		if paused {
 			gsm.eventSystem.EmitGamePaused()
-			gsm.logger.Debug("Game paused")
+			dbg.Log(dbg.State, "Game paused")
 		} else {
 			gsm.eventSystem.EmitGameResumed()
-			gsm.logger.Debug("Game resumed")
+			dbg.Log(dbg.State, "Game resumed")
 		}
 	}
 }
@@ -112,7 +113,7 @@ func (gsm *GameStateManager) IsGameOver() bool {
 func (gsm *GameStateManager) SetGameOver(gameOver bool) {
 	gsm.state.IsGameOver = gameOver
 	if gameOver {
-		gsm.logger.Debug("Game over")
+		dbg.Log(dbg.State, "Game over")
 	}
 }
 
@@ -125,14 +126,14 @@ func (gsm *GameStateManager) IsVictory() bool {
 func (gsm *GameStateManager) SetVictory(victory bool) {
 	gsm.state.IsVictory = victory
 	if victory {
-		gsm.logger.Debug("Victory achieved")
+		dbg.Log(dbg.State, "Victory achieved")
 	}
 }
 
 // Reset resets the game state to initial values
 func (gsm *GameStateManager) Reset() {
 	gsm.state = NewGameState()
-	gsm.logger.Debug("Game state reset")
+	dbg.Log(dbg.State, "Game state reset")
 }
 
 // GetStateInfo returns a summary of the current game state

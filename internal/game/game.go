@@ -141,8 +141,6 @@ func (g *ECSGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 
 // Cleanup cleans up resources
 func (g *ECSGame) Cleanup(ctx context.Context) {
-	g.logger.Debug("Cleaning up ECS game")
-
 	// Cancel the game context to signal shutdown to all systems
 	if g.cancel != nil {
 		g.cancel()

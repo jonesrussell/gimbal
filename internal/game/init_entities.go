@@ -31,14 +31,9 @@ func (g *ECSGame) createEntities(ctx context.Context) error {
 		return errors.NewGameError(errors.ConfigMissing, "player config not loaded")
 	}
 	g.playerEntity = core.CreatePlayer(g.world, playerSprite, g.config, g.playerConfig)
-	g.logger.Debug("Player entity created",
-		"entity_id", g.playerEntity,
-		"health", g.playerConfig.Health,
-		"size", g.playerConfig.Size)
 
 	// Create star field
 	g.starEntities = core.CreateStarField(g.world, starSprite, g.config)
-	g.logger.Debug("Star entities created", "count", len(g.starEntities))
 
 	return nil
 }
