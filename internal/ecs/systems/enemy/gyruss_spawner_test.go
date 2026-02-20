@@ -179,11 +179,11 @@ func TestGyrussSpawner_SpawnIndexOrbitAngle(t *testing.T) {
 		FirePattern: managers.FireConfig{
 			Type:            "single_shot",
 			FireRate:        0.5,
-			BurstCount:       0,
-			SprayAngle:       0,
-			ProjectileCount:  1,
-			FireWhileOrbit:   true,
-			FireWhileAttack:  false,
+			BurstCount:      0,
+			SprayAngle:      0,
+			ProjectileCount: 1,
+			FireWhileOrbit:  true,
+			FireWhileAttack: false,
 		},
 		Retreat: managers.RetreatConfig{
 			Timeout: 15.0,
