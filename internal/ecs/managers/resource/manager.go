@@ -7,8 +7,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
-
-	"github.com/jonesrussell/gimbal/internal/common"
 )
 
 // ResourceType represents different types of resources
@@ -32,18 +30,16 @@ type Resource struct {
 type ResourceManager struct {
 	resources   map[string]*Resource
 	mutex       sync.RWMutex
-	logger      common.Logger
 	defaultFont text.Face
 
 	scaledCache map[string]*ebiten.Image // Cache for scaled sprites
 	audioPlayer *AudioPlayer             // Audio player for background music
 }
 
-// NewResourceManager creates a new resource management system with the provided logger
-func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceManager {
+// NewResourceManager creates a new resource management system
+func NewResourceManager(ctx context.Context) *ResourceManager {
 	rm := &ResourceManager{
 		resources:   make(map[string]*Resource),
-		logger:      logger,
 		scaledCache: make(map[string]*ebiten.Image),
 	}
 
@@ -52,15 +48,12 @@ func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceMana
 	// the game will continue without audio
 	disableAudio := os.Getenv("DISABLE_AUDIO")
 	if disableAudio == "1" || disableAudio == "true" {
-		logger.Debug("Audio disabled, skipping audio player initialization")
 		rm.audioPlayer = nil
 	} else {
-		audioPlayer, audioErr := NewAudioPlayer(44100, logger)
+		audioPlayer, audioErr := NewAudioPlayer(44100)
 		if audioErr != nil {
-			logger.Warn("Failed to create audio player, audio will be disabled", "error", audioErr)
 			rm.audioPlayer = nil
 		} else if audioPlayer == nil {
-			logger.Debug("Audio player not available (no audio device), continuing without audio")
 			rm.audioPlayer = nil
 		} else {
 			rm.audioPlayer = audioPlayer
@@ -68,7 +61,8 @@ func NewResourceManager(ctx context.Context, logger common.Logger) *ResourceMana
 	}
 
 	if fontErr := rm.loadDefaultFont(ctx); fontErr != nil {
-		logger.Error("failed to load default font", "error", fontErr)
+		// non-fatal; font may be loaded later
+		_ = fontErr
 	}
 	return rm
 }
@@ -116,7 +110,6 @@ func (rm *ResourceManager) Cleanup(ctx context.Context) error {
 		rm.audioPlayer.Cleanup()
 	}
 
-	rm.logger.Info("Cleaning up resources", "count", len(rm.resources))
 	rm.resources = make(map[string]*Resource)
 	return nil
 }

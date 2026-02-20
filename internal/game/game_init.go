@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"log"
 
 	"github.com/yohamta/donburi"
 
@@ -28,7 +29,6 @@ func (g *ECSGame) setupInitialScene(ctx context.Context) error {
 	g.sceneManager = scenes.NewSceneManager(&scenes.SceneManagerConfig{
 		World:        g.world,
 		Config:       g.config,
-		Logger:       g.logger,
 		InputHandler: g.inputHandler,
 		Font:         font,
 		ScoreManager: g.scoreManager,
@@ -87,7 +87,6 @@ func (g *ECSGame) finalizeInitialization(ctx context.Context) error {
 func NewECSGame(
 	ctx context.Context,
 	gameConfig *config.GameConfig,
-	logger common.Logger,
 	inputHandler common.GameInputHandler,
 ) (*ECSGame, error) {
 	// Create ECS world
@@ -100,7 +99,6 @@ func NewECSGame(
 		world:        world,
 		config:       gameConfig,
 		inputHandler: inputHandler,
-		logger:       logger,
 		ctx:          gameCtx,
 		cancel:       cancel,
 	}
@@ -130,7 +128,7 @@ func (g *ECSGame) loadAssets(ctx context.Context) error {
 	// Load all audio through resource manager
 	if err := g.resourceManager.LoadAllAudio(ctx); err != nil {
 		// Audio is optional, log warning but don't fail
-		g.logger.Warn("Failed to load audio, continuing without it", "error", err)
+		log.Printf("[WARN] Failed to load audio, continuing without it: %v", err)
 	}
 
 	return nil

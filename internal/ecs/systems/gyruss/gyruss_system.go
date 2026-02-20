@@ -3,14 +3,15 @@ package gyruss
 import (
 	"context"
 	"embed"
+	"log"
 
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
-	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/config"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
@@ -29,7 +30,6 @@ type GyrussSystem struct {
 	world       donburi.World
 	gameConfig  *config.GameConfig
 	resourceMgr *resources.ResourceManager
-	logger      common.Logger
 
 	// Stage management
 	stageLoader *managers.StageLoader
@@ -56,7 +56,6 @@ type GyrussSystemConfig struct {
 	World       donburi.World
 	GameConfig  *config.GameConfig
 	ResourceMgr *resources.ResourceManager
-	Logger      common.Logger
 	AssetsFS    embed.FS
 	EventSystem *events.EventSystem
 }
@@ -67,21 +66,13 @@ func NewGyrussSystem(cfg *GyrussSystemConfig) *GyrussSystem {
 		world:        cfg.World,
 		gameConfig:   cfg.GameConfig,
 		resourceMgr:  cfg.ResourceMgr,
-		logger:       cfg.Logger,
 		eventSystem:  cfg.EventSystem,
 		currentStage: 1,
 	}
 
-	// Create stage loader
-	gs.stageLoader = managers.NewStageLoader(cfg.Logger, cfg.AssetsFS)
-
-	// Create wave manager
-	gs.waveManager = enemy.NewGyrussWaveManager(cfg.World, cfg.Logger)
-
-	// Create spawner
-	gs.spawner = enemy.NewGyrussSpawner(cfg.World, cfg.GameConfig, cfg.ResourceMgr, cfg.Logger)
-
-	// Create subsystems
+	gs.stageLoader = managers.NewStageLoader(cfg.AssetsFS)
+	gs.waveManager = enemy.NewGyrussWaveManager(cfg.World)
+	gs.spawner = enemy.NewGyrussSpawner(cfg.World, cfg.GameConfig, cfg.ResourceMgr)
 	gs.createSubsystems(cfg)
 
 	return gs
@@ -89,24 +80,12 @@ func NewGyrussSystem(cfg *GyrussSystemConfig) *GyrussSystem {
 
 // createSubsystems creates all the Gyruss subsystems
 func (gs *GyrussSystem) createSubsystems(cfg *GyrussSystemConfig) {
-	// Path system for entry animations
-	gs.pathSystem = path.NewPathSystem(cfg.World, cfg.GameConfig, cfg.Logger)
-
-	// Scale animation system
-	gs.scaleSystem = animation.NewScaleAnimationSystem(cfg.World, cfg.Logger)
-
-	// Behavior state machine
-	gs.behaviorSystem = behavior.NewBehaviorSystem(cfg.World, cfg.GameConfig, cfg.Logger)
-
-	// Attack pattern system
-	gs.attackSystem = attack.NewAttackSystem(cfg.World, cfg.GameConfig, cfg.Logger)
-
-	// Fire pattern system
-	gs.fireSystem = fire.NewFirePatternSystem(cfg.World, cfg.GameConfig, cfg.Logger)
-
-	// Power-up system
-	gs.powerUpSystem = powerup.NewPowerUpSystem(cfg.World, cfg.GameConfig, cfg.Logger)
-
+	gs.pathSystem = path.NewPathSystem(cfg.World, cfg.GameConfig)
+	gs.scaleSystem = animation.NewScaleAnimationSystem(cfg.World)
+	gs.behaviorSystem = behavior.NewBehaviorSystem(cfg.World, cfg.GameConfig)
+	gs.attackSystem = attack.NewAttackSystem(cfg.World, cfg.GameConfig)
+	gs.fireSystem = fire.NewFirePatternSystem(cfg.World, cfg.GameConfig)
+	gs.powerUpSystem = powerup.NewPowerUpSystem(cfg.World, cfg.GameConfig)
 }
 
 // LoadStage loads a stage by number
@@ -117,15 +96,8 @@ func (gs *GyrussSystem) LoadStage(stageNumber int) error {
 	}
 
 	gs.currentStage = stageNumber
-
-	// Load into wave manager
 	gs.waveManager.LoadStage(stageConfig)
-
-	gs.logger.Info("Gyruss stage loaded",
-		"stage", stageNumber,
-		"name", stageConfig.Metadata.Name,
-		"waves", len(stageConfig.Waves))
-
+	log.Printf("[INFO] Gyruss stage loaded stage=%d name=%s waves=%d", stageNumber, stageConfig.Metadata.Name, len(stageConfig.Waves))
 	return nil
 }
 
@@ -236,9 +208,7 @@ func (gs *GyrussSystem) SpawnBoss(ctx context.Context) {
 	}
 	gs.spawner.SpawnBoss(ctx, bossConfig)
 	dbg.Log(dbg.Spawn, "boss spawned")
-	gs.logger.Info("Gyruss boss spawned",
-		"stage", gs.currentStage,
-		"boss_type", bossConfig.BossType)
+	log.Printf("[INFO] Gyruss boss spawned stage=%d boss_type=%s", gs.currentStage, bossConfig.BossType)
 }
 
 // OnEnemyDestroyed is called when an enemy is destroyed

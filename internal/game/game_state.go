@@ -3,7 +3,6 @@ package game
 import (
 	"time"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 )
@@ -36,15 +35,13 @@ func NewGameState() *GameState {
 type GameStateManager struct {
 	state       *GameState
 	eventSystem *events.EventSystem
-	logger      common.Logger
 }
 
 // NewGameStateManager creates a new game state management system with the provided dependencies
-func NewGameStateManager(eventSystem *events.EventSystem, logger common.Logger) *GameStateManager {
+func NewGameStateManager(eventSystem *events.EventSystem) *GameStateManager {
 	return &GameStateManager{
 		state:       NewGameState(),
 		eventSystem: eventSystem,
-		logger:      logger,
 	}
 }
 

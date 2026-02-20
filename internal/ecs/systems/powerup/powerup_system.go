@@ -3,6 +3,7 @@ package powerup
 import (
 	"context"
 	"image/color"
+	"log"
 	"math"
 	"math/rand"
 	"time"
@@ -31,7 +32,6 @@ const (
 type PowerUpSystem struct {
 	world           donburi.World
 	config          *config.GameConfig
-	logger          common.Logger
 	screenCenter    common.Point
 	sprites         map[core.PowerUpType]*ebiten.Image
 	playerHasDouble bool
@@ -42,12 +42,10 @@ type PowerUpSystem struct {
 func NewPowerUpSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	logger common.Logger,
 ) *PowerUpSystem {
 	ps := &PowerUpSystem{
 		world:  world,
 		config: cfg,
-		logger: logger,
 		screenCenter: common.Point{
 			X: float64(cfg.ScreenSize.Width) / 2,
 			Y: float64(cfg.ScreenSize.Height) / 2,
@@ -193,7 +191,7 @@ func (ps *PowerUpSystem) collectPowerUp(playerEntry *donburi.Entry, data *core.P
 		if ps.doubleRemaining == 0 {
 			ps.doubleRemaining = 10 * time.Second // Default 10 seconds
 		}
-		ps.logger.Info("Double shot activated", "duration", ps.doubleRemaining)
+		log.Printf("[INFO] Double shot activated duration=%v", ps.doubleRemaining)
 
 	case core.PowerUpExtraLife:
 		if playerEntry.HasComponent(core.Health) {
@@ -203,7 +201,7 @@ func (ps *PowerUpSystem) collectPowerUp(playerEntry *donburi.Entry, data *core.P
 				health.Maximum = health.Current
 			}
 			core.Health.SetValue(playerEntry, *health)
-			ps.logger.Info("Extra life collected", "lives", health.Current)
+			log.Printf("[INFO] Extra life collected lives=%d", health.Current)
 		}
 
 	case core.PowerUpInvincibility:
@@ -219,7 +217,7 @@ func (ps *PowerUpSystem) collectPowerUp(playerEntry *donburi.Entry, data *core.P
 			}
 			core.Health.SetValue(playerEntry, *health)
 		}
-		ps.logger.Info("Invincibility power-up collected", "duration", duration)
+		log.Printf("[INFO] Invincibility power-up collected duration=%v", duration)
 	}
 }
 
@@ -230,7 +228,7 @@ func (ps *PowerUpSystem) updateEffects(deltaTime float64) {
 		if ps.doubleRemaining <= 0 {
 			ps.playerHasDouble = false
 			ps.doubleRemaining = 0
-			ps.logger.Info("Double shot expired")
+			log.Printf("[INFO] Double shot expired")
 		}
 	}
 }

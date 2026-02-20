@@ -1,6 +1,8 @@
 package game
 
 import (
+	"log"
+
 	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/scenes"
 )
@@ -31,7 +33,7 @@ func (g *ECSGame) handleLevelComplete() {
 
 	// Load next stage via stage state machine (delegates to GyrussSystem)
 	if err := g.stageStateMachine.LoadNextStage(); err != nil {
-		g.logger.Error("Failed to load next stage", "error", err)
+		log.Printf("[ERROR] Failed to load next stage: %v", err)
 		// Still switch scene so the game doesn't hang; next play will retry same stage
 	}
 

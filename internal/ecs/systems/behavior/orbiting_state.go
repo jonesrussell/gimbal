@@ -6,7 +6,6 @@ import (
 
 	"github.com/yohamta/donburi"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
@@ -15,15 +14,11 @@ import (
 // OrbitingState handles orbital movement around the center
 type OrbitingState struct {
 	config *config.GameConfig
-	logger common.Logger
 }
 
 // NewOrbitingState creates a new orbiting state handler
-func NewOrbitingState(cfg *config.GameConfig, logger common.Logger) *OrbitingState {
-	return &OrbitingState{
-		config: cfg,
-		logger: logger,
-	}
+func NewOrbitingState(cfg *config.GameConfig) *OrbitingState {
+	return &OrbitingState{config: cfg}
 }
 
 // StateType returns the state type

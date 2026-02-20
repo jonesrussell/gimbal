@@ -5,7 +5,6 @@ import (
 
 	"github.com/yohamta/donburi"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
@@ -37,7 +36,6 @@ type Config struct {
 	EventSystem  *events.EventSystem
 	WaveManager  *enemy.GyrussWaveManager
 	GyrussSystem GyrussSystemForStage
-	Logger       common.Logger
 }
 
 // StageStateMachine owns stage progression, wave index, and boss lifecycle
@@ -45,7 +43,6 @@ type StageStateMachine struct {
 	eventSystem    *events.EventSystem
 	waveManager    *enemy.GyrussWaveManager
 	gyrussSystem   GyrussSystemForStage
-	logger         common.Logger
 	state          StageState
 	waveIndex      int
 	stageNumber    int
@@ -62,7 +59,6 @@ func NewStageStateMachine(cfg *Config) *StageStateMachine {
 		eventSystem:  cfg.EventSystem,
 		waveManager:  cfg.WaveManager,
 		gyrussSystem: cfg.GyrussSystem,
-		logger:       cfg.Logger,
 		state:        StageStatePreWave,
 		preWaveDelay: levelStartDelaySec,
 	}

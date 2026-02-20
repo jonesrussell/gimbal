@@ -15,15 +15,11 @@ import (
 // AttackingState handles attack execution
 type AttackingState struct {
 	config *config.GameConfig
-	logger common.Logger
 }
 
 // NewAttackingState creates a new attacking state handler
-func NewAttackingState(cfg *config.GameConfig, logger common.Logger) *AttackingState {
-	return &AttackingState{
-		config: cfg,
-		logger: logger,
-	}
+func NewAttackingState(cfg *config.GameConfig) *AttackingState {
+	return &AttackingState{config: cfg}
 }
 
 // StateType returns the state type

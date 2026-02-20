@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/yohamta/donburi"
@@ -29,7 +30,6 @@ type ECSGame struct {
 	world        donburi.World
 	config       *config.GameConfig
 	inputHandler common.GameInputHandler
-	logger       common.Logger
 
 	// Context for game lifecycle
 	ctx    context.Context
@@ -77,10 +77,10 @@ type ECSGame struct {
 	perfMonitor     *debug.PerformanceMonitor
 
 	// Debug system
-	renderDebugger   *debug.RenderingDebugger
-	showDebugInfo    bool
-	debugKeyPressed  bool
-	traceKeyPressed  bool
+	renderDebugger  *debug.RenderingDebugger
+	showDebugInfo   bool
+	debugKeyPressed bool
+	traceKeyPressed bool
 }
 
 // Update updates the game state
@@ -149,7 +149,7 @@ func (g *ECSGame) Cleanup(ctx context.Context) {
 	// Clean up resources
 	if g.resourceManager != nil {
 		if err := g.resourceManager.Cleanup(ctx); err != nil {
-			g.logger.Error("Failed to cleanup resource manager", "error", err)
+			log.Printf("[ERROR] Failed to cleanup resource manager: %v", err)
 		}
 	}
 

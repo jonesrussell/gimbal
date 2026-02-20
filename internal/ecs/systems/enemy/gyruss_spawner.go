@@ -22,7 +22,6 @@ type GyrussSpawner struct {
 	world        donburi.World
 	gameConfig   *config.GameConfig
 	resourceMgr  *resources.ResourceManager
-	logger       common.Logger
 	screenCenter common.Point
 
 	// Sprite cache
@@ -34,13 +33,11 @@ func NewGyrussSpawner(
 	world donburi.World,
 	gameConfig *config.GameConfig,
 	resourceMgr *resources.ResourceManager,
-	logger common.Logger,
 ) *GyrussSpawner {
 	return &GyrussSpawner{
 		world:       world,
 		gameConfig:  gameConfig,
 		resourceMgr: resourceMgr,
-		logger:      logger,
 		screenCenter: common.Point{
 			X: float64(gameConfig.ScreenSize.Width) / 2,
 			Y: float64(gameConfig.ScreenSize.Height) / 2,

@@ -16,11 +16,9 @@ import (
 )
 
 // MovementSystem updates entity positions based on velocity or input
-// It is responsible for moving the player, starfield, and any other moving entities.
 type MovementSystem struct {
 	world        donburi.World
 	config       *config.GameConfig
-	logger       common.Logger
 	inputHandler common.GameInputHandler
 }
 
@@ -28,13 +26,11 @@ type MovementSystem struct {
 func NewMovementSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	logger common.Logger,
 	inputHandler common.GameInputHandler,
 ) *MovementSystem {
 	return &MovementSystem{
 		world:        world,
 		config:       cfg,
-		logger:       logger,
 		inputHandler: inputHandler,
 	}
 }

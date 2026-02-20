@@ -5,7 +5,6 @@ import (
 
 	"github.com/yohamta/donburi"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
@@ -14,15 +13,11 @@ import (
 // RetreatingState handles retreat movement back to orbit or off-screen
 type RetreatingState struct {
 	config *config.GameConfig
-	logger common.Logger
 }
 
 // NewRetreatingState creates a new retreating state handler
-func NewRetreatingState(cfg *config.GameConfig, logger common.Logger) *RetreatingState {
-	return &RetreatingState{
-		config: cfg,
-		logger: logger,
-	}
+func NewRetreatingState(cfg *config.GameConfig) *RetreatingState {
+	return &RetreatingState{config: cfg}
 }
 
 // StateType returns the state type

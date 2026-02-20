@@ -3,13 +3,13 @@ package app
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	gamepkg "github.com/jonesrussell/gimbal/internal/game"
 	"github.com/jonesrussell/gimbal/internal/input"
-	"github.com/jonesrussell/gimbal/internal/logger"
 )
 
 // Container manages all application dependencies and their lifecycle
@@ -17,7 +17,6 @@ type Container struct {
 	mu sync.RWMutex
 
 	// Core dependencies
-	logger       common.Logger
 	appConfig    *config.AppConfig
 	config       *config.GameConfig
 	inputHandler common.GameInputHandler
@@ -46,45 +45,23 @@ func (c *Container) Initialize(ctx context.Context) error {
 		return fmt.Errorf("container already initialized")
 	}
 
-	// Step 1: Initialize logger (needed by everything else)
-	if err := c.initializeLogger(); err != nil {
-		return fmt.Errorf("failed to initialize logger: %w", err)
-	}
-
-	// Step 2: Initialize configuration
+	// Step 1: Initialize configuration
 	if err := c.initializeConfig(); err != nil {
 		return fmt.Errorf("failed to initialize config: %w", err)
 	}
 
-	// Step 3: Initialize input handler
+	// Step 2: Initialize input handler
 	if err := c.initializeInputHandler(); err != nil {
 		return fmt.Errorf("failed to initialize input handler: %w", err)
 	}
 
-	// Step 4: Initialize game
+	// Step 3: Initialize game
 	if err := c.initializeGame(ctx); err != nil {
 		return fmt.Errorf("failed to initialize game: %w", err)
 	}
 
 	c.initialized = true
-	c.logger.Info("Application container initialized successfully")
-	return nil
-}
-
-// initializeLogger creates and configures the logger
-func (c *Container) initializeLogger() error {
-	loggerConfig := &logger.Config{
-		LogFile:    c.appConfig.Logging.LogFile,
-		LogLevel:   c.appConfig.LogLevel,
-		ConsoleOut: c.appConfig.Logging.ConsoleOut,
-		FileOut:    c.appConfig.Logging.FileOut,
-	}
-
-	log, err := logger.NewWithConfig(loggerConfig)
-	if err != nil {
-		return err
-	}
-	c.logger = log
+	log.Printf("[INFO] Application container initialized successfully")
 	return nil
 }
 
@@ -103,9 +80,9 @@ func (c *Container) initializeConfig() error {
 	// Only add invincible option if debug is enabled
 	if debugEnabled && c.invincible {
 		opts = append(opts, config.WithInvincible(true))
-		c.logger.Info("Invincible mode enabled (DEBUG mode required)")
+		log.Printf("[INFO] Invincible mode enabled (DEBUG mode required)")
 	} else if c.invincible && !debugEnabled {
-		c.logger.Warn("Invincible flag ignored: DEBUG must be true to use invincible mode")
+		log.Printf("[WARN] Invincible flag ignored: DEBUG must be true to use invincible mode")
 	}
 
 	gameConfig := config.NewConfig(opts...)
@@ -113,7 +90,7 @@ func (c *Container) initializeConfig() error {
 	// Safety check: ensure invincible is disabled if debug is disabled
 	if !gameConfig.Debug && gameConfig.Invincible {
 		gameConfig.Invincible = false
-		c.logger.Warn("Invincible mode disabled: DEBUG mode is required")
+		log.Printf("[WARN] Invincible mode disabled: DEBUG mode is required")
 	}
 
 	// Validate configuration
@@ -122,13 +99,7 @@ func (c *Container) initializeConfig() error {
 	}
 
 	c.config = gameConfig
-	c.logger.Info("Game configuration created and validated",
-		"screen_size", gameConfig.ScreenSize,
-		"player_size", gameConfig.PlayerSize,
-		"num_stars", gameConfig.NumStars,
-		"debug", gameConfig.Debug,
-		"invincible", gameConfig.Invincible,
-	)
+	log.Printf("[INFO] Game configuration created and validated (debug=%v invincible=%v)", gameConfig.Debug, gameConfig.Invincible)
 	return nil
 }
 
@@ -136,26 +107,19 @@ func (c *Container) initializeConfig() error {
 func (c *Container) initializeInputHandler() error {
 	inputHandler := input.NewHandler()
 	c.inputHandler = inputHandler
-	c.logger.Info("Input handler created")
+	log.Printf("[INFO] Input handler created")
 	return nil
 }
 
 // initializeGame creates the ECS game instance
 func (c *Container) initializeGame(ctx context.Context) error {
-	game, err := gamepkg.NewECSGame(ctx, c.config, c.logger, c.inputHandler)
+	game, err := gamepkg.NewECSGame(ctx, c.config, c.inputHandler)
 	if err != nil {
 		return err
 	}
 	c.game = game
-	c.logger.Info("ECS game initialized successfully")
+	log.Printf("[INFO] ECS game initialized successfully")
 	return nil
-}
-
-// GetLogger returns the logger instance
-func (c *Container) GetLogger() common.Logger {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.logger
 }
 
 // GetGame returns the ECS game instance
@@ -174,7 +138,7 @@ func (c *Container) Shutdown(ctx context.Context) error {
 		return nil
 	}
 
-	c.logger.Info("Shutting down application container")
+	log.Printf("[INFO] Shutting down application container")
 
 	// Shutdown in reverse order of initialization
 	if c.game != nil {
@@ -182,16 +146,9 @@ func (c *Container) Shutdown(ctx context.Context) error {
 			return fmt.Errorf("context must not be nil in Shutdown")
 		}
 		c.game.Cleanup(ctx)
-		c.logger.Debug("Game cleaned up")
-	}
-
-	if c.logger != nil {
-		if err := c.logger.Sync(); err != nil {
-			c.logger.Error("Failed to sync logger during shutdown", "error", err)
-		}
 	}
 
 	c.shutdown = true
-	c.logger.Info("Application container shutdown complete")
+	log.Printf("[INFO] Application container shutdown complete")
 	return nil
 }

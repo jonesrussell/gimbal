@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/yohamta/donburi"
@@ -28,15 +29,11 @@ type GameStateManagerForHealth interface {
 }
 
 // HealthSystem manages player health, invincibility, and respawning
-// Restore original fields: world, gameConfig, eventSystem, gameStateManager, logger, lastUpdate
-// Remove registry/context fields and methods
-// Only keep the minimal interface wrapper for collision
 type HealthSystem struct {
 	world            donburi.World
 	config           *config.GameConfig
 	eventSystem      EventSystemForHealth
 	gameStateManager GameStateManagerForHealth
-	logger           common.Logger
 	lastUpdate       time.Time
 }
 
@@ -46,14 +43,12 @@ func NewHealthSystem(
 	cfg *config.GameConfig,
 	eventSystem EventSystemForHealth,
 	gameStateManager GameStateManagerForHealth,
-	logger common.Logger,
 ) *HealthSystem {
 	return &HealthSystem{
 		world:            world,
 		config:           cfg,
 		eventSystem:      eventSystem,
 		gameStateManager: gameStateManager,
-		logger:           logger,
 		lastUpdate:       time.Now(),
 	}
 }
@@ -242,7 +237,7 @@ func (hs *HealthSystem) respawnEntity(ctx context.Context, entity donburi.Entity
 // This method implements the collision.HealthSystemInterface.
 func (hs *HealthSystem) DamagePlayer(ctx context.Context, entity donburi.Entity, damage int) {
 	if err := hs.DamageEntity(ctx, entity, damage); err != nil {
-		hs.logger.Error("Failed to damage entity", "error", err, "entity", entity)
+		log.Printf("[ERROR] Failed to damage entity: %v", err)
 	}
 }
 

@@ -25,7 +25,6 @@ const (
 type FirePatternSystem struct {
 	world            donburi.World
 	config           *config.GameConfig
-	logger           common.Logger
 	screenCenter     common.Point
 	projectileSprite *ebiten.Image
 }
@@ -34,12 +33,10 @@ type FirePatternSystem struct {
 func NewFirePatternSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	logger common.Logger,
 ) *FirePatternSystem {
 	fps := &FirePatternSystem{
 		world:  world,
 		config: cfg,
-		logger: logger,
 		screenCenter: common.Point{
 			X: float64(cfg.ScreenSize.Width) / 2,
 			Y: float64(cfg.ScreenSize.Height) / 2,

@@ -35,7 +35,6 @@ func (rm *ResourceManager) LoadAudio(ctx context.Context, name, path string) (*A
 
 	// Check cache first
 	if cached := rm.getCachedAudio(name); cached != nil {
-		rm.logger.Debug("[AUDIO_CACHE] Audio reused from cache", "name", name)
 		return cached, nil
 	}
 
@@ -58,8 +57,6 @@ func (rm *ResourceManager) getCachedAudio(name string) *AudioResource {
 
 // loadAndCacheAudio loads audio from assets and caches it
 func (rm *ResourceManager) loadAndCacheAudio(ctx context.Context, name, path string) (*AudioResource, error) {
-	rm.logger.Debug("[AUDIO_LOAD] Loading audio from embed", "name", name, "path", path)
-
 	// Load from embedded assets
 	audioData, err := rm.loadAudioFile(path)
 	if err != nil {
@@ -81,7 +78,6 @@ func (rm *ResourceManager) loadAndCacheAudio(ctx context.Context, name, path str
 	// Cache the audio resource
 	rm.cacheAudio(name, audioRes)
 
-	rm.logger.Debug("[AUDIO_LOAD] Audio loaded successfully", "name", name, "length", length)
 	return audioRes, nil
 }
 
@@ -89,11 +85,9 @@ func (rm *ResourceManager) loadAndCacheAudio(ctx context.Context, name, path str
 func (rm *ResourceManager) loadAudioFile(path string) ([]byte, error) {
 	audioData, err := assets.Assets.ReadFile(path)
 	if err != nil {
-		rm.logger.Error("[AUDIO_ERROR] Failed to read audio file", "path", path, "error", err)
 		return nil, errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to read audio file", err)
 	}
 
-	rm.logger.Debug("[AUDIO_LOAD] Audio file read successfully", "path", path, "size", len(audioData))
 	return audioData, nil
 }
 
@@ -105,13 +99,10 @@ func (rm *ResourceManager) decodeVorbisData(name, path string, audioData []byte)
 	// Decode OGG/Vorbis stream to get length
 	stream, err := vorbis.DecodeWithoutResampling(reader)
 	if err != nil {
-		rm.logger.Error("[AUDIO_ERROR] Failed to decode Vorbis audio", "name", name, "path", path, "error", err)
 		return 0, errors.NewGameErrorWithCause(errors.AssetInvalid, "failed to decode audio", err)
 	}
 
 	length := stream.Length()
-	rm.logger.Debug("[AUDIO_DECODE] Audio decoded successfully", "name", name, "length", length)
-
 	return length, nil
 }
 
@@ -206,7 +197,6 @@ func getAudioConfigs() []struct {
 func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
 	// Skip audio loading if audio is disabled
 	if isAudioDisabled() {
-		rm.logger.Debug("Audio disabled, skipping audio loading")
 		return nil
 	}
 
@@ -218,13 +208,11 @@ func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
 	audioConfigs := getAudioConfigs()
 	for _, cfg := range audioConfigs {
 		if _, err := rm.LoadAudio(ctx, cfg.name, cfg.path); err != nil {
-			rm.logger.Warn("Failed to load audio, continuing without it", "name", cfg.name, "error", err)
 			// Don't fail completely if audio fails to load
 			continue
 		}
 	}
 
-	rm.logger.Info("[AUDIO_LOAD] All audio resources loaded successfully")
 	return nil
 }
 
@@ -233,7 +221,6 @@ type AudioPlayer struct {
 	audioContext *audio.Context
 	players      map[string]*audio.Player
 	audioData    map[string][]byte // Store raw audio data for looping
-	logger       common.Logger
 }
 
 // isAudioDisabled checks if audio is disabled via environment variable
@@ -243,16 +230,14 @@ func isAudioDisabled() bool {
 }
 
 // tryCreateAudioContext attempts to create an audio context with panic recovery
-func tryCreateAudioContext(sampleRate int, logger common.Logger) (*audio.Context, error) {
+func tryCreateAudioContext(sampleRate int) (*audio.Context, error) {
 	var audioContext *audio.Context
 	var initErr error
 
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				logger.Debug("Audio context creation panicked (no audio device available)", "panic", r)
 				audioContext = nil
-				// Convert panic to error for logging
 				if err, ok := r.(error); ok {
 					initErr = err
 				} else {
@@ -261,56 +246,30 @@ func tryCreateAudioContext(sampleRate int, logger common.Logger) (*audio.Context
 			}
 		}()
 
-		// audio.NewContext may panic if no audio device is available
-		// We catch the panic and return nil to allow the game to continue without audio
-		// Note: In some environments (e.g., WSL2), the underlying ALSA system may be
-		// unavailable, causing errors. We handle this gracefully by catching panics.
 		audioContext = audio.NewContext(sampleRate)
 	}()
 
 	return audioContext, initErr
 }
 
-// handleAudioInitFailure handles the case when audio initialization fails
-func handleAudioInitFailure(initErr error, logger common.Logger) {
-	if initErr != nil {
-		logger.Debug("Audio context creation failed", "error", initErr)
-	} else {
-		logger.Debug("Audio context not available (no audio device), continuing without audio")
-	}
-
-	// Set DISABLE_AUDIO environment variable to prevent Ebiten from trying to initialize audio
-	// This helps avoid errors when ebiten.RunGame is called, as Ebiten may try to initialize
-	// audio internally even if our AudioPlayer failed to initialize
+// handleAudioInitFailure sets DISABLE_AUDIO so Ebiten does not retry audio init
+func handleAudioInitFailure(initErr error) {
 	if os.Getenv("DISABLE_AUDIO") == "" {
-		if err := os.Setenv("DISABLE_AUDIO", disableAudioEnvValue); err != nil {
-			logger.Debug("Failed to set DISABLE_AUDIO environment variable", "error", err)
-		} else {
-			logger.Debug("Set DISABLE_AUDIO=1 to prevent Ebiten audio initialization")
-		}
+		_ = os.Setenv("DISABLE_AUDIO", disableAudioEnvValue)
 	}
 }
 
 // NewAudioPlayer creates a new audio player
 // Returns nil, nil if audio initialization fails (e.g., no audio device available)
-// This allows the game to run without audio in environments like containers
-// Attempts to suppress ALSA stderr output during initialization, though some C library
-// messages may still appear as they write directly to file descriptors.
-func NewAudioPlayer(sampleRate int, logger common.Logger) (*AudioPlayer, error) {
-	// Check if we should skip audio initialization (e.g., in WSL2 without audio)
-	// If DISABLE_AUDIO environment variable is set, skip audio entirely
+func NewAudioPlayer(sampleRate int) (*AudioPlayer, error) {
 	if isAudioDisabled() {
-		logger.Debug("Audio disabled via DISABLE_AUDIO environment variable")
 		return nil, nil
 	}
 
-	// Try to create audio context - this may fail in containers without audio devices
-	// We attempt to suppress stderr during initialization to reduce ALSA error messages
-	// Note: Some ALSA warnings may still appear as the C library writes directly to FDs
-	audioContext, initErr := tryCreateAudioContext(sampleRate, logger)
+	audioContext, initErr := tryCreateAudioContext(sampleRate)
 
 	if audioContext == nil {
-		handleAudioInitFailure(initErr, logger)
+		handleAudioInitFailure(initErr)
 		return nil, nil
 	}
 
@@ -318,7 +277,6 @@ func NewAudioPlayer(sampleRate int, logger common.Logger) (*AudioPlayer, error) 
 		audioContext: audioContext,
 		players:      make(map[string]*audio.Player),
 		audioData:    make(map[string][]byte),
-		logger:       logger,
 	}, nil
 }
 
@@ -326,71 +284,45 @@ func NewAudioPlayer(sampleRate int, logger common.Logger) (*AudioPlayer, error) 
 func (ap *AudioPlayer) PlayMusic(name string, audioRes *AudioResource, volume float64) error {
 	// Check if audio player is initialized
 	if ap == nil || ap.audioContext == nil {
-		if ap != nil && ap.logger != nil {
-			ap.logger.Debug("Audio player not available, skipping music playback", "name", name)
-		}
 		return nil // Not an error - audio is optional
 	}
 
-	ap.logger.Debug("PlayMusic: Stopping any existing music", "name", name)
 	// Stop any currently playing music
 	ap.StopMusic(name)
 
-	ap.logger.Debug("PlayMusic: Storing audio data", "name", name, "data_size", len(audioRes.Data))
 	// Store the audio data if not already stored
 	if _, exists := ap.audioData[name]; !exists {
 		ap.audioData[name] = audioRes.Data
 	}
 
-	// Get the stored audio data
 	audioData := ap.audioData[name]
-	ap.logger.Debug("PlayMusic: Decoding audio first", "name", name, "data_size", len(audioData))
 
 	// Decode the audio first (this might take a moment for large files)
 	decodedOnce, err := vorbis.DecodeWithoutResampling(bytes.NewReader(audioData))
 	if err != nil {
-		ap.logger.Error("Failed to decode audio", "name", name, "error", err)
 		return errors.NewGameErrorWithCause(errors.AssetInvalid, "failed to decode audio", err)
 	}
 
-	// Get the length of the decoded stream
 	streamLength := decodedOnce.Length()
-	ap.logger.Debug("PlayMusic: Audio decoded", "name", name, "stream_length", streamLength)
+	_ = streamLength
 
-	// Create an infinite loop from the decoded stream
-	// We need to read the decoded data and create a loop from it
-	ap.logger.Debug("PlayMusic: Reading decoded audio data", "name", name)
 	// Read all data from decoded stream into a buffer
 	decodedData, err := io.ReadAll(decodedOnce)
 	if err != nil {
-		ap.logger.Error("Failed to read decoded audio data", "name", name, "error", err)
 		return errors.NewGameErrorWithCause(errors.AssetLoadFailed, "failed to read decoded audio", err)
 	}
 
-	// Create infinite loop from decoded data
-	ap.logger.Debug("PlayMusic: Creating infinite loop from decoded stream",
-		"name", name, "decoded_size", len(decodedData))
 	loopStream := audio.NewInfiniteLoop(bytes.NewReader(decodedData), int64(len(decodedData)))
 
-	ap.logger.Debug("PlayMusic: Creating audio player", "name", name)
-	// Create a new player from the looping stream
-	// If this fails (e.g., ALSA unavailable in WSL2), treat it as non-fatal
-	// Audio is optional and the game should continue without it
 	player, err := ap.audioContext.NewPlayer(loopStream)
 	if err != nil {
-		ap.logger.Warn("Failed to create audio player (audio unavailable), continuing without audio", "name", name, "error", err)
 		return nil // Not a fatal error - audio is optional
 	}
 
-	ap.logger.Debug("PlayMusic: Setting volume and playing", "name", name, "volume", volume)
-	// Set volume (0.0 to 1.0)
 	player.SetVolume(volume)
-
-	// Play the music (it will loop automatically)
 	player.Play()
 
 	ap.players[name] = player
-	ap.logger.Debug("Music started playing", "name", name, "volume", volume)
 
 	return nil
 }
@@ -403,9 +335,6 @@ func (ap *AudioPlayer) StopMusic(name string) {
 	if player, exists := ap.players[name]; exists {
 		player.Close()
 		delete(ap.players, name)
-		if ap.logger != nil {
-			ap.logger.Debug("Music stopped", "name", name)
-		}
 	}
 }
 
@@ -446,7 +375,4 @@ func (ap *AudioPlayer) Cleanup() {
 		return
 	}
 	ap.StopAllMusic()
-	if ap.logger != nil {
-		ap.logger.Debug("Audio player cleaned up")
-	}
 }

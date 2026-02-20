@@ -2,7 +2,6 @@
 package enemy
 
 import (
-	"context"
 	"testing"
 
 	"github.com/yohamta/donburi"
@@ -11,23 +10,9 @@ import (
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 )
 
-type mockLogger struct{}
-
-func (m *mockLogger) Debug(_ string, _ ...any)                           {}
-func (m *mockLogger) DebugContext(_ context.Context, _ string, _ ...any) {}
-func (m *mockLogger) Info(_ string, _ ...any)                            {}
-func (m *mockLogger) InfoContext(_ context.Context, _ string, _ ...any)  {}
-func (m *mockLogger) Warn(_ string, _ ...any)                            {}
-func (m *mockLogger) WarnContext(_ context.Context, _ string, _ ...any)  {}
-func (m *mockLogger) Error(_ string, _ ...any)                           {}
-func (m *mockLogger) ErrorContext(_ context.Context, _ string, _ ...any) {}
-func (m *mockLogger) Sync() error                                        { return nil }
-
 func TestNewGyrussWaveManager(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &mockLogger{}
-
-	wm := NewGyrussWaveManager(world, logger)
+	wm := NewGyrussWaveManager(world)
 
 	if wm == nil {
 		t.Fatal("Expected wave manager to be created")
@@ -39,8 +24,7 @@ func TestNewGyrussWaveManager(t *testing.T) {
 
 func TestGyrussWaveManager_LoadStage(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
+	wm := NewGyrussWaveManager(world)
 
 	config := &managers.StageConfig{
 		StageNumber: 1,
@@ -74,8 +58,7 @@ func TestGyrussWaveManager_LoadStage(t *testing.T) {
 
 func TestGyrussWaveManager_Reset(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
+	wm := NewGyrussWaveManager(world)
 
 	config := &managers.StageConfig{
 		StageNumber: 1,
@@ -102,8 +85,7 @@ func TestGyrussWaveManager_Reset(t *testing.T) {
 
 func TestGyrussWaveManager_HasMoreWaves(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
+	wm := NewGyrussWaveManager(world)
 
 	// No stage loaded
 	if wm.HasMoreWaves() {
@@ -130,8 +112,7 @@ func TestGyrussWaveManager_HasMoreWaves(t *testing.T) {
 
 func TestGyrussWaveManager_GetBossConfig(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
+	wm := NewGyrussWaveManager(world)
 
 	// No stage loaded
 	if wm.GetBossConfig() != nil {
@@ -158,8 +139,7 @@ func TestGyrussWaveManager_GetBossConfig(t *testing.T) {
 
 func TestGyrussWaveManager_StartWave(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
+	wm := NewGyrussWaveManager(world)
 
 	config := &managers.StageConfig{
 		StageNumber: 1,
@@ -199,8 +179,7 @@ func TestGyrussWaveManager_StartWave(t *testing.T) {
 
 func TestGyrussWaveManager_AllSpawnedForCurrentWave(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
+	wm := NewGyrussWaveManager(world)
 
 	config := &managers.StageConfig{
 		Waves: []managers.GyrussWave{
@@ -234,8 +213,7 @@ func TestGyrussWaveManager_AllSpawnedForCurrentWave(t *testing.T) {
 
 func TestGyrussWaveManager_ActiveEnemyCount(t *testing.T) {
 	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
+	wm := NewGyrussWaveManager(world)
 
 	config := &managers.StageConfig{Waves: []managers.GyrussWave{{WaveID: "wave_1"}}}
 	wm.LoadStage(config)

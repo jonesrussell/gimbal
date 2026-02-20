@@ -7,22 +7,17 @@ import (
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // ScaleAnimationSystem handles visual scaling animations
 type ScaleAnimationSystem struct {
-	world  donburi.World
-	logger common.Logger
+	world donburi.World
 }
 
 // NewScaleAnimationSystem creates a new scale animation system
-func NewScaleAnimationSystem(world donburi.World, logger common.Logger) *ScaleAnimationSystem {
-	return &ScaleAnimationSystem{
-		world:  world,
-		logger: logger,
-	}
+func NewScaleAnimationSystem(world donburi.World) *ScaleAnimationSystem {
+	return &ScaleAnimationSystem{world: world}
 }
 
 // Update processes all scale animations

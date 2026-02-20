@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/jonesrussell/gimbal/assets"
 	"github.com/jonesrussell/gimbal/internal/dbg"
@@ -23,10 +24,10 @@ import (
 func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 	g.eventSystem = events.NewEventSystem(g.world)
 	dbg.Log(dbg.World, "EventSystem created at %p", g.eventSystem)
-	g.resourceManager = resources.NewResourceManager(ctx, g.logger)
-	g.stateManager = NewGameStateManager(g.eventSystem, g.logger)
+	g.resourceManager = resources.NewResourceManager(ctx)
+	g.stateManager = NewGameStateManager(g.eventSystem)
 	g.scoreManager = managers.NewScoreManager(10000)
-	g.levelManager = managers.NewLevelManager(g.logger)
+	g.levelManager = managers.NewLevelManager()
 
 	// Wire up level manager to emit events
 	g.levelManager.SetEventEmitter(g.eventSystem)
@@ -37,7 +38,7 @@ func (g *ECSGame) createCoreSystems(ctx context.Context) error {
 // createGameplaySystems creates gameplay ECS systems
 func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 	// Load player config
-	playerConfig, loadErr := managers.LoadPlayerConfig(ctx, g.logger)
+	playerConfig, loadErr := managers.LoadPlayerConfig(ctx)
 	if loadErr != nil {
 		return fmt.Errorf("failed to load player config: %w", loadErr)
 	}
@@ -51,7 +52,7 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 
 	// Load initial stage via stage state machine (delegates to GyrussSystem)
 	if stageErr := g.stageStateMachine.LoadStage(1); stageErr != nil {
-		g.logger.Warn("Failed to load initial stage", "error", stageErr)
+		log.Printf("[WARN] Failed to load initial stage: %v", stageErr)
 	}
 
 	return nil
@@ -59,16 +60,15 @@ func (g *ECSGame) createGameplaySystems(ctx context.Context) error {
 
 // createBasicSystems creates health, movement, and Gyruss systems
 func (g *ECSGame) createBasicSystems() error {
-	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager, g.logger)
+	g.healthSystem = health.NewHealthSystem(g.world, g.config, g.eventSystem, g.stateManager)
 
-	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.logger, g.inputHandler)
+	g.movementSystem = movement.NewMovementSystem(g.world, g.config, g.inputHandler)
 
 	// Create Gyruss system (replaces EnemySystem)
 	g.gyrussSystem = gyruss.NewGyrussSystem(&gyruss.GyrussSystemConfig{
 		World:       g.world,
 		GameConfig:  g.config,
 		ResourceMgr: g.resourceManager,
-		Logger:      g.logger,
 		AssetsFS:    assets.Assets,
 		EventSystem: g.eventSystem,
 	})
@@ -78,7 +78,6 @@ func (g *ECSGame) createBasicSystems() error {
 		EventSystem:  g.eventSystem,
 		WaveManager:  g.gyrussSystem.GetWaveManager(),
 		GyrussSystem: g.gyrussSystem,
-		Logger:       g.logger,
 	})
 	dbg.Log(dbg.World, "StageStateMachine using EventSystem %p", g.eventSystem)
 
@@ -96,22 +95,21 @@ func (g *ECSGame) createRemainingSystems(ctx context.Context) {
 		EventSystem:  g.eventSystem,
 		ScoreManager: g.scoreManager,
 		EnemySystem:  g.gyrussSystem, // GyrussSystem implements EnemySystemInterface
-		Logger:       g.logger,
 	})
 }
 
 // registerAllSystems registers and initializes all systems
 func (g *ECSGame) registerAllSystems(ctx context.Context) error {
 	g.renderOptimizer = core.NewRenderOptimizer(g.config)
-	g.imagePool = core.NewImagePool(g.logger)
-	g.perfMonitor = debug.NewPerformanceMonitor(g.logger)
+	g.imagePool = core.NewImagePool()
+	g.perfMonitor = debug.NewPerformanceMonitor()
 
 	// Initialize rendering debugger with default font
 	font, err := g.resourceManager.GetDefaultFont(ctx)
 	if err != nil {
-		g.logger.Warn("Failed to get font for debugger, debug overlay disabled", "error", err)
+		log.Printf("[WARN] Failed to get font for debugger, debug overlay disabled: %v", err)
 	} else {
-		g.renderDebugger = debug.NewRenderingDebugger(font, g.logger)
+		g.renderDebugger = debug.NewRenderingDebugger(font, nil)
 	}
 
 	return nil

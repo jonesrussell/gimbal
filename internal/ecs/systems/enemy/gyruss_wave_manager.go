@@ -7,7 +7,6 @@ import (
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
@@ -16,7 +15,6 @@ import (
 // GyrussWaveManager manages Gyruss-style wave spawning from stage configuration
 type GyrussWaveManager struct {
 	world       donburi.World
-	logger      common.Logger
 	stageConfig *managers.StageConfig
 
 	// Wave state
@@ -33,11 +31,8 @@ type GyrussWaveManager struct {
 }
 
 // NewGyrussWaveManager creates a new Gyruss-style wave manager
-func NewGyrussWaveManager(world donburi.World, logger common.Logger) *GyrussWaveManager {
-	return &GyrussWaveManager{
-		world:  world,
-		logger: logger,
-	}
+func NewGyrussWaveManager(world donburi.World) *GyrussWaveManager {
+	return &GyrussWaveManager{world: world}
 }
 
 // LoadStage loads a stage configuration

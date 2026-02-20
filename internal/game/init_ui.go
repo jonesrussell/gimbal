@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/jonesrussell/gimbal/internal/errors"
 	uicore "github.com/jonesrussell/gimbal/internal/ui/core"
@@ -23,7 +24,7 @@ func (g *ECSGame) initializeUI(ctx context.Context) error {
 
 	ammoSprite, err := g.resourceManager.GetUISprite(ctx, "ammo", uicore.AmmoIconSize)
 	if err != nil {
-		g.logger.Warn("Failed to load ammo sprite, using fallback", "error", err)
+		log.Printf("[WARN] Failed to load ammo sprite, using fallback: %v", err)
 		ammoSprite = nil // Will use fallback in UI
 	}
 

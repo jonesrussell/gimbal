@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/jonesrussell/gimbal/internal/config"
@@ -19,18 +20,18 @@ func (g *ECSGame) updateCoreSystems() error {
 	g.handlePauseInput()
 
 	if err := g.sceneManager.Update(); err != nil {
-		g.logger.Error("Scene manager update failed", "error", err)
+		log.Printf("[ERROR] Scene manager update failed: %v", err)
 		return err
 	}
 
 	// Check if quit has been requested by a scene
 	if g.sceneManager.IsQuitRequested() {
-		g.logger.Info("Quit requested, stopping game loop")
+		log.Printf("[INFO] Quit requested, stopping game loop")
 		return gameerrors.NewGameError(gameerrors.StateTransition, "application shutdown requested")
 	}
 
 	if err := g.ui.Update(); err != nil {
-		g.logger.Error("UI update failed", "error", err)
+		log.Printf("[ERROR] UI update failed: %v", err)
 		return err
 	}
 
@@ -108,15 +109,15 @@ func (g *ECSGame) updateSystemWithTiming(systemName string, updateFn func() erro
 	if err != nil {
 		// Collision timeout is non-fatal: one slow frame should not exit the game
 		if errors.Is(err, context.DeadlineExceeded) {
-			g.logger.Warn("System exceeded time budget, continuing", "system", systemName, "error", err)
+			log.Printf("[WARN] System exceeded time budget, continuing: system=%s error=%v", systemName, err)
 			return nil
 		}
-		g.logger.Error("System update failed", "system", systemName, "error", err)
+		log.Printf("[ERROR] System update failed: system=%s error=%v", systemName, err)
 		return err
 	}
 
 	if dur > config.SlowSystemThreshold {
-		g.logger.Warn("Slow system update", "system", systemName, "duration", dur)
+		log.Printf("[WARN] Slow system update: system=%s duration=%v", systemName, dur)
 	}
 
 	return nil

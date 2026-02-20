@@ -17,7 +17,6 @@ import (
 type PathSystem struct {
 	world        donburi.World
 	config       *config.GameConfig
-	logger       common.Logger
 	registry     *PathRegistry
 	screenCenter common.Point
 }
@@ -26,12 +25,10 @@ type PathSystem struct {
 func NewPathSystem(
 	world donburi.World,
 	cfg *config.GameConfig,
-	logger common.Logger,
 ) *PathSystem {
 	return &PathSystem{
 		world:    world,
 		config:   cfg,
-		logger:   logger,
 		registry: NewPathRegistry(),
 		screenCenter: common.Point{
 			X: float64(cfg.ScreenSize.Width) / 2,

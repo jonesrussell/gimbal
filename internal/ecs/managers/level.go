@@ -1,9 +1,5 @@
 package managers
 
-import (
-	"github.com/jonesrussell/gimbal/internal/common"
-)
-
 // LevelEventEmitter defines the interface for emitting level events.
 type LevelEventEmitter interface {
 	EmitLevelChanged(oldLevel, newLevel int)
@@ -13,16 +9,14 @@ type LevelEventEmitter interface {
 type LevelManager struct {
 	level        int
 	maxLevels    int
-	logger       common.Logger
 	eventEmitter LevelEventEmitter
 }
 
-// NewLevelManager creates a new level management system with the provided logger
-func NewLevelManager(logger common.Logger) *LevelManager {
+// NewLevelManager creates a new level management system
+func NewLevelManager() *LevelManager {
 	return &LevelManager{
 		level:     1,
 		maxLevels: 6, // Default to 6 stages
-		logger:    logger,
 	}
 }
 
@@ -51,14 +45,12 @@ func (lm *LevelManager) SetLevel(level int) {
 	}
 	if level > lm.maxLevels {
 		level = lm.maxLevels
-		lm.logger.Warn("Level exceeds available levels", "requested", level, "max", lm.maxLevels)
 	}
 	oldLevel := lm.level
 	if oldLevel == level {
 		return // No change
 	}
 	lm.level = level
-	lm.logger.Debug("Level changed", "old_level", oldLevel, "new_level", lm.level)
 
 	// Emit level changed event
 	if lm.eventEmitter != nil {
@@ -70,8 +62,6 @@ func (lm *LevelManager) SetLevel(level int) {
 func (lm *LevelManager) IncrementLevel() {
 	if lm.level < lm.maxLevels {
 		lm.SetLevel(lm.level + 1)
-	} else {
-		lm.logger.Debug("Already at max level", "level", lm.level)
 	}
 }
 
@@ -82,7 +72,6 @@ func (lm *LevelManager) Reset() {
 		return // Already at level 1
 	}
 	lm.level = 1
-	lm.logger.Debug("Level reset", "old_level", oldLevel, "new_level", lm.level)
 
 	// Emit level changed event
 	if lm.eventEmitter != nil {

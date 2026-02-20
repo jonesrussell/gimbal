@@ -3,19 +3,16 @@ package behavior
 import (
 	"github.com/yohamta/donburi"
 
-	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 )
 
 // EnteringState handles the entry path phase
-type EnteringState struct {
-	logger common.Logger
-}
+type EnteringState struct{}
 
 // NewEnteringState creates a new entering state handler
-func NewEnteringState(logger common.Logger) *EnteringState {
-	return &EnteringState{logger: logger}
+func NewEnteringState() *EnteringState {
+	return &EnteringState{}
 }
 
 // StateType returns the state type

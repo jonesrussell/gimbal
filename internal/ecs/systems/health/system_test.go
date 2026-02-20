@@ -20,18 +20,6 @@ type mockGameStateManager struct{}
 
 func (mockGameStateManager) SetGameOver(bool) {}
 
-type testLogger struct{}
-
-func (testLogger) Debug(_ string, _ ...any)                           {}
-func (testLogger) DebugContext(_ context.Context, _ string, _ ...any) {}
-func (testLogger) Info(_ string, _ ...any)                            {}
-func (testLogger) InfoContext(_ context.Context, _ string, _ ...any)  {}
-func (testLogger) Warn(_ string, _ ...any)                            {}
-func (testLogger) WarnContext(_ context.Context, _ string, _ ...any)  {}
-func (testLogger) Error(_ string, _ ...any)                           {}
-func (testLogger) ErrorContext(_ context.Context, _ string, _ ...any) {}
-func (testLogger) Sync() error                                        { return nil }
-
 func TestDamageEntity_DevInvinciblePreventsDamage(t *testing.T) {
 	world := donburi.NewWorld()
 	entity := world.Create(core.PlayerTag, core.Health, core.Position, core.Size)
@@ -42,7 +30,7 @@ func TestDamageEntity_DevInvinciblePreventsDamage(t *testing.T) {
 	core.Health.SetValue(entry, health)
 
 	cfg := config.NewConfig(config.WithDebug(true), config.WithInvincible(true))
-	hs := NewHealthSystem(world, cfg, mockEventSystem{}, mockGameStateManager{}, testLogger{})
+	hs := NewHealthSystem(world, cfg, mockEventSystem{}, mockGameStateManager{})
 	ctx := context.Background()
 
 	err := hs.DamageEntity(ctx, entity, 1)
@@ -71,7 +59,7 @@ func TestDamageEntity_IsInvinciblePreventsDamage(t *testing.T) {
 	core.Health.SetValue(entry, health)
 
 	cfg := config.NewConfig(config.WithDebug(false))
-	hs := NewHealthSystem(world, cfg, mockEventSystem{}, mockGameStateManager{}, testLogger{})
+	hs := NewHealthSystem(world, cfg, mockEventSystem{}, mockGameStateManager{})
 	ctx := context.Background()
 
 	err := hs.DamageEntity(ctx, entity, 1)
@@ -98,7 +86,7 @@ func TestDamageEntity_AppliesDamageWhenNotInvincible(t *testing.T) {
 	core.Health.SetValue(entry, health)
 
 	cfg := config.NewConfig(config.WithDebug(false))
-	hs := NewHealthSystem(world, cfg, mockEventSystem{}, mockGameStateManager{}, testLogger{})
+	hs := NewHealthSystem(world, cfg, mockEventSystem{}, mockGameStateManager{})
 	ctx := context.Background()
 
 	err := hs.DamageEntity(ctx, entity, 1)
