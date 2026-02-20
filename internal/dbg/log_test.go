@@ -41,7 +41,6 @@ func TestLog_respectsDisable(t *testing.T) {
 	}
 }
 
-
 func TestTrace_lifecycle(t *testing.T) {
 	ClearTrace()
 	defer ClearTrace()

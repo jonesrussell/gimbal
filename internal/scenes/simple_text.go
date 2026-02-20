@@ -46,6 +46,6 @@ func (s *SimpleTextScene) Draw(screen *ebiten.Image) {
 	)
 }
 
-func (s *SimpleTextScene) Enter() {}
-func (s *SimpleTextScene) Exit()  {}
+func (s *SimpleTextScene) Enter()             {}
+func (s *SimpleTextScene) Exit()              {}
 func (s *SimpleTextScene) GetType() SceneType { return s.sceneType }

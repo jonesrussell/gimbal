@@ -260,7 +260,7 @@ type AttackPatternData struct {
 	PairEntityID   int               // Partner entity ID for paired attacks
 
 	// LoopbackRush state: only switch to outward when we cross from >30 to <=30
-	LoopbackRushPassedCenter bool        // true once we've entered the near-center zone (so we move outward)
+	LoopbackRushPassedCenter bool         // true once we've entered the near-center zone (so we move outward)
 	LoopbackRushOutwardDir   common.Point // normalized direction for outward phase (set when crossing)
 }
 

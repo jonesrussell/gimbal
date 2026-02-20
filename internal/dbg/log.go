@@ -18,8 +18,8 @@ const (
 var enabled uint32
 var traceNextFrame uint32
 
-func Enable()    { atomic.StoreUint32(&enabled, 1) }
-func Disable()   { atomic.StoreUint32(&enabled, 0) }
+func Enable()         { atomic.StoreUint32(&enabled, 1) }
+func Disable()        { atomic.StoreUint32(&enabled, 0) }
 func IsEnabled() bool { return atomic.LoadUint32(&enabled) == 1 }
 
 // Trace enables full dbg output for the next frame only (call Trace(), then one Update() will log; then disabled again).
