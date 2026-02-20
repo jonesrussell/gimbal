@@ -3,13 +3,13 @@ package gyruss
 import (
 	"context"
 	"embed"
-	"fmt"
 
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/common"
+	"github.com/jonesrussell/gimbal/internal/dbg"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/events"
@@ -236,6 +236,7 @@ func (gs *GyrussSystem) SpawnBoss(ctx context.Context) {
 		return
 	}
 	gs.spawner.SpawnBoss(ctx, bossConfig)
+	dbg.Log(dbg.Spawn, "boss spawned")
 	gs.logger.Info("Gyruss boss spawned",
 		"stage", gs.currentStage,
 		"boss_type", bossConfig.BossType)
@@ -296,7 +297,7 @@ func (gs *GyrussSystem) DestroyEnemy(entity donburi.Entity) int {
 	// Emit BossDefeated before removing so StageStateMachine can transition
 	if isBoss && gs.eventSystem != nil {
 		gs.eventSystem.EmitBossDefeated()
-		fmt.Println("GyrussSystem: EmitBossDefeated called")
+		dbg.Log(dbg.Event, "EmitBossDefeated (world=%p eventSystem=%p)", gs.world, gs.eventSystem)
 	}
 
 	// Remove the entity
