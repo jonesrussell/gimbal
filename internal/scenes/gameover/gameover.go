@@ -162,7 +162,6 @@ func (s *GameOverScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *GameOverScene) Enter() {
-	s.manager.GetLogger().Debug("Entering game over scene")
 	s.startTime = time.Now()
 	s.fadeAlpha = 0.0
 	s.countdown = continueCountdownDuration
@@ -173,9 +172,7 @@ func (s *GameOverScene) Enter() {
 	s.playGameOverSound()
 }
 
-func (s *GameOverScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting game over scene")
-}
+func (s *GameOverScene) Exit() {}
 
 func (s *GameOverScene) playGameOverSound() {
 	if s.resourceMgr == nil {

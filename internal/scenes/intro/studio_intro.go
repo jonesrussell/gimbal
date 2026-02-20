@@ -80,13 +80,10 @@ func (s *StudioIntroScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *StudioIntroScene) Enter() {
-	s.manager.GetLogger().Debug("Entering studio intro scene")
 	s.startTime = time.Now()
 }
 
-func (s *StudioIntroScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting studio intro scene")
-}
+func (s *StudioIntroScene) Exit() {}
 
 func (s *StudioIntroScene) GetType() scenes.SceneType {
 	return scenes.SceneStudioIntro

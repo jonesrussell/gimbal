@@ -3,6 +3,7 @@ package intro
 import (
 	"context"
 	"image/color"
+	"log"
 	"math"
 	"time"
 
@@ -65,10 +66,7 @@ func (s *TitleScreenScene) Update() error {
 	deltaTime := 1.0 / 60.0 // Assume 60 FPS
 	s.starfield.Update(deltaTime)
 
-	// Log input event for debugging
 	event := s.manager.GetInputHandler().GetLastEvent()
-	s.manager.GetLogger().Debug("TitleScreen input event", "event", event)
-
 	// Transition on any key or mouse event
 	if event == common.InputEventAny {
 		s.manager.SwitchScene(scenes.SceneMenu)
@@ -119,7 +117,6 @@ func (s *TitleScreenScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *TitleScreenScene) Enter() {
-	s.manager.GetLogger().Debug("Entering title screen scene")
 	s.startTime = time.Now()
 	s.starfield.Reset()
 
@@ -128,7 +125,6 @@ func (s *TitleScreenScene) Enter() {
 }
 
 func (s *TitleScreenScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting title screen scene")
 	s.stopMusic("game_music_main")
 }
 
@@ -146,7 +142,7 @@ func (s *TitleScreenScene) startMusic(trackName string) {
 		return
 	}
 	if err := audioPlayer.PlayMusic(trackName, musicRes, 0.7); err != nil {
-		s.manager.GetLogger().Warn("Failed to play music", "track", trackName, "error", err)
+		log.Printf("[WARN] Failed to play music: track=%s error=%v", trackName, err)
 		return
 	}
 	s.musicPlaying = true

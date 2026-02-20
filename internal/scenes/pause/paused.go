@@ -130,7 +130,6 @@ func (s *PausedScene) Draw(screen *ebiten.Image) {
 
 // Enter is called when the scene becomes active
 func (s *PausedScene) Enter() {
-	s.manager.GetLogger().Debug("Entering paused scene")
 	s.fadeIn = 0
 	s.animationTime = 0
 	s.selectionChanged = false
@@ -147,9 +146,7 @@ func (s *PausedScene) Enter() {
 }
 
 // Exit is called when the scene becomes inactive
-func (s *PausedScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting paused scene")
-}
+func (s *PausedScene) Exit() {}
 
 // GetType returns the scene type identifier
 func (s *PausedScene) GetType() scenes.SceneType {

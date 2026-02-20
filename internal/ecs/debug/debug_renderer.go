@@ -2,6 +2,7 @@ package debug
 
 import (
 	"image/color"
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -28,20 +29,18 @@ type DebugRenderer struct {
 	level      DebugLevel
 	font       v2text.Face
 	config     *config.GameConfig
-	logger     common.Logger
 	mouseX     int
 	mouseY     int
 	hoverRange float64 // Distance for mouse hover entity info
 }
 
 // NewDebugRenderer creates a new debug renderer
-func NewDebugRenderer(gameConfig *config.GameConfig, logger common.Logger) *DebugRenderer {
+func NewDebugRenderer(gameConfig *config.GameConfig) *DebugRenderer {
 	return &DebugRenderer{
 		enabled:    false,
 		level:      DebugBasic,
 		config:     gameConfig,
-		logger:     logger,
-		hoverRange: 50.0, // Show entity info within 50 pixels of mouse
+		hoverRange: 50.0,
 	}
 }
 
@@ -53,7 +52,7 @@ func (dr *DebugRenderer) Toggle() {
 	} else {
 		dr.level = DebugOff
 	}
-	dr.logger.Debug("Debug mode toggled", "enabled", dr.enabled, "level", dr.level)
+	log.Printf("[DEBUG] Debug mode toggled enabled=%v level=%v", dr.enabled, dr.level)
 }
 
 // CycleLevel cycles through debug levels (Basic -> Detailed -> Off)
@@ -70,7 +69,7 @@ func (dr *DebugRenderer) CycleLevel() {
 			dr.level = DebugOff
 		}
 	}
-	dr.logger.Debug("Debug level cycled", "enabled", dr.enabled, "level", dr.level)
+	log.Printf("[DEBUG] Debug level cycled enabled=%v level=%v", dr.enabled, dr.level)
 }
 
 // IsEnabled returns whether debug mode is active

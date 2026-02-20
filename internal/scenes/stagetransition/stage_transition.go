@@ -124,8 +124,6 @@ func (s *StageTransitionScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *StageTransitionScene) Enter() {
-	s.manager.GetLogger().Debug("Entering stage transition scene",
-		"next_planet", s.nextPlanet)
 	s.startTime = time.Now()
 	s.soundPlayed = false
 	s.currentFrame = 0
@@ -148,9 +146,7 @@ func (s *StageTransitionScene) Enter() {
 	}
 }
 
-func (s *StageTransitionScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting stage transition scene")
-}
+func (s *StageTransitionScene) Exit() {}
 
 func (s *StageTransitionScene) GetType() scenes.SceneType {
 	return scenes.SceneStageTransition

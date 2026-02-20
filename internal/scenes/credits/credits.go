@@ -3,6 +3,7 @@ package credits
 import (
 	"context"
 	"image/color"
+	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -159,7 +160,6 @@ func (s *CreditsScene) Draw(screen *ebiten.Image) {
 }
 
 func (s *CreditsScene) Enter() {
-	s.manager.GetLogger().Debug("Entering credits scene")
 	s.startTime = time.Now()
 	s.scrollY = creditsStartY
 	s.starfield.Reset()
@@ -169,7 +169,6 @@ func (s *CreditsScene) Enter() {
 }
 
 func (s *CreditsScene) Exit() {
-	s.manager.GetLogger().Debug("Exiting credits scene")
 	s.stopMusic("game_music_main")
 }
 
@@ -187,7 +186,7 @@ func (s *CreditsScene) startMusic(trackName string) {
 		return
 	}
 	if err := audioPlayer.PlayMusic(trackName, musicRes, 0.7); err != nil {
-		s.manager.GetLogger().Warn("Failed to play music", "track", trackName, "error", err)
+		log.Printf("[WARN] Failed to play music: track=%s error=%v", trackName, err)
 		return
 	}
 	s.musicPlaying = true
