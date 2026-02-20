@@ -95,6 +95,14 @@ func WithInvincible(invincible bool) GameOption {
 	}
 }
 
+// SetDevInvincible sets Invincible for runtime toggle (e.g. pause menu).
+// Only takes effect when Debug is true; no-op when Debug is false.
+func (c *GameConfig) SetDevInvincible(invincible bool) {
+	if c.Debug {
+		c.Invincible = invincible
+	}
+}
+
 // DefaultConfig returns a default game configuration
 func DefaultConfig() *GameConfig {
 	return &GameConfig{
