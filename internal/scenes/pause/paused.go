@@ -56,6 +56,35 @@ type PausedScene struct {
 	font              text.Face
 }
 
+// buildPauseOptions returns menu options for the pause menu, including God mode when Debug.
+func (s *PausedScene) buildPauseOptions() []menu.MenuOption {
+	cfg := s.manager.GetConfig()
+	opts := []menu.MenuOption{
+		{Text: "Resume", Action: func() {
+			s.manager.InvokeResumeCallback()
+			s.manager.SwitchScene(scenes.ScenePlaying)
+		}},
+		{Text: "Return to Menu", Action: func() {
+			s.manager.InvokeResumeCallback()
+			s.manager.SwitchScene(scenes.SceneMenu)
+		}},
+	}
+	if cfg.Debug {
+		godText := "God mode: OFF"
+		if cfg.Invincible {
+			godText = "God mode: ON"
+		}
+		opts = append(opts, menu.MenuOption{
+			Text: godText,
+			Action: func() {
+				cfg.SetDevInvincible(!cfg.Invincible)
+			},
+		})
+	}
+	opts = append(opts, menu.MenuOption{Text: "Quit", Action: func() { s.manager.RequestQuit() }})
+	return opts
+}
+
 // NewPausedScene creates a new pause scene instance
 func NewPausedScene(manager *scenes.SceneManager, font text.Face) *PausedScene {
 	scene := &PausedScene{
@@ -67,19 +96,7 @@ func NewPausedScene(manager *scenes.SceneManager, font text.Face) *PausedScene {
 		font:              font,
 	}
 
-	options := []menu.MenuOption{
-		{Text: "Resume", Action: func() {
-			// Invoke resume callback to sync game state (sets IsPaused = false)
-			manager.InvokeResumeCallback()
-			manager.SwitchScene(scenes.ScenePlaying)
-		}},
-		{Text: "Return to Menu", Action: func() {
-			// Invoke resume callback to reset pause state before going to menu
-			manager.InvokeResumeCallback()
-			manager.SwitchScene(scenes.SceneMenu)
-		}},
-		{Text: "Quit", Action: func() { manager.RequestQuit() }},
-	}
+	options := scene.buildPauseOptions()
 
 	config := menu.PausedMenuConfig()
 	config.MenuY = float64(manager.GetConfig().ScreenSize.Height) / 2
@@ -117,6 +134,12 @@ func (s *PausedScene) Enter() {
 	s.fadeIn = 0
 	s.animationTime = 0
 	s.selectionChanged = false
+
+	// Refresh menu so God mode label reflects current state when Debug is on
+	config := menu.PausedMenuConfig()
+	config.MenuY = float64(s.manager.GetConfig().ScreenSize.Height) / 2
+	s.menu = menu.NewMenuSystem(s.buildPauseOptions(), &config, s.manager.GetConfig().ScreenSize.Width,
+		s.manager.GetConfig().ScreenSize.Height, s.font)
 
 	// Check ESC state when entering
 	s.escWasPressed = ebiten.IsKeyPressed(ebiten.KeyEscape)
