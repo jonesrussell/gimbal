@@ -7,16 +7,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	v2text "github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/stage"
 )
 
 // drawWaveDebugInfo draws wave information at the bottom of the screen
 func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
-	if g.gyrussSystem == nil {
-		return
-	}
-
-	waveManager := g.gyrussSystem.GetWaveManager()
-	if waveManager == nil {
+	if g.stageStateMachine == nil {
 		return
 	}
 
@@ -24,35 +21,37 @@ func (g *ECSGame) drawWaveDebugInfo(screen *ebiten.Image) {
 	lineHeight := 20.0
 	x := 10.0
 
-	// Get stage info
-	stageConfig := waveManager.GetStageConfig()
+	// Get stage info from stage state machine
+	stageConfig := g.stageStateMachine.StageConfig()
 	if stageConfig == nil {
 		g.drawDebugText(screen, "Stage: Not loaded", x, screenHeight-lineHeight)
 		return
 	}
 
-	// Check if boss is triggered
-	if waveManager.IsBossTriggered() {
-		if g.gyrussSystem.IsBossActive() {
-			g.drawBossDebugInfo(screen, x, screenHeight, lineHeight)
-		} else if g.gyrussSystem.IsBossDefeated() {
-			g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
-		} else {
-			g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
-		}
+	// Boss lifecycle from stage state
+	st := g.stageStateMachine.State()
+	switch st {
+	case stage.StageStateBossSpawning:
+		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
+		return
+	case stage.StageStateBossActive:
+		g.drawBossDebugInfo(screen, x, screenHeight, lineHeight)
+		return
+	case stage.StageStateBossDefeated, stage.StageStateStageCompleted:
+		g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
 		return
 	}
 
-	// Show wave info
-	currentWaveIndex := waveManager.GetCurrentWaveIndex()
-	waveCount := waveManager.GetWaveCount()
-
-	if waveManager.IsWaitingForLevelStart() {
+	// PreWave (level start or inter-wave)
+	if st == stage.StageStatePreWave {
 		g.drawDebugText(screen, "Stage: Starting...", x, screenHeight-lineHeight)
 		return
 	}
 
-	if !waveManager.HasMoreWaves() {
+	// WaveCompleted (brief transition) or wave info
+	waveCount := len(stageConfig.Waves)
+	currentWaveIndex := g.stageStateMachine.CurrentWaveIndex()
+	if currentWaveIndex >= waveCount && st != stage.StageStateWaveInProgress {
 		g.drawDebugText(screen, "Waves: Complete", x, screenHeight-lineHeight)
 		return
 	}

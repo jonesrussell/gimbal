@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/yohamta/donburi"
-	"github.com/yohamta/donburi/filter"
-	"github.com/yohamta/donburi/query"
 
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
@@ -90,15 +88,15 @@ func TestGyrussWaveManager_Reset(t *testing.T) {
 
 	// Advance state
 	wm.currentWaveIndex = 1
-	wm.bossTriggered = true
+	wm.isSpawning = true
 
 	wm.Reset()
 
 	if wm.GetCurrentWaveIndex() != 0 {
 		t.Error("Expected wave index to reset to 0")
 	}
-	if wm.IsBossTriggered() {
-		t.Error("Expected boss triggered to reset to false")
+	if wm.isSpawning {
+		t.Error("Expected isSpawning to reset to false")
 	}
 }
 
@@ -130,21 +128,6 @@ func TestGyrussWaveManager_HasMoreWaves(t *testing.T) {
 	}
 }
 
-func TestGyrussWaveManager_IsBossTriggered(t *testing.T) {
-	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
-
-	if wm.IsBossTriggered() {
-		t.Error("Expected boss not triggered initially")
-	}
-
-	wm.bossTriggered = true
-	if !wm.IsBossTriggered() {
-		t.Error("Expected boss to be triggered")
-	}
-}
-
 func TestGyrussWaveManager_GetBossConfig(t *testing.T) {
 	world := donburi.NewWorld()
 	logger := &mockLogger{}
@@ -173,22 +156,7 @@ func TestGyrussWaveManager_GetBossConfig(t *testing.T) {
 	}
 }
 
-func TestGyrussWaveManager_IsWaitingForLevelStart(t *testing.T) {
-	world := donburi.NewWorld()
-	logger := &mockLogger{}
-	wm := NewGyrussWaveManager(world, logger)
-
-	config := &managers.StageConfig{
-		Waves: []managers.GyrussWave{{WaveID: "wave_1"}},
-	}
-	wm.LoadStage(config)
-
-	if !wm.IsWaitingForLevelStart() {
-		t.Error("Expected to be waiting for level start after loading stage")
-	}
-}
-
-func TestGyrussWaveManager_LevelStartThenSpawning(t *testing.T) {
+func TestGyrussWaveManager_StartWave(t *testing.T) {
 	world := donburi.NewWorld()
 	logger := &mockLogger{}
 	wm := NewGyrussWaveManager(world, logger)
@@ -201,172 +169,91 @@ func TestGyrussWaveManager_LevelStartThenSpawning(t *testing.T) {
 				SpawnSequence: []managers.EnemyGroupConfig{
 					{EnemyType: "basic", Count: 2, SpawnDelay: 0, SpawnInterval: 0},
 				},
-				Timing: managers.WaveTiming{},
 			},
+			{WaveID: "wave_2"},
 		},
 	}
 	wm.LoadStage(config)
 
-	const dt = 1.0 / 60.0
-	const maxIter = 10000
-	iter := 0
-	for wm.IsWaitingForLevelStart() && iter < maxIter {
-		wm.Update(dt)
-		iter++
-	}
-	if iter >= maxIter {
-		t.Fatal("Timed out waiting for level start to finish")
+	// Before StartWave, ShouldSpawnEnemy returns false (not spawning)
+	if _, ok := wm.ShouldSpawnEnemy(); ok {
+		t.Error("Expected ShouldSpawnEnemy false before StartWave")
 	}
 
+	wm.StartWave(0)
 	if wm.GetCurrentWaveIndex() != 0 {
-		t.Errorf("Expected current wave index 0 after level start, got %d", wm.GetCurrentWaveIndex())
+		t.Errorf("Expected current wave index 0, got %d", wm.GetCurrentWaveIndex())
+	}
+	// After StartWave(0), ShouldSpawnEnemy should return true (spawn delay 0)
+	_, ok := wm.ShouldSpawnEnemy()
+	if !ok {
+		t.Error("Expected ShouldSpawnEnemy true after StartWave(0) with SpawnDelay 0")
 	}
 
-	// Advance a few more frames and assert spawning has started (ShouldSpawnEnemy returns true at least once)
-	shouldSpawnSeen := false
-	for i := 0; i < 300; i++ {
-		wm.Update(dt)
-		_, ok := wm.ShouldSpawnEnemy()
-		if ok {
-			shouldSpawnSeen = true
-			break
-		}
-	}
-	if !shouldSpawnSeen {
-		t.Error("Expected ShouldSpawnEnemy to return true at least once after level start")
+	// StartWave(1) switches to wave 1
+	wm.StartWave(1)
+	if wm.GetCurrentWaveIndex() != 1 {
+		t.Errorf("Expected current wave index 1, got %d", wm.GetCurrentWaveIndex())
 	}
 }
 
-func TestGyrussWaveManager_SpawnFlowAndWaveComplete(t *testing.T) {
+func TestGyrussWaveManager_AllSpawnedForCurrentWave(t *testing.T) {
 	world := donburi.NewWorld()
 	logger := &mockLogger{}
 	wm := NewGyrussWaveManager(world, logger)
 
 	config := &managers.StageConfig{
-		StageNumber: 1,
 		Waves: []managers.GyrussWave{
 			{
-				WaveID:  "wave_1",
-				OnClear: "boss",
+				WaveID: "wave_1",
 				SpawnSequence: []managers.EnemyGroupConfig{
 					{EnemyType: "basic", Count: 2, SpawnDelay: 0, SpawnInterval: 0},
 				},
-				Timing: managers.WaveTiming{},
 			},
 		},
 	}
 	wm.LoadStage(config)
+	wm.StartWave(0)
 
-	const dt = 1.0 / 60.0
-	const maxIter = 10000
-
-	// Advance past level start
-	iter := 0
-	for wm.IsWaitingForLevelStart() && iter < maxIter {
-		wm.Update(dt)
-		iter++
+	if wm.AllSpawnedForCurrentWave() {
+		t.Error("Expected AllSpawnedForCurrentWave false before any spawns")
 	}
-	if iter >= maxIter {
-		t.Fatal("Timed out waiting for level start to finish")
-	}
-
-	// Exhaust group: when ShouldSpawnEnemy returns true, create an enemy entity (so countActiveEnemies is correct) and MarkEnemySpawned
-	spawnCount := 0
-	for spawnCount < 2 {
-		wm.Update(dt)
+	// Exhaust the single group: ShouldSpawnEnemy + MarkEnemySpawned for each of 2 enemies, then one more ShouldSpawnEnemy to advance past group
+	for i := 0; i < 2; i++ {
 		_, ok := wm.ShouldSpawnEnemy()
 		if !ok {
-			continue
+			t.Fatalf("Expected ShouldSpawnEnemy true for spawn %d", i)
 		}
-		world.Create(core.EnemyTag)
 		wm.MarkEnemySpawned()
-		spawnCount++
 	}
-	// One more ShouldSpawnEnemy so manager advances past group (currentGroupIndex >= len(SpawnSequence))
-	wm.Update(dt)
-	_, _ = wm.ShouldSpawnEnemy()
-
-	// Remove all enemy entities so wave completion (allSpawned && activeEnemies == 0) can trigger
-	var toRemove []donburi.Entity
-	query.NewQuery(filter.Contains(core.EnemyTag)).Each(world, func(entry *donburi.Entry) {
-		toRemove = append(toRemove, entry.Entity())
-	})
-	for _, e := range toRemove {
-		world.Remove(e)
-	}
-
-	// Advance until wave completes and boss is triggered
-	iter = 0
-	for !wm.IsBossTriggered() && iter < maxIter {
-		wm.Update(dt)
-		iter++
-	}
-	if iter >= maxIter {
-		t.Fatal("Timed out waiting for boss to be triggered")
-	}
-
-	if !wm.IsBossTriggered() {
-		t.Error("Expected boss to be triggered after wave completion")
+	_, _ = wm.ShouldSpawnEnemy() // advances currentGroupIndex past the only group
+	if !wm.AllSpawnedForCurrentWave() {
+		t.Error("Expected AllSpawnedForCurrentWave true after all groups spawned")
 	}
 }
 
-func TestGyrussWaveManager_TimeoutDoesNotCompleteWaveWhenEnemiesRemain(t *testing.T) {
+func TestGyrussWaveManager_ActiveEnemyCount(t *testing.T) {
 	world := donburi.NewWorld()
 	logger := &mockLogger{}
 	wm := NewGyrussWaveManager(world, logger)
 
-	// Wave with timeout set; completion should be world-driven only (allSpawned && activeEnemies == 0).
-	config := &managers.StageConfig{
-		StageNumber: 1,
-		Waves: []managers.GyrussWave{
-			{
-				WaveID:  "wave_1",
-				OnClear: "boss",
-				SpawnSequence: []managers.EnemyGroupConfig{
-					{EnemyType: "basic", Count: 2, SpawnDelay: 0, SpawnInterval: 0},
-				},
-				Timing: managers.WaveTiming{Timeout: 1.0},
-			},
-		},
-	}
+	config := &managers.StageConfig{Waves: []managers.GyrussWave{{WaveID: "wave_1"}}}
 	wm.LoadStage(config)
 
-	const dt = 1.0 / 60.0
-	const maxIter = 10000
-
-	// Advance past level start
-	iter := 0
-	for wm.IsWaitingForLevelStart() && iter < maxIter {
-		wm.Update(dt)
-		iter++
+	if n := wm.ActiveEnemyCount(); n != 0 {
+		t.Errorf("Expected ActiveEnemyCount 0 in empty world, got %d", n)
 	}
-	if iter >= maxIter {
-		t.Fatal("Timed out waiting for level start to finish")
+	e1 := world.Create(core.EnemyTag)
+	e2 := world.Create(core.EnemyTag)
+	if n := wm.ActiveEnemyCount(); n != 2 {
+		t.Errorf("Expected ActiveEnemyCount 2, got %d", n)
 	}
-
-	// Spawn all enemies (2), leave both in world so activeEnemies > 0
-	spawnCount := 0
-	for spawnCount < 2 {
-		wm.Update(dt)
-		_, ok := wm.ShouldSpawnEnemy()
-		if !ok {
-			continue
-		}
-		world.Create(core.EnemyTag)
-		wm.MarkEnemySpawned()
-		spawnCount++
+	world.Remove(e1)
+	if n := wm.ActiveEnemyCount(); n != 1 {
+		t.Errorf("Expected ActiveEnemyCount 1 after remove, got %d", n)
 	}
-	// Advance past group so allSpawned is true
-	wm.Update(dt)
-	_, _ = wm.ShouldSpawnEnemy()
-
-	// Advance time well past the 1s timeout (e.g. 5 seconds)
-	for i := 0; i < 300; i++ {
-		wm.Update(dt)
-	}
-
-	// Wave must not have completed: boss not triggered (enemies still in world).
-	if wm.IsBossTriggered() {
-		t.Error("Expected wave not to complete on timeout when enemies remain; IsBossTriggered should be false")
+	world.Remove(e2)
+	if n := wm.ActiveEnemyCount(); n != 0 {
+		t.Errorf("Expected ActiveEnemyCount 0 after all removed, got %d", n)
 	}
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
 	enemysys "github.com/jonesrussell/gimbal/internal/ecs/systems/enemy"
+	"github.com/jonesrussell/gimbal/internal/ecs/systems/stage"
 )
 
 // drawBossDebugInfo draws boss debug information
@@ -39,9 +40,14 @@ func (g *ECSGame) findBossEntity() *donburi.Entry {
 	return bossEntry
 }
 
-// drawBossStatus draws boss spawn/defeat status
+// drawBossStatus draws boss spawn/defeat status when boss entity not found
 func (g *ECSGame) drawBossStatus(screen *ebiten.Image, x, screenHeight, lineHeight float64) {
-	if g.gyrussSystem.WasBossSpawned() {
+	if g.stageStateMachine == nil {
+		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)
+		return
+	}
+	st := g.stageStateMachine.State()
+	if st == stage.StageStateBossDefeated || st == stage.StageStateStageCompleted {
 		g.drawDebugText(screen, "Boss: Defeated", x, screenHeight-lineHeight)
 	} else {
 		g.drawDebugText(screen, "Boss: Spawning soon...", x, screenHeight-lineHeight)

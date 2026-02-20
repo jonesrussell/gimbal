@@ -11,6 +11,7 @@ import (
 	"github.com/jonesrussell/gimbal/internal/common"
 	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/ecs/core"
+	"github.com/jonesrussell/gimbal/internal/ecs/events"
 	"github.com/jonesrussell/gimbal/internal/ecs/managers"
 	resources "github.com/jonesrussell/gimbal/internal/ecs/managers/resource"
 	"github.com/jonesrussell/gimbal/internal/ecs/systems/animation"
@@ -42,10 +43,11 @@ type GyrussSystem struct {
 	fireSystem     *fire.FirePatternSystem
 	powerUpSystem  *powerup.PowerUpSystem
 
+	// Events (for BossDefeated)
+	eventSystem *events.EventSystem
+
 	// State
 	currentStage int
-	bossSpawned  bool
-	bossTimer    float64
 }
 
 // GyrussSystemConfig holds configuration for creating a GyrussSystem
@@ -55,6 +57,7 @@ type GyrussSystemConfig struct {
 	ResourceMgr *resources.ResourceManager
 	Logger      common.Logger
 	AssetsFS    embed.FS
+	EventSystem *events.EventSystem
 }
 
 // NewGyrussSystem creates a new Gyruss gameplay system
@@ -64,9 +67,8 @@ func NewGyrussSystem(cfg *GyrussSystemConfig) *GyrussSystem {
 		gameConfig:   cfg.GameConfig,
 		resourceMgr:  cfg.ResourceMgr,
 		logger:       cfg.Logger,
+		eventSystem:  cfg.EventSystem,
 		currentStage: 1,
-		bossSpawned:  false,
-		bossTimer:    0,
 	}
 
 	// Create stage loader
@@ -115,8 +117,6 @@ func (gs *GyrussSystem) LoadStage(stageNumber int) error {
 	}
 
 	gs.currentStage = stageNumber
-	gs.bossSpawned = false
-	gs.bossTimer = 0
 
 	// Load into wave manager
 	gs.waveManager.LoadStage(stageConfig)
@@ -178,9 +178,6 @@ func (gs *GyrussSystem) Update(ctx context.Context, deltaTime float64) error {
 	// Handle enemy spawning
 	gs.handleSpawning(ctx)
 
-	// Handle boss spawning
-	gs.handleBossSpawning(ctx, deltaTime)
-
 	// Update path system (entry animations)
 	if err := gs.pathSystem.Update(ctx, deltaTime); err != nil {
 		return err
@@ -231,31 +228,13 @@ func (gs *GyrussSystem) handleSpawning(ctx context.Context) {
 	gs.waveManager.MarkEnemySpawned()
 }
 
-// handleBossSpawning handles boss spawning
-func (gs *GyrussSystem) handleBossSpawning(ctx context.Context, deltaTime float64) {
-	if gs.bossSpawned {
-		return
-	}
-
-	if !gs.waveManager.IsBossTriggered() {
-		return
-	}
-
+// SpawnBoss spawns the boss immediately when called (by StageStateMachine after delay)
+func (gs *GyrussSystem) SpawnBoss(ctx context.Context) {
 	bossConfig := gs.waveManager.GetBossConfig()
 	if bossConfig == nil || !bossConfig.Enabled {
 		return
 	}
-
-	// Wait for spawn delay
-	gs.bossTimer += deltaTime
-	if gs.bossTimer < bossConfig.SpawnDelay {
-		return
-	}
-
-	// Spawn boss
 	gs.spawner.SpawnBoss(ctx, bossConfig)
-	gs.bossSpawned = true
-
 	gs.logger.Info("Gyruss boss spawned",
 		"stage", gs.currentStage,
 		"boss_type", bossConfig.BossType)
@@ -273,36 +252,6 @@ func (gs *GyrussSystem) HasDoubleShot() bool {
 	return gs.powerUpSystem.HasDoubleShot()
 }
 
-// IsBossActive returns whether boss is currently active
-func (gs *GyrussSystem) IsBossActive() bool {
-	return gs.bossSpawned && !gs.IsBossDefeated()
-}
-
-// WasBossSpawned returns whether the boss has been spawned this stage
-func (gs *GyrussSystem) WasBossSpawned() bool {
-	return gs.bossSpawned
-}
-
-// IsBossDefeated returns whether boss has been defeated (boss was spawned and no longer exists).
-func (gs *GyrussSystem) IsBossDefeated() bool {
-	if !gs.bossSpawned {
-		return false
-	}
-	bossExists := false
-	query.NewQuery(
-		filter.And(
-			filter.Contains(core.EnemyTag),
-			filter.Contains(core.EnemyTypeID),
-		),
-	).Each(gs.world, func(entry *donburi.Entry) {
-		typeID := core.EnemyTypeID.Get(entry)
-		if enemy.EnemyType(*typeID) == enemy.EnemyTypeBoss {
-			bossExists = true
-		}
-	})
-	return !bossExists
-}
-
 // DestroyEnemy destroys an enemy and returns points - implements EnemySystemInterface
 func (gs *GyrussSystem) DestroyEnemy(entity donburi.Entity) int {
 	if !gs.world.Valid(entity) {
@@ -312,11 +261,13 @@ func (gs *GyrussSystem) DestroyEnemy(entity donburi.Entity) int {
 	entry := gs.world.Entry(entity)
 	points := 100 // Default points
 
-	// Check if it's a boss for more points
+	// Check if it's a boss for more points and emit BossDefeated before removing
+	isBoss := false
 	if entry.HasComponent(core.EnemyTypeID) {
 		typeID := core.EnemyTypeID.Get(entry)
 		switch enemy.EnemyType(*typeID) {
 		case enemy.EnemyTypeBoss:
+			isBoss = true
 			// Get boss points from stage config
 			bossConfig := gs.waveManager.GetBossConfig()
 			if bossConfig != nil {
@@ -341,16 +292,16 @@ func (gs *GyrussSystem) DestroyEnemy(entity donburi.Entity) int {
 	// Try to spawn power-up
 	gs.powerUpSystem.TrySpawnPowerUp(position)
 
+	// Emit BossDefeated before removing so StageStateMachine can transition
+	if isBoss && gs.eventSystem != nil {
+		gs.eventSystem.EmitBossDefeated()
+	}
+
 	// Remove the entity
 	gs.world.Remove(entity)
 
 	gs.logger.Debug("Enemy destroyed", "entity", entity, "points", points)
 	return points
-}
-
-// IsStageComplete returns whether the current stage is complete
-func (gs *GyrussSystem) IsStageComplete() bool {
-	return gs.bossSpawned && gs.IsBossDefeated()
 }
 
 // GetCurrentStage returns the current stage number
@@ -370,8 +321,6 @@ func (gs *GyrussSystem) GetPowerUpSystem() *powerup.PowerUpSystem {
 
 // Reset resets the Gyruss system state for a new game
 func (gs *GyrussSystem) Reset() {
-	gs.bossSpawned = false
-	gs.bossTimer = 0
 	gs.waveManager.Reset()
 	gs.logger.Debug("Gyruss system reset")
 }

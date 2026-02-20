@@ -26,25 +26,16 @@ type GyrussWaveManager struct {
 	// Timing
 	waveTimer       time.Duration
 	groupSpawnTimer time.Duration
-	interWaveTimer  time.Duration
 
 	// Flags
-	isSpawning             bool
-	isWaitingInterWave     bool
-	isWaitingForLevelStart bool
-	levelStartTimer        time.Duration
-	levelStartDelay        time.Duration
-
-	// Boss state
-	bossTriggered bool
+	isSpawning bool
 }
 
 // NewGyrussWaveManager creates a new Gyruss-style wave manager
 func NewGyrussWaveManager(world donburi.World, logger common.Logger) *GyrussWaveManager {
 	return &GyrussWaveManager{
-		world:           world,
-		logger:          logger,
-		levelStartDelay: 3500 * time.Millisecond,
+		world:  world,
+		logger: logger,
 	}
 }
 
@@ -52,8 +43,6 @@ func NewGyrussWaveManager(world donburi.World, logger common.Logger) *GyrussWave
 func (gwm *GyrussWaveManager) LoadStage(config *managers.StageConfig) {
 	gwm.stageConfig = config
 	gwm.Reset()
-	gwm.isWaitingForLevelStart = true
-	gwm.levelStartTimer = 0
 
 	gwm.logger.Debug("Gyruss stage loaded",
 		"stage", config.StageNumber,
@@ -68,49 +57,16 @@ func (gwm *GyrussWaveManager) Reset() {
 	gwm.spawnIndex = 0
 	gwm.waveTimer = 0
 	gwm.groupSpawnTimer = 0
-	gwm.interWaveTimer = 0
 	gwm.isSpawning = false
-	gwm.isWaitingInterWave = false
-	gwm.isWaitingForLevelStart = false
-	gwm.bossTriggered = false
 }
 
-// Update updates the wave manager state
+// Update updates the wave manager state (spawn timers only; wave transitions are driven by StageStateMachine)
 func (gwm *GyrussWaveManager) Update(deltaTime float64) {
 	deltaDuration := time.Duration(deltaTime * float64(time.Second))
-
-	// Handle level start delay
-	if gwm.isWaitingForLevelStart {
-		gwm.levelStartTimer += deltaDuration
-		if gwm.levelStartTimer >= gwm.levelStartDelay {
-			gwm.isWaitingForLevelStart = false
-			gwm.startNextWave()
-		}
-		return
-	}
-
-	// Handle inter-wave delay
-	if gwm.isWaitingInterWave {
-		gwm.interWaveTimer += deltaDuration
-		wave := gwm.getCurrentWave()
-		if wave != nil {
-			delay := time.Duration(wave.Timing.InterWaveDelay * float64(time.Second))
-			if gwm.interWaveTimer >= delay {
-				gwm.isWaitingInterWave = false
-				gwm.startNextWave()
-			}
-		}
-		return
-	}
-
-	// Update wave timer
 	if gwm.isSpawning {
 		gwm.waveTimer += deltaDuration
 		gwm.groupSpawnTimer += deltaDuration
 	}
-
-	// Check for wave completion
-	gwm.checkWaveCompletion()
 }
 
 // getCurrentWave returns the current wave config
@@ -130,19 +86,19 @@ func (gwm *GyrussWaveManager) getCurrentGroup() *managers.EnemyGroupConfig {
 	return &wave.SpawnSequence[gwm.currentGroupIndex]
 }
 
-// startNextWave starts the next wave
-func (gwm *GyrussWaveManager) startNextWave() {
-	if gwm.stageConfig == nil || gwm.currentWaveIndex >= len(gwm.stageConfig.Waves) {
+// StartWave starts spawning the given wave index (called by StageStateMachine)
+func (gwm *GyrussWaveManager) StartWave(waveIndex int) {
+	if gwm.stageConfig == nil || waveIndex < 0 || waveIndex >= len(gwm.stageConfig.Waves) {
 		return
 	}
-
-	wave := &gwm.stageConfig.Waves[gwm.currentWaveIndex]
+	gwm.currentWaveIndex = waveIndex
 	gwm.currentGroupIndex = 0
 	gwm.spawnIndex = 0
 	gwm.waveTimer = 0
 	gwm.groupSpawnTimer = 0
 	gwm.isSpawning = true
 
+	wave := &gwm.stageConfig.Waves[waveIndex]
 	gwm.logger.Debug("Gyruss wave started",
 		"wave_id", wave.WaveID,
 		"description", wave.Description,
@@ -192,60 +148,18 @@ func (gwm *GyrussWaveManager) MarkEnemySpawned() {
 	gwm.groupSpawnTimer = 0
 }
 
-// checkWaveCompletion checks if the current wave is complete
-func (gwm *GyrussWaveManager) checkWaveCompletion() {
-	if !gwm.isSpawning {
-		return
-	}
-
+// AllSpawnedForCurrentWave returns true when all groups in the current wave have finished spawning
+func (gwm *GyrussWaveManager) AllSpawnedForCurrentWave() bool {
 	wave := gwm.getCurrentWave()
 	if wave == nil {
-		return
+		return false
 	}
-
-	// Wave completes only when all spawned and no active enemies (world-driven).
-	// Check if all groups are done spawning
-	allSpawned := gwm.currentGroupIndex >= len(wave.SpawnSequence)
-
-	// Check if all enemies are killed
-	activeEnemies := gwm.countActiveEnemies()
-
-	if allSpawned && activeEnemies == 0 {
-		gwm.completeWave()
-	}
+	return gwm.currentGroupIndex >= len(wave.SpawnSequence)
 }
 
-// completeWave completes the current wave and advances
-func (gwm *GyrussWaveManager) completeWave() {
-	wave := gwm.getCurrentWave()
-	if wave == nil {
-		return
-	}
-
-	gwm.logger.Debug("Gyruss wave completed",
-		"wave_id", wave.WaveID,
-		"on_clear", wave.OnClear)
-
-	gwm.isSpawning = false
-
-	// Check what happens on clear
-	if wave.OnClear == "boss" {
-		gwm.bossTriggered = true
-		gwm.logger.Debug("Boss wave triggered")
-		return
-	}
-
-	// Move to next wave
-	gwm.currentWaveIndex++
-	if gwm.currentWaveIndex < len(gwm.stageConfig.Waves) {
-		nextWave := &gwm.stageConfig.Waves[gwm.currentWaveIndex]
-		if nextWave.Timing.InterWaveDelay > 0 {
-			gwm.isWaitingInterWave = true
-			gwm.interWaveTimer = 0
-		} else {
-			gwm.startNextWave()
-		}
-	}
+// ActiveEnemyCount returns the number of active enemies in the world (excluding boss)
+func (gwm *GyrussWaveManager) ActiveEnemyCount() int {
+	return gwm.countActiveEnemies()
 }
 
 // countActiveEnemies counts active enemies (excluding boss)
@@ -276,11 +190,6 @@ func (gwm *GyrussWaveManager) HasMoreWaves() bool {
 	return gwm.currentWaveIndex < len(gwm.stageConfig.Waves)
 }
 
-// IsBossTriggered returns true if boss should spawn
-func (gwm *GyrussWaveManager) IsBossTriggered() bool {
-	return gwm.bossTriggered
-}
-
 // GetBossConfig returns the boss configuration
 func (gwm *GyrussWaveManager) GetBossConfig() *managers.StageBossConfig {
 	if gwm.stageConfig == nil {
@@ -303,11 +212,6 @@ func (gwm *GyrussWaveManager) GetDifficulty() *managers.DifficultySettings {
 		return nil
 	}
 	return &gwm.stageConfig.Difficulty
-}
-
-// IsWaitingForLevelStart returns true if waiting for level start
-func (gwm *GyrussWaveManager) IsWaitingForLevelStart() bool {
-	return gwm.isWaitingForLevelStart
 }
 
 // GetCurrentWaveIndex returns the current wave index

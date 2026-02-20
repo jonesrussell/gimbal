@@ -6,8 +6,7 @@ import (
 
 // checkLevelCompletion checks if the stage is complete and advances to the next
 func (g *ECSGame) checkLevelCompletion() {
-	// Check if current stage is complete (boss defeated)
-	if !g.gyrussSystem.IsStageComplete() {
+	if !g.stageStateMachine.IsStageCompleted() {
 		return
 	}
 
@@ -16,7 +15,7 @@ func (g *ECSGame) checkLevelCompletion() {
 
 // handleLevelComplete handles level completion actions
 func (g *ECSGame) handleLevelComplete() {
-	currentStage := g.gyrussSystem.GetCurrentStage()
+	currentStage := g.stageStateMachine.StageNumber()
 	g.logger.Debug("Stage complete", "stage", currentStage)
 
 	// Check if final stage (stage 6)
@@ -29,8 +28,8 @@ func (g *ECSGame) handleLevelComplete() {
 	// Update level manager to track progression
 	g.levelManager.IncrementLevel()
 
-	// Load next stage so transition/intro/playing use the new stage config
-	if err := g.gyrussSystem.LoadNextStage(); err != nil {
+	// Load next stage via stage state machine (delegates to GyrussSystem)
+	if err := g.stageStateMachine.LoadNextStage(); err != nil {
 		g.logger.Error("Failed to load next stage", "error", err)
 		// Still switch scene so the game doesn't hang; next play will retry same stage
 	}
