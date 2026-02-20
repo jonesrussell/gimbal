@@ -70,12 +70,15 @@ func NewStageStateMachine(cfg *Config) *StageStateMachine {
 }
 
 func (ssm *StageStateMachine) onBossDefeated(_ donburi.World, _ events.BossDefeatedEvent) {
-	if ssm.state == StageStateBossActive {
-		ssm.state = StageStateBossDefeated
-		ssm.eventSystem.EmitStageCompleted(ssm.stageNumber)
-		ssm.state = StageStateStageCompleted
-		ssm.logger.Debug("Stage completed", "stage", ssm.stageNumber)
+	// Accept both BossActive and BossSpawning so we never get stuck if the boss
+	// is defeated while state is still BossSpawning (e.g. same-frame or ordering edge case).
+	if ssm.state != StageStateBossActive && ssm.state != StageStateBossSpawning {
+		return
 	}
+	ssm.state = StageStateBossDefeated
+	ssm.eventSystem.EmitStageCompleted(ssm.stageNumber)
+	ssm.state = StageStateStageCompleted
+	ssm.logger.Debug("Stage completed", "stage", ssm.stageNumber)
 }
 
 // LoadStage delegates to GyrussSystem then resets state to PreWave
