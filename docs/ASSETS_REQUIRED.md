@@ -32,7 +32,7 @@ This document lists all assets required for the Gimbal game, including what exis
 |------------|------|--------|-------|
 | Main Menu Music | `sounds/game_music_main.ogg` | ✅ Exists | Main menu background music |
 | Level 1 Music | `sounds/game_music_level_1.ogg` | ✅ Exists | Stage 1 gameplay music |
-| Level 2 Music | `sounds/game_music_level_2.ogg` | ✅ Exists | Not currently loaded in code |
+| Level 2 Music | `sounds/game_music_level_2.ogg` | ✅ Exists | Stage 2 gameplay music |
 | Boss Music | `sounds/game_music_boss.ogg` | ✅ Exists | Boss fight music |
 | **Level 3 Music** | `sounds/game_music_level_3.ogg` | ❌ **Missing** | For stage 3+ |
 | **Level 4 Music** | `sounds/game_music_level_4.ogg` | ❌ **Missing** | For stage 4+ |
