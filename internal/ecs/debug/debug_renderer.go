@@ -19,8 +19,8 @@ type DebugLevel int
 
 const (
 	DebugOff      DebugLevel = iota
-	DebugBasic               // Just grid + performance
-	DebugDetailed            // Everything
+	DebugBasic               // FPS and entity count only
+	DebugDetailed            // Adds 50px grid and entity/collision debug
 )
 
 // DebugRenderer handles all debug visualization and metrics
@@ -120,7 +120,7 @@ func (dr *DebugRenderer) drawTextWithBackground(screen *ebiten.Image, text strin
 	v2text.Draw(screen, text, dr.font, op)
 }
 
-// Render draws all debug information
+// Render draws debug information for the current level: Basic = performance metrics; Detailed adds grid, entity debug, and collision debug.
 func (dr *DebugRenderer) Render(screen *ebiten.Image, world donburi.World) {
 	if !dr.enabled {
 		return

@@ -245,6 +245,7 @@ func (s *PlayingScene) startBackgroundMusic() {
 	musicName := s.getLevelMusicName()
 	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), musicName)
 	if !ok {
+		log.Printf("[WARN] Music track not loaded, skipping playback: name=%s", musicName)
 		return
 	}
 
@@ -280,6 +281,7 @@ func (s *PlayingScene) switchToBossMusic() {
 
 	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), musicTrackBoss)
 	if !ok {
+		log.Printf("[WARN] Music track not loaded, skipping playback: name=%s", musicTrackBoss)
 		return
 	}
 
@@ -305,6 +307,7 @@ func (s *PlayingScene) switchToLevelMusic() {
 
 	musicRes, ok := s.resourceMgr.GetAudio(context.Background(), musicName)
 	if !ok {
+		log.Printf("[WARN] Music track not loaded, skipping playback: name=%s", musicName)
 		return
 	}
 

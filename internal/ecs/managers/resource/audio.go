@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2/audio"
@@ -212,7 +213,7 @@ func (rm *ResourceManager) LoadAllAudio(ctx context.Context) error {
 	audioConfigs := getAudioConfigs()
 	for _, cfg := range audioConfigs {
 		if _, err := rm.LoadAudio(ctx, cfg.name, cfg.path); err != nil {
-			// Don't fail completely if audio fails to load
+			log.Printf("[WARN] Failed to load audio track, skipping: name=%s error=%v", cfg.name, err)
 			continue
 		}
 	}

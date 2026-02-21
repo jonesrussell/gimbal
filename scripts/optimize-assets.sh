@@ -7,7 +7,10 @@ cd "$ROOT"
 echo "Stripping metadata (mogrify -strip)..."
 for dir in assets/sprites assets/ui assets/cutscenes assets/planets assets/bosses assets/ending; do
   [ -d "$dir" ] || continue
-  mogrify -strip "$dir"/*.png 2>/dev/null || true
+  for f in "$dir"/*.png; do
+    [ -f "$f" ] || continue
+    mogrify -strip "$f" 2>/dev/null || true
+  done
 done
 echo "Running optipng -o2..."
 for dir in assets/sprites assets/ui assets/cutscenes assets/planets assets/bosses assets/ending; do
