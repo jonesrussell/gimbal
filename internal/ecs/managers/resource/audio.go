@@ -158,6 +158,10 @@ func getAudioConfigs() []struct {
 			path: "sounds/game_music_level_1.ogg",
 		},
 		{
+			name: "game_music_level_2",
+			path: "sounds/game_music_level_2.ogg",
+		},
+		{
 			name: "game_music_boss",
 			path: "sounds/game_music_boss.ogg",
 		},

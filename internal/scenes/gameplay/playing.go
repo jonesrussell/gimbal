@@ -27,6 +27,7 @@ import (
 const (
 	musicTrackMain   = "game_music_main"
 	musicTrackLevel1 = "game_music_level_1"
+	musicTrackLevel2 = "game_music_level_2"
 	musicTrackBoss   = "game_music_boss"
 )
 
@@ -324,6 +325,9 @@ func (s *PlayingScene) getLevelMusicName() string {
 	// Use level-specific music (e.g., game_music_level_1 for level 1)
 	if levelManager.GetLevel() == 1 {
 		return musicTrackLevel1
+	}
+	if levelManager.GetLevel() == 2 {
+		return musicTrackLevel2
 	}
 
 	// Fallback to main music for other levels (can be extended later)
