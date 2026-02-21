@@ -47,12 +47,12 @@ type EnemyConfigs struct {
 func LoadPlayerConfig(ctx context.Context) (*PlayerConfig, error) {
 	data, err := assets.Assets.ReadFile("entities/player.json")
 	if err != nil {
-		return defaultPlayerConfig(), nil
+		return defaultPlayerConfig(), err
 	}
 
 	var config PlayerConfig
 	if unmarshalErr := json.Unmarshal(data, &config); unmarshalErr != nil {
-		return defaultPlayerConfig(), nil
+		return defaultPlayerConfig(), unmarshalErr
 	}
 
 	return &config, nil
