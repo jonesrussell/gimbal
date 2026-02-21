@@ -118,13 +118,14 @@ func (s *StageIntroScene) Draw(screen *ebiten.Image) {
 		screen.DrawImage(s.planetSprite, op)
 	}
 
-	// Draw planet route
+	// Draw planet route (slight delay so planet reads first)
 	routeText := fmt.Sprintf("%s → %s", s.fromPlanet, s.toPlanet)
+	routeAlpha := fadeAlpha * math.Min(1.0, math.Max(0, (elapsed-0.15)/0.35))
 	scenes.DrawCenteredTextWithOptions(screen, scenes.TextDrawOptions{
 		Text:  routeText,
 		X:     centerX,
 		Y:     centerY + 60,
-		Alpha: fadeAlpha,
+		Alpha: routeAlpha,
 		Font:  s.font,
 	})
 

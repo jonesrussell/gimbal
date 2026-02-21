@@ -13,7 +13,7 @@ const (
 
 	// Layout constants
 	HUDSpacing  = 24
-	HUDPadding  = 16
+	HUDPadding  = 20
 	HUDPaddingV = 12
 	IconSpacing = 4
 
