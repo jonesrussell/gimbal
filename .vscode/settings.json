@@ -1,38 +1,43 @@
 {
-    "go.useLanguageServer": true,
-    "go.lintOnSave": "package",
-    "go.lintTool": "golangci-lint",
-    "go.lintFlags": ["--fast"],
-    "go.formatTool": "gofmt",
-    "go.toolsManagement.autoUpdate": true,
-    "go.gopath": "",
-    "go.goroot": "",
-    "go.vetOnSave": "package",
-    "go.coverOnSave": false,
-    "go.testOnSave": false,
-    "go.testFlags": ["-v"],
-    "go.testTimeout": "30s",
-    "go.testEnvVars": {},
-    "go.testEnvFile": "${workspaceFolder}/.env",
-    "go.delveConfig": {
-        "dlvLoadConfig": {
-            "followPointers": true,
-            "maxVariableRecurse": 1,
-            "maxStringLen": 64,
-            "maxArrayValues": 64,
-            "maxStructFields": -1
-        },
-        "apiVersion": 2,
-        "showGlobalVariables": false
+  "go.useLanguageServer": true,
+  "go.lintOnSave": "package",
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": [
+    "--fast"
+  ],
+  "go.toolsManagement.autoUpdate": true,
+  "go.gopath": "",
+  "go.goroot": "",
+  "go.vetOnSave": "package",
+  "go.coverOnSave": false,
+  "go.testOnSave": false,
+  "go.testFlags": [
+    "-v"
+  ],
+  "go.testTimeout": "30s",
+  "go.testEnvVars": {},
+  "go.testEnvFile": "${workspaceFolder}/.env",
+  "go.delveConfig": {
+    "dlvLoadConfig": {
+      "followPointers": true,
+      "maxVariableRecurse": 1,
+      "maxStringLen": 64,
+      "maxArrayValues": 64,
+      "maxStructFields": -1
     },
-    "go.alternateTools": {},
-    "go.inferGopath": true,
-    "gopls": {
-        "buildFlags": ["-tags=dev"],
-        "ui.diagnostic.analyses": {
-            "unusedparams": true,
-            "shadow": true
-        },
-        "formatting.gofumpt": true
-    }
+    "apiVersion": 2,
+    "showGlobalVariables": false
+  },
+  "go.alternateTools": {},
+  "go.inferGopath": true,
+  "gopls": {
+    "buildFlags": [
+      "-tags=dev"
+    ],
+    "ui.diagnostic.analyses": {
+      "unusedparams": true,
+      "shadow": true
+    },
+    "formatting.gofumpt": true
+  }
 }
