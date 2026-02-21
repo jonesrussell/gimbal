@@ -203,13 +203,6 @@ func (rm *ResourceManager) loadUISprites(ctx context.Context) error {
 			FallbackHeight: 480,
 			FallbackColor:  color.RGBA{255, 0, 0, 128}, // Red semi-transparent fallback
 		},
-		{
-			Name:           "scanline_overlay",
-			Path:           "ui/scanline_overlay.png",
-			FallbackWidth:  640,
-			FallbackHeight: 480,
-			FallbackColor:  color.RGBA{0, 0, 0, 128}, // Black semi-transparent fallback
-		},
 	}
 
 	for _, cfg := range spriteConfigs {
