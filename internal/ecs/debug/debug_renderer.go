@@ -129,8 +129,10 @@ func (dr *DebugRenderer) Render(screen *ebiten.Image, world donburi.World) {
 	// Update mouse position for hover detection
 	dr.UpdateMousePosition()
 
-	// Draw debug grid
-	dr.drawGrid(screen)
+	// Draw debug grid only in Detailed mode (Basic = FPS/entity count only)
+	if dr.level == DebugDetailed {
+		dr.drawGrid(screen)
+	}
 
 	// Draw performance metrics
 	dr.drawPerformanceMetrics(screen, world)

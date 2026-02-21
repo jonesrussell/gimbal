@@ -90,6 +90,7 @@ Scenes implement the `Scene` interface (Update, Draw, Enter, Exit, GetType) and 
 ### Configuration
 - Game constants: `config/constants.go` (game-wide), `ecs/constants.go` (ECS-specific), `game/constants.go` (game loop)
 - Runtime config: Functional options (`WithDebug()`, `WithSpeed()`)
+- **Debug overlay:** Off by default; toggle with **F3**. Basic = FPS and entity count; Detailed (cycle with same key or F4 if implemented) adds 50px grid and entity/collision debug.
 - **Invincibility:** Developer God mode: `-invincible` when `DEBUG=true`, or pause menu "God mode" when Debug. Player invincibility: power-up type `PowerUpInvincibility` (temporary; same Health invincibility as i-frames).
 - Entity configs: JSON files in `assets/entities/` (player.json)
 - Stage configs: JSON files in `assets/stages/` (stage_01.json through stage_06.json)
