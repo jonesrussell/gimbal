@@ -7,7 +7,7 @@ This document lists all assets required for the Gimbal game, including what exis
 | Asset Name | Path | Status | Size | Notes |
 |------------|------|--------|------|-------|
 | Player | `sprites/player.png` | ✅ Exists | 32x32 | Main player sprite |
-| Player Spritesheet | `sprites/player_spritesheet.png` | ✅ Exists | - | Not currently used in code |
+| Player Spritesheet | `sprites/player_spritesheet.png` | ⛔ Removed | - | Removed from loading; not used in code |
 | Heart | `sprites/heart.png` | ✅ Exists | 16x16 | Health indicator |
 | Enemy (Basic) | `sprites/enemy.png` | ✅ Exists | 32x32 | Basic enemy type |
 | Enemy Heavy | `sprites/enemy_heavy.png` | ✅ Exists | 32x32 | Heavy enemy type |
