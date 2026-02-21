@@ -223,16 +223,7 @@ func (rm *ResourceManager) loadUISprites(ctx context.Context) error {
 
 // loadCutsceneSprites loads cutscene-related sprites
 func (rm *ResourceManager) loadCutsceneSprites(ctx context.Context) error {
-	// Scanning grid
-	spriteConfigs := []SpriteLoadConfig{
-		{
-			Name:           "scanning_grid",
-			Path:           "cutscenes/scanning_grid.png",
-			FallbackWidth:  640,
-			FallbackHeight: 480,
-			FallbackColor:  color.RGBA{0, 255, 255, 64}, // Cyan semi-transparent fallback
-		},
-	}
+	spriteConfigs := []SpriteLoadConfig{}
 
 	// Warp tunnel frames
 	for i := 1; i <= 8; i++ {
