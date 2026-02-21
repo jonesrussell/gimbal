@@ -15,8 +15,10 @@ const (
 	Spawn  Category = "SPAWN"
 )
 
-var enabled uint32
-var traceNextFrame uint32
+var (
+	enabled        uint32
+	traceNextFrame uint32
+)
 
 func Enable()         { atomic.StoreUint32(&enabled, 1) }
 func Disable()        { atomic.StoreUint32(&enabled, 0) }

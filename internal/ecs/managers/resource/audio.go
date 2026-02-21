@@ -316,7 +316,7 @@ func (ap *AudioPlayer) PlayMusic(name string, audioRes *AudioResource, volume fl
 
 	player, err := ap.audioContext.NewPlayer(loopStream)
 	if err != nil {
-		return nil // Not a fatal error - audio is optional
+		return err
 	}
 
 	player.SetVolume(volume)

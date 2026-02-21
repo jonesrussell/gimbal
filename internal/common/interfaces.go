@@ -5,7 +5,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/jonesrussell/gimbal/internal/config"
 	"github.com/jonesrussell/gimbal/internal/math"
 )
 
@@ -18,14 +17,6 @@ type GameUI interface {
 	UpdateLives(lives int)
 	ShowPauseMenu(visible bool)
 	SetDeviceClass(deviceClass string)
-}
-
-// UIData holds the current UI state data.
-type UIData struct {
-	Score       int
-	Lives       int
-	IsPaused    bool
-	DeviceClass string
 }
 
 // Logger represents a logging interface
@@ -46,27 +37,6 @@ type Entity interface {
 	Update()
 	Draw(screen any)
 	GetPosition() Point
-}
-
-// Movable represents an entity that can move
-type Movable interface {
-	Entity
-	SetPosition(pos Point)
-	GetSpeed() float64
-}
-
-// Rotatable represents an entity that can rotate
-type Rotatable interface {
-	Movable
-	SetAngle(angle math.Angle)
-	GetAngle() math.Angle
-}
-
-// Collidable represents an entity that can collide with others
-type Collidable interface {
-	Entity
-	GetBounds() config.Size
-	CheckCollision(other Collidable) bool
 }
 
 // InputHandler represents a component that can handle input
@@ -143,12 +113,6 @@ const (
 	InputEventAny // Any key or mouse input - perfect for title screens
 )
 
-// PhysicsSystem represents a system that handles physics calculations
-type PhysicsSystem interface {
-	CalculatePosition(angle math.Angle, radius float64) Point
-	ValidatePosition(pos Point, bounds config.Size) Point
-}
-
 // RenderSystem represents a system that handles rendering
 type RenderSystem interface {
 	Draw(screen *ebiten.Image, sprite *ebiten.Image, pos Point, angle math.Angle)
@@ -159,108 +123,4 @@ type RenderSystem interface {
 // This interface enables type-safe health system access across packages
 type HealthProvider interface {
 	GetPlayerHealth() (current, maximum int)
-}
-
-// Result represents a value that can either be a success or an error
-type Result[T any] struct {
-	value T
-	err   error
-}
-
-// Ok creates a successful Result
-func Ok[T any](value T) Result[T] {
-	return Result[T]{value: value, err: nil}
-}
-
-// Err creates a failed Result
-func Err[T any](err error) Result[T] {
-	return Result[T]{err: err}
-}
-
-// Unwrap returns the value or panics if there's an error.
-// Use UnwrapOr() or check IsErr() first to avoid panics.
-//
-// This method follows the Rust Result pattern where unwrapping
-// on an error causes a panic. For safe unwrapping, use UnwrapOr()
-// or check the error state with IsErr() before calling Unwrap().
-func (r Result[T]) Unwrap() T {
-	if r.err != nil {
-		panic(r.err)
-	}
-	return r.value
-}
-
-// UnwrapOr returns the value or a default if there's an error
-func (r Result[T]) UnwrapOr(defaultValue T) T {
-	if r.err != nil {
-		return defaultValue
-	}
-	return r.value
-}
-
-// IsOk returns true if the Result is successful
-func (r Result[T]) IsOk() bool {
-	return r.err == nil
-}
-
-// IsErr returns true if the Result contains an error
-func (r Result[T]) IsErr() bool {
-	return r.err != nil
-}
-
-// Error returns the error if present
-func (r Result[T]) Error() error {
-	return r.err
-}
-
-// Value returns the value if successful
-func (r Result[T]) Value() T {
-	return r.value
-}
-
-// Updatable represents an entity that can be updated with a delta time
-type Updatable interface {
-	Update(deltaTime float64) error
-}
-
-// Drawable represents an entity that can be drawn to a screen
-type Drawable interface {
-	Draw(screen *ebiten.Image) error
-}
-
-// Identifiable represents an entity with a unique identifier
-type Identifiable interface {
-	GetID() string
-	SetID(id string)
-}
-
-// Configurable represents an entity that can be configured
-type Configurable[T any] interface {
-	GetConfig() T
-	SetConfig(config T) error
-	ValidateConfig(config T) error
-}
-
-// Lifecycle represents an entity with lifecycle management
-type Lifecycle interface {
-	Initialize() error
-	Start() error
-	Stop() error
-	Cleanup() error
-}
-
-// Observable represents an entity that can notify observers of changes
-type Observable[T any] interface {
-	Subscribe(observer func(T)) func() // Returns unsubscribe function
-	Notify(event T)
-}
-
-// Repository represents a data access interface
-type Repository[T any, ID comparable] interface {
-	Get(id ID) (T, error)
-	GetAll() ([]T, error)
-	Create(entity T) error
-	Update(entity T) error
-	Delete(id ID) error
-	Exists(id ID) bool
 }

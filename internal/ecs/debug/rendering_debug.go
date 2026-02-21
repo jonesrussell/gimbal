@@ -115,8 +115,11 @@ func (rd *RenderingDebugger) analyzeRendering(world donburi.World) {
 	})
 
 	// Log analysis
-	log.Printf("[DEBUG] Rendering analysis entities_with_sprite=%d entities_with_size=%d entities_with_scale=%d entities_with_rotation=%d draw_calls=%d",
-		entitiesWithSprite, entitiesWithSize, entitiesWithScale, entitiesWithRotation, rd.drawCalls)
+	log.Printf(
+		"[DEBUG] Rendering analysis entities_with_sprite=%d entities_with_size=%d "+
+			"entities_with_scale=%d entities_with_rotation=%d draw_calls=%d",
+		entitiesWithSprite, entitiesWithSize, entitiesWithScale, entitiesWithRotation, rd.drawCalls,
+	)
 }
 
 // drawRenderingStats draws rendering statistics
